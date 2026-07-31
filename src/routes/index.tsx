@@ -343,12 +343,9 @@ function FinalCTASection() {
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             Your memories are already playing. Let’s make them visible.
           </p>
-          <a
-            href="#"
-            className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-10 py-5 text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
-          >
+          <button className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-10 py-5 text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]">
             Begin Your Journey
-          </a>
+          </button>
         </div>
       </AnimatedSection>
     </section>
