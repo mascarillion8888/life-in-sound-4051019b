@@ -61,18 +61,18 @@ function JourneyPage() {
           />
         </div>
 
-        <div className="mt-12 flex w-full max-w-2xl items-center justify-between gap-4">
+        <div className="mt-12 flex w-full max-w-2xl flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
             disabled
-            className="h-12 rounded-full px-8 text-base font-medium"
+            className="h-12 w-full rounded-full px-8 text-base font-medium sm:w-auto"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Previous
           </Button>
           <Button
             disabled
-            className="h-12 rounded-full px-8 text-base font-semibold"
+            className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
           >
             Next
             <ChevronRight className="ml-2 h-4 w-4" />
