@@ -167,9 +167,12 @@ function HeroSection() {
         are. Rediscover the songs that shaped your memories and identity, and
         turn them into a cinematic visual journey.
       </p>
-      <button className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]">
+      <Link
+        to="/journey"
+        className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
+      >
         Begin Your Journey
-      </button>
+      </Link>
     </section>
   );
 }
@@ -343,9 +346,12 @@ function FinalCTASection() {
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             Your memories are already playing. Let’s make them visible.
           </p>
-          <button className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-10 py-5 text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]">
+          <Link
+            to="/journey"
+            className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-10 py-5 text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
+          >
             Begin Your Journey
-          </button>
+          </Link>
         </div>
       </AnimatedSection>
     </section>
