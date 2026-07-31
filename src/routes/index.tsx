@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Dna, Heart, Image as ImageIcon, Music, Sparkles } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
