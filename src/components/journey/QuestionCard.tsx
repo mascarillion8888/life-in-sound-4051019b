@@ -22,7 +22,7 @@ export function QuestionCard({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="w-full rounded-[2rem] border border-border/50 bg-card/40 p-8 backdrop-blur-xl md:p-12">
+    <div className="w-full rounded-[2rem] border border-border/50 bg-card/60 p-8 backdrop-blur-xl md:p-12">
       <div className="space-y-4">
         <span className="text-sm font-semibold uppercase tracking-widest text-primary">
           Question {number}
@@ -30,7 +30,7 @@ export function QuestionCard({
         <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
           {title}
         </h2>
-        <p className="text-lg leading-relaxed text-muted-foreground">
+        <p className="text-lg leading-relaxed text-foreground/80">
           {description}
         </p>
       </div>
