@@ -142,11 +142,11 @@ function Header() {
         </span>
       </div>
       <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
-        <a href="#how-it-works" className="transition-colors hover:text-foreground">
-          How it Works
+        <a href="#features" className="transition-colors hover:text-foreground">
+          Features
         </a>
-        <a href="#why-music" className="transition-colors hover:text-foreground">
-          Why Music?
+        <a href="#" className="transition-colors hover:text-foreground">
+          About
         </a>
       </nav>
     </header>
@@ -167,15 +167,13 @@ function HeroSection() {
         are. Rediscover the songs that shaped your memories and identity, and
         turn them into a cinematic visual journey.
       </p>
-      <a
-        href="#how-it-works"
-        className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
-      >
+      <button className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]">
         Begin Your Journey
-      </a>
+      </button>
     </section>
   );
 }
+
 
 function FeaturesSection() {
   return (
