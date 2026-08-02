@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -41,8 +42,9 @@ export const Route = createFileRoute("/journey")({
 });
 
 function JourneyPage() {
-  const total = 8;
-  const current = 1;
+  const total = questions.length;
+  const [current, setCurrent] = useState(1);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const question = questions[current - 1];
 
   return (
@@ -55,23 +57,30 @@ function JourneyPage() {
 
         <div className="mt-12 w-full max-w-2xl">
           <QuestionCard
+            key={question.id}
             number={current}
             title={question.title}
             description={question.description}
+            answer={answers[question.id]}
+            onChoose={(song) =>
+              setAnswers((prev) => ({ ...prev, [question.id]: song }))
+            }
           />
         </div>
 
         <div className="mt-12 flex w-full max-w-2xl flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
-            disabled
+            disabled={current === 1}
+            onClick={() => setCurrent((c) => Math.max(1, c - 1))}
             className="h-12 w-full rounded-full px-8 text-base font-medium sm:w-auto"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Previous
           </Button>
           <Button
-            disabled
+            disabled={current === total}
+            onClick={() => setCurrent((c) => Math.min(total, c + 1))}
             className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
           >
             Next
