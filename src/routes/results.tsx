@@ -1,9 +1,12 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { Dna, Film, Sparkles, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
+import { loadJourney } from "@/lib/journey-storage";
 import posterPreview from "@/assets/poster-preview.jpg";
+
 
 export const Route = createFileRoute("/results")({
   head: () => ({
