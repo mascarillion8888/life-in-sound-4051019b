@@ -1,9 +1,12 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { Dna, Film, Sparkles, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
+import { loadJourney } from "@/lib/journey-storage";
 import posterPreview from "@/assets/poster-preview.jpg";
+
 
 export const Route = createFileRoute("/results")({
   head: () => ({
@@ -63,10 +66,19 @@ function ResultsPage() {
   const stateAnswers = useRouterState({
     select: (s) => (s.location.state as { answers?: Record<number, string> })?.answers,
   });
+  const [storedAnswers, setStoredAnswers] = useState<Record<number, string>>({});
 
+  // Fall back to saved progress when the page is reloaded or opened directly.
+  useEffect(() => {
+    const saved = loadJourney();
+    if (saved) setStoredAnswers(saved.answers);
+  }, []);
+
+  const answers = stateAnswers ?? storedAnswers;
   const songs = questions.map(
-    (q) => stateAnswers?.[q.id] ?? `Untitled track ${q.id}`,
+    (q) => answers?.[q.id] ?? `Untitled track ${q.id}`,
   );
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
