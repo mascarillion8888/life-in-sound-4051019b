@@ -44,9 +44,12 @@ export const Route = createFileRoute("/journey")({
 
 function JourneyPage() {
   const total = questions.length;
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const question = questions[current - 1];
+  const isLast = current === total;
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
