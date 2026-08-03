@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
 import { questions } from "@/lib/questions";
+
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -43,9 +44,12 @@ export const Route = createFileRoute("/journey")({
 
 function JourneyPage() {
   const total = questions.length;
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const question = questions[current - 1];
+  const isLast = current === total;
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -79,13 +83,19 @@ function JourneyPage() {
             Previous
           </Button>
           <Button
-            disabled={current === total}
-            onClick={() => setCurrent((c) => Math.min(total, c + 1))}
+            onClick={() => {
+              if (isLast) {
+                navigate({ to: "/results", state: { answers } as never });
+              } else {
+                setCurrent((c) => Math.min(total, c + 1));
+              }
+            }}
             className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
           >
-            Next
+            {isLast ? "See Your Results" : "Next"}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
+
         </div>
       </main>
     </div>
