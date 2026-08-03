@@ -47,9 +47,33 @@ function JourneyPage() {
   const navigate = useNavigate();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [restored, setRestored] = useState(false);
   const question = questions[current - 1];
   const isLast = current === total;
 
+  // Restore any saved progress after hydration.
+  useEffect(() => {
+    const saved = loadJourney();
+    if (saved) {
+      setCurrent(Math.min(Math.max(saved.current, 1), total));
+      setAnswers(saved.answers);
+    }
+    setRestored(true);
+  }, [total]);
+
+  // Persist on every change once restoration has run.
+  useEffect(() => {
+    if (!restored) return;
+    saveJourney({ current, answers });
+  }, [restored, current, answers]);
+
+  const startNewJourney = () => {
+    clearJourney();
+    setAnswers({});
+    setCurrent(1);
+  };
+
+  const savedProgress = current > 1 || Object.keys(answers).length > 0;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -95,9 +119,19 @@ function JourneyPage() {
             {isLast ? "See Your Results" : "Next"}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
-
         </div>
+
+        {savedProgress ? (
+          <button
+            onClick={startNewJourney}
+            className="mt-10 inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Start New Journey
+          </button>
+        ) : null}
       </main>
     </div>
   );
 }
+
