@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
 import { questions } from "@/lib/questions";
+
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
