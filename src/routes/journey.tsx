@@ -83,13 +83,19 @@ function JourneyPage() {
             Previous
           </Button>
           <Button
-            disabled={current === total}
-            onClick={() => setCurrent((c) => Math.min(total, c + 1))}
+            onClick={() => {
+              if (isLast) {
+                navigate({ to: "/results", state: { answers } as never });
+              } else {
+                setCurrent((c) => Math.min(total, c + 1));
+              }
+            }}
             className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
           >
-            Next
+            {isLast ? "See Your Results" : "Next"}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
+
         </div>
       </main>
     </div>
