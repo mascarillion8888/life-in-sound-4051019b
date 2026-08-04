@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/journey/ProgressBar";
@@ -77,6 +77,17 @@ function JourneyPage() {
 
   const savedProgress = current > 1 || Object.keys(answers).length > 0;
 
+  const isAnswered = Boolean(answers[question.id]);
+  const unanswered = questions.filter((q) => !answers[q.id]);
+  const canFinish = unanswered.length === 0;
+  const canAdvance = isLast ? canFinish : isAnswered;
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    setShowHint(false);
+  }, [current, isAnswered]);
+
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
@@ -110,18 +121,40 @@ function JourneyPage() {
           </Button>
           <Button
             onClick={() => {
+              if (!canAdvance) {
+                setShowHint(true);
+                return;
+              }
               if (isLast) {
                 navigate({ to: "/results", state: { answers } as never });
               } else {
                 setCurrent((c) => Math.min(total, c + 1));
               }
             }}
-            className="h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto"
+            aria-disabled={!canAdvance}
+            className={`h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto ${
+              canAdvance ? "" : "opacity-50"
+            }`}
           >
             {isLast ? "See Your Results" : "Next"}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
+
+        {showHint && !canAdvance ? (
+          <p
+            role="alert"
+            className="mt-6 flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-center text-sm font-medium text-primary"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {isLast
+              ? `Still missing an answer for question${unanswered.length > 1 ? "s" : ""} ${unanswered
+                  .map((q) => q.id)
+                  .join(", ")}.`
+              : "Choose a song before moving on."}
+          </p>
+        ) : null}
+
 
         {savedProgress ? (
           <button
