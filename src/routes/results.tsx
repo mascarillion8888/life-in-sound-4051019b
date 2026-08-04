@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Maximize, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
@@ -68,12 +68,23 @@ function ResultsPage() {
     select: (s) => (s.location.state as { answers?: Record<number, string> })?.answers,
   });
   const [storedAnswers, setStoredAnswers] = useState<Record<number, string>>({});
+  const [posterOpen, setPosterOpen] = useState(false);
 
   // Fall back to saved progress when the page is reloaded or opened directly.
   useEffect(() => {
     const saved = loadJourney();
     if (saved) setStoredAnswers(saved.answers);
   }, []);
+
+  // Close fullscreen poster with Escape.
+  useEffect(() => {
+    if (!posterOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPosterOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [posterOpen]);
 
   const answers = stateAnswers ?? storedAnswers;
   const songs = questions.map(
@@ -192,26 +203,58 @@ function ResultsPage() {
         </AnimatedReveal>
 
         {/* Cinematic Poster */}
-<AnimatedReveal>
-        <section>
-          <SectionHeading
-            icon={Film}
-            eyebrow="Framed"
-            title="Cinematic Poster"
-          />
-          <div className="mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
+        <AnimatedReveal>
+          <section>
+            <SectionHeading
+              icon={Film}
+              eyebrow="Framed"
+              title="Cinematic Poster"
+            />
+            <div className="group relative mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
+              <img
+                src={posterPreview}
+                alt="Placeholder cinematic poster of your personal SoundMap"
+                loading="lazy"
+                className="w-full rounded-[1.5rem] object-cover"
+              />
+              <button
+                onClick={() => setPosterOpen(true)}
+                className="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-card group-hover:opacity-100 focus:opacity-100"
+                aria-label="View poster fullscreen"
+              >
+                <Maximize className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              A printable poster of your SoundMap is coming soon.
+            </p>
+          </section>
+        </AnimatedReveal>
+
+        {/* Fullscreen Poster Overlay */}
+        {posterOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+            onClick={() => setPosterOpen(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Fullscreen poster preview"
+          >
+            <button
+              onClick={() => setPosterOpen(false)}
+              className="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg backdrop-blur-md transition-transform hover:scale-105"
+              aria-label="Close fullscreen poster"
+            >
+              <X className="h-5 w-5" />
+            </button>
             <img
               src={posterPreview}
-              alt="Placeholder cinematic poster of your personal SoundMap"
-              loading="lazy"
-              className="w-full rounded-[1.5rem] object-cover"
+              alt="Fullscreen cinematic poster of your personal SoundMap"
+              className="max-h-[90vh] max-w-full rounded-[1.5rem] object-contain shadow-2xl shadow-primary/10"
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            A printable poster of your SoundMap is coming soon.
-          </p>
-        </section>
-        </AnimatedReveal>
+        )}
 
         <AnimatedReveal>
         <div className="flex flex-col items-center gap-4 pb-8">
