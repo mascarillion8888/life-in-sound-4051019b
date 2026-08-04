@@ -68,6 +68,7 @@ function ResultsPage() {
     select: (s) => (s.location.state as { answers?: Record<number, string> })?.answers,
   });
   const [storedAnswers, setStoredAnswers] = useState<Record<number, string>>({});
+  const [posterOpen, setPosterOpen] = useState(false);
 
   // Fall back to saved progress when the page is reloaded or opened directly.
   useEffect(() => {
