@@ -77,6 +77,17 @@ function JourneyPage() {
 
   const savedProgress = current > 1 || Object.keys(answers).length > 0;
 
+  const isAnswered = Boolean(answers[question.id]);
+  const unanswered = questions.filter((q) => !answers[q.id]);
+  const canFinish = unanswered.length === 0;
+  const canAdvance = isLast ? canFinish : isAnswered;
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    setShowHint(false);
+  }, [current, isAnswered]);
+
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
