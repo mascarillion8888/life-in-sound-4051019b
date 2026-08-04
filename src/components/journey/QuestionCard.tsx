@@ -26,15 +26,15 @@ export function QuestionCard({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="w-full rounded-[2rem] border border-border/50 bg-card/60 p-8 backdrop-blur-xl md:p-12">
+    <div className="w-full rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
       <div className="space-y-4">
         <span className="text-sm font-semibold uppercase tracking-widest text-primary">
           Question {number}
         </span>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
           {title}
         </h2>
-        <p className="text-lg leading-relaxed text-foreground/80">
+        <p className="text-base leading-relaxed text-foreground/80 sm:text-lg">
           {description}
         </p>
       </div>
@@ -44,7 +44,7 @@ export function QuestionCard({
           setOpen(true);
           onChoose(`Song for question ${number}`);
         }}
-        className="mt-10 h-16 w-full gap-3 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
+        className="mt-8 h-14 w-full gap-3 sm:mt-10 sm:h-16 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
       >
         <Music2 className="h-5 w-5" />
         Choose Song
