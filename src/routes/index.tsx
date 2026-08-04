@@ -132,7 +132,7 @@ function AnimatedSection({
 
 function Header() {
   return (
-    <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-8 lg:px-8">
+    <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
           <div className="h-3.5 w-3.5 rounded-full bg-primary" />
@@ -155,21 +155,21 @@ function Header() {
 
 function HeroSection() {
   return (
-    <section className="flex flex-col items-center justify-center px-6 pb-16 pt-16 text-center md:pb-24 md:pt-24 lg:pt-32">
-      <h1 className="max-w-4xl text-5xl font-bold tracking-tight text-foreground md:text-7xl lg:text-8xl">
+    <section className="flex flex-col items-center justify-center px-5 pb-12 pt-10 text-center sm:px-6 md:pb-24 md:pt-24 lg:pt-32">
+      <h1 className="max-w-4xl text-4xl font-bold sm:text-5xl tracking-tight text-foreground md:text-7xl lg:text-8xl">
         <span className="block">Your Life.</span>
         <span className="block">
           One <span className="text-gold-gradient">Soundtrack.</span>
         </span>
       </h1>
-      <p className="mt-8 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+      <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:mt-8 md:text-xl">
         Music doesn't just play in the background — it becomes part of who you
         are. Rediscover the songs that shaped your memories and identity, and
         turn them into a cinematic visual journey.
       </p>
       <Link
         to="/journey"
-        className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
+        className="mt-8 inline-flex w-full max-w-xs items-center justify-center rounded-full bg-primary px-8 py-4 text-base sm:mt-10 sm:w-auto sm:text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
       >
         Begin Your Journey
       </Link>
@@ -180,7 +180,7 @@ function HeroSection() {
 
 function FeaturesSection() {
   return (
-    <section id="features" className="mx-auto max-w-7xl px-6 pb-16 lg:px-8">
+    <section id="features" className="mx-auto max-w-7xl px-5 pb-12 sm:px-6 md:pb-16 lg:px-8">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
         {features.map((feature, i) => {
           const Icon = feature.icon;
@@ -188,15 +188,15 @@ function FeaturesSection() {
             <AnimatedSection
               key={feature.title}
               delay={i * 100}
-              className="group relative flex flex-col rounded-[2rem] border border-border bg-card/60 p-8 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/80 lg:p-10"
+              className="group relative flex flex-col rounded-[2rem] border border-border bg-card/60 p-6 sm:p-8 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/80 lg:p-10"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 transition-colors group-hover:bg-primary/15">
                 <Icon className="h-7 w-7 text-primary" strokeWidth={1.5} />
               </div>
-              <h3 className="mt-8 text-2xl font-semibold tracking-tight text-card-foreground">
+              <h3 className="mt-6 text-xl font-semibold sm:mt-8 sm:text-2xl tracking-tight text-card-foreground">
                 {feature.title}
               </h3>
-              <p className="mt-3 text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-3 text-base leading-relaxed text-muted-foreground sm:text-lg">
                 {feature.description}
               </p>
             </AnimatedSection>
@@ -209,32 +209,32 @@ function FeaturesSection() {
 
 function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
+    <section id="how-it-works" className="relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24 lg:px-8">
       <div className="pointer-events-none absolute inset-0 -z-10 glow-gold opacity-40" />
       <AnimatedSection className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">
           How it Works
         </p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl">
+        <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl lg:text-5xl">
           Three steps to your personal SoundMap
         </h2>
       </AnimatedSection>
 
-      <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+      <div className="mt-10 grid grid-cols-1 gap-6 md:mt-16 md:grid-cols-3 md:gap-8">
         {steps.map((step, i) => (
           <AnimatedSection
             key={step.number}
             delay={150 + i * 120}
             className="relative"
           >
-            <div className="flex h-full flex-col rounded-[2rem] border border-border/50 bg-card/40 p-8 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/60 lg:p-10">
+            <div className="flex h-full flex-col rounded-[2rem] border border-border/50 bg-card/40 p-6 sm:p-8 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/60 lg:p-10">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <span className="text-lg font-bold">{step.number}</span>
               </div>
-              <h3 className="mt-8 text-2xl font-semibold tracking-tight text-card-foreground">
+              <h3 className="mt-6 text-xl font-semibold sm:mt-8 sm:text-2xl tracking-tight text-card-foreground">
                 {step.title}
               </h3>
-              <p className="mt-3 flex-1 text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-3 flex-1 text-base leading-relaxed text-muted-foreground sm:text-lg">
                 {step.description}
               </p>
             </div>
@@ -247,7 +247,7 @@ function HowItWorksSection() {
 
 function PreviewSection() {
   return (
-    <section className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
+    <section className="relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24 lg:px-8">
       <AnimatedSection className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/20 shadow-2xl">
         <div className="group relative aspect-square md:aspect-[16/10]">
           <img
@@ -259,9 +259,9 @@ function PreviewSection() {
             className="absolute inset-0 h-full w-full object-cover blur-2xl transition-all duration-1000 group-hover:blur-xl group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/40 transition-colors duration-700 group-hover:bg-black/30" />
-          <div className="absolute inset-0 flex items-center justify-center p-8">
-            <div className="rounded-2xl border border-white/10 bg-black/30 px-8 py-5 text-center backdrop-blur-md md:px-12 md:py-6">
-              <p className="text-xl font-medium text-foreground md:text-3xl">
+          <div className="absolute inset-0 flex items-center justify-center p-5 sm:p-8">
+            <div className="rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-center backdrop-blur-md sm:px-8 sm:py-5 md:px-12 md:py-6">
+              <p className="text-lg font-medium text-foreground sm:text-xl md:text-3xl">
                 Your story could look like this.
               </p>
             </div>
@@ -282,7 +282,7 @@ function ReasonCard({
   text: string;
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-2xl border border-border/50 bg-card/40 p-6 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/60">
+    <div className="flex items-start gap-4 rounded-2xl border border-border/50 bg-card/40 p-5 sm:p-6 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/60">
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
         <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
       </div>
@@ -298,17 +298,17 @@ function WhyMusicSection() {
   return (
     <section
       id="why-music"
-      className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8"
+      className="relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24 lg:px-8"
     >
-      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
+      <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
         <AnimatedSection>
           <p className="text-sm font-semibold uppercase tracking-widest text-primary">
             The Science
           </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl">
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl lg:text-5xl">
             Why Music?
           </h2>
-          <div className="mt-6 space-y-4 text-lg leading-relaxed text-muted-foreground">
+          <div className="mt-6 space-y-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
             <p>
               Music is one of the most powerful triggers of autobiographical
               memory. Neuroscience shows that when you hear a song tied to a
@@ -336,19 +336,19 @@ function WhyMusicSection() {
 
 function FinalCTASection() {
   return (
-    <section className="relative mx-auto max-w-7xl px-6 pb-32 pt-16 lg:px-8">
-      <AnimatedSection className="relative overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/30 p-12 text-center backdrop-blur-xl md:p-20">
+    <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-8 sm:px-6 md:pb-32 md:pt-16 lg:px-8">
+      <AnimatedSection className="relative overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/30 p-7 text-center backdrop-blur-xl sm:p-12 md:p-20">
         <div className="pointer-events-none absolute inset-0 glow-gold opacity-50" />
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-5xl lg:text-6xl">
             Ready to discover your soundtrack?
           </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
             Your memories are already playing. Let’s make them visible.
           </p>
           <Link
             to="/journey"
-            className="mt-10 inline-flex items-center justify-center rounded-full bg-primary px-10 py-5 text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
+            className="mt-8 inline-flex w-full max-w-xs items-center justify-center rounded-full bg-primary px-8 py-4 text-base sm:mt-10 sm:w-auto sm:px-10 sm:py-5 sm:text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
           >
             Begin Your Journey
           </Link>

@@ -91,12 +91,12 @@ function JourneyPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-24">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-16 sm:px-6 md:py-24">
         <div className="w-full max-w-2xl">
           <ProgressBar current={current} total={total} />
         </div>
 
-        <div className="mt-12 w-full max-w-2xl">
+        <div className="mt-8 w-full max-w-2xl md:mt-12">
           <QuestionCard
             key={question.id}
             number={current}
@@ -109,7 +109,7 @@ function JourneyPage() {
           />
         </div>
 
-        <div className="mt-12 flex w-full max-w-2xl flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex w-full max-w-2xl md:mt-12 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
             disabled={current === 1}

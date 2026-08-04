@@ -56,7 +56,7 @@ function SectionHeading({
         <Icon className="h-4 w-4" />
         {eyebrow}
       </span>
-      <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+      <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
         {title}
       </h2>
     </div>
@@ -96,18 +96,18 @@ function ResultsPage() {
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
 
-      <main className="relative z-10 mx-auto max-w-4xl space-y-24 px-6 py-24 md:py-32">
+      <main className="relative z-10 mx-auto max-w-4xl space-y-16 px-5 py-16 sm:px-6 md:space-y-24 md:py-32">
         <AnimatedReveal>
         <header className="space-y-5 text-center">
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
             Your SoundMap
           </span>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground md:text-6xl">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-6xl">
             <span className="text-gold-gradient">Eight songs.</span>
             <br />
             One life, in sound.
           </h1>
-          <p className="mx-auto max-w-xl text-lg leading-relaxed text-foreground/70">
+          <p className="mx-auto max-w-xl text-base leading-relaxed text-foreground/70 sm:text-lg">
             Everything below was shaped by the answers you just gave.
           </p>
         </header>
@@ -115,9 +115,9 @@ function ResultsPage() {
 
         {/* Life Story */}
 <AnimatedReveal>
-        <section className="rounded-[2rem] border border-border/50 bg-card/60 p-8 backdrop-blur-xl md:p-12">
+        <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
           <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
-          <div className="mt-8 space-y-5 text-lg leading-relaxed text-foreground/80">
+          <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
             <p>
               It begins with <span className="text-primary">{songs[0]}</span> — a
               sound from a version of you that had not yet learned to be careful.
@@ -155,7 +155,7 @@ function ResultsPage() {
             ].map((group) => (
               <div
                 key={group.label}
-                className="rounded-[2rem] border border-border/50 bg-card/60 p-8 backdrop-blur-xl"
+                className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8"
               >
                 <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
                   {group.label}
@@ -184,16 +184,16 @@ function ResultsPage() {
             eyebrow="In order"
             title="Emotional Timeline"
           />
-          <ol className="mt-10 space-y-6 border-l border-border/60 pl-8">
+          <ol className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8">
             {questions.map((q, i) => (
               <li key={q.id} className="relative">
-                <span className="absolute -left-[2.65rem] top-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
+                <span className="absolute -left-[2.4rem] top-1.5 sm:-left-[2.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
                   {i + 1}
                 </span>
                 <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
                   {q.title}
                 </p>
-                <p className="mt-1 text-xl font-semibold text-foreground">
+                <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
                   {songs[i]}
                 </p>
               </li>
@@ -219,7 +219,7 @@ function ResultsPage() {
               />
               <button
                 onClick={() => setPosterOpen(true)}
-                className="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-card group-hover:opacity-100 focus:opacity-100"
+                className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg sm:right-6 sm:top-6 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-card md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
                 aria-label="View poster fullscreen"
               >
                 <Maximize className="h-5 w-5" />
@@ -242,7 +242,7 @@ function ResultsPage() {
           >
             <button
               onClick={() => setPosterOpen(false)}
-              className="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg backdrop-blur-md transition-transform hover:scale-105"
+              className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg sm:right-6 sm:top-6 backdrop-blur-md transition-transform hover:scale-105"
               aria-label="Close fullscreen poster"
             >
               <X className="h-5 w-5" />
