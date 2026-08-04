@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Maximize, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
