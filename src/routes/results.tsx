@@ -5,6 +5,7 @@ import { Dna, Film, Sparkles, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney } from "@/lib/journey-storage";
+import { AnimatedReveal } from "@/components/AnimatedReveal";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 
@@ -85,6 +86,7 @@ function ResultsPage() {
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
 
       <main className="relative z-10 mx-auto max-w-4xl space-y-24 px-6 py-24 md:py-32">
+        <AnimatedReveal>
         <header className="space-y-5 text-center">
           <span className="text-sm font-semibold uppercase tracking-widest text-primary">
             Your SoundMap
@@ -98,8 +100,10 @@ function ResultsPage() {
             Everything below was shaped by the answers you just gave.
           </p>
         </header>
+        </AnimatedReveal>
 
         {/* Life Story */}
+<AnimatedReveal>
         <section className="rounded-[2rem] border border-border/50 bg-card/60 p-8 backdrop-blur-xl md:p-12">
           <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
           <div className="mt-8 space-y-5 text-lg leading-relaxed text-foreground/80">
@@ -126,8 +130,10 @@ function ResultsPage() {
             </p>
           </div>
         </section>
+        </AnimatedReveal>
 
         {/* Music DNA */}
+<AnimatedReveal>
         <section>
           <SectionHeading icon={Dna} eyebrow="Your signature" title="Music DNA" />
           <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -157,8 +163,10 @@ function ResultsPage() {
             ))}
           </div>
         </section>
+        </AnimatedReveal>
 
         {/* Emotional Timeline */}
+<AnimatedReveal>
         <section>
           <SectionHeading
             icon={Clock}
@@ -181,8 +189,10 @@ function ResultsPage() {
             ))}
           </ol>
         </section>
+        </AnimatedReveal>
 
         {/* Cinematic Poster */}
+<AnimatedReveal>
         <section>
           <SectionHeading
             icon={Film}
@@ -201,7 +211,9 @@ function ResultsPage() {
             A printable poster of your SoundMap is coming soon.
           </p>
         </section>
+        </AnimatedReveal>
 
+        <AnimatedReveal>
         <div className="flex flex-col items-center gap-4 pb-8">
           <Button
             asChild
@@ -216,6 +228,7 @@ function ResultsPage() {
             Back home
           </Link>
         </div>
+        </AnimatedReveal>
       </main>
     </div>
   );
