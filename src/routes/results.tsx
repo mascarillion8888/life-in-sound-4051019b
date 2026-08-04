@@ -76,6 +76,16 @@ function ResultsPage() {
     if (saved) setStoredAnswers(saved.answers);
   }, []);
 
+  // Close fullscreen poster with Escape.
+  useEffect(() => {
+    if (!posterOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPosterOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [posterOpen]);
+
   const answers = stateAnswers ?? storedAnswers;
   const songs = questions.map(
     (q) => answers?.[q.id] ?? `Untitled track ${q.id}`,
