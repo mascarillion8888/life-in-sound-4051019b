@@ -17,7 +17,6 @@ const FinalCTASection = lazy(
   () => import("@/components/landing/FinalCTASection")
 );
 
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -70,76 +69,8 @@ const features = [
   },
 ];
 
-const steps = [
-  {
-    number: "01",
-    title: "Choose your songs",
-    description:
-      "Select 8 songs that changed your life — the moments, people, and emotions tied to each one.",
-  },
-  {
-    number: "02",
-    title: "Answer 8 questions",
-    description:
-      "Reflect on meaningful questions about your memories, feelings, and the identity behind your music.",
-  },
-  {
-    number: "03",
-    title: "Receive your SoundMap",
-    description:
-      "Get your complete personal artwork including Life Story, Music DNA, Emotional Timeline, and a Cinematic Poster.",
-  },
-];
-
-const reasons = [
-  {
-    icon: Heart,
-    title: "Emotion",
-    text: "Music encodes feelings directly into memory.",
-  },
-  {
-    icon: Music,
-    title: "Memory",
-    text: "Songs trigger vivid, autobiographical recall.",
-  },
-  {
-    icon: Sparkles,
-    title: "Identity",
-    text: "Your soundtrack reveals who you are becoming.",
-  },
-];
-
-function AnimatedSection({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const { ref, inView } = useInView<HTMLDivElement>();
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setReady(true);
-  }, []);
-
-  const hidden = ready && !inView;
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "transition-all duration-1000 ease-out will-change-transform",
-        hidden ? "opacity-0 translate-y-12" : "opacity-100 translate-y-0",
-        className
-      )}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  );
+function SectionFallback() {
+  return <div className="min-h-[40vh]" aria-hidden="true" />;
 }
 
 function Header() {
@@ -189,7 +120,6 @@ function HeroSection() {
   );
 }
 
-
 function FeaturesSection() {
   return (
     <section id="features" className="mx-auto max-w-7xl px-5 pb-12 sm:px-6 md:pb-16 lg:px-8">
@@ -219,157 +149,6 @@ function FeaturesSection() {
   );
 }
 
-function HowItWorksSection() {
-  return (
-    <section id="how-it-works" className="relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24 lg:px-8">
-      <div className="pointer-events-none absolute inset-0 -z-10 glow-gold opacity-40" />
-      <AnimatedSection className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-          How it Works
-        </p>
-        <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl lg:text-5xl">
-          Three steps to your personal SoundMap
-        </h2>
-      </AnimatedSection>
-
-      <div className="mt-10 grid grid-cols-1 gap-6 md:mt-16 md:grid-cols-3 md:gap-8">
-        {steps.map((step, i) => (
-          <AnimatedSection
-            key={step.number}
-            delay={150 + i * 120}
-            className="relative"
-          >
-            <div className="flex h-full flex-col rounded-[2rem] border border-border/50 bg-card/40 p-6 sm:p-8 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/60 lg:p-10">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <span className="text-lg font-bold">{step.number}</span>
-              </div>
-              <h3 className="mt-6 text-xl font-semibold sm:mt-8 sm:text-2xl tracking-tight text-card-foreground">
-                {step.title}
-              </h3>
-              <p className="mt-3 flex-1 text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {step.description}
-              </p>
-            </div>
-          </AnimatedSection>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function PreviewSection() {
-  return (
-    <section className="relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24 lg:px-8">
-      <AnimatedSection className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/20 shadow-2xl">
-        <div className="group relative aspect-square md:aspect-[16/10]">
-          <img
-            src={posterPreview}
-            alt="Example SoundMap poster"
-            width={1024}
-            height={1024}
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover blur-2xl transition-all duration-1000 group-hover:blur-xl group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-black/40 transition-colors duration-700 group-hover:bg-black/30" />
-          <div className="absolute inset-0 flex items-center justify-center p-5 sm:p-8">
-            <div className="rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-center backdrop-blur-md sm:px-8 sm:py-5 md:px-12 md:py-6">
-              <p className="text-lg font-medium text-foreground sm:text-xl md:text-3xl">
-                Your story could look like this.
-              </p>
-            </div>
-          </div>
-        </div>
-      </AnimatedSection>
-    </section>
-  );
-}
-
-function ReasonCard({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: typeof Heart;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="flex items-start gap-4 rounded-2xl border border-border/50 bg-card/40 p-5 sm:p-6 backdrop-blur-xl transition-all hover:border-gold-subtle hover:bg-card/60">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-        <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
-      </div>
-      <div>
-        <h3 className="text-xl font-semibold text-card-foreground">{title}</h3>
-        <p className="mt-1 text-muted-foreground">{text}</p>
-      </div>
-    </div>
-  );
-}
-
-function WhyMusicSection() {
-  return (
-    <section
-      id="why-music"
-      className="relative mx-auto max-w-7xl px-5 py-16 sm:px-6 md:py-24 lg:px-8"
-    >
-      <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
-        <AnimatedSection>
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-            The Science
-          </p>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl lg:text-5xl">
-            Why Music?
-          </h2>
-          <div className="mt-6 space-y-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-            <p>
-              Music is one of the most powerful triggers of autobiographical
-              memory. Neuroscience shows that when you hear a song tied to a
-              meaningful moment, your brain activates the hippocampus — where
-              memories live — and the amygdala, where emotions are processed.
-            </p>
-            <p>
-              This unique connection is why a single melody can instantly
-              transport you back to a person, a place, or a version of yourself
-              you thought you had lost. SoundMap honors this connection by
-              turning your music into a living visual story of who you are.
-            </p>
-          </div>
-        </AnimatedSection>
-
-        <AnimatedSection delay={200} className="grid gap-4">
-          {reasons.map((reason) => (
-            <ReasonCard key={reason.title} {...reason} />
-          ))}
-        </AnimatedSection>
-      </div>
-    </section>
-  );
-}
-
-function FinalCTASection() {
-  return (
-    <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-8 sm:px-6 md:pb-32 md:pt-16 lg:px-8">
-      <AnimatedSection className="relative overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/30 p-7 text-center backdrop-blur-xl sm:p-12 md:p-20">
-        <div className="pointer-events-none absolute inset-0 glow-gold opacity-50" />
-        <div className="relative z-10">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-5xl lg:text-6xl">
-            Ready to discover your soundtrack?
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Your memories are already playing. Let’s make them visible.
-          </p>
-          <Link
-            to="/journey"
-            className="mt-8 inline-flex w-full max-w-xs items-center justify-center rounded-full bg-primary px-8 py-4 text-base sm:mt-10 sm:w-auto sm:px-10 sm:py-5 sm:text-lg font-semibold text-primary-foreground shadow-2xl shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/40 active:scale-[0.98]"
-          >
-            Begin Your Journey
-          </Link>
-        </div>
-      </AnimatedSection>
-    </section>
-  );
-}
-
 function Index() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -378,10 +157,18 @@ function Index() {
       <main className="relative z-10">
         <HeroSection />
         <FeaturesSection />
-        <HowItWorksSection />
-        <PreviewSection />
-        <WhyMusicSection />
-        <FinalCTASection />
+        <Suspense fallback={<SectionFallback />}>
+          <HowItWorksSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <PreviewSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <WhyMusicSection />
+        </Suspense>
+        <Suspense fallback={<SectionFallback />}>
+          <FinalCTASection />
+        </Suspense>
       </main>
     </div>
   );
