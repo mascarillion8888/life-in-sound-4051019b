@@ -50,6 +50,7 @@ function JourneyPage() {
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [restored, setRestored] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const question = questions[current - 1];
   const isLast = current === total;
 
@@ -65,9 +66,9 @@ function JourneyPage() {
 
   // Persist on every change once restoration has run.
   useEffect(() => {
-    if (!restored) return;
+    if (!restored || completed) return;
     saveJourney({ current, answers });
-  }, [restored, current, answers]);
+  }, [restored, completed, current, answers]);
 
   const startNewJourney = () => {
     clearJourney();
@@ -126,6 +127,9 @@ function JourneyPage() {
                 return;
               }
               if (isLast) {
+                // Journey finished — progress is no longer needed.
+                setCompleted(true);
+                clearJourney();
                 navigate({ to: "/results", state: { answers } as never });
               } else {
                 setCurrent((c) => Math.min(total, c + 1));
