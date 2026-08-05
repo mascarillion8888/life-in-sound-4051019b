@@ -72,6 +72,7 @@ function JourneyPage() {
 
   const startNewJourney = () => {
     clearJourney();
+    setCompleted(false);
     setAnswers({});
     setCurrent(1);
   };
