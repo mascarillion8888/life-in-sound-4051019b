@@ -1,10 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Dna, Heart, Image as ImageIcon, Music, Sparkles } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Dna, Heart, Image as ImageIcon } from "lucide-react";
+import { lazy, Suspense } from "react";
 
-import posterPreview from "@/assets/poster-preview.jpg";
-import { cn } from "@/lib/utils";
-import { useInView } from "@/hooks/use-in-view";
+import { AnimatedSection } from "@/components/AnimatedSection";
+
+const HowItWorksSection = lazy(
+  () => import("@/components/landing/HowItWorksSection")
+);
+const PreviewSection = lazy(
+  () => import("@/components/landing/PreviewSection")
+);
+const WhyMusicSection = lazy(
+  () => import("@/components/landing/WhyMusicSection")
+);
+const FinalCTASection = lazy(
+  () => import("@/components/landing/FinalCTASection")
+);
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
