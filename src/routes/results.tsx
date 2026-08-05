@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock, Maximize, X } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Maximize } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney } from "@/lib/journey-storage";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import posterPreview from "@/assets/poster-preview.jpg";
+
+const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
+
 
 
 export const Route = createFileRoute("/results")({
