@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock, Maximize, X } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Maximize } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney } from "@/lib/journey-storage";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import posterPreview from "@/assets/poster-preview.jpg";
+
+const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
+
 
 
 export const Route = createFileRoute("/results")({
@@ -231,30 +234,13 @@ function ResultsPage() {
           </section>
         </AnimatedReveal>
 
-        {/* Fullscreen Poster Overlay */}
+        {/* Fullscreen Poster Overlay (lazy-loaded on demand) */}
         {posterOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
-            onClick={() => setPosterOpen(false)}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Fullscreen poster preview"
-          >
-            <button
-              onClick={() => setPosterOpen(false)}
-              className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg sm:right-6 sm:top-6 backdrop-blur-md transition-transform hover:scale-105"
-              aria-label="Close fullscreen poster"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <img
-              src={posterPreview}
-              alt="Fullscreen cinematic poster of your personal SoundMap"
-              className="max-h-[90vh] max-w-full rounded-[1.5rem] object-contain shadow-2xl shadow-primary/10"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
+          <Suspense fallback={null}>
+            <PosterLightbox onClose={() => setPosterOpen(false)} />
+          </Suspense>
         )}
+
 
         <AnimatedReveal>
         <div className="flex flex-col items-center gap-4 pb-8">
