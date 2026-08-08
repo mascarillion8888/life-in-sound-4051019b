@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { Dna, Film, Sparkles, Clock, Maximize } from "lucide-react";
 
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney } from "@/lib/journey-storage";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
+import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
+import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -93,6 +95,9 @@ function ResultsPage() {
   const songs = questions.map(
     (q) => answers?.[q.id] ?? `Untitled track ${q.id}`,
   );
+  const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+
+
 
 
   return (
@@ -145,6 +150,13 @@ function ResultsPage() {
           </div>
         </section>
         </AnimatedReveal>
+
+        {/* AI Personality */}
+        <AnimatedReveal>
+          <AIPersonalityCard profile={profile} />
+        </AnimatedReveal>
+
+
 
         {/* Music DNA */}
 <AnimatedReveal>
