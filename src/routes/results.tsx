@@ -95,6 +95,9 @@ function ResultsPage() {
   const songs = questions.map(
     (q) => answers?.[q.id] ?? `Untitled track ${q.id}`,
   );
+  const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+
+
 
 
   return (
