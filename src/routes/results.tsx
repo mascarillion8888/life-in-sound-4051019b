@@ -151,6 +151,13 @@ function ResultsPage() {
         </section>
         </AnimatedReveal>
 
+        {/* AI Personality */}
+        <AnimatedReveal>
+          <AIPersonalityCard profile={profile} />
+        </AnimatedReveal>
+
+
+
         {/* Music DNA */}
 <AnimatedReveal>
         <section>
