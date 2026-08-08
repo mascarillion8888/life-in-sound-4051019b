@@ -21,5 +21,5 @@ export function writePoeticSummary(
   const primary = IMAGE_BY_DIMENSION[first] ?? IMAGE_BY_DIMENSION.introspection;
   const secondary = IMAGE_BY_DIMENSION[second] ?? IMAGE_BY_DIMENSION.hope;
 
-  return `Your music feels like ${primary} — and just underneath it, ${secondary}. It sounds like ${emotions.dominantEmotion.toLowerCase()}, played best ${music.listeningStyle.toLowerCase()}.`;
+  return `Your music feels like ${primary} — and just underneath it, ${secondary}. It sounds like ${emotions.dominantEmotion.toLowerCase()}, best heard ${music.listeningStyle.toLowerCase()}.`;
 }
