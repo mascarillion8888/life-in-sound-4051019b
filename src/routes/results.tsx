@@ -9,6 +9,8 @@ import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
+import { generateStory } from "@/lib/llm/generateStory.server";
+import { deterministicLifeStory } from "@/lib/llm/prompts";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -63,6 +65,120 @@ function SectionHeading({
   );
 }
 
+type StoryStatus = "idle" | "loading" | "ready" | "fallback";
+
+/**
+ * Life Story section — Sprint 014.
+ *
+ * 1. Deterministic profile is available immediately (always rendered as the
+ *    fallback narrative while/if the LLM is unavailable).
+ * 2. The server Story Engine is called once per distinct (songs + profile)
+ *    fingerprint; duplicate calls within the same Results session are skipped.
+ * 3. On success, the generated narrative replaces the fallback. On any failure
+ *    or empty response, the deterministic narrative remains. The page never
+ *    breaks because the LLM is unavailable.
+ */
+function LifeStory({
+  profile,
+  songs,
+}: {
+  profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
+  songs: string[];
+}) {
+  const fallback = useMemo(() => deterministicLifeStory(songs), [songs]);
+
+  // Stable fingerprint of the inputs — prevents duplicate LLM calls on re-render
+  // for the same Results state. Kept client-side only; contains no secrets.
+  const fingerprint = useMemo(
+    () => JSON.stringify({ songs, archetype: profile.archetype }),
+    [songs, profile.archetype],
+  );
+
+  const [story, setStory] = useState<string | null>(null);
+  const [status, setStatus] = useState<StoryStatus>("idle");
+
+  useEffect(() => {
+    // Skip if we already have a story for these inputs, or are mid-flight.
+    if (status !== "idle") return;
+    let active = true;
+    setStatus("loading");
+
+    generateStory({ data: { profile, songs } })
+      .then((result) => {
+        if (!active) return;
+        if (result && typeof result.story === "string" && result.story.length > 0) {
+          setStory(result.story);
+          setStatus("ready");
+        } else {
+          setStatus("fallback");
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setStatus("fallback");
+      });
+
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fingerprint]);
+
+  const showFallback = status === "loading" || status === "idle" || status === "fallback";
+
+  return (
+    <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
+      <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
+      <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
+        {showFallback ? (
+          fallback
+            .split("\n\n")
+            .map((paragraph, i) => <p key={i}>{highlightSongs(paragraph, songs)}</p>)
+        ) : (
+          <p className="whitespace-pre-line">{story}</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Highlight supplied song titles that appear in the deterministic fallback prose. */
+function highlightSongs(paragraph: string, songs: string[]): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let remaining = paragraph;
+  let key = 0;
+  while (remaining.length > 0) {
+    let earliest = -1;
+    let matched: string | null = null;
+    for (const song of songs) {
+      if (!song) continue;
+      const idx = remaining.indexOf(song);
+      if (idx !== -1 && (earliest === -1 || idx < earliest)) {
+        earliest = idx;
+        matched = song;
+      }
+    }
+    if (earliest === -1 || !matched) {
+      parts.push(remaining);
+      break;
+    }
+    if (earliest > 0) parts.push(remaining.slice(0, earliest));
+    parts.push(
+      <span key={key++} className="text-primary">
+        {matched}
+      </span>,
+    );
+    remaining = remaining.slice(earliest + matched.length);
+  }
+  return (
+    <>
+      {parts.map((p, i) => (
+        <span key={i}>{p}</span>
+      ))}
+    </>
+  );
+}
+
 function ResultsPage() {
   const stateAnswers = useRouterState({
     select: (s) => (s.location.state as { answers?: Record<number, string> })?.answers,
@@ -113,28 +229,16 @@ function ResultsPage() {
 
         {/* Life Story */}
         <AnimatedReveal>
-          <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
-            <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
-            <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
-              <p>
-                It begins with <span className="text-primary">{songs[0]}</span> — a sound from a
-                version of you that had not yet learned to be careful. By the time{" "}
-                <span className="text-primary">{songs[1]}</span> arrived, everything felt urgent,
-                and music was the only language large enough for it.
+          {profile ? (
+            <LifeStory profile={profile} songs={songs} />
+          ) : (
+            <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
+              <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
+              <p className="mt-8 text-base text-muted-foreground sm:text-lg">
+                Complete your journey to unlock your Life Story.
               </p>
-              <p>
-                Then someone became a melody: <span className="text-primary">{songs[2]}</span>. And
-                when things came apart, <span className="text-primary">{songs[3]}</span> held the
-                weight for you until you could carry it again.
-              </p>
-              <p>
-                You found your spine again in <span className="text-primary">{songs[4]}</span>, kept
-                someone close through <span className="text-primary">{songs[5]}</span>, and changed
-                direction to <span className="text-primary">{songs[6]}</span>. If the credits rolled
-                tomorrow, they would roll over <span className="text-primary">{songs[7]}</span>.
-              </p>
-            </div>
-          </section>
+            </section>
+          )}
         </AnimatedReveal>
 
         {/* AI Personality */}
