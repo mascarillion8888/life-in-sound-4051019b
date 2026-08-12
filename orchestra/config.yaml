@@ -1,0 +1,74 @@
+# Life in a Sound — LLM Orchestra (LiteLLM config)
+# Provider keys are read from environment / .env (never hardcoded here).
+# Start:  litellm --config orchestra/config.yaml
+#         (or: python -m litellm --config orchestra/config.yaml)
+
+model_list:
+  # ---------- Groq (fast, cheap) ----------
+  - model_name: groq-llama-3.3-70b
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-gpt-oss-120b
+    litellm_params:
+      model: groq/openai/gpt-oss-120b
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-qwen3.6-27b
+    litellm_params:
+      model: groq/qwen/qwen3.6-27b
+      api_key: os.environ/GROQ_API_KEY
+
+  # ---------- Gemini ----------
+  # NOTE: gemini-3.5-flash & 3.6-flash return null content via LiteLLM (thinking
+  # model parse bug). gemini-3-flash-preview works correctly.
+  - model_name: gemini-3-flash-preview
+    litellm_params:
+      model: gemini/gemini-3-flash-preview
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemini-3.1-flash-lite
+    litellm_params:
+      model: gemini/gemini-3.1-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+
+  # ---------- Mistral ----------
+  - model_name: mistral-large
+    litellm_params:
+      model: mistral/mistral-large-latest
+      api_key: os.environ/MISTRAL_API_KEY
+
+  - model_name: mistral-small
+    litellm_params:
+      model: mistral/mistral-small-latest
+      api_key: os.environ/MISTRAL_API_KEY
+
+  # ---------- OpenRouter (multi-provider gateway) ----------
+  - model_name: openrouter-claude-sonnet-4.6
+    litellm_params:
+      model: openrouter/anthropic/claude-sonnet-4.6
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: openrouter-gpt-5.2
+    litellm_params:
+      model: openrouter/openai/gpt-5.2
+      api_key: os.environ/OPENROUTER_API_KEY
+
+# Role -> model mapping. Used by orchestra/router.py
+# orchestrator  -> Gemini 3.5 Flash      (broad reasoning, fast)
+# coder         -> Groq GPT-OSS 120B     (fast code)
+# reviewer      -> OpenRouter Claude 4.6 (deep review)
+# researcher    -> Gemini 3 Flash Preview (fast multi-source)
+# verifier      -> Mistral Large         (precise checks)
+# summarizer    -> Groq Qwen 3.6 27B     (fast compact)
+# triage        -> Mistral Small         (cheap routing)
+# guardian      -> OpenRouter GPT-5.2    (safety/alignment)
+
+router_settings:
+  routing_strategy: simple-shuffle
+
+litellm_settings:
+  drop_params: true
+  num_retries: 2
+  request_timeout: 60
