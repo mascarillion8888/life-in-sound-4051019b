@@ -12,8 +12,6 @@ import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
 
-
-
 export const Route = createFileRoute("/results")({
   head: () => ({
     meta: [
@@ -41,10 +39,6 @@ export const Route = createFileRoute("/results")({
   }),
   component: ResultsPage,
 });
-
-const emotions = ["Nostalgia", "Longing", "Euphoria", "Tenderness"];
-const styles = ["Cinematic pop", "Warm analog soul", "Late-night indie"];
-const themes = ["Coming of age", "Love & loss", "Reinvention", "Belonging"];
 
 function SectionHeading({
   icon: Icon,
@@ -92,13 +86,8 @@ function ResultsPage() {
   }, [posterOpen]);
 
   const answers = stateAnswers ?? storedAnswers;
-  const songs = questions.map(
-    (q) => answers?.[q.id] ?? `Untitled track ${q.id}`,
-  );
+  const songs = questions.map((q) => answers?.[q.id] ?? `Untitled track ${q.id}`);
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
-
-
-
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -106,49 +95,45 @@ function ResultsPage() {
 
       <main className="relative z-10 mx-auto max-w-4xl space-y-16 px-5 py-16 sm:px-6 md:space-y-24 md:py-32">
         <AnimatedReveal>
-        <header className="space-y-5 text-center">
-          <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-            Your SoundMap
-          </span>
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-6xl">
-            <span className="text-gold-gradient">Eight songs.</span>
-            <br />
-            One life, in sound.
-          </h1>
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-foreground/70 sm:text-lg">
-            Everything below was shaped by the answers you just gave.
-          </p>
-        </header>
+          <header className="space-y-5 text-center">
+            <span className="text-sm font-semibold uppercase tracking-widest text-primary">
+              Your SoundMap
+            </span>
+            <h1 className="text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-6xl">
+              <span className="text-gold-gradient">Eight songs.</span>
+              <br />
+              One life, in sound.
+            </h1>
+            <p className="mx-auto max-w-xl text-base leading-relaxed text-foreground/70 sm:text-lg">
+              Everything below was shaped by the answers you just gave.
+            </p>
+          </header>
         </AnimatedReveal>
 
         {/* Life Story */}
-<AnimatedReveal>
-        <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
-          <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
-          <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
-            <p>
-              It begins with <span className="text-primary">{songs[0]}</span> — a
-              sound from a version of you that had not yet learned to be careful.
-              By the time <span className="text-primary">{songs[1]}</span> arrived,
-              everything felt urgent, and music was the only language large enough
-              for it.
-            </p>
-            <p>
-              Then someone became a melody:{" "}
-              <span className="text-primary">{songs[2]}</span>. And when things
-              came apart, <span className="text-primary">{songs[3]}</span> held the
-              weight for you until you could carry it again.
-            </p>
-            <p>
-              You found your spine again in{" "}
-              <span className="text-primary">{songs[4]}</span>, kept someone close
-              through <span className="text-primary">{songs[5]}</span>, and changed
-              direction to <span className="text-primary">{songs[6]}</span>. If the
-              credits rolled tomorrow, they would roll over{" "}
-              <span className="text-primary">{songs[7]}</span>.
-            </p>
-          </div>
-        </section>
+        <AnimatedReveal>
+          <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
+            <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
+            <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
+              <p>
+                It begins with <span className="text-primary">{songs[0]}</span> — a sound from a
+                version of you that had not yet learned to be careful. By the time{" "}
+                <span className="text-primary">{songs[1]}</span> arrived, everything felt urgent,
+                and music was the only language large enough for it.
+              </p>
+              <p>
+                Then someone became a melody: <span className="text-primary">{songs[2]}</span>. And
+                when things came apart, <span className="text-primary">{songs[3]}</span> held the
+                weight for you until you could carry it again.
+              </p>
+              <p>
+                You found your spine again in <span className="text-primary">{songs[4]}</span>, kept
+                someone close through <span className="text-primary">{songs[5]}</span>, and changed
+                direction to <span className="text-primary">{songs[6]}</span>. If the credits rolled
+                tomorrow, they would roll over <span className="text-primary">{songs[7]}</span>.
+              </p>
+            </div>
+          </section>
         </AnimatedReveal>
 
         {/* AI Personality */}
@@ -156,75 +141,74 @@ function ResultsPage() {
           <AIPersonalityCard profile={profile} />
         </AnimatedReveal>
 
-
-
         {/* Music DNA */}
-<AnimatedReveal>
-        <section>
-          <SectionHeading icon={Dna} eyebrow="Your signature" title="Music DNA" />
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {[
-              { label: "Favorite emotions", items: emotions },
-              { label: "Music style", items: styles },
-              { label: "Dominant life themes", items: themes },
-            ].map((group) => (
-              <div
-                key={group.label}
-                className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8"
-              >
-                <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                  {group.label}
-                </p>
-                <ul className="mt-6 space-y-3">
-                  {group.items.map((item) => (
-                    <li
-                      key={item}
-                      className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-center text-sm font-medium text-primary"
-                    >
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
+        <AnimatedReveal>
+          <section>
+            <SectionHeading icon={Dna} eyebrow="Your signature" title="Music DNA" />
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  label: "Favorite emotions",
+                  items: profile?.emotionalProfile ?? [],
+                },
+                {
+                  label: "Music style",
+                  items: profile?.music ? [profile.music.mood] : [],
+                },
+                {
+                  label: "Recommended genres",
+                  items: profile?.recommendedGenres ?? [],
+                },
+              ].map((group) => (
+                <div
+                  key={group.label}
+                  className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8"
+                >
+                  <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+                    {group.label}
+                  </p>
+                  <ul className="mt-6 space-y-3">
+                    {group.items.map((item) => (
+                      <li
+                        key={item}
+                        className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-center text-sm font-medium text-primary"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
         </AnimatedReveal>
 
         {/* Emotional Timeline */}
-<AnimatedReveal>
-        <section>
-          <SectionHeading
-            icon={Clock}
-            eyebrow="In order"
-            title="Emotional Timeline"
-          />
-          <ol className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8">
-            {questions.map((q, i) => (
-              <li key={q.id} className="relative">
-                <span className="absolute -left-[2.4rem] top-1.5 sm:-left-[2.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
-                  {i + 1}
-                </span>
-                <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  {q.title}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
-                  {songs[i]}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
+        <AnimatedReveal>
+          <section>
+            <SectionHeading icon={Clock} eyebrow="In order" title="Emotional Timeline" />
+            <ol className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8">
+              {questions.map((q, i) => (
+                <li key={q.id} className="relative">
+                  <span className="absolute -left-[2.4rem] top-1.5 sm:-left-[2.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
+                    {i + 1}
+                  </span>
+                  <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+                    {q.title}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
+                    {songs[i]}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
         </AnimatedReveal>
 
         {/* Cinematic Poster */}
         <AnimatedReveal>
           <section>
-            <SectionHeading
-              icon={Film}
-              eyebrow="Framed"
-              title="Cinematic Poster"
-            />
+            <SectionHeading icon={Film} eyebrow="Framed" title="Cinematic Poster" />
             <div className="group relative mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
               <img
                 src={posterPreview}
@@ -239,6 +223,29 @@ function ResultsPage() {
               >
                 <Maximize className="h-5 w-5" />
               </button>
+              {profile?.poster ? (
+                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-6 pt-12">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                    {profile.poster.paletteLabel}
+                  </p>
+                  <h3 className="text-xl font-bold text-white sm:text-2xl">
+                    {profile.poster.headline}
+                  </h3>
+                  <p className="text-sm text-white/80">{profile.poster.subheadline}</p>
+                  {profile.poster.keywords.length > 0 ? (
+                    <ul className="mt-1 flex flex-wrap gap-2">
+                      {profile.poster.keywords.map((keyword) => (
+                        <li
+                          key={keyword}
+                          className="rounded-full border border-white/30 bg-white/10 px-3 py-0.5 text-xs font-medium text-white"
+                        >
+                          {keyword}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             <p className="mt-4 text-center text-sm text-muted-foreground">
               A printable poster of your SoundMap is coming soon.
@@ -253,22 +260,21 @@ function ResultsPage() {
           </Suspense>
         )}
 
-
         <AnimatedReveal>
-        <div className="flex flex-col items-center gap-4 pb-8">
-          <Button
-            asChild
-            className="h-14 rounded-full px-10 text-base font-semibold shadow-lg shadow-primary/20"
-          >
-            <Link to="/journey">Start again</Link>
-          </Button>
-          <Link
-            to="/"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Back home
-          </Link>
-        </div>
+          <div className="flex flex-col items-center gap-4 pb-8">
+            <Button
+              asChild
+              className="h-14 rounded-full px-10 text-base font-semibold shadow-lg shadow-primary/20"
+            >
+              <Link to="/journey">Start again</Link>
+            </Button>
+            <Link
+              to="/"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            >
+              Back home
+            </Link>
+          </div>
         </AnimatedReveal>
       </main>
     </div>
