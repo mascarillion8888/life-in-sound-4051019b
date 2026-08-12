@@ -11,6 +11,7 @@ Sprint 007
 Sprint 008
 Sprint 009
 Sprint 010
+Sprint 011 - Journey Persistence
 
 ## Ready
-Sprint 011 - Journey Persistence
+_(next roadmap item to be planned — see ROADMAP.md Phase 2)_
