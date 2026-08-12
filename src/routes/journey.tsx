@@ -7,8 +7,12 @@ import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
 import { questions } from "@/lib/questions";
 import { clearJourney, loadJourney, saveJourney } from "@/lib/journey-storage";
-
-
+import { useSession } from "@/lib/supabase/use-session";
+import {
+  clearRemoteJourney,
+  loadRemoteJourney,
+  saveRemoteJourney,
+} from "@/lib/supabase/journey-remote";
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -47,6 +51,7 @@ export const Route = createFileRoute("/journey")({
 function JourneyPage() {
   const total = questions.length;
   const navigate = useNavigate();
+  const session = useSession();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [restored, setRestored] = useState(false);
@@ -54,24 +59,47 @@ function JourneyPage() {
   const question = questions[current - 1];
   const isLast = current === total;
 
-  // Restore any saved progress after hydration.
-  useEffect(() => {
-    const saved = loadJourney();
-    if (saved) {
-      setCurrent(Math.min(Math.max(saved.current, 1), total));
-      setAnswers(saved.answers);
-    }
-    setRestored(true);
-  }, [total]);
+  const userId = session.status === "anonymous" && session.user ? session.user.id : null;
 
-  // Persist on every change once restoration has run.
+  // Restore progress once the session resolves. Uses the server copy when the
+  // user is authenticated (reconciled with the local cache), otherwise the
+  // localStorage fallback.
+  useEffect(() => {
+    if (session.status === "loading") return;
+
+    let active = true;
+    (async () => {
+      const saved = userId ? await loadRemoteJourney(userId) : loadJourney();
+      if (!active) return;
+      if (saved) {
+        setCurrent(Math.min(Math.max(saved.current, 1), total));
+        setAnswers(saved.answers);
+      }
+      setRestored(true);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [session.status, userId, total]);
+
+  // Persist on every change once restoration has run. Server write is async;
+  // localStorage write inside saveRemoteJourney is synchronous and immediate.
   useEffect(() => {
     if (!restored || completed) return;
-    saveJourney({ current, answers });
-  }, [restored, completed, current, answers]);
+    if (userId) {
+      void saveRemoteJourney(userId, { current, answers });
+    } else {
+      saveJourney({ current, answers });
+    }
+  }, [restored, completed, current, answers, userId]);
 
   const startNewJourney = () => {
-    clearJourney();
+    if (userId) {
+      void clearRemoteJourney(userId);
+    } else {
+      clearJourney();
+    }
     setCompleted(false);
     setAnswers({});
     setCurrent(1);
@@ -89,7 +117,6 @@ function JourneyPage() {
     setShowHint(false);
   }, [current, isAnswered]);
 
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
@@ -105,9 +132,7 @@ function JourneyPage() {
             title={question.title}
             description={question.description}
             answer={answers[question.id]}
-            onChoose={(song) =>
-              setAnswers((prev) => ({ ...prev, [question.id]: song }))
-            }
+            onChoose={(song) => setAnswers((prev) => ({ ...prev, [question.id]: song }))}
           />
         </div>
 
@@ -130,7 +155,11 @@ function JourneyPage() {
               if (isLast) {
                 // Journey finished — progress is no longer needed.
                 setCompleted(true);
-                clearJourney();
+                if (userId) {
+                  void clearRemoteJourney(userId);
+                } else {
+                  clearJourney();
+                }
                 navigate({ to: "/results", state: { answers } as never });
               } else {
                 setCurrent((c) => Math.min(total, c + 1));
@@ -160,7 +189,6 @@ function JourneyPage() {
           </p>
         ) : null}
 
-
         {savedProgress ? (
           <button
             onClick={startNewJourney}
@@ -174,4 +202,3 @@ function JourneyPage() {
     </div>
   );
 }
-
