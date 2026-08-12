@@ -1,6 +1,6 @@
 # SoundMap Project Status
 
-Version: v0.12
+Version: v0.13
 
 ---
 
@@ -22,19 +22,19 @@ Active Development
 
 ## Current Sprint
 
-Sprint 012 ✅ Completed
+Sprint 013 ✅ Completed
 
 Title:
-Results Polish
+Timeline Improvements
 
 Implementation checkpoint:
-Commit 521eb0c
+Commit b33f43f
 
 ---
 
 ## Next Sprint
 
-_(to be planned — next roadmap item is in Phase 2 - Experience, see ROADMAP.md)_
+_(to be planned — next roadmap item is in Phase 3 - Intelligence, see ROADMAP.md)_
 
 Status:
 READY FOR PLANNING
