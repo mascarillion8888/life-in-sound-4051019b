@@ -12,6 +12,7 @@ Sprint 008
 Sprint 009
 Sprint 010
 Sprint 011 - Journey Persistence
+Sprint 012 - Results Polish
 
 ## Ready
 _(next roadmap item to be planned — see ROADMAP.md Phase 2)_

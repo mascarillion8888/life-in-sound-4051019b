@@ -1,6 +1,6 @@
 # SoundMap Project Status
 
-Version: v0.11
+Version: v0.12
 
 ---
 
@@ -22,17 +22,13 @@ Active Development
 
 ## Current Sprint
 
-Sprint 011 ✅ Completed
+Sprint 012 ✅ Completed
 
 Title:
-Journey Persistence
+Results Polish
 
 Implementation checkpoint:
-Commit 16fb0ba
-
-Activation:
-Supabase project created; Anonymous Auth enabled; journeys migration
-executed; RLS enabled; client environment configured.
+Commit 521eb0c
 
 ---
 
