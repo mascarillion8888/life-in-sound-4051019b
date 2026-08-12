@@ -8,6 +8,7 @@ import { loadJourney } from "@/lib/journey-storage";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -188,19 +189,34 @@ function ResultsPage() {
           <section>
             <SectionHeading icon={Clock} eyebrow="In order" title="Emotional Timeline" />
             <ol className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8">
-              {questions.map((q, i) => (
-                <li key={q.id} className="relative">
-                  <span className="absolute -left-[2.4rem] top-1.5 sm:-left-[2.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
-                    {i + 1}
-                  </span>
-                  <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                    {q.title}
-                  </p>
-                  <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
-                    {songs[i]}
-                  </p>
-                </li>
-              ))}
+              {questions.map((q, i) => {
+                const emotionLabels = getQuestionEmotionLabels(q.id);
+                return (
+                  <li key={q.id} className="relative">
+                    <span className="absolute -left-[2.4rem] top-1.5 sm:-left-[2.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+                      {q.title}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
+                      {songs[i]}
+                    </p>
+                    {emotionLabels.length > 0 ? (
+                      <ul className="mt-2 flex flex-wrap gap-2">
+                        {emotionLabels.map((label) => (
+                          <li
+                            key={label}
+                            className="rounded-full border border-primary/25 bg-primary/10 px-3 py-0.5 text-xs font-medium text-primary"
+                          >
+                            {label}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ol>
           </section>
         </AnimatedReveal>

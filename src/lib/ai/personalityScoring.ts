@@ -9,7 +9,7 @@ import type {
  * Each journey question maps to the dimensions it inherently expresses.
  * (Derived from the question texts in src/lib/questions.ts — no invented traits.)
  */
-const QUESTION_DIMENSIONS: Record<number, PersonalityDimension[]> = {
+export const QUESTION_DIMENSIONS: Record<number, PersonalityDimension[]> = {
   1: ["nostalgia", "introspection"],
   2: ["rebellion", "energy"],
   3: ["connection", "nostalgia"],

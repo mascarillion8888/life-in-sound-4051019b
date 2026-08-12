@@ -1,7 +1,7 @@
 import type { EmotionProfile, PersonalityScores } from "./types";
 import { rankedDimensions } from "./personalityScoring";
 
-const EMOTION_BY_DIMENSION: Record<string, string> = {
+export const EMOTION_BY_DIMENSION: Record<string, string> = {
   introspection: "Reflection",
   nostalgia: "Nostalgia",
   energy: "Euphoria",
