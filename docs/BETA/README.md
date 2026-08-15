@@ -153,3 +153,39 @@ Before this checkpoint was pushed, all of the following passed:
   still pass.
 
 See `MANUAL_TEST_SCRIPT.md` for the human QA script.
+
+## PRE-BETA LEGAL REVIEW REQUIRED
+
+Before inviting real users into the closed beta, a legal/IP/data-readiness
+package must be reviewed by qualified professionals. The package lives in
+`docs/LEGAL_IP/` (created at checkpoint after `fab4f6d`). It is factual and
+preparatory — **it is not legal advice**, and no item below is claimed to be
+legally complete. Each unchecked item is an open question.
+
+Checklist (none claimed complete):
+
+- [ ] **IP inventory reviewed** — `docs/LEGAL_IP/IP_INVENTORY.md` reviewed by
+      IP counsel; ownership character of each element confirmed.
+- [ ] **Patentability review** — `docs/LEGAL_IP/INVENTION_DISCLOSURE.md`
+      candidate aspects reviewed by a patent professional; patent strategy
+      decided before broad public disclosure of novel mechanisms.
+- [ ] **Trademark search** — availability clearance for "Life in a Sound",
+      "SoundMap", tagline, and feature names in intended markets (TR, EU, UK,
+      US, CA, AU).
+- [ ] **Ownership review** — contributor/contractor IP assignment verified in
+      writing; AI-assisted contribution ownership resolved per jurisdiction;
+      licence file decision made.
+- [ ] **Privacy / data-flow review** — `docs/LEGAL_IP/DATA_FLOW_AND_PRIVACY_MAP.md`
+      reviewed; lawful bases per data category confirmed; DPIA completed where
+      required; Supabase/Cloudflare/AI-provider DPAs in place.
+- [ ] **Terms / privacy documents** — end-user Terms of Service and Privacy
+      Policy drafted, reviewed, and published before any real-user beta.
+- [ ] **AI-provider data processing review** — each provider's (Groq, Google
+      Gemini, Mistral, OpenRouter) current retention/training/transfer terms
+      reviewed; lawful cross-border transfer mechanism confirmed per market.
+- [ ] **Beta data deletion / export process** — owner-scoped deletion +
+      Auth-cascade verified; derived-data cascade reviewed; erasure-request
+      process documented; unclaimed anonymous timeline retention policy set.
+
+Related: `docs/LEGAL_IP/GLOBAL_MARKET_LEGAL_CHECKLIST.md` lists per-market
+review questions (TR, EU/EEA, UK, US, CA, AU).
