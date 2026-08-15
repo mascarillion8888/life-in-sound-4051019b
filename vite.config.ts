@@ -4,7 +4,36 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig, type LovableViteTanstackOptions } from "@lovable.dev/vite-tanstack-config";
+
+// Deployment/runtime compatibility only — no product behaviour change.
+// The Nitro/rolldown build splits the TanStack Start SSR service assets
+// (under node_modules/.nitro/vite/services/ssr/assets/) into separate chunks,
+// which creates an ESM live-binding cycle: the chunk that defines
+// `createCsrfMiddleware` imports `server_exports` back from the chunk that
+// consumes it, so the consumer's top-level
+// `defaultCsrfMiddleware = createCsrfMiddleware(...)` runs before the export
+// is initialised and throws `createCsrfMiddleware is not a function` under
+// workerd (Cloudflare Workers). Forcing these service assets into a single
+// chunk removes the cycle. Client bundle and product semantics are unchanged.
+//
+// `rolldownConfig` is a real Nitro option (see nitro/dist/vite.mjs) but is
+// not in the Lovable plugin's narrow `nitro` type schema, so it is passed via
+// a cast; the Lovable config spreads `userNitroOpts` into nitroOpts verbatim.
+const nitroDeploymentConfig = {
+  rolldownConfig: {
+    output: {
+      codeSplitting: {
+        groups: [
+          {
+            test: /[\\/]node_modules[\\/]\.nitro[\\/]vite[\\/]services[\\/]ssr[\\/]assets[\\/]/,
+            name: "tanstack-start-ssr",
+          },
+        ],
+      },
+    },
+  },
+} as unknown as NonNullable<LovableViteTanstackOptions>["nitro"];
 
 export default defineConfig({
   tanstackStart: {
@@ -12,4 +41,5 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: nitroDeploymentConfig,
 });

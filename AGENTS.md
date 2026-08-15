@@ -376,4 +376,67 @@ no new third-party analytics dep, no billing/quotas, no in-app reset button.
   redaction list mentions them by name).
 - Golden/companion/memory suites: 199/199.
 
+## Deployment phase — Cloudflare Workers foundation
+
+### Live deployment status
+NOT deployed yet (no `wrangler login` / `CLOUDFLARE_API_TOKEN` in this env).
+Foundation is committed so a deploy is a single authenticated `npm run deploy`.
+Do not treat the build as live until a Worker URL exists.
+
+### Runtime compatibility verified
+- `process.env` IS populated from Cloudflare Worker `vars`+`secrets` bindings
+  under `nodejs_compat` — verified empirically with a probe Worker (`wrangler
+  dev`). So `orchestra.ts` `getApiKey()` (`process.env?.[keyEnv]`) works at
+  runtime when provider keys are set as `wrangler secret put`. No code change
+  to `orchestra.ts` or any `src/lib/*` was needed for this.
+- Provider keys are RUNTIME Worker secrets (never inlined); `VITE_SUPABASE_*`
+  are BUILD-time inlined (public, RLS-enforced). See `docs/BETA/ENVIRONMENT.md`.
+
+### Runtime blocker found and fixed (pre-existing, deployment-only change)
+The Nitro/rolldown build split the TanStack Start SSR service assets
+(`node_modules/.nitro/vite/services/ssr/assets/`) into separate chunks, creating
+an ESM live-binding cycle: the chunk defining `createCsrfMiddleware` imported
+`server_exports` back from the chunk consuming it, so the consumer's top-level
+`defaultCsrfMiddleware = createCsrfMiddleware(...)` ran before the export was
+initialised and threw `createCsrfMiddleware is not a function` on EVERY route
+under workerd. Reproduced at the prior checkpoint `ad2493f` (pre-existing, not
+introduced by beta readiness). Fix: `vite.config.ts` adds a Nitro
+`rolldownConfig.output.codeSplitting.groups` entry forcing those service assets
+into one chunk (`tanstack-start-ssr`), removing the cycle. CSRF semantics
+unchanged (same middleware, same `serverFn` filter). All routes 200 under
+`wrangler dev`. This is a build-config change only — no product behaviour change.
+
+### Deployment files
+- `wrangler.jsonc` (root) — Worker `mascarillion8888-life-in-sound-4051019b`,
+  `nodejs_compat`, `compatibility_date` 2026-08-15, `main`/`assets` point at the
+  Nitro `.output/`, `no_bundle: true` (Nitro already bundled), declares the four
+  provider keys in `secrets.required`.
+- `package.json` — added `wrangler` devDep; scripts `cf:dev`, `deploy:dry-run`,
+  `deploy`.
+- `docs/BETA/ENVIRONMENT.md` — secret/var inventory, build-time vs runtime,
+  local preview + deploy commands.
+- `.output/`, `.wrangler/`, `.dev.vars`, `.env*` remain gitignored;
+  `wrangler.jsonc` is committed.
+
+### Discrepancy surfaced (NOT fixed here — out of scope)
+The beta-readiness AGENTS.md note "eslint: 0 errors" is inaccurate. `eslint .`
+on the clean checkpoint `a675252` reports 23 prettier formatting ERRORS across
+product files (`questions.ts`, `HowItWorksSection`, `AIPersonalityCard`,
+`personalityScoring.ts`, etc.) plus 6 pre-existing shadcn warnings. Confirmed
+pre-existing by stashing all deployment changes and re-linting. These are
+auto-fixable with `eslint . --fix` (formatting only, no semantic change) but
+were NOT applied in this phase to keep the deployment commit focused and avoid
+unrelated churn across 16 product files. Recommend a separate formatting pass.
+
+### Verification gates (this deployment phase)
+- tsc: 0. vite build: 0. `wrangler deploy --dry-run`: 0.
+- Full suite 641/641 (20 files) — unchanged.
+- `wrangler dev` (workerd, local): `/`, `/journey`, `/results`, `/memory`,
+  `/companion`, `/profile`, `/patterns`, `/events`, `/chapters` all 200, 0 500s.
+- Secret scan: no provider-key values in `.output/server` or `.output/public`;
+  only key-name string literals (`keyEnv: "GROQ_API_KEY"`) in server bundle; no
+  `process.env`/`service_role`/server-only modules in client bundle.
+- eslint: my changed files (`vite.config.ts`) clean. 23 pre-existing product-file
+  prettier errors remain (see discrepancy above) — out of scope for this phase.
+
 

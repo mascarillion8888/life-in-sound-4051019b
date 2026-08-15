@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mascarillion8888-life-in-sound-4051019b",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS"
+  },
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["**/*.mjs", "**/*.js"]
+    }
+  ],
+  // Production secrets are set with `npx wrangler secret put <NAME>` (encrypted
+  // bindings). They are never written here. At runtime they surface via the
+  // Worker `env` object AND via `process.env` under nodejs_compat, which is how
+  // the server-only Orchestra bridge (src/lib/llm/orchestra.ts) reads provider
+  // keys. `secrets.required` makes wrangler warn during local dev if a key is
+  // missing. See docs/BETA/ENVIRONMENT.md for the full inventory.
+  "secrets": {
+    "required": [
+      "GROQ_API_KEY",
+      "GEMINI_API_KEY",
+      "MISTRAL_API_KEY",
+      "OPENROUTER_API_KEY"
+    ]
+  }
+}
