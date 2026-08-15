@@ -10,12 +10,37 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChaptersRouteImport } from './routes/chapters'
+import { Route as CompanionRouteImport } from './routes/companion'
+import { Route as EventsRouteImport } from './routes/events'
 import { Route as JourneyRouteImport } from './routes/journey'
+import { Route as MemoryRouteImport } from './routes/memory'
+import { Route as PatternsRouteImport } from './routes/patterns'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResultsRouteImport } from './routes/results'
+import { Route as ChaptersChapterIdRouteImport } from './routes/chapters.$chapterId'
+import { Route as CompanionConversationIdRouteImport } from './routes/companion.$conversationId'
+import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
+import { Route as MemoryMemoryIdRouteImport } from './routes/memory.$memoryId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChaptersRoute = ChaptersRouteImport.update({
+  id: '/chapters',
+  path: '/chapters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompanionRoute = CompanionRouteImport.update({
+  id: '/companion',
+  path: '/companion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JourneyRoute = JourneyRouteImport.update({
@@ -23,39 +48,150 @@ const JourneyRoute = JourneyRouteImport.update({
   path: '/journey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MemoryRoute = MemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatternsRoute = PatternsRouteImport.update({
+  id: '/patterns',
+  path: '/patterns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResultsRoute = ResultsRouteImport.update({
   id: '/results',
   path: '/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChaptersChapterIdRoute = ChaptersChapterIdRouteImport.update({
+  id: '/$chapterId',
+  path: '/$chapterId',
+  getParentRoute: () => ChaptersRoute,
+} as any)
+const CompanionConversationIdRoute = CompanionConversationIdRouteImport.update({
+  id: '/$conversationId',
+  path: '/$conversationId',
+  getParentRoute: () => CompanionRoute,
+} as any)
+const EventsEventIdRoute = EventsEventIdRouteImport.update({
+  id: '/$eventId',
+  path: '/$eventId',
+  getParentRoute: () => EventsRoute,
+} as any)
+const MemoryMemoryIdRoute = MemoryMemoryIdRouteImport.update({
+  id: '/$memoryId',
+  path: '/$memoryId',
+  getParentRoute: () => MemoryRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chapters': typeof ChaptersRouteWithChildren
+  '/companion': typeof CompanionRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
   '/journey': typeof JourneyRoute
+  '/memory': typeof MemoryRouteWithChildren
+  '/patterns': typeof PatternsRoute
+  '/profile': typeof ProfileRoute
   '/results': typeof ResultsRoute
+  '/chapters/$chapterId': typeof ChaptersChapterIdRoute
+  '/companion/$conversationId': typeof CompanionConversationIdRoute
+  '/events/$eventId': typeof EventsEventIdRoute
+  '/memory/$memoryId': typeof MemoryMemoryIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chapters': typeof ChaptersRouteWithChildren
+  '/companion': typeof CompanionRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
   '/journey': typeof JourneyRoute
+  '/memory': typeof MemoryRouteWithChildren
+  '/patterns': typeof PatternsRoute
+  '/profile': typeof ProfileRoute
   '/results': typeof ResultsRoute
+  '/chapters/$chapterId': typeof ChaptersChapterIdRoute
+  '/companion/$conversationId': typeof CompanionConversationIdRoute
+  '/events/$eventId': typeof EventsEventIdRoute
+  '/memory/$memoryId': typeof MemoryMemoryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chapters': typeof ChaptersRouteWithChildren
+  '/companion': typeof CompanionRouteWithChildren
+  '/events': typeof EventsRouteWithChildren
   '/journey': typeof JourneyRoute
+  '/memory': typeof MemoryRouteWithChildren
+  '/patterns': typeof PatternsRoute
+  '/profile': typeof ProfileRoute
   '/results': typeof ResultsRoute
+  '/chapters/$chapterId': typeof ChaptersChapterIdRoute
+  '/companion/$conversationId': typeof CompanionConversationIdRoute
+  '/events/$eventId': typeof EventsEventIdRoute
+  '/memory/$memoryId': typeof MemoryMemoryIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/journey' | '/results'
+  fullPaths:
+    | '/'
+    | '/chapters'
+    | '/companion'
+    | '/events'
+    | '/journey'
+    | '/memory'
+    | '/patterns'
+    | '/profile'
+    | '/results'
+    | '/chapters/$chapterId'
+    | '/companion/$conversationId'
+    | '/events/$eventId'
+    | '/memory/$memoryId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/journey' | '/results'
-  id: '__root__' | '/' | '/journey' | '/results'
+  to:
+    | '/'
+    | '/chapters'
+    | '/companion'
+    | '/events'
+    | '/journey'
+    | '/memory'
+    | '/patterns'
+    | '/profile'
+    | '/results'
+    | '/chapters/$chapterId'
+    | '/companion/$conversationId'
+    | '/events/$eventId'
+    | '/memory/$memoryId'
+  id:
+    | '__root__'
+    | '/'
+    | '/chapters'
+    | '/companion'
+    | '/events'
+    | '/journey'
+    | '/memory'
+    | '/patterns'
+    | '/profile'
+    | '/results'
+    | '/chapters/$chapterId'
+    | '/companion/$conversationId'
+    | '/events/$eventId'
+    | '/memory/$memoryId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChaptersRoute: typeof ChaptersRouteWithChildren
+  CompanionRoute: typeof CompanionRouteWithChildren
+  EventsRoute: typeof EventsRouteWithChildren
   JourneyRoute: typeof JourneyRoute
+  MemoryRoute: typeof MemoryRouteWithChildren
+  PatternsRoute: typeof PatternsRoute
+  ProfileRoute: typeof ProfileRoute
   ResultsRoute: typeof ResultsRoute
 }
 
@@ -68,11 +204,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chapters': {
+      id: '/chapters'
+      path: '/chapters'
+      fullPath: '/chapters'
+      preLoaderRoute: typeof ChaptersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companion': {
+      id: '/companion'
+      path: '/companion'
+      fullPath: '/companion'
+      preLoaderRoute: typeof CompanionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/journey': {
       id: '/journey'
       path: '/journey'
       fullPath: '/journey'
       preLoaderRoute: typeof JourneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memory': {
+      id: '/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof MemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patterns': {
+      id: '/patterns'
+      path: '/patterns'
+      fullPath: '/patterns'
+      preLoaderRoute: typeof PatternsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/results': {
@@ -82,12 +260,92 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chapters/$chapterId': {
+      id: '/chapters/$chapterId'
+      path: '/$chapterId'
+      fullPath: '/chapters/$chapterId'
+      preLoaderRoute: typeof ChaptersChapterIdRouteImport
+      parentRoute: typeof ChaptersRoute
+    }
+    '/companion/$conversationId': {
+      id: '/companion/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/companion/$conversationId'
+      preLoaderRoute: typeof CompanionConversationIdRouteImport
+      parentRoute: typeof CompanionRoute
+    }
+    '/events/$eventId': {
+      id: '/events/$eventId'
+      path: '/$eventId'
+      fullPath: '/events/$eventId'
+      preLoaderRoute: typeof EventsEventIdRouteImport
+      parentRoute: typeof EventsRoute
+    }
+    '/memory/$memoryId': {
+      id: '/memory/$memoryId'
+      path: '/$memoryId'
+      fullPath: '/memory/$memoryId'
+      preLoaderRoute: typeof MemoryMemoryIdRouteImport
+      parentRoute: typeof MemoryRoute
+    }
   }
 }
 
+interface ChaptersRouteChildren {
+  ChaptersChapterIdRoute: typeof ChaptersChapterIdRoute
+}
+
+const ChaptersRouteChildren: ChaptersRouteChildren = {
+  ChaptersChapterIdRoute: ChaptersChapterIdRoute,
+}
+
+const ChaptersRouteWithChildren = ChaptersRoute._addFileChildren(
+  ChaptersRouteChildren,
+)
+
+interface CompanionRouteChildren {
+  CompanionConversationIdRoute: typeof CompanionConversationIdRoute
+}
+
+const CompanionRouteChildren: CompanionRouteChildren = {
+  CompanionConversationIdRoute: CompanionConversationIdRoute,
+}
+
+const CompanionRouteWithChildren = CompanionRoute._addFileChildren(
+  CompanionRouteChildren,
+)
+
+interface EventsRouteChildren {
+  EventsEventIdRoute: typeof EventsEventIdRoute
+}
+
+const EventsRouteChildren: EventsRouteChildren = {
+  EventsEventIdRoute: EventsEventIdRoute,
+}
+
+const EventsRouteWithChildren =
+  EventsRoute._addFileChildren(EventsRouteChildren)
+
+interface MemoryRouteChildren {
+  MemoryMemoryIdRoute: typeof MemoryMemoryIdRoute
+}
+
+const MemoryRouteChildren: MemoryRouteChildren = {
+  MemoryMemoryIdRoute: MemoryMemoryIdRoute,
+}
+
+const MemoryRouteWithChildren =
+  MemoryRoute._addFileChildren(MemoryRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChaptersRoute: ChaptersRouteWithChildren,
+  CompanionRoute: CompanionRouteWithChildren,
+  EventsRoute: EventsRouteWithChildren,
   JourneyRoute: JourneyRoute,
+  MemoryRoute: MemoryRouteWithChildren,
+  PatternsRoute: PatternsRoute,
+  ProfileRoute: ProfileRoute,
   ResultsRoute: ResultsRoute,
 }
 export const routeTree = rootRouteImport

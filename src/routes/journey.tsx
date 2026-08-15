@@ -7,7 +7,7 @@ import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
 import { questions } from "@/lib/questions";
 import { clearJourney, loadJourney, saveJourney } from "@/lib/journey-storage";
-import { useSession } from "@/lib/supabase/use-session";
+import { useSession, useUserId } from "@/lib/supabase/use-session";
 import {
   clearRemoteJourney,
   loadRemoteJourney,
@@ -59,7 +59,7 @@ function JourneyPage() {
   const question = questions[current - 1];
   const isLast = current === total;
 
-  const userId = session.status === "anonymous" && session.user ? session.user.id : null;
+  const userId = useUserId(session);
 
   // Restore progress once the session resolves. Uses the server copy when the
   // user is authenticated (reconciled with the local cache), otherwise the
