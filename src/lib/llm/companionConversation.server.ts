@@ -51,7 +51,9 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
-import { runRole } from "@/lib/llm/orchestra";
+import { runRole, listRoles } from "@/lib/llm/orchestra";
+import { inferProviderFromModel, latencyBucketMs } from "@/lib/telemetry";
+import { recordAiUsage } from "@/lib/aiUsage";
 import type { CompanionContextSlice } from "@/lib/llm/companionConversation";
 import { classifySignificantInteractionLogic } from "@/lib/llm/classifySignificantInteraction.server";
 import type { SerializableSignificantInteraction } from "@/lib/llm/classifySignificantInteraction.server";
@@ -147,6 +149,23 @@ export type CompanionTelemetry = {
   providerCalls: number;
   /** Result of the cheap deterministic significance gate. */
   significanceGate: "ran" | "skipped" | "failed";
+  /**
+   * Provider-neutral AI usage signal for this turn's LLM call (or null when no
+   * call was made). Content-free: capability, provider, model, success,
+   * fallback, latency bucket. No prompt/response text, no tokens (the Orchestra
+   * bridge does not expose usage in v1). Recorded via the telemetry sink.
+   */
+  aiUsage?: AiUsageSummary | null;
+};
+
+/** Content-free AI usage summary attached to Companion telemetry. */
+export type AiUsageSummary = {
+  capability: string;
+  provider: string;
+  model: string | null;
+  success: boolean;
+  fallback: boolean;
+  latencyBucket: string;
 };
 
 function toResponse(r: LogicResult): CompanionConversationResponse {
@@ -316,8 +335,14 @@ export async function companionConversationLogic(
     contextSlices: input.contextSlices,
   });
 
-  // 7. Call Orchestra (the capability's single role + prompt).
+  // 7. Call Orchestra (the capability's single role + prompt). Timed so a
+  //    content-free AI usage summary can be recorded (telemetry hook only;
+  //    behaviour is unchanged — success/failure paths are identical).
   let response: string | null = null;
+  const roleModels = listRoles();
+  const model = roleModels[capabilityPlan.role] ?? null;
+  const provider = inferProviderFromModel(model);
+  const callStart = Date.now();
   try {
     response = await runRoleImpl(capabilityPlan.role, capabilityPlan.prompt, {
       temperature: capabilityPlan.temperature,
@@ -326,7 +351,27 @@ export async function companionConversationLogic(
   } catch {
     response = null;
   }
+  const callMs = Date.now() - callStart;
   const providerCalls = response ? 1 : 0;
+  const aiUsage: AiUsageSummary = {
+    capability: policy.capability,
+    provider,
+    model,
+    success: !!response,
+    fallback: !response,
+    latencyBucket: latencyBucketMs(callMs),
+  };
+  // Record the content-free AI usage event via the cost-governor/telemetry
+  // sink. Never throws; never records prompts/responses.
+  recordAiUsage({
+    event: "ai_call",
+    capability: policy.capability,
+    provider,
+    model: model ?? undefined,
+    success: !!response,
+    fallback: !response,
+    latencyBucket: aiUsage.latencyBucket,
+  });
   if (!response) {
     // LLM failed: user turn remains saved; assistant turn NOT fabricated.
     return {
@@ -342,6 +387,7 @@ export async function companionConversationLogic(
         trustLevels: dedupTrust(retrievedContext),
         providerCalls: 0,
         significanceGate: retrievalOk ? "skipped" : "failed",
+        aiUsage,
       },
     };
   }
@@ -364,6 +410,7 @@ export async function companionConversationLogic(
         trustLevels: dedupTrust(retrievedContext),
         providerCalls,
         significanceGate: retrievalOk ? "skipped" : "failed",
+        aiUsage,
       },
     };
   }
@@ -402,6 +449,7 @@ export async function companionConversationLogic(
       trustLevels: dedupTrust(retrievedContext),
       providerCalls,
       significanceGate,
+      aiUsage,
     },
   };
 }

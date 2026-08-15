@@ -314,3 +314,66 @@ All additive; existing 568 tests still pass.
   no new provider/role, no vector/embeddings/pgvector, no service-role in
   browser. One Orchestra call per turn (classification is deterministic).
 
+## Closed Beta Readiness + Product Validation v1
+
+Phase goal: prepare the app for closed beta — onboarding clarity, first-value
+path, privacy-safe instrumentation, AI usage observability, cost governor
+interface, reliability UX, structured feedback. No history rewrite; built on
+top of checkpoint `ad2493f`.
+
+### New core libs (all pure/deterministic, no new deps)
+- `src/lib/telemetry.ts` — privacy-safe instrumentation abstraction
+  (injectable `TelemetrySink`, default no-op). Forbidden-key redaction strips
+  raw content/credentials/tokens. Provider-neutral `AiUsageEvent` contract +
+  `inferProviderFromModel` + `trackAiUsage`. Closed `PRODUCT_EVENTS` set.
+- `src/lib/aiUsage.ts` — cost governor interface. `canUseAi` ALWAYS allows in
+  v1 (beta-unmetered); `recordAiUsage` forwards content-free events. Structured
+  for future budgets/fallback without touching call sites. No billing API.
+- `src/lib/reliability.ts` — canonical user-safe failure messages. Never raw
+  500/stack traces/credential strings. Persistence failure ≠ success.
+- `src/lib/onboarding.ts` — onboarding completion contract (pure), first-value
+  CTA, session-safe flags (seen/first-memory), anonymous-compatible.
+- `src/lib/feedback.ts` — structured feedback (closed-set ratings only,
+  no raw content). Recorded via telemetry sink; no new table.
+
+### Route changes (minimal, additive)
+- `results.tsx` — "This was your first listen" first-value CTA section
+  (→ /memory, → /companion) + onboarding_completed telemetry + markOnboardingSeen.
+- `memory.tsx` — SavedPhase now links to saved Memory Detail (/memory/$memoryId),
+  shows "Did this feel meaningful?" feedback prompt, memory_created telemetry,
+  first-memory flag, reliability messages for save/extraction failures.
+- `companion.$conversationId.tsx` — companion_turn telemetry (ok/failed),
+  companion_memory_confirmed telemetry, "Was this helpful?" feedback prompt,
+  reliability message for provider failure.
+- `index.tsx` — subtle "Beta" pill + app_opened telemetry.
+- `journey.tsx` — onboarding_started telemetry.
+
+### Telemetry hook in orchestration (behavior unchanged)
+`companionConversation.server.ts` adds a content-free `aiUsage` field to
+`CompanionTelemetry` (capability, provider inferred from model, model, success,
+fallback, latency bucket) by timing the existing `runRoleImpl` call. Success/
+failure paths identical; `orchestra.ts` untouched (uses existing `listRoles()`
+export). Token counts omitted in v1 (bridge doesn't expose usage; contract has
+optional fields for future). Golden suite (39) still green.
+
+### Docs
+- `docs/BETA/README.md` — beta readiness state, constraints, beta account
+  reset (dashboard-side, no in-app reset button), persistence note (no new
+  table for feedback).
+- `docs/BETA/MANUAL_TEST_SCRIPT.md` — human QA script (onboarding, first
+  memory, companion, reliability failure paths, privacy sanity, anonymous-first).
+
+### Constraints respected
+No new domain tables, no vector/embeddings/pgvector, no new LLM provider, no
+service-role in companion code, `src/lib/ai/*` and `orchestra.ts` untouched,
+no new third-party analytics dep, no billing/quotas, no in-app reset button.
+
+### Verification gates (this phase)
+- tsc: 0. eslint: 0 errors (6 pre-existing shadcn warnings). vite build: 0.
+- Full suite 641/641 (20 files): 607 prior + 34 new beta-readiness tests.
+- Secret scan: no `VITE_`-prefixed provider keys, no service-role in
+  companion code, no secrets/tokens in telemetry (only the forbidden-key
+  redaction list mentions them by name).
+- Golden/companion/memory suites: 199/199.
+
+

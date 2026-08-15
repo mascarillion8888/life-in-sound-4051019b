@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Music, Plus, Save, Sparkles, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Music,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+  X,
+  ArrowRight,
+  Check,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +22,10 @@ import { useSession, useUserId } from "@/lib/supabase/use-session";
 import { createMemory } from "@/lib/supabase/memory-remote";
 import { extractMemory } from "@/lib/llm/extractMemory.server";
 import type { ExtractedCandidate } from "@/lib/llm/extractMemory";
+import { markFirstMemoryCreated, hasCreatedFirstMemory } from "@/lib/onboarding";
+import { submitFeedback, type FeedbackRating } from "@/lib/feedback";
+import { track, PRODUCT_EVENTS } from "@/lib/telemetry";
+import { ReliabilityMessage } from "@/lib/reliability";
 
 export const Route = createFileRoute("/memory")({
   head: () => ({
@@ -87,6 +102,10 @@ function MemoryCapturePage() {
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  /** The id of the most recently saved memory (for the "view this memory" CTA). */
+  const [savedMemoryId, setSavedMemoryId] = useState<string | null>(null);
+  /** Whether the post-first-memory feedback prompt was answered. */
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   const canExtract = rawNote.trim().length > 0 && phase === "compose";
 
@@ -102,16 +121,12 @@ function MemoryCapturePage() {
       } else {
         // AI unavailable or unparseable → manual fallback with the note preserved.
         setDraft(EMPTY_DRAFT(rawNote.trim()));
-        setExtractionError(
-          "We couldn't structure your memory automatically. You can fill in the details manually below — your note is preserved.",
-        );
+        setExtractionError(ReliabilityMessage.memoryExtractionFailed);
         setPhase("review");
       }
     } catch {
       setDraft(EMPTY_DRAFT(rawNote.trim()));
-      setExtractionError(
-        "Something went wrong reading your memory. You can fill in the details manually below.",
-      );
+      setExtractionError(ReliabilityMessage.memoryExtractionFailed);
       setPhase("review");
     }
   }
@@ -153,13 +168,23 @@ function MemoryCapturePage() {
       };
       const result = await createMemory(userId, capture);
       if ("memoryId" in result) {
+        setSavedMemoryId(result.memoryId);
         setPhase("saved");
+        const isFirst = !hasCreatedFirstMemory();
+        if (isFirst) markFirstMemoryCreated();
+        track({
+          event: PRODUCT_EVENTS.memoryCreated,
+          timestamp: new Date().toISOString(),
+          userId,
+          result: "ok",
+          detail: { first: isFirst },
+        });
       } else {
-        setSaveError(`Could not save your memory: ${result.error}`);
+        setSaveError(`${ReliabilityMessage.memorySaveFailed}`);
         setPhase("review");
       }
     } catch {
-      setSaveError("Something went wrong saving your memory. Please try again.");
+      setSaveError(ReliabilityMessage.memorySaveFailed);
       setPhase("review");
     }
   }
@@ -225,11 +250,19 @@ function MemoryCapturePage() {
 
         {phase === "saved" && (
           <SavedPhase
+            memoryId={savedMemoryId}
+            feedbackSubmitted={feedbackSubmitted}
+            onFeedback={(rating) => {
+              submitFeedback("first_memory", rating, userId ?? undefined);
+              setFeedbackSubmitted(true);
+            }}
             onAnother={() => {
               setRawNote("");
               setDraft(null);
               setExtractionError(null);
               setSaveError(null);
+              setSavedMemoryId(null);
+              setFeedbackSubmitted(false);
               setPhase("compose");
             }}
           />
@@ -495,7 +528,17 @@ function ReviewPhase({
   );
 }
 
-function SavedPhase({ onAnother }: { onAnother: () => void }) {
+function SavedPhase({
+  memoryId,
+  feedbackSubmitted,
+  onFeedback,
+  onAnother,
+}: {
+  memoryId: string | null;
+  feedbackSubmitted: boolean;
+  onFeedback: (rating: FeedbackRating) => void;
+  onAnother: () => void;
+}) {
   return (
     <div className="flex flex-col items-center gap-4 py-16 text-center">
       <div className="flex size-14 items-center justify-center rounded-full bg-primary/10">
@@ -506,6 +549,39 @@ function SavedPhase({ onAnother }: { onAnother: () => void }) {
         Your memory is part of your timeline now. Come back any time a song and a moment belong
         together.
       </p>
+
+      {memoryId ? (
+        <Button asChild className="gap-2">
+          <Link to="/memory/$memoryId" params={{ memoryId }}>
+            View this memory
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
+      ) : null}
+
+      {!feedbackSubmitted ? (
+        <div className="mt-2 w-full max-w-md rounded-2xl border border-border bg-card/60 p-4">
+          <p className="text-sm font-medium text-foreground">Did this feel meaningful?</p>
+          <div className="mt-3 flex justify-center gap-2">
+            {(
+              [
+                ["yes", "Yes"],
+                ["somewhat", "Somewhat"],
+                ["not_really", "Not really"],
+              ] as [FeedbackRating, string][]
+            ).map(([value, label]) => (
+              <Button key={value} variant="outline" size="sm" onClick={() => onFeedback(value)}>
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Check className="size-4 text-primary" /> Thanks — that helps us shape the beta.
+        </p>
+      )}
+
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
         <Button onClick={onAnother} className="gap-2">
           <Plus className="size-4" /> Save another memory

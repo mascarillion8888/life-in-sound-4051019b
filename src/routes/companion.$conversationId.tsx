@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Archive, Loader2, RotateCcw, Send } from "lucide-react";
+import { ArrowLeft, Archive, Loader2, RotateCcw, Send, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,9 @@ import {
   dismissSignificantInteractionFn,
 } from "@/lib/llm/confirmSignificantInteraction.server";
 import { promoteSignificantInteraction } from "@/lib/llm/promoteSignificantInteraction.server";
+import { submitFeedback, type FeedbackRating } from "@/lib/feedback";
+import { track, PRODUCT_EVENTS } from "@/lib/telemetry";
+import { ReliabilityMessage } from "@/lib/reliability";
 import type {
   CompanionConversation,
   CompanionTurn,
@@ -43,6 +46,8 @@ function ConversationDetailPage() {
   const [candidateBusy, setCandidateBusy] = useState(false);
   /** "Remembered" confirmation shown after successful confirm+promote. */
   const [remembered, setRemembered] = useState(false);
+  /** Whether the post-first-companion-turn feedback prompt was answered. */
+  const [companionFeedbackSubmitted, setCompanionFeedbackSubmitted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isArchived = conversation?.status === "archived";
@@ -113,7 +118,15 @@ function ConversationDetailPage() {
         });
         setPendingUserTurnId(result.userTurn.id);
       }
-      setError("The Companion couldn't reply. Your message was saved — try again.");
+      setError(ReliabilityMessage.companionUnavailable);
+      // Content-free telemetry: outcome only, never the message/response text.
+      track({
+        event: PRODUCT_EVENTS.companionTurn,
+        timestamp: new Date().toISOString(),
+        userId: userId ?? undefined,
+        result: "failed",
+        fallback: true,
+      });
       if (!retry) setInput("");
       return;
     }
@@ -123,6 +136,14 @@ function ConversationDetailPage() {
     setTurns(refreshed);
     setPendingUserTurnId(null);
     setInput("");
+
+    // Content-free telemetry: outcome only, never the message/response text.
+    track({
+      event: PRODUCT_EVENTS.companionTurn,
+      timestamp: new Date().toISOString(),
+      userId: userId ?? undefined,
+      result: "ok",
+    });
 
     // Surface a candidate if the significance machinery produced one. Do NOT
     // interrupt the conversation; the advisory block is shown below the input.
@@ -151,6 +172,12 @@ function ConversationDetailPage() {
           if (promoRes.ok && promoRes.companionMemory) {
             setRemembered(true);
             setCandidate(null);
+            track({
+              event: PRODUCT_EVENTS.companionMemoryConfirmed,
+              timestamp: new Date().toISOString(),
+              userId: userId ?? undefined,
+              result: "ok",
+            });
           }
           // else: promotion failed; the interaction is still confirmed. The
           // advisory stays so it is clear it was NOT fully remembered; the user
@@ -266,6 +293,37 @@ function ConversationDetailPage() {
             </div>
           )}
           {error && <p className="mb-2 text-xs text-amber-600 dark:text-amber-500">{error}</p>}
+          {turns.length >= 2 && !companionFeedbackSubmitted && !error ? (
+            <div className="mb-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3">
+              <p className="text-xs font-medium text-foreground">Was this helpful?</p>
+              <div className="mt-2 flex gap-2">
+                {(
+                  [
+                    ["yes", "Yes"],
+                    ["not_really", "Not really"],
+                  ] as [FeedbackRating, string][]
+                ).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      submitFeedback("first_companion", value, userId ?? undefined);
+                      setCompanionFeedbackSubmitted(true);
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {companionFeedbackSubmitted ? (
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Check className="size-3.5 text-primary" /> Thanks — that helps us shape the beta.
+            </p>
+          ) : null}
           {pendingUserTurnId && !sending && (
             <Button onClick={() => handleSend(true)} size="sm" variant="outline" className="mb-2">
               Retry

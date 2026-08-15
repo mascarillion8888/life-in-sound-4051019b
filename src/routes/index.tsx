@@ -1,21 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Dna, Heart, Image as ImageIcon } from "lucide-react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { track, PRODUCT_EVENTS } from "@/lib/telemetry";
 
-const HowItWorksSection = lazy(
-  () => import("@/components/landing/HowItWorksSection")
-);
-const PreviewSection = lazy(
-  () => import("@/components/landing/PreviewSection")
-);
-const WhyMusicSection = lazy(
-  () => import("@/components/landing/WhyMusicSection")
-);
-const FinalCTASection = lazy(
-  () => import("@/components/landing/FinalCTASection")
-);
+const HowItWorksSection = lazy(() => import("@/components/landing/HowItWorksSection"));
+const PreviewSection = lazy(() => import("@/components/landing/PreviewSection"));
+const WhyMusicSection = lazy(() => import("@/components/landing/WhyMusicSection"));
+const FinalCTASection = lazy(() => import("@/components/landing/FinalCTASection"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -80,8 +73,9 @@ function Header() {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
           <div className="h-3.5 w-3.5 rounded-full bg-primary" />
         </div>
-        <span className="text-lg font-semibold tracking-tight text-foreground">
-          SoundMap
+        <span className="text-lg font-semibold tracking-tight text-foreground">SoundMap</span>
+        <span className="rounded-full border border-border/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Beta
         </span>
       </div>
       <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
@@ -106,9 +100,8 @@ function HeroSection() {
         </span>
       </h1>
       <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:mt-8 md:text-xl">
-        Music doesn't just play in the background — it becomes part of who you
-        are. Rediscover the songs that shaped your memories and identity, and
-        turn them into a cinematic visual journey.
+        Music doesn't just play in the background — it becomes part of who you are. Rediscover the
+        songs that shaped your memories and identity, and turn them into a cinematic visual journey.
       </p>
       <Link
         to="/journey"
@@ -150,6 +143,14 @@ function FeaturesSection() {
 }
 
 function Index() {
+  // Content-free product instrumentation: the app was opened. No user content.
+  useEffect(() => {
+    track({
+      event: PRODUCT_EVENTS.appOpened,
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold" />

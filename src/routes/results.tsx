@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock, Maximize } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Maximize, ArrowRight, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
@@ -11,6 +11,13 @@ import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { generateStory } from "@/lib/llm/generateStory.server";
 import { deterministicLifeStory } from "@/lib/llm/prompts";
+import {
+  FIRST_VALUE_CTA,
+  FIRST_MOMENTS_CAPABILITIES,
+  markOnboardingSeen,
+  onboardingState,
+} from "@/lib/onboarding";
+import { track, PRODUCT_EVENTS } from "@/lib/telemetry";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -192,6 +199,21 @@ function ResultsPage() {
     if (saved) setStoredAnswers(saved.answers);
   }, []);
 
+  const answers = stateAnswers ?? storedAnswers;
+
+  // Mark onboarding as seen and record a content-free completion event once
+  // the answers resolve to a complete journey.
+  useEffect(() => {
+    const complete = onboardingState(answers ?? {}).complete;
+    if (!complete) return;
+    markOnboardingSeen();
+    track({
+      event: PRODUCT_EVENTS.onboardingCompleted,
+      timestamp: new Date().toISOString(),
+      result: "ok",
+    });
+  }, [answers]);
+
   // Close fullscreen poster with Escape.
   useEffect(() => {
     if (!posterOpen) return;
@@ -201,8 +223,6 @@ function ResultsPage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [posterOpen]);
-
-  const answers = stateAnswers ?? storedAnswers;
   const songs = questions.map((q) => answers?.[q.id] ?? `Untitled track ${q.id}`);
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
 
@@ -379,6 +399,43 @@ function ResultsPage() {
             <PosterLightbox onClose={() => setPosterOpen(false)} />
           </Suspense>
         )}
+
+        <AnimatedReveal>
+          <section className="mx-auto max-w-3xl rounded-[2rem] border border-border bg-card/60 p-6 backdrop-blur-xl sm:p-8 lg:p-10">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              This was your first listen.
+            </h2>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+              {FIRST_VALUE_CTA.blurb}
+            </p>
+            <ul className="mt-6 space-y-2">
+              {FIRST_MOMENTS_CAPABILITIES.map((c) => (
+                <li key={c} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                  {c}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild className="h-12 rounded-full px-8 text-base font-semibold">
+                <Link to={FIRST_VALUE_CTA.route}>
+                  {FIRST_VALUE_CTA.label}
+                  <ArrowRight className="ml-2 size-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="h-12 rounded-full px-8 text-base font-medium"
+              >
+                <Link to="/companion">
+                  <MessageCircle className="mr-2 size-4" />
+                  Talk with your Companion
+                </Link>
+              </Button>
+            </div>
+          </section>
+        </AnimatedReveal>
 
         <AnimatedReveal>
           <div className="flex flex-col items-center gap-4 pb-8">

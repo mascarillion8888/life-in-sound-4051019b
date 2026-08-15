@@ -13,6 +13,7 @@ import {
   loadRemoteJourney,
   saveRemoteJourney,
 } from "@/lib/supabase/journey-remote";
+import { track, PRODUCT_EVENTS } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -93,6 +94,14 @@ function JourneyPage() {
       saveJourney({ current, answers });
     }
   }, [restored, completed, current, answers, userId]);
+
+  // Content-free product instrumentation: onboarding started once, on mount.
+  useEffect(() => {
+    track({
+      event: PRODUCT_EVENTS.onboardingStarted,
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
 
   const startNewJourney = () => {
     if (userId) {
