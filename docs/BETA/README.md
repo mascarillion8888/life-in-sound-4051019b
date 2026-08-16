@@ -177,7 +177,7 @@ Checklist (none claimed complete):
       licence file decision made.
 - [ ] **Privacy / data-flow review** — `docs/LEGAL_IP/DATA_FLOW_AND_PRIVACY_MAP.md`
       reviewed; lawful bases per data category confirmed; DPIA completed where
-      required; Supabase/Cloudflare/AI-provider DPAs in place.
+      required; Supabase/hosting/AI-provider DPAs in place.
 - [ ] **Terms / privacy documents** — end-user Terms of Service and Privacy
       Policy drafted, reviewed, and published before any real-user beta.
 - [ ] **AI-provider data processing review** — each provider's (Groq, Google

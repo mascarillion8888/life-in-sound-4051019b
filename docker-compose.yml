@@ -1,0 +1,29 @@
+# Minimal docker-compose for Life in a Sound.
+#
+# Build-time VITE_* vars (public, RLS-enforced) are passed as build args.
+# Runtime provider secrets are passed via the environment (or an env file);
+# they are never baked into the image.
+#
+# Usage:
+#   export VITE_SUPABASE_URL=...
+#   export VITE_SUPABASE_ANON_KEY=...
+#   export GROQ_API_KEY=... GEMINI_API_KEY=... MISTRAL_API_KEY=... OPENROUTER_API_KEY=...
+#   docker compose up --build
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    image: life-in-sound
+    ports:
+      - "3000:3000"
+    environment:
+      - GROQ_API_KEY
+      - GEMINI_API_KEY
+      - MISTRAL_API_KEY
+      - OPENROUTER_API_KEY
+      - PORT=3000
+    restart: unless-stopped

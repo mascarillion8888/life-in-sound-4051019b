@@ -70,9 +70,10 @@ full product/model design (kept separate from this technical handoff).
 
 - **Frontend:** React 19 + TanStack Start (file-based router) + TanStack React
   Query, Tailwind v4, Radix UI, lucide-react icons.
-- **Build/deploy:** Vite 8 → Nitro 3 (beta) → **Cloudflare Workers** target.
-  `src/server.ts` is a Workers `fetch` handler; build emits
-  `.output/server/wrangler.json`.
+- **Build/deploy:** Vite 8 → Nitro 3 (beta) → **Node.js** target
+  (`node-server` preset). `src/server.ts` is a fetch handler wrapped by Nitro;
+  build emits `.output/server/index.mjs`, run with `node .output/server/index.mjs`
+  (or the Docker image).
 - **Data:** Supabase (Postgres + Auth) as server-side source of truth;
   `localStorage` as cache / offline fallback.
 - **Auth:** Supabase **anonymous auth** only (no login UI, no real accounts).
@@ -89,8 +90,8 @@ full product/model design (kept separate from this technical handoff).
   generate the Life Story narrative.
 - **Python `orchestra/`** — canonical reference/spec for roles, role prompts,
   provider mappings and intended orchestration. **Untouched.** Not executed at
-  runtime (Cloudflare Workers cannot run Python). Kept as the source of truth
-  the TS bridge mirrors.
+  runtime (the Node + Nitro deployment does not run Python). Kept as the source
+  of truth the TS bridge mirrors.
 
 ---
 
@@ -175,12 +176,13 @@ Responsive Design, documentation system.
   login UI, no passwords, no friction.
 - **localStorage fallback.** When Supabase env vars are absent or the request
   fails, persistence falls back to `localStorage` so the app always works.
-- **Cloudflare Workers cannot run Python.** The Python `orchestra/` LiteLLM
-  process cannot run inside the deployed worker.
+- **Cloudflare Workers cannot run Python** (historical context for the TS
+  bridge choice). The Node + Nitro deployment also does not run the Python
+  `orchestra/` LiteLLM process; the TS bridge is the runtime.
 - **Option 1 chosen: TypeScript-native Orchestra bridge.** Reimplemented the
   Orchestra's role→provider mapping in TS as `src/lib/llm/orchestra.ts`, calling
   provider OpenAI-compatible endpoints via native `fetch`. Keeps everything
-  inside the Cloudflare Worker; no second runtime; no new dependencies.
+  inside the Node server; no second runtime; no new dependencies.
 - **Python `orchestra/` remains untouched as the canonical reference/spec.**
   The TS bridge is a faithful, documented port — it strips the LiteLLM
   provider prefix (e.g. `groq/qwen3.6-27b` → `qwen/qwen3.6-27b`) because it

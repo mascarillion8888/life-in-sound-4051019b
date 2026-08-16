@@ -46,7 +46,7 @@ Review areas (applied per market):
 | Subscription terms (future) | If paid subscriptions are introduced: distance-selling, recurring-billing, and cancellation rules under Turkish law? |
 | Children / minors | Age thresholds and parental-consent requirements under KVKK for minors? |
 | Data deletion / export | KVKK deletion/rectification/objection rights implementation? Data portability under KVKK? |
-| Cross-border transfers | KVKK cross-border transfer rules (countries with adequate protection / explicit consent / other conditions) for Supabase, Cloudflare, and AI providers? |
+| Cross-border transfers | KVKK cross-border transfer rules (countries with adequate protection / explicit consent / other conditions) for Supabase, the operator-chosen hosting infrastructure, and AI providers? |
 | Cookies / analytics | Turkish cookie/electronic-communication notice requirements? |
 | Intellectual property | Copyright in code/content under Turkish law; absent licence file implications? |
 | Trademarks | "Life in a Sound" / "SoundMap" / tagline clearance at Türk PatentMarka? |
@@ -65,7 +65,7 @@ Review areas (applied per market):
 | Subscription terms (future) | Recurring payments, cancellation, pre-contract information for digital content subscriptions? |
 | Children / minors | GDPR Art. 8 digital-consent age (member-state-specific, 13–16); "best interests of the child" for emotional content? |
 | Data deletion / export | Right to erasure Art. 17 (incl. provider-side feasibility); data portability Art. 20? |
-| Cross-border transfers | Chapter V transfers to Supabase/Cloudflare/AI providers; SCCs/adequacy (e.g., EU-US Data Privacy Framework for US providers)? |
+| Cross-border transfers | Chapter V transfers to Supabase/operator-chosen hosting/AI providers; SCCs/adequacy (e.g., EU-US Data Privacy Framework for US providers)? |
 | Cookies / analytics | ePrivacy consent for cookies/localStorage; cookie banner? |
 | Intellectual property | Software directive/Copyright directive; authorship of AI-assisted code in EU? |
 | Trademarks | EUIPO clearance + national registers; Madrid Protocol? |

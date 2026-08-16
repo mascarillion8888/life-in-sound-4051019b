@@ -1,0 +1,27 @@
+# Build context exclusions for the Life in a Sound Docker image.
+# Keeps the build context small and prevents secrets/build artifacts from
+# entering the image.
+
+node_modules
+.output
+.vinxi
+.nitro
+dist
+.git
+.gitignore
+.agents
+.github
+.vscode
+.idea
+coverage
+*.log
+.env
+.env.*
+.dev.vars
+.wrangler
+.DS_Store
+Dockerfile
+docker-compose.yml
+.dockerignore
+docs
+AGENTS.md

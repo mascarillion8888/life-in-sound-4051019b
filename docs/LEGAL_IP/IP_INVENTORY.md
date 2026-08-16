@@ -21,7 +21,7 @@ Every item in this inventory is tagged with one of four categories:
 | Category | Meaning |
 |----------|---------|
 | **ORIGINAL PROJECT ELEMENT** | Designed and authored for this project; not sourced from a third-party product. Ownership/protectability is a legal question — not asserted here. |
-| **THIRD-PARTY TECHNOLOGY** | A commercial service or platform operated by a third party (Cloudflare, Supabase, AI providers). The project uses it under the provider's terms; the project does not own it. |
+| **THIRD-PARTY TECHNOLOGY** | A commercial service or platform operated by a third party (Supabase, AI providers). The project uses it under the provider's terms; the project does not own it. |
 | **OPEN-SOURCE DEPENDENCY** | A library/package consumed under its own open-source licence (see `package.json`). |
 | **AI PROVIDER TECHNOLOGY** | A third-party AI model/API the project calls at runtime via the Orchestra bridge. The model, weights, and API are the provider's property. |
 
@@ -59,7 +59,7 @@ see Ownership Review in `GLOBAL_MARKET_LEGAL_CHECKLIST.md`.
 | Canonical architecture (domain tree + provenance layers) | ORIGINAL PROJECT ELEMENT | `docs/ARCHITECTURE/LIFE_IN_A_SOUND_ARCHITECTURE.md` defines a domain model: Identity, Profile, Companion Profile, Music DNA, Media, Life Chapters → Life Events → Music Memories → Experiences/Reflections/Connections, Patterns, Stories; with the Companion as an orchestration layer above the tree. |
 | Trust/provenance hierarchy (4 layers) | ORIGINAL PROJECT ELEMENT | SOURCE/USER FACT → DERIVED/COMPUTED → AI INTERPRETATION → TRANSIENT. One-directional: lower-trust layers may not silently become higher-truth source. |
 | Deterministic-then-generative AI split | ORIGINAL PROJECT ELEMENT | Deterministic pipeline (`src/lib/ai/pipeline.ts`) is the factual source of truth; the LLM (Orchestra) is interpretation only, with deterministic fallback when unavailable. |
-| Cloudflare Workers deployment model | ORIGINAL PROJECT ELEMENT (config) + THIRD-PARTY TECHNOLOGY (platform) | `wrangler.jsonc` + Nitro build target Cloudflare Workers; the platform itself is Cloudflare's. |
+| Node.js + Nitro + Docker deployment model | ORIGINAL PROJECT ELEMENT (config) | `vite.config.ts` sets the Nitro `node-server` preset; build emits `.output/server/index.mjs`; `Dockerfile` + `docker-compose.yml` package the Node server. The Node/Nitro/Docker tooling itself is third-party open-source. |
 
 ---
 
@@ -182,13 +182,13 @@ see Ownership Review in `GLOBAL_MARKET_LEGAL_CHECKLIST.md`.
 
 | Element | Category | Factual description |
 |---------|----------|---------------------|
-| Cloudflare Workers | THIRD-PARTY TECHNOLOGY | Hosting/runtime platform. The Worker runs on Cloudflare's infrastructure under Cloudflare's terms. |
+| Node.js + Nitro + Docker runtime | THIRD-PARTY TECHNOLOGY (open-source) | Hosting/runtime: the Node.js runtime, the Nitro server, and the Docker container engine are third-party open-source technologies used under their own licences. The hosting infrastructure (wherever the container runs) is operator-chosen. |
 | Supabase (Postgres + Auth + Storage) | THIRD-PARTY TECHNOLOGY | Data layer. Database, anonymous auth, and private storage bucket are Supabase services under Supabase's terms. |
 | Groq | AI PROVIDER TECHNOLOGY | LLM provider; called via `https://api.groq.com/openai/v1/chat/completions`. Model `llama-3.3-70b-versatile`. |
 | Google Gemini | AI PROVIDER TECHNOLOGY | LLM provider; called via `https://generativelanguage.googleapis.com/...`. Models `gemini-3-flash-preview`, `gemini-3.1-flash-lite`. |
 | Mistral | AI PROVIDER TECHNOLOGY | LLM provider; called via `https://api.mistral.ai/v1/chat/completions`. Model `mistral-large-latest`. |
 | OpenRouter | AI PROVIDER TECHNOLOGY | LLM provider; called via `https://openrouter.ai/api/v1/chat/completions`. Model `anthropic/claude-sonnet-4.6`. |
-| Python `orchestra/` reference | ORIGINAL PROJECT ELEMENT (spec) | Canonical role/provider spec kept as reference; NOT executed at runtime (Cloudflare Workers cannot run Python). The TS bridge mirrors it. |
+| Python `orchestra/` reference | ORIGINAL PROJECT ELEMENT (spec) | Canonical role/provider spec kept as reference; NOT executed at runtime (the Node + Nitro deployment does not run Python). The TS bridge mirrors it. |
 
 The project does **not** claim ownership of any third-party platform, model,
 weights, or API. Use of each provider is governed by that provider's terms —
@@ -210,7 +210,7 @@ Full list in `package.json`. Notable categories:
 | Radix UI primitives | OPEN-SOURCE (MIT) | Accessible components. |
 | `@supabase/supabase-js` | OPEN-SOURCE (MIT) | Supabase client SDK. |
 | `@lovable.dev/vite-tanstack-config` | OPEN-SOURCE / third-party config | Lovable build config plugin. |
-| wrangler 4 | OPEN-SOURCE | Cloudflare CLI (devDep). |
+| Docker (engine / compose) | OPEN-SOURCE | Container build/runtime tooling. |
 | Vitest, TypeScript, ESLint, Prettier | OPEN-SOURCE | Tooling. |
 
 Each dependency carries its own licence. A full licence/compatibility audit of
@@ -222,8 +222,8 @@ all transitive dependencies is a legal-review question — not performed here.
 
 - No claim that any element is legally protected, patentable, or
   trademark-available.
-- No claim of ownership over Cloudflare, Supabase, Groq, Google Gemini,
-  Mistral, OpenRouter, or any model/weights/API.
+- No claim of ownership over Supabase, Groq, Google Gemini, Mistral,
+  OpenRouter, or any model/weights/API.
 - No claim that the Python `orchestra/` spec or LiteLLM patterns are the
   project's invention (LiteLLM is a third-party open-source project; the
   in-repo `orchestra/` mirrors its role/provider pattern).

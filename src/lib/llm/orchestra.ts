@@ -1,6 +1,6 @@
 /**
- * TypeScript-native Orchestra runtime — server-side bridge for the Cloudflare
- * Workers deployment.
+ * TypeScript-native Orchestra runtime — server-side bridge for the Node +
+ * Nitro deployment.
  *
  * Mirrors the canonical Python Orchestra spec in `orchestra/router.py` +
  * `orchestra/config.yaml` (role → provider/model + per-role system prompts),

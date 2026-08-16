@@ -151,7 +151,7 @@ cross-border question, AI-provider transfer question.
 | Ownership/control assumption | Project-controlled. **Requires legal review**: is server-side dev logging a processing activity requiring disclosure? |
 | Retention question | Not specified. **Requires legal review**: retention period for telemetry logs. |
 | Deletion question | Not specified. **Requires legal review**: telemetry deletion on account deletion. |
-| Cross-border question | Wherever the Worker/logs reside (Cloudflare). **Requires legal review**. |
+| Cross-border question | Wherever the Node server/logs reside (the operator-chosen hosting infrastructure). **Requires legal review**. |
 | AI-provider transfer question | No — telemetry is internal; provider is identified by model name only, never by key. |
 
 ---
@@ -226,7 +226,8 @@ mental-health-related life event; a reflection about trauma.
 
 Personal data leaves the project's direct control at:
 - Supabase (Auth + Postgres + Storage) — region chosen at project setup.
-- Cloudflare Workers (runtime/logs) — Cloudflare infrastructure.
+- The operator-chosen hosting infrastructure (wherever the Node/Docker
+  container runs) + logs.
 - AI providers (Groq, Google Gemini, Mistral, OpenRouter → underlying models)
   — each provider's own regions.
 
