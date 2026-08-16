@@ -406,10 +406,12 @@ No product behaviour change.
 
 ### What was added
 - `Dockerfile` — multi-stage (build with Node 22, run the Nitro server on
-  port 3000). Runtime provider secrets are passed as env vars at `docker run`,
-  never baked into the image.
+  port 3000). Non-root runtime (`USER node`, uid 1000). Runtime provider
+  secrets are passed as env vars at `docker run`, never baked into the image.
+  `PORT` is configurable (defaults to 3000). `.env` is excluded via
+  `.dockerignore`.
 - `docker-compose.yml` — minimal compose to build and run the service.
-- `.dockerignore` — excludes `node_modules`, `.output`, `.git`, etc.
+- `.dockerignore` — excludes `node_modules`, `.output`, `.git`, `.env`, etc.
 
 ### Runtime compatibility
 - `process.env` is populated natively by Node at runtime — so
@@ -449,10 +451,23 @@ unrelated churn across 16 product files. Recommend a separate formatting pass.
   `/memory`, `/memory/$id`, `/companion`, `/companion/$id`, `/profile`,
   `/patterns`, `/events`, `/events/$id`, `/chapters`, `/chapters/$id` all 200.
 - Client assets served correctly: CSS (`text/css`), JS (`text/javascript`),
-  `favicon.ico` (`image/vnd.microsoft.icon`), `robots.txt` (`text/plain`).
-  Inter font loaded via Google Fonts CDN (no local font files to host).
+  `favicon.ico` (`image/vnd.microsoft.icon`), `robots.txt` (`text/plain`),
+  `poster-preview-*.jpg` (`image/jpeg`).
+- Inter font loaded via Google Fonts CDN (variable font; no local font files).
+  All 7 unique `*.woff2` subsets returned 200 — Regular(400)/Medium(500)/
+  SemiBold(600)/Bold(700) all resolve. No font/CSS/JS 404s. Self-hosting the
+  fonts would change product behaviour, so the CDN delivery is kept.
+- Docker build (multi-stage, `npm ci`, production build, minimal runtime
+  image ~336 MB) succeeded. Non-root runtime verified (`uid=1000(node)`).
+  `.env` is NOT copied into the image (`.dockerignore`). No secrets baked in
+  (placeholder build-args only). `PORT` configurable (tested 3000 and 8080).
+- Docker runtime smoke test: all 13 routes 200; CSS/JS/favicon/robots/poster
+  200 with correct content-types; Inter woff2 (CDN) all 200; no 404s in
+  container log.
 - No `wrangler.json` emitted in `.output/`; no `wrangler`/`cloudflare`/
-  `workerd`/`nodejs_compat` references remain in source/config.
+  `workerd` references remain in source/config (only migration-documentation
+  mentions in AGENTS.md/AI_HANDOFF.md, and `wrangler` as an optional
+  transitive peer of `env-runner` in the lockfiles).
 - Secret scan: no provider-key values in `.output/server` or `.output/public`;
   only key-name string literals (`keyEnv: "GROQ_API_KEY"`) in server bundle; no
   `process.env`/`service_role`/server-only modules in client bundle.

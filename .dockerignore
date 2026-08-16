@@ -6,6 +6,7 @@ node_modules
 .output
 .vinxi
 .nitro
+.wrangler
 dist
 .git
 .gitignore
@@ -18,7 +19,6 @@ coverage
 .env
 .env.*
 .dev.vars
-.wrangler
 .DS_Store
 Dockerfile
 docker-compose.yml

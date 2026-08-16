@@ -7,8 +7,8 @@
 //
 // Deployment target: standard Node.js + Nitro (node-server preset). The production
 // server entry is `.output/server/index.mjs`, run with `node .output/server/index.mjs`.
-// `process.env` is populated natively by Node at runtime (no nodejs_compat shim needed),
-// which is how the Orchestra bridge reads provider API keys.
+// `process.env` is populated natively by Node at runtime, which is how the
+// Orchestra bridge reads provider API keys.
 //
 // Build chunking fix (deployment-agnostic): the Nitro/rolldown build splits the
 // TanStack Start SSR service assets (under node_modules/.nitro/vite/services/ssr/assets/)

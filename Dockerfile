@@ -52,6 +52,12 @@ ENV HOST=0.0.0.0
 # because Nitro bundles the server into .output/server.
 COPY --from=build /app/.output ./.output
 
+# Run as the non-root `node` user (uid 1000, built into node:*-slim).
+# The build output is owned by root from the previous stage; chown so the
+# non-root user can read it.
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3000
 
 # Healthcheck: the landing route returns 200 when the server is up.
