@@ -108,6 +108,15 @@ const ROLE_PROMPTS: Record<OrchestraRole, string> = {
   guardian: "You are the guardian. Block unsafe/illegal actions. If safe, say OK.",
 };
 
+/**
+ * Bounded request timeout for a single provider call. A provider request must
+ * never wait indefinitely: when this elapses the request is aborted and
+ * `runRole` returns `null` (treated as a non-fatal fallback, identical to a
+ * network/parse/HTTP failure). Override per-call via `RunRoleOptions.timeoutMs`
+ * (0 disables the bounded timeout, leaving only any caller-supplied `signal`).
+ */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
 export type RunRoleOptions = {
   temperature?: number;
   maxTokens?: number;
@@ -115,6 +124,11 @@ export type RunRoleOptions = {
   fetchImpl?: typeof fetch;
   /** Abort signal for request cancellation. */
   signal?: AbortSignal;
+  /**
+   * Per-call bounded timeout in ms. Defaults to {@link DEFAULT_REQUEST_TIMEOUT_MS}.
+   * Set to 0 to disable the bounded timeout (only the caller `signal` applies).
+   */
+  timeoutMs?: number;
 };
 
 /** Return the role → model mapping (no secrets). Mirrors list_roles() in Python. */
@@ -130,6 +144,29 @@ function getApiKey(keyEnv: string): string | null {
   // server-only env access. Never VITE_-prefixed.
   const value = process.env?.[keyEnv];
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+/**
+ * Build the AbortSignal used for a provider request. Combines a bounded
+ * timeout (so the request never waits indefinitely) with any caller-supplied
+ * `signal`. A timeout/abort is non-fatal: `runRole`'s fetch `catch` converts
+ * it into a `null` return. Returns `undefined` when no signal applies so that
+ * callers/tests passing no signal behave exactly as before.
+ */
+function buildRequestSignal(
+  callerSignal: AbortSignal | undefined,
+  timeoutMs: number,
+): AbortSignal | undefined {
+  const signals: AbortSignal[] = [];
+  if (callerSignal) signals.push(callerSignal);
+  if (timeoutMs > 0) signals.push(AbortSignal.timeout(timeoutMs));
+  if (signals.length === 0) return undefined;
+  if (signals.length === 1) return signals[0];
+  // AbortSignal.any is available on Node 22+; fall back to the timeout signal
+  // alone if the runtime lacks it (keeps the bounded-timeout guarantee).
+  return typeof AbortSignal.any === "function"
+    ? AbortSignal.any(signals)
+    : signals[signals.length - 1];
 }
 
 function extractContent(payload: unknown): string | null {
@@ -171,6 +208,8 @@ export async function runRole(
   const temperature = options.temperature ?? 0.3;
   const maxTokens = options.maxTokens ?? 512;
   const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+  const requestSignal = buildRequestSignal(options.signal, timeoutMs);
 
   let response: Response;
   try {
@@ -180,7 +219,7 @@ export async function runRole(
         "content-type": "application/json",
         authorization: `Bearer ${apiKey}`,
       },
-      signal: options.signal,
+      signal: requestSignal,
       body: JSON.stringify({
         model: spec.model,
         messages: [
@@ -192,7 +231,7 @@ export async function runRole(
       }),
     });
   } catch {
-    return null; // network error → fallback
+    return null; // network error / timeout / abort → fallback (non-fatal)
   }
 
   if (!response.ok) return null;
