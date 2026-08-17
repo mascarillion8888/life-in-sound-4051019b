@@ -19,9 +19,7 @@ export function AnimatedReveal({
       style={{ transitionDelay: `${delay}ms` }}
       className={cn(
         "transition-all duration-700 ease-out motion-reduce:transition-none",
-        inView
-          ? "translate-y-0 opacity-100 blur-0"
-          : "translate-y-8 opacity-0 blur-[2px]",
+        inView ? "translate-y-0 opacity-100 blur-0" : "translate-y-8 opacity-0 blur-[2px]",
         className,
       )}
     >

@@ -2,17 +2,12 @@ import { Brain } from "lucide-react";
 
 import type { PersonalityProfile } from "@/lib/ai/types";
 
-export function AIPersonalityCard({
-  profile,
-}: {
-  profile: PersonalityProfile | null;
-}) {
+export function AIPersonalityCard({ profile }: { profile: PersonalityProfile | null }) {
   if (!profile) {
     return (
       <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 text-center backdrop-blur-xl sm:p-8 md:p-12">
         <p className="text-base text-muted-foreground">
-          No journey data available yet — complete your journey to unlock your
-          personality profile.
+          No journey data available yet — complete your journey to unlock your personality profile.
         </p>
       </section>
     );
@@ -100,9 +95,7 @@ export function AIPersonalityCard({
 
       <div className="mt-8">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span className="font-semibold uppercase tracking-widest">
-            Confidence
-          </span>
+          <span className="font-semibold uppercase tracking-widest">Confidence</span>
           <span className="font-semibold text-primary">{confidencePct}%</span>
         </div>
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-border/50">

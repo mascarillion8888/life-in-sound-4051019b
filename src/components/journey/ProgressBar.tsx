@@ -1,12 +1,6 @@
 import { Progress } from "@/components/ui/progress";
 
-export function ProgressBar({
-  current,
-  total,
-}: {
-  current: number;
-  total: number;
-}) {
+export function ProgressBar({ current, total }: { current: number; total: number }) {
   const value = (current / total) * 100;
 
   return (

@@ -34,9 +34,7 @@ export function QuestionCard({
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
           {title}
         </h2>
-        <p className="text-base leading-relaxed text-foreground/80 sm:text-lg">
-          {description}
-        </p>
+        <p className="text-base leading-relaxed text-foreground/80 sm:text-lg">{description}</p>
       </div>
 
       <Button

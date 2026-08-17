@@ -58,16 +58,14 @@ export default function WhyMusicSection() {
           </h2>
           <div className="mt-6 space-y-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
             <p>
-              Music is one of the most powerful triggers of autobiographical
-              memory. Neuroscience shows that when you hear a song tied to a
-              meaningful moment, your brain activates the hippocampus — where
-              memories live — and the amygdala, where emotions are processed.
+              Music is one of the most powerful triggers of autobiographical memory. Neuroscience
+              shows that when you hear a song tied to a meaningful moment, your brain activates the
+              hippocampus — where memories live — and the amygdala, where emotions are processed.
             </p>
             <p>
-              This unique connection is why a single melody can instantly
-              transport you back to a person, a place, or a version of yourself
-              you thought you had lost. SoundMap honors this connection by
-              turning your music into a living visual story of who you are.
+              This unique connection is why a single melody can instantly transport you back to a
+              person, a place, or a version of yourself you thought you had lost. SoundMap honors
+              this connection by turning your music into a living visual story of who you are.
             </p>
           </div>
         </AnimatedSection>

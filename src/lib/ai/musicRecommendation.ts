@@ -22,10 +22,7 @@ const LISTENING_STYLE: Record<string, string> = {
 };
 
 /** Deterministic music profile derived from scores + emotional read. */
-export function recommendMusic(
-  scores: PersonalityScores,
-  emotions: EmotionProfile,
-): MusicProfile {
+export function recommendMusic(scores: PersonalityScores, emotions: EmotionProfile): MusicProfile {
   const ranked = rankedDimensions(scores);
   const [first, second, third] = ranked;
 

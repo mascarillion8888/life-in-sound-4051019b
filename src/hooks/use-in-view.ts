@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useInView<T extends HTMLElement = HTMLElement>(
-  options?: IntersectionObserverInit
-) {
+export function useInView<T extends HTMLElement = HTMLElement>(options?: IntersectionObserverInit) {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
 
@@ -16,7 +14,7 @@ export function useInView<T extends HTMLElement = HTMLElement>(
           setInView(true);
         }
       },
-      { threshold: 0.12, ...options }
+      { threshold: 0.12, ...options },
     );
 
     observer.observe(element);

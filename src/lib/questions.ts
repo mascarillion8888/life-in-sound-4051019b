@@ -38,8 +38,7 @@ export const questions: Question[] = [
   {
     id: 6,
     title: "What song reminds you of a person you miss?",
-    description:
-      "Music has a way of keeping people close. Which song still sounds like them?",
+    description: "Music has a way of keeping people close. Which song still sounds like them?",
   },
   {
     id: 7,
@@ -50,7 +49,6 @@ export const questions: Question[] = [
   {
     id: 8,
     title: "What song do you want to be remembered by?",
-    description:
-      "If your life had closing credits, this is the track that would play over them.",
+    description: "If your life had closing credits, this is the track that would play over them.",
   },
 ];

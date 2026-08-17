@@ -153,13 +153,12 @@ function JourneyPage() {
                 return;
               }
               if (isLast) {
-                // Journey finished — progress is no longer needed.
+                // Journey finished — keep the answers persisted so /results can
+                // reload them on a direct visit / F5 (history state is lost on
+                // refresh). The user can still wipe progress via the "Start New
+                // Journey" action. We only stop further auto-save by marking
+                // the local component as completed.
                 setCompleted(true);
-                if (userId) {
-                  void clearRemoteJourney(userId);
-                } else {
-                  clearJourney();
-                }
                 navigate({ to: "/results", state: { answers } as never });
               } else {
                 setCurrent((c) => Math.min(total, c + 1));

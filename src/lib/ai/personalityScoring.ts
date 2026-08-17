@@ -1,9 +1,5 @@
 import { questions } from "@/lib/questions";
-import type {
-  JourneyAnswers,
-  PersonalityDimension,
-  PersonalityScores,
-} from "./types";
+import type { JourneyAnswers, PersonalityDimension, PersonalityScores } from "./types";
 
 /**
  * Each journey question maps to the dimensions it inherently expresses.

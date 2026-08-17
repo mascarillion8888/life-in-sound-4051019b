@@ -5,13 +5,7 @@ export type JourneyAnswers = Record<number, string>;
 
 /** Deterministic personality dimensions supported by the 8 journey questions. */
 export type PersonalityDimension =
-  | "introspection"
-  | "nostalgia"
-  | "energy"
-  | "melancholy"
-  | "hope"
-  | "rebellion"
-  | "connection";
+  "introspection" | "nostalgia" | "energy" | "melancholy" | "hope" | "rebellion" | "connection";
 
 export type PersonalityScores = Record<PersonalityDimension, number>;
 

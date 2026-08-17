@@ -1,11 +1,7 @@
 import { questions } from "@/lib/questions";
 import { analyzeEmotions } from "./emotionAnalyzer";
 import { recommendMusic } from "./musicRecommendation";
-import {
-  answeredCount,
-  rankedDimensions,
-  scorePersonality,
-} from "./personalityScoring";
+import { answeredCount, rankedDimensions, scorePersonality } from "./personalityScoring";
 import { writePoeticSummary } from "./poeticSummary";
 import { buildPosterModel } from "./posterModel";
 import type { JourneyAnswers, PersonalityProfile } from "./types";
@@ -83,15 +79,9 @@ export function analyzeUserJourney(
   const poeticSummary = writePoeticSummary(scores, emotions, music);
 
   const [first] = rankedDimensions(scores);
-  const base =
-    ARCHETYPE_BY_DIMENSION[first] ?? ARCHETYPE_BY_DIMENSION.introspection;
+  const base = ARCHETYPE_BY_DIMENSION[first] ?? ARCHETYPE_BY_DIMENSION.introspection;
 
-  const poster = buildPosterModel(
-    base.archetype,
-    base.title,
-    emotions,
-    music,
-  );
+  const poster = buildPosterModel(base.archetype, base.title, emotions, music);
 
   const coverage = answered / Math.max(questions.length, 1);
   const confidence = Number(

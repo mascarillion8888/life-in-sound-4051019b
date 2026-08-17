@@ -30,21 +30,31 @@ export function useSession(): SessionState {
     let active = true;
 
     // Resolve the current session, signing in anonymously if none exists.
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      if (data.session) {
-        setState({ status: "anonymous", user: data.session.user });
-        return;
-      }
-      const { data: signInData } = await supabase.auth.signInAnonymously();
-      if (!active) return;
-      if (signInData.session) {
-        setState({ status: "anonymous", user: signInData.session.user });
-      } else {
-        // Anonymous sign-in not enabled on the project — degrade gracefully.
+    // The .catch guards against network errors during getSession() or a
+    // rejection from signInAnonymously() — without it the promise would
+    // surface as an unhandledrejection and leave the UI stuck on "loading".
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!active) return;
+        if (data.session) {
+          setState({ status: "anonymous", user: data.session.user });
+          return;
+        }
+        const { data: signInData } = await supabase.auth.signInAnonymously();
+        if (!active) return;
+        if (signInData.session) {
+          setState({ status: "anonymous", user: signInData.session.user });
+        } else {
+          // Anonymous sign-in not enabled on the project — degrade gracefully.
+          setState({ status: "unavailable" });
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        // Network failure or auth rejection — never throw into the UI.
         setState({ status: "unavailable" });
-      }
-    });
+      });
 
     // Keep state in sync if the token refreshes or the session changes.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {

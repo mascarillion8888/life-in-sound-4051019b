@@ -24,8 +24,7 @@ export function buildPosterModel(
     headline: title,
     subheadline: music.mood,
     archetype,
-    paletteLabel:
-      PALETTE_BY_EMOTION[emotions.dominantEmotion] ?? "Ink black & candle gold",
+    paletteLabel: PALETTE_BY_EMOTION[emotions.dominantEmotion] ?? "Ink black & candle gold",
     keywords: [
       emotions.dominantEmotion,
       ...emotions.secondaryEmotions,

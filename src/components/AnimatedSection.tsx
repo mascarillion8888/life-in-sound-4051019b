@@ -27,7 +27,7 @@ export function AnimatedSection({
       className={cn(
         "transition-all duration-1000 ease-out will-change-transform",
         hidden ? "opacity-0 translate-y-12" : "opacity-100 translate-y-0",
-        className
+        className,
       )}
       style={{ transitionDelay: `${delay}ms` }}
     >
