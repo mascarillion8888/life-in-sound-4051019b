@@ -1,14 +1,58 @@
+import type { Song } from "./song/types";
+
 export const JOURNEY_STORAGE_KEY = "soundmap.journey.v1";
 
 export type JourneyProgress = {
   current: number;
   answers: Record<number, string>;
+  /**
+   * Structured Song selections per question id. Persisted alongside the
+   * title strings in `answers` so the QuestionCard can restore the full
+   * title + artist + artwork after a refresh. A Song is only stored here when
+   * it has passed `isValidSong`; malformed entries are dropped on load.
+   */
+  songs: Record<number, Song>;
 };
 
-export const emptyJourney: JourneyProgress = { current: 1, answers: {} };
+export const emptyJourney: JourneyProgress = { current: 1, answers: {}, songs: {} };
 
 function isBrowser() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+/**
+ * Validate a candidate Song object. Only entries with the guaranteed,
+ * non-empty string fields (provider, providerId, title, artist) are accepted;
+ * the nullable fields (album, artworkUrl, isrc) are coerced to null when
+ * absent or non-string so a malformed payload can never produce a Song with
+ * an undefined field. Mirrors the guarantees of the Song type.
+ */
+export function isValidSong(value: unknown): value is Song {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.provider === "string" &&
+    v.provider.length > 0 &&
+    typeof v.providerId === "string" &&
+    v.providerId.length > 0 &&
+    typeof v.title === "string" &&
+    v.title.length > 0 &&
+    typeof v.artist === "string" &&
+    v.artist.length > 0
+  );
+}
+
+/** Coerce a validated Song's nullable fields to `null` when absent/non-string. */
+function normalizeSong(song: Song): Song {
+  return {
+    provider: song.provider,
+    providerId: song.providerId,
+    title: song.title,
+    artist: song.artist,
+    album: typeof song.album === "string" ? song.album : null,
+    artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
+    isrc: typeof song.isrc === "string" ? song.isrc : null,
+  };
 }
 
 /** Read saved journey progress from localStorage. Returns null when nothing valid is stored. */
@@ -33,7 +77,17 @@ export function loadJourney(): JourneyProgress | null {
       }
     }
 
-    return { current, answers };
+    const songs: Record<number, Song> = {};
+    if (parsed.songs && typeof parsed.songs === "object") {
+      for (const [key, value] of Object.entries(parsed.songs)) {
+        const id = Number(key);
+        if (Number.isFinite(id) && isValidSong(value)) {
+          songs[id] = normalizeSong(value);
+        }
+      }
+    }
+
+    return { current, answers, songs };
   } catch {
     return null;
   }

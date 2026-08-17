@@ -80,6 +80,7 @@ function JourneyPage() {
       if (saved) {
         setCurrent(Math.min(Math.max(saved.current, 1), total));
         setAnswers(saved.answers);
+        setSongs(saved.songs ?? {});
       }
       setRestored(true);
     })();
@@ -94,11 +95,11 @@ function JourneyPage() {
   useEffect(() => {
     if (!restored || completed) return;
     if (userId) {
-      void saveRemoteJourney(userId, { current, answers });
+      void saveRemoteJourney(userId, { current, answers, songs });
     } else {
-      saveJourney({ current, answers });
+      saveJourney({ current, answers, songs });
     }
-  }, [restored, completed, current, answers, userId]);
+  }, [restored, completed, current, answers, songs, userId]);
 
   const startNewJourney = () => {
     if (userId) {

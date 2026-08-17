@@ -13,8 +13,10 @@
  */
 import { getSupabase } from "./client";
 import type { JourneyRow } from "./types";
+import type { Song } from "../song/types";
 import {
   clearJourney,
+  isValidSong,
   loadJourney,
   mergeJourneys,
   saveJourney,
@@ -37,7 +39,7 @@ export async function loadRemoteJourney(userId: string): Promise<JourneyProgress
   try {
     const { data, error } = await supabase
       .from(TABLE)
-      .select("current, answers")
+      .select("current, answers, songs")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -75,6 +77,7 @@ export async function saveRemoteJourney(userId: string, progress: JourneyProgres
         user_id: userId,
         current: progress.current,
         answers: progress.answers,
+        songs: progress.songs,
         version: 1,
       },
       { onConflict: "user_id" },
@@ -101,10 +104,34 @@ export async function clearRemoteJourney(userId: string): Promise<void> {
   }
 }
 
-function toProgress(row: Pick<JourneyRow, "current" | "answers"> | null): JourneyProgress | null {
+function toProgress(
+  row: Pick<JourneyRow, "current" | "answers" | "songs"> | null,
+): JourneyProgress | null {
   if (!row) return null;
   const current = typeof row.current === "number" && row.current >= 1 ? Math.floor(row.current) : 1;
   const answers =
     row.answers && typeof row.answers === "object" ? (row.answers as Record<number, string>) : {};
-  return { current, answers };
+
+  // Server data is untrusted — validate each Song entry and drop malformed ones
+  // so a corrupt/partial row can never produce a Song with undefined fields.
+  const songs: Record<number, Song> = {};
+  if (row.songs && typeof row.songs === "object") {
+    for (const [key, value] of Object.entries(row.songs as Record<string, unknown>)) {
+      const id = Number(key);
+      if (Number.isFinite(id) && isValidSong(value)) {
+        const song = value as Song;
+        songs[id] = {
+          provider: song.provider,
+          providerId: song.providerId,
+          title: song.title,
+          artist: song.artist,
+          album: typeof song.album === "string" ? song.album : null,
+          artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
+          isrc: typeof song.isrc === "string" ? song.isrc : null,
+        };
+      }
+    }
+  }
+
+  return { current, answers, songs };
 }

@@ -4,10 +4,25 @@ import {
   JOURNEY_STORAGE_KEY,
   clearJourney,
   hasJourneyProgress,
+  isValidSong,
   loadJourney,
   mergeJourneys,
   saveJourney,
 } from "./journey-storage";
+import type { Song } from "./song/types";
+
+function song(over: Partial<Song> = {}): Song {
+  return {
+    provider: "musicbrainz",
+    providerId: "11111111-2222-3333-4444-555555555555",
+    title: "Upside Down",
+    artist: "Jack Johnson",
+    album: null,
+    artworkUrl: null,
+    isrc: null,
+    ...over,
+  };
+}
 
 describe("journey-storage localStorage layer", () => {
   beforeEach(() => {
@@ -19,7 +34,7 @@ describe("journey-storage localStorage layer", () => {
   });
 
   it("round-trips a journey through localStorage", () => {
-    const progress = { current: 3, answers: { 1: "Song A", 2: "Song B" } };
+    const progress = { current: 3, answers: { 1: "Song A", 2: "Song B" }, songs: {} };
     saveJourney(progress);
     expect(loadJourney()).toEqual(progress);
   });
@@ -37,16 +52,16 @@ describe("journey-storage localStorage layer", () => {
       }),
     );
     const loaded = loadJourney();
-    expect(loaded).toEqual({ current: 2, answers: { 1: "Keep" } });
+    expect(loaded).toEqual({ current: 2, answers: { 1: "Keep" }, songs: {} });
   });
 
   it("clamps a bad current value back to 1", () => {
     localStorage.setItem(JOURNEY_STORAGE_KEY, JSON.stringify({ current: -5, answers: {} }));
-    expect(loadJourney()).toEqual({ current: 1, answers: {} });
+    expect(loadJourney()).toEqual({ current: 1, answers: {}, songs: {} });
   });
 
   it("clearJourney removes the stored entry", () => {
-    saveJourney({ current: 4, answers: { 1: "x" } });
+    saveJourney({ current: 4, answers: { 1: "x" }, songs: {} });
     expect(loadJourney()).not.toBeNull();
     clearJourney();
     expect(loadJourney()).toBeNull();
@@ -54,29 +69,119 @@ describe("journey-storage localStorage layer", () => {
 
   it("hasJourneyProgress detects meaningful progress", () => {
     expect(hasJourneyProgress(null)).toBe(false);
-    expect(hasJourneyProgress({ current: 1, answers: {} })).toBe(false);
-    expect(hasJourneyProgress({ current: 2, answers: {} })).toBe(true);
-    expect(hasJourneyProgress({ current: 1, answers: { 1: "x" } })).toBe(true);
+    expect(hasJourneyProgress({ current: 1, answers: {}, songs: {} })).toBe(false);
+    expect(hasJourneyProgress({ current: 2, answers: {}, songs: {} })).toBe(true);
+    expect(hasJourneyProgress({ current: 1, answers: { 1: "x" }, songs: {} })).toBe(true);
+  });
+});
+
+describe("journey-storage structured Song persistence", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("saves and loads a structured Song round-trip", () => {
+    const progress = {
+      current: 1,
+      answers: { 1: "Upside Down" },
+      songs: { 1: song() },
+    };
+    saveJourney(progress);
+    expect(loadJourney()).toEqual(progress);
+  });
+
+  it("preserves nullable Song fields (album, artwork, isrc) when present", () => {
+    const full = song({
+      album: "Sing-A-Longs",
+      artworkUrl: "https://example.com/art.jpg",
+      isrc: "USCA10123456",
+    });
+    saveJourney({ current: 1, answers: { 1: full.title }, songs: { 1: full } });
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(full);
+  });
+
+  it("rejects a malformed Song entry (missing artist) and keeps valid ones", () => {
+    const valid = song();
+    const malformed = {
+      provider: "musicbrainz",
+      providerId: "x",
+      title: "No Artist",
+    } as Partial<Song>;
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "Upside Down", 2: "No Artist" },
+        songs: { 1: valid, 2: malformed },
+      }),
+    );
+    const loaded = loadJourney();
+    expect(loaded?.songs).toEqual({ 1: valid });
+    // The malformed entry is dropped; its title string in answers is untouched.
+    expect(loaded?.answers[2]).toBe("No Artist");
+  });
+
+  it("coerces a Song with non-string nullable fields to null", () => {
+    const weird = {
+      ...song(),
+      album: 123,
+      artworkUrl: undefined,
+      isrc: null,
+    };
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({ current: 1, answers: { 1: "x" }, songs: { 1: weird } }),
+    );
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual({ ...song(), album: null, artworkUrl: null, isrc: null });
+  });
+
+  it("isValidSong accepts a full Song and rejects garbage", () => {
+    expect(isValidSong(song())).toBe(true);
+    expect(isValidSong(null)).toBe(false);
+    expect(isValidSong({})).toBe(false);
+    expect(isValidSong({ provider: "musicbrainz" })).toBe(false);
+    expect(isValidSong({ ...song(), title: "" })).toBe(false);
+  });
+
+  it("returns songs: {} when the stored songs field is absent", () => {
+    localStorage.setItem(JOURNEY_STORAGE_KEY, JSON.stringify({ current: 1, answers: { 1: "x" } }));
+    expect(loadJourney()?.songs).toEqual({});
   });
 });
 
 describe("mergeJourneys reconciliation", () => {
   it("returns the non-null side when one is null", () => {
-    const a = { current: 2, answers: { 1: "x" } };
+    const a = { current: 2, answers: { 1: "x" }, songs: {} };
     expect(mergeJourneys(a, null)).toEqual(a);
     expect(mergeJourneys(null, a)).toEqual(a);
     expect(mergeJourneys(null, null)).toBeNull();
   });
 
   it("prefers the snapshot with more answers", () => {
-    const smaller = { current: 5, answers: { 1: "x" } };
-    const bigger = { current: 1, answers: { 1: "x", 2: "y", 3: "z" } };
+    const smaller = { current: 5, answers: { 1: "x" }, songs: {} };
+    const bigger = { current: 1, answers: { 1: "x", 2: "y", 3: "z" }, songs: {} };
     expect(mergeJourneys(smaller, bigger)).toEqual(bigger);
   });
 
   it("breaks ties toward the higher current", () => {
-    const low = { current: 2, answers: { 1: "x" } };
-    const high = { current: 5, answers: { 1: "y" } };
+    const low = { current: 2, answers: { 1: "x" }, songs: {} };
+    const high = { current: 5, answers: { 1: "y" }, songs: {} };
     expect(mergeJourneys(low, high)).toEqual(high);
+  });
+
+  it("carries the winner's structured songs through the merge", () => {
+    const withSongs = {
+      current: 1,
+      answers: { 1: "Upside Down", 2: "B" },
+      songs: { 1: song() },
+    };
+    const withoutSongs = { current: 1, answers: { 1: "A" }, songs: {} };
+    // withSongs has more answers → it wins, and its songs come along.
+    expect(mergeJourneys(withoutSongs, withSongs)).toEqual(withSongs);
   });
 });
