@@ -13,6 +13,7 @@ import {
   loadRemoteJourney,
   saveRemoteJourney,
 } from "@/lib/supabase/journey-remote";
+import type { Song } from "@/lib/song/types";
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -54,6 +55,11 @@ function JourneyPage() {
   const session = useSession();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  // Structured Song objects chosen for each question, kept in component state
+  // for the QuestionCard display. Only the title string is persisted to the
+  // existing answers store (Supabase/localStorage); structured metadata lives
+  // in memory for this journey session (persistence is a later phase).
+  const [songs, setSongs] = useState<Record<number, Song>>({});
   const [restored, setRestored] = useState(false);
   const [completed, setCompleted] = useState(false);
   const question = questions[current - 1];
@@ -102,6 +108,7 @@ function JourneyPage() {
     }
     setCompleted(false);
     setAnswers({});
+    setSongs({});
     setCurrent(1);
   };
 
@@ -132,7 +139,11 @@ function JourneyPage() {
             title={question.title}
             description={question.description}
             answer={answers[question.id]}
-            onChoose={(song) => setAnswers((prev) => ({ ...prev, [question.id]: song }))}
+            selected={songs[question.id] ?? null}
+            onChoose={(song) => {
+              setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
+              setSongs((prev) => ({ ...prev, [question.id]: song }));
+            }}
           />
         </div>
 
