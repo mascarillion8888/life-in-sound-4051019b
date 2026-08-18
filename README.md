@@ -66,6 +66,8 @@ Use Next.js + Tailwind.
 
 This project was built with [Lovable](https://lovable.dev).
 
+> **Active branch:** `restore/pre-cloudflare-2501bd2` is the current development branch (v1 scope: journey → results only). The lifelong-companion system on `main` was set aside as built-too-early; see `docs/MANAGEMENT/ROADMAP.md`.
+
 ## Build with Lovable
 
 Continue developing this project in the [Lovable editor](https://lovable.dev/projects/e45ef638-2efc-41f8-b8a2-7f7b1ddd64a7).
