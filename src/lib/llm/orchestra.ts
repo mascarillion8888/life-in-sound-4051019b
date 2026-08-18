@@ -1,15 +1,20 @@
 /**
- * TypeScript-native Orchestra runtime — server-side bridge for the Cloudflare
- * Workers deployment.
+ * TypeScript-native Orchestra runtime — server-side bridge.
  *
- * Mirrors the canonical Python Orchestra spec in `orchestra/router.py` +
- * `orchestra/config.yaml` (role → provider/model + per-role system prompts),
- * WITHOUT executing Python or importing LiteLLM. Provider calls use native
- * `fetch` against OpenAI-compatible chat-completions endpoints.
+ * Only the `summarizer` role is wired here, because it is the only Orchestra
+ * role used by the product: Life Story generation in
+ * `generateStory.server.ts`. The other seven roles (orchestrator, coder,
+ * reviewer, researcher, verifier, triage, guardian) defined in the canonical
+ * Python spec (`orchestra/router.py` + `orchestra/config.yaml`) are not part
+ * of the product runtime — they exist solely as an ad-hoc multi-model
+ * development tool for OpenHands authoring sessions. See `orchestra/README.md`.
+ *
+ * Provider calls use native `fetch` against OpenAI-compatible
+ * chat-completions endpoints (no LiteLLM, no Python).
  *
  * SECURITY:
  *   - Provider API keys are read from server-only environment variables
- *     (GROQ_API_KEY, GEMINI_API_KEY, MISTRAL_API_KEY, OPENROUTER_API_KEY).
+ *     (GROQ_API_KEY for summarizer).
  *   - These are NEVER prefixed with `VITE_` and are NEVER imported by any
  *     client module. This file must only be imported from server functions
  *     (`*.server.ts`) or other server-only modules.
@@ -19,16 +24,11 @@
  * is not modified by this TypeScript bridge.
  */
 
-/** Roles mirrored from orchestra/router.py ROLE_MAP. */
-export type OrchestraRole =
-  | "orchestrator"
-  | "coder"
-  | "reviewer"
-  | "researcher"
-  | "verifier"
-  | "summarizer"
-  | "triage"
-  | "guardian";
+/**
+ * Product Orchestra roles. Only `summarizer` is implemented; the dev-only
+ * roles from the Python spec are deliberately absent from the product runtime.
+ */
+export type OrchestraRole = "summarizer";
 
 /** Provider routing config: role -> { provider endpoint, model, api key env var }. */
 type ProviderSpec = {
@@ -41,71 +41,23 @@ type ProviderSpec = {
 };
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-const GEMINI_OPENAI_ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const MISTRAL_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
-const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
 /**
- * Role → provider/model/key mapping. Kept in sync with
- * `orchestra/router.py` ROLE_MAP and `orchestra/config.yaml` model_list.
- * Only the providers actually configured in the project are used; no new
- * credentials are invented.
+ * Role → provider/model/key mapping. Only `summarizer` is mapped; it is the
+ * sole role the product calls. Kept consistent with the `summarizer` entry in
+ * `orchestra/router.py` ROLE_MAP / `orchestra/config.yaml` model_list.
  */
 const ROLE_PROVIDER: Record<OrchestraRole, ProviderSpec> = {
-  orchestrator: {
-    endpoint: GEMINI_OPENAI_ENDPOINT,
-    model: "gemini-3-flash-preview",
-    keyEnv: "GEMINI_API_KEY",
-  },
-  coder: {
-    endpoint: GROQ_ENDPOINT,
-    model: "llama-3.3-70b-versatile",
-    keyEnv: "GROQ_API_KEY",
-  },
-  reviewer: {
-    endpoint: OPENROUTER_ENDPOINT,
-    model: "anthropic/claude-sonnet-4.6",
-    keyEnv: "OPENROUTER_API_KEY",
-  },
-  researcher: {
-    endpoint: GEMINI_OPENAI_ENDPOINT,
-    model: "gemini-3.1-flash-lite",
-    keyEnv: "GEMINI_API_KEY",
-  },
-  verifier: {
-    endpoint: MISTRAL_ENDPOINT,
-    model: "mistral-large-latest",
-    keyEnv: "MISTRAL_API_KEY",
-  },
   summarizer: {
     endpoint: GROQ_ENDPOINT,
     model: "qwen/qwen3.6-27b",
     keyEnv: "GROQ_API_KEY",
   },
-  triage: {
-    endpoint: MISTRAL_ENDPOINT,
-    model: "mistral-small-latest",
-    keyEnv: "MISTRAL_API_KEY",
-  },
-  guardian: {
-    endpoint: OPENROUTER_ENDPOINT,
-    model: "openai/gpt-5.2",
-    keyEnv: "OPENROUTER_API_KEY",
-  },
 };
 
 /** Per-role system prompts, mirrored from orchestra/router.py ROLE_PROMPTS. */
 const ROLE_PROMPTS: Record<OrchestraRole, string> = {
-  orchestrator:
-    "You are the orchestrator. Decompose the task, assign sub-tasks to roles, and synthesize results.",
-  coder: "You are a coder. Produce clean, minimal, correct code. No commentary unless asked.",
-  reviewer: "You are a reviewer. Give brutally honest, actionable feedback. Flag risks.",
-  researcher: "You are a researcher. Gather concise facts with sources. No filler.",
-  verifier: "You are a verifier. Check claims against evidence. Pass/fail with reasons.",
   summarizer: "You are a summarizer. Compress to essentials. Bullet points.",
-  triage: "You are triage. Classify and route. Output one role label only.",
-  guardian: "You are the guardian. Block unsafe/illegal actions. If safe, say OK.",
 };
 
 export type RunRoleOptions = {
