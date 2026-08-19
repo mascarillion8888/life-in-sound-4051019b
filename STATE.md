@@ -140,7 +140,7 @@ Uygulayan: [AI]
 6. **OpenHands'e güven:** Hedef + sınır ver, yöntemi ona bırak. Aşırı kısıtlama yapma.
 7. **Neden + nasıl yaz:** Sadece "şunu yaptım" değil — neden o kararı aldın, neyi reddettin.
 8. **Checkpoint oluştur:** Her temiz test+build sonrasında — HANDOFF.md güncellemesi dahil.
-
+9. **Her checkpoint (temiz test+build sonrası) otomatik olarak şunu içerir: docs/HANDOFF.md'yi tamamen yeniden yaz, commit+push et, güncel içeriğini kullanıcıya göster. Bu, checkpoint'in ayrılmaz parçasıdır, opsiyonel bir ek adım değildir.
 ---
 _Son güncelleme: OpenHands — 2026-08-19 (STATE.md bölündü: anlık durum → docs/HANDOFF.md)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._
