@@ -97,5 +97,4 @@ Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yas
 | 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | 053bd4a |
 
 ---
-_2026-08-19 OpenHands tarafından tamamen yeniden yazıldı._
-_Kaynak notu: §2 düzeltme spesifikasyonu önceki bir Claude sohbetinde üretilmiştir; repoda `FIX_manual_song_entry.md` hiç olmadı. Bu satır tekrar karışıklığı önler._
+_2026-08-19 OpenHands tarafından tamamen yeniden yazıldı. §2 düzeltme spesifikasyonu önceki bir Claude sohbetinde üretilmiştir; repoda `FIX_manual_song_entry.md` hiç olmadı — bu satır tekrar karışıklığı önler._
