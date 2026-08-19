@@ -12,7 +12,7 @@
 
 ```
 Aktif dal: main
-HEAD:      [bu commit] — checkpoint: QuestionCard manuel giriş + HANDOFF güncellendi
+HEAD:      a98de74 — checkpoint: QuestionCard manuel şarkı girişi + HANDOFF.md güncellendi
 Senkron:  (push sonrası EVET)
 Testler:   87/87 (8 dosya) — 2026-08-19
 tsc/build: temiz (0, 0)
@@ -93,7 +93,7 @@ Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yas
 |---|---|---|---|
 | 2026-08-19 | OpenHands | Bileşen testleri + testing-library (80/80) + microagent | a620ad5 |
 | 2026-08-19 | OpenHands | HANDOFF sistemi: STATE bölündü, AGENTS sıra, handoff-check CI | 5ea6114 |
-| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | [bu commit] |
+| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | a98de74 |
 
 ---
 _2026-08-19 OpenHands tarafından tamamen yeniden yazıldı._
