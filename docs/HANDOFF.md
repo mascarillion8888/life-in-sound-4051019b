@@ -12,10 +12,11 @@
 
 ```
 Aktif dal: main
-HEAD:      357eda8 — docs(handoff): correct HEAD reference after rebase
-Senkron:  (push sonrası EVET)
-Testler:   87/87 (8 dosya) — 2026-08-19
-tsc/build: temiz (0, 0)
+HEAD:      (bu dosyanın içinde asla sabit yazılmaz — her zaman
+            `git log -1 --oneline` ile kontrol et, bu doğru olan tek kaynak)
+Senkron:   `git fetch && git status` ile doğrula
+Testler:   87/87 geçti — 2026-08-19
+tsc/build: temiz
 Worktree:  temiz
 ```
 Doğrula: `git status && git log --oneline -3 && npm test`. Uyuşmuyorsa git'e güven, bildir.
@@ -93,7 +94,7 @@ Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yas
 |---|---|---|---|
 | 2026-08-19 | OpenHands | Bileşen testleri + testing-library (80/80) + microagent | a620ad5 |
 | 2026-08-19 | OpenHands | HANDOFF sistemi: STATE bölündü, AGENTS sıra, handoff-check CI | 5ea6114 |
-| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | a98de74 |
+| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | 053bd4a |
 
 ---
 _2026-08-19 OpenHands tarafından tamamen yeniden yazıldı._
