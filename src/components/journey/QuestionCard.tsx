@@ -35,7 +35,11 @@ export function QuestionCard({
 }) {
   const [open, setOpen] = useState(false);
 
-  const displayName = selected ? `${selected.title} — ${selected.artist}` : answer;
+  const displayName = selected
+    ? selected.artist
+      ? `${selected.title} — ${selected.artist}`
+      : selected.title
+    : answer;
 
   return (
     <div className="w-full rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
@@ -190,6 +194,26 @@ function SongPickerDialog({
             <SearchState status={status} />
           )}
         </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={query.trim().length === 0}
+          onClick={() =>
+            onChoose({
+              provider: "manual",
+              providerId: crypto.randomUUID(),
+              title: query.trim(),
+              artist: "",
+              album: null,
+              artworkUrl: null,
+              isrc: null,
+            })
+          }
+          className="mt-2 w-full justify-center text-sm text-muted-foreground hover:text-foreground"
+        >
+          Bulamadım, kendim yazacağım
+        </Button>
 
         <DialogFooter className="text-xs text-muted-foreground sm:justify-start">
           Artwork, when available, is provided by the Cover Art Archive. A song stays selectable

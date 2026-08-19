@@ -10,13 +10,13 @@
  * song must remain selectable even when artwork/album/isrc is missing.
  */
 export type Song = {
-  /** Stable provider slug, e.g. "musicbrainz". Never the raw external entity. */
-  provider: string;
-  /** Provider-specific identifier (MusicBrainz MBID). */
+  /** Stable provider slug: "musicbrainz" (external) or "manual" (user-typed). */
+  provider: "musicbrainz" | "manual";
+  /** Provider-specific identifier (MusicBrainz MBID or a generated UUID for manual entries). */
   providerId: string;
-  /** Display title (track/recording name). Always present. */
+  /** Display title (track/recording name, or a user-typed string). Always present. */
   title: string;
-  /** Primary artist/credit name. Always present. */
+  /** Primary artist/credit name. Empty string for manual entries the user did not split out. */
   artist: string;
   /** Album/release name when known. */
   album: string | null;

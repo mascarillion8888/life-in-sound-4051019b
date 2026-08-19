@@ -162,3 +162,112 @@ describe("QuestionCard", () => {
     });
   });
 });
+
+describe("QuestionCard — manual song entry", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows the "Bulamadım, kendim yazacağım" button whenever the picker is open', async () => {
+    renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+
+    const manualBtn = await screen.findByRole("button", {
+      name: /bulamadım, kendim yazacağım/i,
+    });
+    expect(manualBtn).toBeInTheDocument();
+  });
+
+  it("disables the manual button when the query is empty", async () => {
+    renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+
+    const manualBtn = await screen.findByRole("button", {
+      name: /bulamadım, kendim yazacağım/i,
+    });
+    expect(manualBtn).toBeDisabled();
+  });
+
+  it("enables the manual button once the user types a query", async () => {
+    renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+
+    const input = await screen.findByLabelText("Search for a song");
+    fireEvent.change(input, { target: { value: "Bad - Michael Jackson" } });
+
+    const manualBtn = screen.getByRole("button", {
+      name: /bulamadım, kendim yazacağım/i,
+    });
+    expect(manualBtn).not.toBeDisabled();
+  });
+
+  it("calls onChoose with a manual Song built from the query and closes the picker", async () => {
+    const { onChoose } = renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+
+    const input = await screen.findByLabelText("Search for a song");
+    fireEvent.change(input, { target: { value: "Bad - Michael Jackson" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /bulamadım, kendim yazacağım/i }));
+
+    expect(onChoose).toHaveBeenCalledTimes(1);
+    const arg = vi.mocked(onChoose).mock.calls[0][0];
+    expect(arg.provider).toBe("manual");
+    expect(arg.title).toBe("Bad - Michael Jackson");
+    expect(arg.artist).toBe("");
+    expect(arg.album).toBeNull();
+    expect(arg.artworkUrl).toBeNull();
+    expect(arg.isrc).toBeNull();
+    // providerId is a generated UUID (non-empty string).
+    expect(typeof arg.providerId).toBe("string");
+    expect(arg.providerId.length).toBeGreaterThan(0);
+
+    // Picker closes after manual selection.
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Search for a song")).not.toBeInTheDocument();
+    });
+  });
+
+  it("trims the query before building the manual Song title", async () => {
+    const { onChoose } = renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+
+    const input = await screen.findByLabelText("Search for a song");
+    fireEvent.change(input, { target: { value: "  Yesterday  " } });
+
+    fireEvent.click(screen.getByRole("button", { name: /bulamadım, kendim yazacağım/i }));
+
+    expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Yesterday");
+  });
+
+  it("does not require a MusicBrainz search to use manual entry", async () => {
+    vi.mocked(searchSongs).mockResolvedValue({ results: [] });
+    const { onChoose } = renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+
+    const input = await screen.findByLabelText("Search for a song");
+    fireEvent.change(input, { target: { value: "Bilinmeyen Şarkı" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /bulamadım, kendim yazacağım/i }));
+
+    expect(searchSongs).not.toHaveBeenCalled();
+    expect(onChoose).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Bilinmeyen Şarkı");
+  });
+
+  it("renders a manual selection without a trailing dash in the card", () => {
+    const manualSong: Song = {
+      provider: "manual",
+      providerId: "manual-uuid",
+      title: "Bad - Michael Jackson",
+      artist: "",
+      album: null,
+      artworkUrl: null,
+      isrc: null,
+    };
+    renderCard({ selected: manualSong });
+    // No trailing " — " when artist is empty.
+    expect(screen.getByText("Bad - Michael Jackson")).toBeInTheDocument();
+    expect(screen.queryByText(/^Bad - Michael Jackson — $/)).not.toBeInTheDocument();
+  });
+});

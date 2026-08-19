@@ -32,6 +32,14 @@
   full lifelong-companion system (Phase 6 below) before this validation
   happened, and that work was set aside as a result. Do not repeat that.
 
+> **Pre-gate bug fix (no phase number):** QuestionCard manual song entry.
+> MusicBrainz search is the default path, but a "Bulamadım, kendim yazacağım"
+> button is always visible in the picker so users can type a free-text song
+> title when search results are irrelevant. Required *before* the Validation
+> Gate — otherwise test users hit irrelevant MusicBrainz results and the
+> feedback is contaminated. Bug fix, not a phase; the gate remains Phase 4's
+> prerequisite.
+
 ## Phase 4 - Platform
 - User Accounts
 - Cloud Storage

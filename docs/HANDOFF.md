@@ -12,9 +12,9 @@
 
 ```
 Aktif dal: main
-HEAD:      a620ad5 — test: add component unit tests + testing-library infra
-Senkron:  EVET
-Testler:   80/80 (7 dosya) — 2026-08-19
+HEAD:      [bu commit] — checkpoint: QuestionCard manuel giriş + HANDOFF güncellendi
+Senkron:  (push sonrası EVET)
+Testler:   87/87 (8 dosya) — 2026-08-19
 tsc/build: temiz (0, 0)
 Worktree:  temiz
 ```
@@ -24,37 +24,44 @@ Doğrula: `git status && git log --oneline -3 && npm test`. Uyuşmuyorsa git'e g
 
 ## 2. Son biten iş (NEDEN + NASIL)
 
-Kullanıcı "hata ayıklama + birim testleri" görevi verdi. Statik analiz
-kapıları zaten temizdi (tsc 0, eslint 0 error/6 shadcn warning, build 0) —
-düzeltilecek hata yoktu. 3 ana bileşen için 23 birim testi yazıldı:
-ProgressBar (5), AIPersonalityCard (8), QuestionCard (10, searchSongs
-mock'lu). `@testing-library/react`+`jest-dom`+`user-event` kuruldu (devDep),
-`vitest.setup.ts` (matchers+cleanup) + tsconfig'e jest-dom tipleri eklendi.
-Radix `Progress` jsdom `aria-valuenow` tutarsızlığı → value testi
-role-varlığına gevşetildi. Repo microagent eklendi. Testler 57→80, kod
-davranışı değişmedi. Otonom ff push.
+MusicBrainz manuel giriş düzeltmesi uygulandı. `Song.provider` literal union
+yapıldı (`"musicbrainz" | "manual"`); `musicbrainz-mapping.ts` iç tipleri
+buna hizalandı. QuestionCard seçici diyaloguna her zaman görünen
+"Bulamadım, kendim yazacağım" butonu eklendi — tıklanınca arama kutusundaki
+metni `provider:"manual"` + `crypto.randomUUID()` ile bir Song'a çevirip
+`onChoose`'a gönderir, picker kapanır. MusicBrainz araması korundu (varsayılan
+yol), sadece zorunlu olmaktan çıktı. `displayName` manuel girişte artist
+boş olduğunda trailing dash üretmemesi için düzeltildi. 7 yeni test eklendi
+(mevcut 10'a dokunulmadı); ROADMAP.md'ye "Validation Gate öncesi zorunlu bug fix"
+notu düştü. Kalıcılık/F5 ekstra iş gerektirmedi (aynı Song tipi).
 
 ---
 
 ## 3. Şu an açık/bekleyen tek şey
 
-Faz 4 Music Memory tasarım önerisi (`docs/TECH/DATABASE_PLAN.md`, DRAFT)
-kullanıcı onayı bekliyor — migration yazılmadı.
+MusicBrainz manuel giriş düzeltmesi TAMAMLANDI. Sıradaki gerçek öncelik
+**Validation Gate** (Adım 5): ürün akışını 5+ gerçek kişiye gösterme, geri
+bildirim toplama. Bu yapılmadan Faz 4'e geçilmez.
 
 **Sıradaki tek adım:**
 ```
-YOK — proje temiz checkpoint'te. Faz 4 tasarım onaylanmadan kod yazma.
+Kullanıcı tarafından yönlendirilir — Validation Gate insan-ludik bir adımdır
+(5+ kişiye ürünü göster), AI oturumu içinden çalıştırılabilir bir kod komutu
+değil. AI adımı: YOK. Kullanıcı onayı olmadan Faz 4 (User Accounts) başlatma.
 ```
 
 ---
 
 ## 4. Olası sonuçlar
 
-**🅐 Kullanıcı Faz 4 tasarımını onaylar →**
-`DATABASE_PLAN.md` 5 onay kutusunu teyit et, `0003_memories.sql` yaz
-(companion tabloları getirmeyen, sadece memories+interpretations). test+tsc+build.
+**🅐 Kullanıcı Validation Gate'i yaptığını bildirir →**
+Gerçek kullanıcı geri bildirimini topla, `docs/PRODUCT/` altına not düş.
+Faz 4 tasarımına (DATABASE_PLAN.md onayı + memories migration) geçmeden önce
+kullanıcı onayı bekle.
 
-**🅑 Kullanıcı tasarımı değiştir der →** `DATABASE_PLAN.md` güncelle, tekrar onay bekle, migration yazma.
+**🅑 Kullanıcı manuel girişte bir sorun bildirirse →**
+Sorunu teyit et, `QuestionCard.tsx` + testlerinde düzelt, HANDOFF'u yeniden yaz,
+checkpoint commit.
 
 **🅒 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden yaz,
 `checkpoint: [özet] — HANDOFF.md güncellendi` formatıyla push et.
@@ -63,16 +70,20 @@ YOK — proje temiz checkpoint'te. Faz 4 tasarım onaylanmadan kod yazma.
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-Vitest `globals: false` + testing-library: (1) jest-dom matchers runtime'da
-`vitest.setup.ts`'te `expect.extend` ile, tipleri tsconfig `types`'a ekleyerek;
-(2) `afterEach(cleanup)` olmadan DOM birikip `getByText` "multiple elements"
-hatası veriyor. İkisi de `vitest.setup.ts`'te çözüldü — gelecek render testleri hazır.
+**Kaynak doğrulama disiplini:** Bu düzeltmenin spesifikasyonu (`FIX_manual_song_entry.md`)
+repoda veya git geçmişinde **mevcut değildi** — önceki bir Claude sohbetinde
+üretilmiş ama repoya hiç kaydedilmemişti. 7 kriterlik arama (find, git log --all,
+git grep, tüm dallar, tüm docs/) NEGATİF dönünce DUR + kullanıcıya sor makul
+karardı. Kullanıcı (a) cevabını + tam spesifikasyonu verince uygulandı. Ders:
+**atfedilen bir dosya/spesifikasyon uygulanmadan önce mevcudiyeti mekanik olarak
+doğrulanmalı** — "daha önce verildi" iddiası tek başına yetmez. Kaynağın nerede
+olduğu (sohbet geçmişi mi, repo dosyası mı) kayıt altına alınmalı.
 
 ---
 
 ## 6. Bu oturumda KESİNLİKLE yapılmaması gerekenler
 
-Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 zaten yasak).
+Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yasak).
 
 ---
 
@@ -80,10 +91,10 @@ Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 zat
 
 | Tarih | Kim | Ne | Commit |
 |---|---|---|---|
-| 2026-08-19 | OpenHands | Düzeltme: main restore'a (c702e28), companion arşivlendi | c702e28 |
-| 2026-08-19 | OpenHands | Faz 4 tasarım önerisi DATABASE_PLAN.md (DRAFT, onay bekliyor) | 6c2ea9d |
 | 2026-08-19 | OpenHands | Bileşen testleri + testing-library (80/80) + microagent | a620ad5 |
-| 2026-08-19 | OpenHands | HANDOFF sistemi: STATE bölündü, AGENTS sıra, handoff-check CI | (bu commit) |
+| 2026-08-19 | OpenHands | HANDOFF sistemi: STATE bölündü, AGENTS sıra, handoff-check CI | 5ea6114 |
+| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | [bu commit] |
 
 ---
 _2026-08-19 OpenHands tarafından tamamen yeniden yazıldı._
+_Kaynak notu: §2 düzeltme spesifikasyonu önceki bir Claude sohbetinde üretilmiştir; repoda `FIX_manual_song_entry.md` hiç olmadı. Bu satır tekrar karışıklığı önler._

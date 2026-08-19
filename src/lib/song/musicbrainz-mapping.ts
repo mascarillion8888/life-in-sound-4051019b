@@ -88,7 +88,7 @@ export function extractFirstIsrc(recording: MusicBrainzRecording): string | null
  * `pickArtworkUrl` against a separately-fetched Cover Art Archive response.
  */
 export function recordingToSong(recording: MusicBrainzRecording): {
-  provider: string;
+  provider: "musicbrainz";
   providerId: string;
   title: string;
   artist: string;
@@ -135,7 +135,7 @@ export function pickArtworkUrl(coverArt: CoverArtResponse | null): string | null
  * resolved separately by the server function (optional, best-effort).
  */
 export function mapRecordingsToSongs(response: MusicBrainzSearchResponse): {
-  provider: string;
+  provider: "musicbrainz";
   providerId: string;
   title: string;
   artist: string;
