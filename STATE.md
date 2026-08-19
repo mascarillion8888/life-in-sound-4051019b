@@ -1,7 +1,9 @@
 # 🧭 LIFE IN A SOUND — ANA YOL HARİTASI & ORTAK AI PROTOKOLÜ
-> **Bu dosya kutsal.** Claude, Gemini, ChatGPT, OpenHands — kim olursan ol,
-> çalışmaya başlamadan önce TAMAMEN oku. Bırakmadan önce GÜNCELLE ve COMMIT'LE.
-> Sohbet geçmişi ölür. Git commit'leri ve bu dosya yaşar.
+
+> Anlık durum için: `docs/HANDOFF.md`'ye bak. Bu dosya sadece kalıcı
+> kuralları içerir. Claude, Gemini, ChatGPT, OpenHands — kim olursan ol,
+> çalışmaya başlamadan önce TAMAMEN oku. Sohbet geçmişi ölür; git
+> commit'leri, `docs/HANDOFF.md` ve bu dosya yaşar.
 
 ---
 
@@ -29,168 +31,33 @@ Bu protokol tam da bunun için tasarlandı.
 
 ---
 
-## 🗺️ YOL HARİTASI (tüm fazlar — neredeyiz, nereye gidiyoruz)
+## 🗺️ YOL HARİTASI (tüm fazlar)
 
 ### ✅ Tamamlanan Fazlar
 - **Faz 1:** Landing Page, Journey Wizard, Results Page, Responsive Design
 - **Faz 2:** Journey Persistence, Results Polish, Timeline Improvements
-- **Faz 3:** AI Story Engine (Sprint 014), Companion Experience v1,
-  Golden Test Suite (39 senaryo), Closed Beta Readiness,
-  Cloudflare→Docker migrasyonu, Legal/IP hazırlığı
-- **Faz 3.5:** Gerçek şarkı arama (MusicBrainz), F5 kalıcılığı,
-  stability fix — restore dalında (c702e28) mevcut; companion içeren eski main
-  düzeltme ile geri alındı (force-push), main restore'un devamı (bkz. Düzeltme 2026-08-19)
+- **Faz 3:** AI Story Engine, Companion Experience v1 (ardından düzeltme ile
+  kaldırıldı — `legacy/companion-v1-2026-08-15`'de arşivlendi), Cloudflare→Docker
+- **Faz 3.5:** Gerçek şarkı arama (MusicBrainz), F5 kalıcılığı, stability fix
 
 ### ⏳ Sıradaki Fazlar
-- **Faz 4:** Music Memory veri modeli (tasarım onayı gerekli, henüz implement edilmedi)
+- **Faz 4:** Music Memory veri modeli (tasarım onayı gerekli — `docs/TECH/DATABASE_PLAN.md` DRAFT, henüz implement edilmedi)
 - **Faz 5:** User Accounts (anonim → email migration)
 - **Faz 6:** Public Beta → Product Hunt → Mobile
 
 ---
 
-## 📊 GÜNCEL GIT DURUMU
-```
-Ana dal (main):    c702e28  refactor(orchestra): reduce product runtime to summarizer only
-Aktif dal:         main (= restore/pre-cloudflare-2501bd2, companionsız)
-Remote main:       c702e28 (force-push edildi, senkron) [Düzeltme 2026-08-19]
-Legacy:            legacy/companion-v1-2026-08-15 @ 7070c45 (arşivlendi, silinmedi)
-Worktree:          TEMİZ
-Test durumu:       57/57 ✅ (restore'un temiz seti; şarkı arama + F5 dahil)
-Build:             ✅ temiz (tsc 0, vite build 0)
-```
+## 🚨 DAL TOPOLOJİSİ KURALI (ihlal edilemez)
 
-**Not:** Önceki 4 song-search commiti (8f0f4de/d9d9744/43f1dfe/f5487ca)
-8949364 merge commit'indeydi; düzeltme ile force-push yapıldı, bu commitler
-artık main'de DEĞİL. Şarkı arama + F5 kalıcılığı restore dalında (c702e28)
-kendi orijinal commitleriyle mevcut — kod kaybı yok. Önceki içerik:
-```
-43f1dfe  fix(migrations): renumber journey_songs to 0010, avoid 0002 collision
-d9d9744  feat(journey): persist structured song selections across refresh
-8f0f4de  feat(journey): add real song search and selection
-f5487ca  fix(stability): unhandled rejection + results data loss
-```
-
----
-
-## 🔴 AKTİF OPERASYON — KALDĞIMIZ YER
-
-**Operasyon ID:** CORRECTION-RESTORE-MAIN-001
-**Durum:** ✅ TAMAMLANDI (2026-08-19, kullanıcı açık onayı)
-**Son güncelleyen:** OpenHands — 2026-08-19
-
-### Ne yapıldı (neden ve nasıl) — DÜZELTME 2026-08-19:
-**Arka plan:** Önceki SONG-SEARCH-MERGE-001, companion sistemini içeren
-eski main'i "kurtarılmış" ilan edip otomatik push etmişti — kullanıcıdan
-önceki oturumda verdiği "companion'ı geride bırak" kararını çiğneyerek.
-Bu, "testler geçti = doğru dal" hatalı eşlemesinden kaynaklandı.
-Yeni kural (§dal topolojisi): push/dal-seçimi/geri-getirme her zaman
-açık onay ister; test sonucundan bağımsız.
-
-1. `legacy/companion-v1-2026-08-15` @ `7070c45` arşiv branch'i oluşturuldu
-   + push edildi. **Neden:** Companion-v1 kodu silinmedi, geri alınabilir
-   tutuldu (history korundu).
-2. `git reset --hard restore/pre-cloudflare-2501bd2` → main = `c702e28`
-   (companionsız). **Neden:** main'i restore'un devamı haline getir.
-3. `git push --force-with-lease origin main` → `f98fc08...c702e28`
-   (forced update). **Neden:** Kullanıcı açık onayı ("Seçenek 1").
-
-### Doğrulama (yeni temiz main, c702e28):
-- ✅ Şarkı arama kodu mevcut: `src/lib/song/`, QuestionCard, journey-storage
-- ✅ Companion dosyaları GONE: `src/lib/llm/companion*` yok; src/lib/llm =
-  generateStory/orchestra/prompts sadece
-- ✅ MusicBrainz referansları mevcut
-- ✅ `npm test` → 57/57 (şarkı arama + F5 kalıcılık testleri dahil)
-- ✅ `tsc --noEmit` 0, `npm run build` temiz
-- ✅ E2e dev: MusicBrainz arama → Q1 "Bad (Michael Jackson's Vision) —
-  Michael Jackson" seçildi, 12 gerçek sonuç
-- ✅ F5 kalıcılık: sayfa yenilendi, Q1 seçimi korundu
-- ✅ Geçici vite.config allowedHosts geri alındı (worktree TEMİZ)
-
-### Şu an tam olarak nerede duruyoruz:
-- ✅ main = origin/main = c702e28 (companionsız, restore'un devamı)
-- ✅ legacy/companion-v1-2026-08-15 = 7070c45 (arşivlendi, silinmedi)
-- ✅ feature/real-song-search artık main'de değil (force-push ile geçersiz;
-  içerik restore'da mevcut, kod kaybı yok)
-- ✅ Faz 4 hazırlık adımı tamam: docs/TECH/DATABASE_PLAN.md yazıldı
-  (DRAFT tasarım önerisi — memories + memory_interpretations tabloları,
-  MUSIC_MEMORY.md açık sorularına somut yanıtlar; implementation DEĞİL,
-  companion sistemini geri getirmez). Kullanıcı onayı bekleniyor.
-- OTONOM kural aktif: çakışmasız clean-up/merge için onay bekleme;
-  tıkanıklık → STATE.md + standby + yan göreve geç
-- Son STATE.md commit: a60b680 | Faz 4 tasarım önerisi: 6c2ea9d
-
----
-
-## 📋 OPENHANDSDEN BEKLENEN SONUÇLARA GÖRE DEVAM PLANI
-
-> Bir sonraki AI veya kullanıcı: OpenHands'in cevabını oku,
-> ilgili şıkkı bul, talimatı aynen uygula.
-
-### Aktif görev: SONG-SEARCH-MERGE-001
-
-**OpenHands'e verilecek talimat:**
-```
-1. git checkout -- vite.config.ts
-2. git status  (temiz olmalı)
-3. git checkout main
-4. git merge --ff-only feature/real-song-search
-5. npm test
-6. Eğer test geçerse: git push origin main
-7. Sonucu raporla
-```
-
----
-
-**🅐 "Merge + push başarılı, X/675 test geçti" → DEVAM:**
-```
-- STATE.md güncelle:
-  - main HEAD = yeni commit hash
-  - feature/real-song-search branch sil:
-    git push origin --delete feature/real-song-search
-  - Operasyon SONG-SEARCH-MERGE-001 → TAMAMLANDI
-  - Devir Notu'na ekle
-- STATE.md commit + push
-- Sonra: Faz 4 başlamadan önce Music Memory veri modeli tasarımını
-  kullanıcıya sor, onay olmadan implement etme
-```
-
-**🅑 "Test başarısız: X/675, hata: [mesaj]" → DUR, ANALİZ ET:**
-```
-- Merge yapma, git merge --abort
-- Hata mesajını tam olarak bana (Claude/Gemini/ChatGPT) yapıştır
-- Olası nedenler:
-  a) Migration scope-guard (companion-orchestrator.test.ts) — 0010 sayacı
-  b) Cherry-pick çakışma kalıntısı — types.ts veya journey.tsx
-  c) Orchestra timeout testi — ağ bağımlılığı
-- Hatayı analiz ettikten sonra fix → test → tekrar dene
-```
-
-**🅒 "Merge çakışması var, dosya: X" → DUR, MANUEL ÇÖZÜM:**
-```
-- git merge --abort
-- Çakışma bloklarını (<<<<<<< ======= >>>>>>>) tam olarak bana yapıştır
-- Ben (Claude/Gemini/ChatGPT) çözümü belirleyeceğim
-- Neden çıktı: main'e bu arada yeni commit gelmiş olabilir
-- git log origin/main --oneline -5 çıktısını da gönder
-```
-
-**🅓 "Push reddedildi / authentication error" → TOKEN İLE TEKRAR:**
-```
-- Kod sorunu değil, erişim sorunu
-- git remote set-url origin https://[GITHUB_TOKEN]@github.com/mascarillion8888/life-in-sound-4051019b.git
-- git push origin main
-- Token yoksa: GitHub → Settings → Developer Settings → Personal Access Token
-```
-
-**🅔 "OpenHands cevap vermedi / sandbox kapandı" → YENİ OTURUM:**
-```
-- Yeni OpenHands oturumu aç
-- İlk iş (salt okunur doğrulama):
-  git status && git branch --show-current && git log --oneline -5
-- STATE.md §3 "Güncel Git Durumu" ile karşılaştır
-- feature/real-song-search @ 43f1dfe ise: merge adımından devam et
-- Farklı bir HEAD görüyorsan: bana (Claude/Gemini/ChatGPT) önce sor
-```
+1. **Rutin çakışmasız git senkronizasyonu** (merge/rebase/ff) — otonom, onay
+   gerekmez.
+2. **Her zaman dur + kullanıcıya sor:** bir merge/rebase sonucunda
+   `companion`/`memory`/`pattern`/`event`/`chapter` dosyaları ortaya çıkarsa,
+   VEYA hangi dalın "asıl" olduğu değişiyorsa — "divergence var mı" sorusundan
+   bağımsız olarak. Kaldırılmış sistemi otonom olarak geri getirme = yasak.
+3. **Force-push / history yeniden yazma** — her zaman açık tek satırlık onay.
+4. **Testler geçti = doğru dal** hatalı eşlemesidir. Test sonucu dal seçimini
+   meşrulaştırmaz; doğru dalı kullanıcı belirler.
 
 ---
 
@@ -198,103 +65,41 @@ açık onay ister; test sonucundan bağımsız.
 
 ### Kural: Her AI, her koşulda, kredi bitmeden önce şunu yapar:
 
-**ADIM 1 — Uyarıyı fark et:**
-- Claude: "You're approaching your usage limit" mesajı
-- Gemini: kota uyarısı / yavaşlama
-- ChatGPT: "You've reached your limit" mesajı
-- Herhangi bir model: cevap gecikmesi veya belirsizlik
+**ADIM 1 — Uyarıyı fark et:** Claude "usage limit", Gemini kota/yavaşlama,
+ChatGPT "reached your limit", veya cevap gecikmesi/belirsizlik.
 
-**ADIM 2 — Devir raporu yaz (STATE.md §3'ü güncelle):**
-```markdown
-## AKTİF OPERASYON — ACİL DEVİR
+**ADIM 2 — `docs/HANDOFF.md`'yi TAMAMEN yeniden yaz (ekleme değil, üzerine yaz):**
+- §1 doğrulanabilir gerçek (dal, HEAD, test, worktree)
+- §2 son biten iş (NEDEN + NASIL)
+- §3 açık/bekleyen tek şey + sıradaki çalıştırılabilir adım
+- §4 olası sonuçlar (ABC şıkları)
+- §5 bu oturumda öğrenilen kritik bilgi
+- §6 yapılmaması gerekenler
+- §7 devir kaydının son 5 satırı
 
-Operasyon ID: [mevcut ID]
-Durum: INTERRUPTED
-Kesinti nedeni: [AI adı] kredisi bitti
-Tarih/Saat: [şu an]
-Tahmini geri dönüş: [biliniyorsa belirt, bilinmiyorsa "belirsiz"]
-
-### Bu oturumda ne yapıldı (NEDEN + NASIL):
-[Her adımı açıkla — sadece "şunu yaptım" değil, neden o kararı aldın,
-hangi alternatifi neden reddettin, hangi riski gördün]
-
-### Tam olarak nerede duruyoruz:
-Dosya: [hangi dosya]
-Satır/commit: [tam referans]
-İşlem: [tam olarak ne yapılıyordu]
-
-### Devir alan AI için sıradaki adım:
-[Kelimesi kelimesine, hangi komutu çalıştıracak]
-
-### OpenHands'teki süreç:
-[Çalışıyor mu? Hangi komut çalışıyordu? Sonuç bekleniyor mu?]
-
-### Dikkat edilmesi gerekenler:
-[Bu oturumda öğrenilen kritik bilgi — bir sonraki AI bunu bilmezse hata yapabilir]
+**ADIM 3 — Commit + push (checkpoint formatı):**
+```
+git add docs/HANDOFF.md
+git commit -m "checkpoint: [özet] — HANDOFF.md güncellendi"
+git push origin main
 ```
 
-**ADIM 3 — Commit + push:**
-```
-git add STATE.md
-git commit -m "chore: emergency handoff — [AI adı] credit limit [tarih]"
-git push origin main  (veya aktif branch)
-```
-
-**ADIM 4 — Kullanıcıya bildir:**
-```
-⚠️ KREDİM BİTİYOR
-
-Tahminen [X dakika/saat] içinde aktif olmayacağım.
-STATE.md güncellendi ve commit edildi.
-
-Şu an yapılmakta olan: [tek cümle özet]
-Kaldığımız yer: [dosya/commit/adım]
-Sıradaki adım: [ne yapılmalı]
-
-Gemini veya ChatGPT'ye geçebilirsin.
-STATE.md'yi okuyarak kaldığım yerden devam edebilirler.
-```
+**ADIM 4 — Kullanıcıya bildir:** Tek cümle özet + kaldığı yer + sıradaki adım.
+"docs/HANDOFF.md güncellendi mi? Commit hash'ini göster." sorusuna hazır ol.
 
 ---
 
-## 🏁 CHECKPOINT OLUŞTURMA PROTOKOLÜ
+## 🏁 CHECKPOINT PROTOKOLÜ
 
-Her AI, önemli bir iş tamamladığında checkpoint oluşturur.
 **Ne zaman checkpoint:** Test suite geçti + build temiz + worktree temiz.
 
-**Checkpoint formatı (STATE.md §6 Devir Notu'na eklenir):**
-```
-| [tarih] | [AI] | [ne yapıldı — NEDEN + NASIL özeti] | ✅ [commit hash] |
-```
-
-**OpenHands checkpoint:**
+**Checkpoint = HANDOFF.md güncellemesini içerir (ayrı/opsiyonel değil):**
 ```
 git add -A
-git commit -m "checkpoint([sprint/operasyon]): [açıklama] — [test sayısı] passing"
+git commit -m "checkpoint: [özet] — HANDOFF.md güncellendi"
 git push origin [branch]
 ```
-
-**Checkpoint sonrası STATE.md'ye ekle:**
-```
-### CHECKPOINT: [operasyon ID] — [tarih]
-Commit: [hash]
-Test: [X/X]
-Build: ✅
-Çalışan özellikler: [liste]
-Devam edilebilir nokta: EVET
-```
-
----
-
-## 📜 DEVİR NOTU (Handover Log)
-| Tarih | Kim | Ne yaptı — Neden | Durum |
-|---|---|---|---|
-| 2026-08-15 | OpenHands | Legal/IP hazırlık paketi — pre-beta IP koruma | ✅ 7070c45 |
-| 2026-08-19 | Claude+OpenHands | migration/node-docker-v1→main — Cloudflare kaldırıldı, Docker eklendi | ✅ 6eccf89 |
-| 2026-08-19 | Claude+OpenHands | feature/real-song-search — gerçek MusicBrainz arama + F5 kalıcılık | ⏳ 43f1dfe, merge bekliyor |
-| 2026-08-19 | OpenHands | SONG-SEARCH-MERGE-001 → main merge + push (8949364) — ff merge + STATE.md web upload'ı (f66273b) ile çakışmasız birleştirme, 675/675 test geçti | ✅ 8949364 |
-| 2026-08-19 | OpenHands | DÜZELTME: companion içeren main'i force-push ile geri aldı, main=restore (c702e28), legacy/companion-v1 arşivlendi (7070c45) — kullanıcı açık onayı, 57/57 test, e2e şarkı arama+F5 doğrulandı | ✅ c702e28 |
-| 2026-08-19 | OpenHands | Faz 4 hazırlık: docs/TECH/DATABASE_PLAN.md tasarım önerisi (memories tablosu, MUSIC_MEMORY.md açık sorularına yanıtlar) — DRAFT, implementation değil, onay bekleniyor | ⏳ 6c2ea9d |
+Checkpoint sonrası `docs/HANDOFF.md` zaten yeniden yazılmış olmalı.
 
 ---
 
@@ -325,31 +130,17 @@ Uygulayan: [AI]
 
 ---
 
-## 📌 YENİ AI OTURUMU BAŞLANGIÇ — 60 SANİYE KONTROL
-
-```
-1. Bu dosyayı BAŞ'TAN SONA oku
-2. AGENTS.md oku
-3. git log --oneline -5  →  STATE.md §3 "Güncel Git Durumu" ile karşılaştır
-4. git status            →  Worktree temiz mi?
-5. §3 "Aktif Operasyon"  →  Yarım iş var mı? Durum ne?
-6. §4 "Sonuç Şıkları"   →  OpenHands'ten beklenen sonuç var mı?
-7. Varsa devam et. Yoksa kullanıcıya sor.
-```
-
----
-
 ## 🔧 ÇALIŞMA KURALLARI (ihlal edilemez)
 
-1. **Git'e güven, bu dosyaya değil:** `git log` + `git status` her zaman önce.
+1. **Git'e güven, dosyaya değil:** `git log` + `git status` her zaman önce.
 2. **Onay olmadan büyük karar yok:** Deterministik katman, migration, yeni faz başlangıcı.
 3. **Sprint icat etme:** Kullanıcı onayı olmadan Faz 4'e geçme.
-4. **Her bırakışta güncelle:** STATE.md + commit + push — koşulsuz.
+4. **Her bırakışta `docs/HANDOFF.md`'yi TAMAMEN yeniden yaz + commit + push** — koşulsuz.
 5. **API key sızdırma:** Sadece server-only modüller.
 6. **OpenHands'e güven:** Hedef + sınır ver, yöntemi ona bırak. Aşırı kısıtlama yapma.
-7. **Neden + nasıl yaz:** Sadece "şunu yaptım" değil — neden o kararı aldın, neyi reddetttin.
-8. **Checkpoint oluştur:** Her temiz test+build sonrasında — geri dönüş noktası.
+7. **Neden + nasıl yaz:** Sadece "şunu yaptım" değil — neden o kararı aldın, neyi reddettin.
+8. **Checkpoint oluştur:** Her temiz test+build sonrasında — HANDOFF.md güncellemesi dahil.
 
 ---
-_Son güncelleme: Claude — 2026-08-19_
-_git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log gerçektir._
+_Son güncelleme: OpenHands — 2026-08-19 (STATE.md bölündü: anlık durum → docs/HANDOFF.md)_
+_git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._

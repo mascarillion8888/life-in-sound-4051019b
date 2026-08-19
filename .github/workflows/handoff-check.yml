@@ -1,0 +1,45 @@
+name: handoff-check
+
+# Amaç: src/, supabase/, docs/PRODUCT gibi "gerçek iş" dizinlerinde
+# değişiklik olduğu halde docs/HANDOFF.md güncellenmemişse UYAR (bloklamaz —
+# tek geliştiricili bir proje için engelleyici CI riskli, bilgilendirici
+# yeterli). Bu, "AI kredisi bitmeden hatırlar mı" belirsizliğini ortadan
+# kaldıran mekanik bir güvenlik ağı.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-handoff-updated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check whether HANDOFF.md was updated alongside real work
+        run: |
+          # Bu push'taki commit'lerde hangi dosyalar değişti?
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          # İlk push (before = tüm sıfırlar) ise atla
+          if [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
+            echo "İlk push, kontrol atlanıyor."
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
+
+          TOUCHED_REAL_WORK=$(echo "$CHANGED" | grep -E '^(src/|supabase/|docs/PRODUCT/|orchestra/)' || true)
+          TOUCHED_HANDOFF=$(echo "$CHANGED" | grep -E '^docs/HANDOFF\.md$' || true)
+
+          if [[ -n "$TOUCHED_REAL_WORK" && -z "$TOUCHED_HANDOFF" ]]; then
+            echo "::warning::Bu push kod/veri/vizyon dosyalarını değiştirdi ama docs/HANDOFF.md güncellenmemiş. Bir sonraki AI oturumu yanlış/eski bir 'şu an neredeyiz' bilgisiyle başlayabilir."
+            echo "Değişen dosyalar:"
+            echo "$TOUCHED_REAL_WORK"
+            exit 1
+          fi
+
+          echo "OK — docs/HANDOFF.md bu push'la birlikte güncellenmiş, veya gerçek iş dosyası değişmemiş."
