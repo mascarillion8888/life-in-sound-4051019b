@@ -111,10 +111,13 @@ açık onay ister; test sonucundan bağımsız.
 - ✅ legacy/companion-v1-2026-08-15 = 7070c45 (arşivlendi, silinmedi)
 - ✅ feature/real-song-search artık main'de değil (force-push ile geçersiz;
   içerik restore'da mevcut, kod kaybı yok)
-- ⏳ Sıradaki: Faz 4 Music Memory veri modeli hazırlığı (read-only keşif +
-  tasarım önerisi — companion tablolarını geri getirmez, implementation değil)
+- ✅ Faz 4 hazırlık adımı tamam: docs/TECH/DATABASE_PLAN.md yazıldı
+  (DRAFT tasarım önerisi — memories + memory_interpretations tabloları,
+  MUSIC_MEMORY.md açık sorularına somut yanıtlar; implementation DEĞİL,
+  companion sistemini geri getirmez). Kullanıcı onayı bekleniyor.
 - OTONOM kural aktif: çakışmasız clean-up/merge için onay bekleme;
   tıkanıklık → STATE.md + standby + yan göreve geç
+- Son STATE.md commit: a60b680 | Faz 4 tasarım önerisi: 6c2ea9d
 
 ---
 
@@ -291,6 +294,7 @@ Devam edilebilir nokta: EVET
 | 2026-08-19 | Claude+OpenHands | feature/real-song-search — gerçek MusicBrainz arama + F5 kalıcılık | ⏳ 43f1dfe, merge bekliyor |
 | 2026-08-19 | OpenHands | SONG-SEARCH-MERGE-001 → main merge + push (8949364) — ff merge + STATE.md web upload'ı (f66273b) ile çakışmasız birleştirme, 675/675 test geçti | ✅ 8949364 |
 | 2026-08-19 | OpenHands | DÜZELTME: companion içeren main'i force-push ile geri aldı, main=restore (c702e28), legacy/companion-v1 arşivlendi (7070c45) — kullanıcı açık onayı, 57/57 test, e2e şarkı arama+F5 doğrulandı | ✅ c702e28 |
+| 2026-08-19 | OpenHands | Faz 4 hazırlık: docs/TECH/DATABASE_PLAN.md tasarım önerisi (memories tablosu, MUSIC_MEMORY.md açık sorularına yanıtlar) — DRAFT, implementation değil, onay bekleniyor | ⏳ 6c2ea9d |
 
 ---
 
