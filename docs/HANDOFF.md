@@ -12,7 +12,7 @@
 
 ```
 Aktif dal: main
-HEAD:      a98de74 — checkpoint: QuestionCard manuel şarkı girişi + HANDOFF.md güncellendi
+HEAD:      357eda8 — docs(handoff): correct HEAD reference after rebase
 Senkron:  (push sonrası EVET)
 Testler:   87/87 (8 dosya) — 2026-08-19
 tsc/build: temiz (0, 0)
