@@ -148,6 +148,31 @@ describe("journey-storage structured Song persistence", () => {
     expect(isValidSong({ ...song(), title: "" })).toBe(false);
   });
 
+  it("isValidSong accepts a manual entry with an empty artist (per Song contract)", () => {
+    // Manual entries the user did not split into artist + title legitimately
+    // carry artist: "" — dropping them on load would lose the selected song and
+    // leave a stale title-only answer behind.
+    expect(isValidSong({ ...song(), provider: "manual", artist: "" })).toBe(true);
+    // artist must still be a string — non-string values are rejected.
+    expect(isValidSong({ ...song(), artist: null })).toBe(false);
+    expect(isValidSong({ ...song(), artist: undefined })).toBe(false);
+  });
+
+  it("round-trips a manual song (empty artist) through localStorage without losing it", () => {
+    const manual: Song = {
+      provider: "manual",
+      providerId: "manual-id",
+      title: "My Childhood Song",
+      artist: "",
+      album: null,
+      artworkUrl: null,
+      isrc: null,
+    };
+    saveJourney({ current: 1, answers: { 1: manual.title }, songs: { 1: manual } });
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(manual);
+  });
+
   it("returns songs: {} when the stored songs field is absent", () => {
     localStorage.setItem(JOURNEY_STORAGE_KEY, JSON.stringify({ current: 1, answers: { 1: "x" } }));
     expect(loadJourney()?.songs).toEqual({});

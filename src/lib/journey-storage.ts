@@ -21,11 +21,15 @@ function isBrowser() {
 }
 
 /**
- * Validate a candidate Song object. Only entries with the guaranteed,
- * non-empty string fields (provider, providerId, title, artist) are accepted;
- * the nullable fields (album, artworkUrl, isrc) are coerced to null when
- * absent or non-string so a malformed payload can never produce a Song with
- * an undefined field. Mirrors the guarantees of the Song type.
+ * Validate a candidate Song object. Only entries with the guaranteed string
+ * fields are accepted: `provider`, `providerId`, `title` must be non-empty;
+ * `artist` must be a string but MAY be empty (manual entries the user did not
+ * split into artist + title legitimately have `artist: ""`, per the Song type
+ * contract — dropping them on load would silently lose the selected song and
+ * leave a stale title-only answer behind). The nullable fields (album,
+ * artworkUrl, isrc) are coerced to null when absent or non-string so a
+ * malformed payload can never produce a Song with an undefined field. Mirrors
+ * the guarantees of the Song type.
  */
 export function isValidSong(value: unknown): value is Song {
   if (!value || typeof value !== "object") return false;
@@ -37,8 +41,7 @@ export function isValidSong(value: unknown): value is Song {
     v.providerId.length > 0 &&
     typeof v.title === "string" &&
     v.title.length > 0 &&
-    typeof v.artist === "string" &&
-    v.artist.length > 0
+    typeof v.artist === "string"
   );
 }
 

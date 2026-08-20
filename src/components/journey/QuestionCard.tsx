@@ -16,6 +16,14 @@ import type { Song } from "@/lib/song/types";
 
 type SearchStatus = "idle" | "loading" | "ready" | "empty" | "error";
 
+// "artist — album" for a song, never a leading or trailing dash when one part
+// is missing. Mirrors displayName's contract so the result list and the
+// selected chip read consistently.
+function metaLine(song: Song): string {
+  const parts = [song.artist, song.album].filter((p): p is string => Boolean(p));
+  return parts.join(" — ");
+}
+
 export function QuestionCard({
   number,
   title,
@@ -181,10 +189,11 @@ function SongPickerDialog({
                       <span className="block truncate text-sm font-medium text-foreground">
                         {song.title}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {song.artist}
-                        {song.album ? ` — ${song.album}` : ""}
-                      </span>
+                      {metaLine(song) ? (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {metaLine(song)}
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                 </li>
