@@ -32,13 +32,16 @@
   full lifelong-companion system (Phase 6 below) before this validation
   happened, and that work was set aside as a result. Do not repeat that.
 
-> **Pre-gate bug fix (no phase number):** QuestionCard manual song entry.
-> MusicBrainz search is the default path, but a "Bulamadım, kendim yazacağım"
-> button is always visible in the picker so users can type a free-text song
-> title when search results are irrelevant. Required *before* the Validation
-> Gate — otherwise test users hit irrelevant MusicBrainz results and the
-> feedback is contaminated. Bug fix, not a phase; the gate remains Phase 4's
-> prerequisite.
+> **Pre-gate UI decision (no phase number):** MusicBrainz entegrasyonu UI'dan
+> tamamen kaldırıldı (kullanıcı kararı, 2026-08-19) — tekrar tekrar tutarsız/
+> alakasız sonuçlar üretmesi nedeniyle ("Sting - Fragile" aratınca obscure
+> cover'lar üstte çıkıyordu). Karar: MusicBrainz bir metadata DB'sidir, tüketici
+> arama motoru değil. Journey artık tek akış: serbest metin kutusu + "Onayla"
+> butonu. Backend modülleri (`searchSong.server.ts`,
+> `musicbrainz-mapping.ts`) arşivde duruyor — hiçbir UI bileşeni çağırmıyor;
+> gelecekte gerçek bir kapak-görseli ihtiyacı çıkarsa farklı bir API ile
+> yeniden değerlendirilebilir (ayrı ve gelecekteki bir karar, şimdi değil).
+> Bug fix değil, ürün kararı; Validation Gate yine Phase 4 önkoşulu.
 
 ## Phase 4 - Platform
 - User Accounts
