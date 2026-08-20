@@ -34,7 +34,8 @@ const GROUNDING_RULES = [
   "Use ONLY the information supplied below. Do not invent facts.",
   "Do not claim knowledge of the user's real life, real relationships, or real history.",
   "Do not invent people, places, locations, dates, times, weather, life events, or memories.",
-  "Do not invent song titles or artists. Treat the supplied song titles as user-provided labels, not as evidence about the user's actual life.",
+  "Do not invent song titles or artists that were not supplied.",
+  "If you have genuine knowledge of a supplied song's or album's real theme, mood, lyrical content, or cultural context, USE IT to enrich the interpretation — this is not fabrication, it is real-world knowledge about an existing work. What you must not do is invent facts about the USER's personal life (their real relationships, locations, dates, or events) — the song's own meaning is fair game, the user's biography is not.",
   "Do not invent chronology beyond the order in which the songs were supplied.",
   "Emotional interpretation is allowed, but only when grounded in the supplied personality profile and emotion information.",
   "Write empathetically and poetically, without pretending to know facts that were not supplied.",
@@ -93,5 +94,6 @@ export function buildLifeStoryPrompt(input: LifeStoryInput): string {
     "",
     "TASK:",
     "Write a single coherent Life Story (3-5 short paragraphs) that reflects on the relationship between the user's selected songs and the deterministic personality profile above. Weave the song titles into the narrative naturally. The story should feel personal and specific to the supplied profile and songs, not generic.",
+    "Where you recognize the song or album, draw on its real, known themes and emotional tone to deepen the interpretation - don't just weave the title into generic prose. If you don't recognize a song, interpret it through the supplied personality profile instead, without pretending to know it.",
   ].join("\n");
 }

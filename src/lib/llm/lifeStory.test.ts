@@ -80,6 +80,22 @@ describe("Life Story prompt construction", () => {
     expect(prompt).toContain("Use ONLY the information supplied below");
   });
 
+  it("allows real-world knowledge of supplied songs/albums but forbids inventing the user's life", () => {
+    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
+    // Real, known meaning of a song/album is fair game — NOT fabrication.
+    expect(prompt).toContain("USE IT to enrich the interpretation");
+    expect(prompt).toContain("the song's own meaning is fair game");
+    // The user's biography is still off-limits.
+    expect(prompt).toContain("invent facts about the USER's personal life");
+    expect(prompt).toContain("the user's biography is not");
+  });
+
+  it("asks the model to draw on a recognized song's real themes in the TASK block", () => {
+    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
+    expect(prompt).toContain("draw on its real, known themes and emotional tone");
+    expect(prompt).toContain("without pretending to know it");
+  });
+
   it("requests narrative prose only (no JSON / markdown headings)", () => {
     const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
     expect(prompt).toContain("Output narrative prose only");
