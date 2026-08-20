@@ -37,10 +37,13 @@ function renderCard(
   overrides: {
     selected?: Song | null;
     answer?: string;
+    draft?: string;
+    onDraftChange?: (text: string) => void;
     onChoose?: (song: Song) => void;
   } = {},
 ) {
   const onChoose = overrides.onChoose ?? vi.fn();
+  const onDraftChange = overrides.onDraftChange ?? vi.fn();
   render(
     <QuestionCard
       number={1}
@@ -48,10 +51,12 @@ function renderCard(
       description="Think of a track that takes you back."
       answer={overrides.answer}
       selected={overrides.selected}
+      draft={overrides.draft ?? ""}
+      onDraftChange={onDraftChange}
       onChoose={onChoose}
     />,
   );
-  return { onChoose };
+  return { onChoose, onDraftChange };
 }
 
 describe("QuestionCard", () => {
@@ -66,14 +71,22 @@ describe("QuestionCard", () => {
     expect(screen.getByText(/takes you back/i)).toBeInTheDocument();
   });
 
-  it('shows "Choose Song" when nothing is selected', () => {
+  it("renders the primary free-text input with the song-entry placeholder", () => {
     renderCard();
-    expect(screen.getByRole("button", { name: /choose song/i })).toBeInTheDocument();
+    expect(screen.getByLabelText("Şarkı ve sanatçı adını yaz")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("örn. Bad - Michael Jackson")).toBeInTheDocument();
   });
 
-  it('shows "Change Song" when a structured Song is selected', () => {
-    renderCard({ selected: SONG_A });
-    expect(screen.getByRole("button", { name: /change song/i })).toBeInTheDocument();
+  it("disables the Onayla button until the user types text", () => {
+    renderCard();
+    expect(screen.getByRole("button", { name: /onayla/i })).toBeDisabled();
+  });
+
+  it("enables the Onayla button once draft text is present", () => {
+    const { onDraftChange } = renderCard({ draft: "Sting - Fragile" });
+    // draft is controlled by the parent; the card reflects it.
+    expect(onDraftChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /onayla/i })).not.toBeDisabled();
   });
 
   it("shows the selected song as 'title — artist'", () => {
@@ -86,130 +99,82 @@ describe("QuestionCard", () => {
     expect(screen.getByText("Yesterday")).toBeInTheDocument();
   });
 
-  it("opens the picker, runs a search, and lists results", async () => {
-    vi.mocked(searchSongs).mockResolvedValue({ results: [SONG_A, SONG_B] });
+  it("exposes the optional MusicBrainz search link (secondary path)", () => {
     renderCard();
-
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "yesterday" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Yesterday")).toBeInTheDocument();
-      expect(screen.getByText("Imagine")).toBeInTheDocument();
-    });
-
-    expect(searchSongs).toHaveBeenCalledWith({ data: { query: "yesterday" } });
+    expect(
+      screen.getByRole("button", { name: /kapak görseli için ara \(opsiyonel\)/i }),
+    ).toBeInTheDocument();
   });
 
-  it("does not search for queries shorter than 2 characters", async () => {
-    renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "y" } });
-
-    expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
-    expect(searchSongs).not.toHaveBeenCalled();
+  it("commits the typed text as a manual Song via the Onayla button", () => {
+    const { onChoose } = renderCard({ draft: "Sting - Fragile" });
+    fireEvent.click(screen.getByRole("button", { name: /onayla/i }));
+    expect(onChoose).toHaveBeenCalledTimes(1);
+    const arg = vi.mocked(onChoose).mock.calls[0][0];
+    expect(arg.provider).toBe("manual");
+    expect(arg.title).toBe("Sting - Fragile");
+    expect(arg.artist).toBe("");
+    expect(arg.album).toBeNull();
+    expect(arg.artworkUrl).toBeNull();
+    expect(arg.isrc).toBeNull();
+    expect(typeof arg.providerId).toBe("string");
+    expect(arg.providerId.length).toBeGreaterThan(0);
   });
 
-  it("shows the empty state when no results come back", async () => {
-    vi.mocked(searchSongs).mockResolvedValue({ results: [] });
-    renderCard();
-
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "zzznothing" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/no results/i)).toBeInTheDocument();
-    });
+  it("commits a manual Song when the user presses Enter in the text box", () => {
+    const { onChoose, onDraftChange } = renderCard({ draft: "Fragile" });
+    const input = screen.getByLabelText("Şarkı ve sanatçı adını yaz");
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onChoose).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Fragile");
+    // onDraftChange must NOT be triggered by Enter (commit goes through onChoose).
+    expect(onDraftChange).not.toHaveBeenCalled();
   });
 
-  it("shows the error state when the search call throws", async () => {
-    vi.mocked(searchSongs).mockRejectedValue(new Error("network down"));
-    renderCard();
-
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "beatles" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/unavailable right now/i)).toBeInTheDocument();
-    });
+  it("does not commit on Enter when the draft is empty", () => {
+    const { onChoose } = renderCard({ draft: "   " });
+    const input = screen.getByLabelText("Şarkı ve sanatçı adını yaz");
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onChoose).not.toHaveBeenCalled();
   });
 
-  it("calls onChoose with the selected song and closes the picker", async () => {
-    vi.mocked(searchSongs).mockResolvedValue({ results: [SONG_A] });
-    const { onChoose } = renderCard();
+  it("trims the draft before building the manual Song title", () => {
+    const { onChoose } = renderCard({ draft: "  Yesterday  " });
+    fireEvent.click(screen.getByRole("button", { name: /onayla/i }));
+    expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Yesterday");
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "yesterday" } });
-    fireEvent.click(screen.getByRole("button", { name: "Search" }));
-
-    await waitFor(() => expect(screen.getByText("Yesterday")).toBeInTheDocument());
-    fireEvent.click(screen.getByText("Yesterday"));
-
-    expect(onChoose).toHaveBeenCalledWith(SONG_A);
-    // Picker closes → the picker's Search input is gone.
-    await waitFor(() => {
-      expect(screen.queryByLabelText("Search for a song")).not.toBeInTheDocument();
-    });
+  it("forwards draft edits to onDraftChange", () => {
+    const { onDraftChange } = renderCard();
+    const input = screen.getByLabelText("Şarkı ve sanatçı adını yaz");
+    fireEvent.change(input, { target: { value: "Imagine" } });
+    expect(onDraftChange).toHaveBeenCalledWith("Imagine");
   });
 });
 
-describe("QuestionCard — manual song entry", () => {
+describe("QuestionCard — manual song entry (primary path)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('shows the "Bulamadım, kendim yazacağım" button whenever the picker is open', async () => {
+  it("does not require the MusicBrainz modal to enter a manual song", () => {
     renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-
-    const manualBtn = await screen.findByRole("button", {
-      name: /bulamadım, kendim yazacağım/i,
-    });
-    expect(manualBtn).toBeInTheDocument();
+    // The primary free-text input and Onayla are present directly on the card.
+    expect(screen.getByLabelText("Şarkı ve sanatçı adını yaz")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /onayla/i })).toBeInTheDocument();
+    // The old in-modal manual-entry button is gone.
+    expect(screen.queryByText(/bulamadım, kendim yazacağım/i)).not.toBeInTheDocument();
+    // And the modal is not open by default.
+    expect(screen.queryByLabelText("Search for a song")).not.toBeInTheDocument();
   });
 
-  it("disables the manual button when the query is empty", async () => {
-    renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+  it("commits a manual Song from the primary input without a MusicBrainz search", () => {
+    vi.mocked(searchSongs).mockResolvedValue({ results: [] });
+    const { onChoose } = renderCard({ draft: "Bad - Michael Jackson" });
 
-    const manualBtn = await screen.findByRole("button", {
-      name: /bulamadım, kendim yazacağım/i,
-    });
-    expect(manualBtn).toBeDisabled();
-  });
+    fireEvent.click(screen.getByRole("button", { name: /onayla/i }));
 
-  it("enables the manual button once the user types a query", async () => {
-    renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "Bad - Michael Jackson" } });
-
-    const manualBtn = screen.getByRole("button", {
-      name: /bulamadım, kendim yazacağım/i,
-    });
-    expect(manualBtn).not.toBeDisabled();
-  });
-
-  it("calls onChoose with a manual Song built from the query and closes the picker", async () => {
-    const { onChoose } = renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "Bad - Michael Jackson" } });
-
-    fireEvent.click(screen.getByRole("button", { name: /bulamadım, kendim yazacağım/i }));
-
+    expect(searchSongs).not.toHaveBeenCalled();
     expect(onChoose).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(onChoose).mock.calls[0][0];
     expect(arg.provider).toBe("manual");
@@ -218,41 +183,43 @@ describe("QuestionCard — manual song entry", () => {
     expect(arg.album).toBeNull();
     expect(arg.artworkUrl).toBeNull();
     expect(arg.isrc).toBeNull();
-    // providerId is a generated UUID (non-empty string).
     expect(typeof arg.providerId).toBe("string");
     expect(arg.providerId.length).toBeGreaterThan(0);
-
-    // Picker closes after manual selection.
-    await waitFor(() => {
-      expect(screen.queryByLabelText("Search for a song")).not.toBeInTheDocument();
-    });
   });
 
-  it("trims the query before building the manual Song title", async () => {
-    const { onChoose } = renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
-
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "  Yesterday  " } });
-
-    fireEvent.click(screen.getByRole("button", { name: /bulamadım, kendim yazacağım/i }));
-
+  it("trims the typed text before building the manual Song title", () => {
+    const { onChoose } = renderCard({ draft: "  Yesterday  " });
+    fireEvent.click(screen.getByRole("button", { name: /onayla/i }));
     expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Yesterday");
   });
 
-  it("does not require a MusicBrainz search to use manual entry", async () => {
-    vi.mocked(searchSongs).mockResolvedValue({ results: [] });
-    const { onChoose } = renderCard();
-    fireEvent.click(screen.getByRole("button", { name: /choose song/i }));
+  it("opens the optional MusicBrainz search via the secondary link", async () => {
+    renderCard();
+    fireEvent.click(screen.getByRole("button", { name: /kapak görseli için ara \(opsiyonel\)/i }));
 
-    const input = await screen.findByLabelText("Search for a song");
-    fireEvent.change(input, { target: { value: "Bilinmeyen Şarkı" } });
+    // The modal search input is now present (modal opened).
+    expect(await screen.findByLabelText("Search for a song")).toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: /bulamadım, kendim yazacağım/i }));
+  it("selecting a result from the optional search fills the primary input and commits the structured song", async () => {
+    vi.mocked(searchSongs).mockResolvedValue({ results: [SONG_A] });
+    const { onChoose, onDraftChange } = renderCard({ draft: "" });
 
-    expect(searchSongs).not.toHaveBeenCalled();
-    expect(onChoose).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Bilinmeyen Şarkı");
+    fireEvent.click(screen.getByRole("button", { name: /kapak görseli için ara \(opsiyonel\)/i }));
+    const searchInput = await screen.findByLabelText("Search for a song");
+    fireEvent.change(searchInput, { target: { value: "yesterday" } });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+    await waitFor(() => expect(screen.getByText("Yesterday")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Yesterday"));
+
+    expect(onChoose).toHaveBeenCalledWith(SONG_A);
+    // The primary text box is prefilled with "title — artist" from the selection.
+    expect(onDraftChange).toHaveBeenCalledWith("Yesterday — The Beatles");
+    // Modal closes after selection.
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Search for a song")).not.toBeInTheDocument();
+    });
   });
 
   it("renders a manual selection without a trailing dash in the card", () => {

@@ -4,7 +4,8 @@
 > fotoğrafı — günlük değil. Her operasyon sonunda TAMAMEN yeniden yazılır.
 > `STATE.md` anayasa (kalıcı kurallar), bu dosya "şu an". Her AI oturumu
 > ilk iş olarak bunu BAŞTAN SONA okur — 100 satırdan uzunsa kısalt.
-> Eski hali: `git log -p -- HANDOFF.md`.
+> Eski hali: `git log -p -- docs/HANDOFF.md`.
+> **TEK kaynak budur** — kök dizinde HANDOFF/ACTIVE_OPERATION dosyası TUTMA.
 
 ---
 
@@ -15,9 +16,9 @@ Aktif dal: main
 HEAD:      (bu dosyanın içinde asla sabit yazılmaz — her zaman
             `git log -1 --oneline` ile kontrol et, bu doğru olan tek kaynak)
 Senkron:   `git fetch && git status` ile doğrula
-Testler:   87/87 geçti — 2026-08-19
+Testler:   90/90 geçti — 2026-08-20
 tsc/build: temiz
-Worktree:  temiz
+Worktree:  temiz (vite.config.ts hariç tutuldu — DEV-ONLY, commitleme)
 ```
 Doğrula: `git status && git log --oneline -3 && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
@@ -25,24 +26,51 @@ Doğrula: `git status && git log --oneline -3 && npm test`. Uyuşmuyorsa git'e g
 
 ## 2. Son biten iş (NEDEN + NASIL)
 
-MusicBrainz manuel giriş düzeltmesi uygulandı. `Song.provider` literal union
-yapıldı (`"musicbrainz" | "manual"`); `musicbrainz-mapping.ts` iç tipleri
-buna hizalandı. QuestionCard seçici diyaloguna her zaman görünen
-"Bulamadım, kendim yazacağım" butonu eklendi — tıklanınca arama kutusundaki
-metni `provider:"manual"` + `crypto.randomUUID()` ile bir Song'a çevirip
-`onChoose`'a gönderir, picker kapanır. MusicBrainz araması korundu (varsayılan
-yol), sadece zorunlu olmaktan çıktı. `displayName` manuel girişte artist
-boş olduğunda trailing dash üretmemesi için düzeltildi. 7 yeni test eklendi
-(mevcut 10'a dokunulmadı); ROADMAP.md'ye "Validation Gate öncesi zorunlu bug fix"
-notu düştü. Kalıcılık/F5 ekstra iş gerektirmedi (aynı Song tipi).
+**Journey Step 4 — manuel şarkı girişi UI tersine çevirmesi (TAMAMLANDI +
+görsel doğrulandı + kullanıcı onaylandı).**
+
+Kullanıcı MusicBrainz arama kalitesini 3. kez raporladı: "Sting - Fragile"
+aratınca Sting'in orijinali yerine "Tomi Paldanius" gibi obscure cover'lar
+üstte çıkıyor. Karar: MusicBrainz bir metadata DB'sidir, tüketici arama
+motoru değil — **serbest metin girişi BİRİNCİL, MusicBrainz araması
+OPSİYONEL/ikincil** yapıldı.
+
+Değişen dosyalar:
+- `src/components/journey/QuestionCard.tsx` — birincil serbest-metin `<Input>`
+  (placeholder "örn. Bad - Michael Jackson", aria-label "Şarkı ve sanatçı
+  adını yaz") + "Onayla" butonu (boşken disabled; Enter da commit eder).
+  MusicBrainz araması artık ikincil link "Kapak görseli için ara (opsiyonel)".
+  Modal içi "Bulamadım, kendim yazacağım" butonu **kaldırıldı** (manuel giriş
+  artık birincil olduğu için modalda gerek yok). Yeni yardımcılar
+  `manualSong(text)` (provider:"manual", title=text, artist:"") ve
+  `songDisplay(song)` ("title — artist" prefille). `onChoose`/Song tipi/
+  kalıcılık değişmedi.
+- `src/routes/journey.tsx` — `draft` state parent'a taşındı; Next butonu
+  pending draft'ı senkron commit eder (blur/setState race yok). `canAdvance`
+  pending draft'ı hesaba katar. Restore + soru-değişim effect'leri draft'ı
+  prefille; `startNewJourney` draft'ı temizler.
+- `src/components/journey/QuestionCard.test.tsx` — her iki describe bloğu
+  yeni davranışa hizalandı; trailing-dash selected-render testi korundu.
+
+**Doğrulama kapıları:** tsc=0, npm test 90/90 (7 dosya), build=0. **Görsel
+doğrulama (STATE.md madde 10):** E2E "Sting - Fragile" yaz → Onayla →
+MusicBrainz beklemeden Next → Q2'ye geçti ✅; localStorage'da
+`songs:{1:{provider:"manual",title:"Sting - Fragile",artist:""}}` retain
+edildi; Q1'e geri dönünce chip görünüyor ✅. Ekran görüntüleri:
+`browser_screenshot_e9bdbb4a.png` (AFTER UI), `browser_screenshot_37083548.png`
+(commit+chip), `browser_screenshot_0e2efb0c.png` (Q2 advanced).
+
+**Önceki checkpoint (482a292, hâlâ geçerli):** `metaLine()` yardımcı fn
+(sonuç kartı bitişik metin fix) + `isValidSong` artist sözleşmesi uyumu
+(manuel restore kaybı fix). Bu UI tersine çevirmesi onun üzerine inşa edildi.
 
 ---
 
 ## 3. Şu an açık/bekleyen tek şey
 
-MusicBrainz manuel giriş düzeltmesi TAMAMLANDI. Sıradaki gerçek öncelik
-**Validation Gate** (Adım 5): ürün akışını 5+ gerçek kişiye gösterme, geri
-bildirim toplama. Bu yapılmadan Faz 4'e geçilmez.
+Journey Step 4 UI tersine çevirmesi TAMAMLANDI ve push edildi. Sıradaki
+gerçek öncelik **Validation Gate** (Faz 4 öncesi): ürün akışını 5+ gerçek
+kişiye gösterme, geri bildirim toplama. Bu yapılmadan Faz 4'e geçilmez.
 
 **Sıradaki tek adım:**
 ```
@@ -57,34 +85,37 @@ değil. AI adımı: YOK. Kullanıcı onayı olmadan Faz 4 (User Accounts) başla
 
 **🅐 Kullanıcı Validation Gate'i yaptığını bildirir →**
 Gerçek kullanıcı geri bildirimini topla, `docs/PRODUCT/` altına not düş.
-Faz 4 tasarımına (DATABASE_PLAN.md onayı + memories migration) geçmeden önce
-kullanıcı onayı bekle.
+Faz 4 tasarımına geçmeden önce kullanıcı onayı bekle.
 
-**🅑 Kullanıcı manuel girişte bir sorun bildirirse →**
-Sorunu teyit et, `QuestionCard.tsx` + testlerinde düzelt, HANDOFF'u yeniden yaz,
-checkpoint commit.
+**🅑 Kullanıcı yeni UI'da bir sorun bildirirse →**
+Sorunu teyit et, `QuestionCard.tsx`/`journey.tsx` + testlerinde düzelt,
+HANDOFF'u yeniden yaz, checkpoint commit.
 
-**🅒 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden yaz,
-`checkpoint: [özet] — HANDOFF.md güncellendi` formatıyla push et.
+**🅒 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden
+yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` formatıyla push et.
 
 ---
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-**Kaynak doğrulama disiplini:** Bu düzeltmenin spesifikasyonu (`FIX_manual_song_entry.md`)
-repoda veya git geçmişinde **mevcut değildi** — önceki bir Claude sohbetinde
-üretilmiş ama repoya hiç kaydedilmemişti. 7 kriterlik arama (find, git log --all,
-git grep, tüm dallar, tüm docs/) NEGATİF dönünce DUR + kullanıcıya sor makul
-karardı. Kullanıcı (a) cevabını + tam spesifikasyonu verince uygulandı. Ders:
-**atfedilen bir dosya/spesifikasyon uygulanmadan önce mevcudiyeti mekanik olarak
-doğrulanmalı** — "daha önce verildi" iddiası tek başına yetmez. Kaynağın nerede
-olduğu (sohbet geçmişi mi, repo dosyası mı) kayıt altına alınmalı.
+**UI önceliklendirmesi kararlılık gerektirir.** MusicBrainz arama kalitesi
+3 kez raporlanmıştı; her seferinde "arama iyileştirme" yerine kök karar
+"aramayı birincil olmaktan çıkar" doğruydu. Bir arama motoru olmayan bir
+metadata DB'sini birincil arama yolu olarak konumlamak, UX hatasının
+tekrarını üretür. Ders: **kullanıcı tekrar eden bir şikayet bildiriyorsa,
+düzeltme değil önceliklendirmeyi sorgula.**
+
+Ayrıca: `draft` state'i component içinde değil parent'ta tutulmalı —
+aksi halde Next onClick ile input blur'unun async setState'i arasında race
+oluşur (Next eski `answers`'ı görür, "cevap yok" uyarısı verir).
 
 ---
 
 ## 6. Bu oturumda KESİNLİKLE yapılmaması gerekenler
 
-Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yasak).
+- Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yasak).
+- `vite.config.ts`'i commit etme — DEV-ONLY `allowedHosts` bulut preview
+  içindir, kullanıcı kendi makinesinde çalışacak, repoda olmamalı.
 
 ---
 
@@ -92,9 +123,13 @@ Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yas
 
 | Tarih | Kim | Ne | Commit |
 |---|---|---|---|
-| 2026-08-19 | OpenHands | Bileşen testleri + testing-library (80/80) + microagent | a620ad5 |
-| 2026-08-19 | OpenHands | HANDOFF sistemi: STATE bölündü, AGENTS sıra, handoff-check CI | 5ea6114 |
-| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton, 7 test) | 053bd4a |
+| 2026-08-19 | OpenHands | Bileşen testleri + testing-library + microagent | a620ad5 |
+| 2026-08-19 | OpenHands | HANDOFF sistemi: STATE bölündü, handoff-check CI | 5ea6114 |
+| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton) | 053bd4a |
+| 2026-08-20 | OpenHands | metaLine + isValidSong artist restore fix | 482a292 |
+| 2026-08-20 | OpenHands | Journey Step 4 UI tersine çevirme (text birincil, MB opsiyonel) | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
 
 ---
-_2026-08-19 OpenHands tarafından tamamen yeniden yazıldı. §2 düzeltme spesifikasyonu önceki bir Claude sohbetinde üretilmiştir; repoda `FIX_manual_song_entry.md` hiç olmadı — bu satır tekrar karışıklığı önler._
+_2026-08-20 OpenHands tarafından tamamen yeniden yazıldı. Kök dizindeki
+`HANDOFF.md`/`ACTIVE_OPERATION.md` geçici dosyaları silindi; tek kaynak
+`docs/HANDOFF.md`._

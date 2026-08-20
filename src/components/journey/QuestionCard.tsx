@@ -24,12 +24,35 @@ function metaLine(song: Song): string {
   return parts.join(" — ");
 }
 
+// Build a manual Song (provider: "manual") from free text. The typed string
+// becomes the title; no artist/album/artwork is inferred. This is the primary
+// path — MusicBrainz is optional and only enriches artwork/metadata.
+function manualSong(text: string): Song {
+  return {
+    provider: "manual",
+    providerId: crypto.randomUUID(),
+    title: text,
+    artist: "",
+    album: null,
+    artworkUrl: null,
+    isrc: null,
+  };
+}
+
+// "title — artist" for prefilling the text box after an optional MusicBrainz
+// selection, or the title alone when the artist is empty (manual entries).
+function songDisplay(song: Song): string {
+  return song.artist ? `${song.title} — ${song.artist}` : song.title;
+}
+
 export function QuestionCard({
   number,
   title,
   description,
   answer,
   selected,
+  draft,
+  onDraftChange,
   onChoose,
 }: {
   number: number;
@@ -39,6 +62,10 @@ export function QuestionCard({
   answer?: string;
   /** Structured Song chosen for this question, when available. */
   selected?: Song | null;
+  /** Current text in the primary free-text box (owned by the parent). */
+  draft: string;
+  /** Update the primary free-text box. */
+  onDraftChange: (text: string) => void;
   onChoose: (song: Song) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -48,6 +75,7 @@ export function QuestionCard({
       ? `${selected.title} — ${selected.artist}`
       : selected.title
     : answer;
+  const canConfirm = draft.trim().length > 0;
 
   return (
     <div className="w-full rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
@@ -61,13 +89,40 @@ export function QuestionCard({
         <p className="text-base leading-relaxed text-foreground/80 sm:text-lg">{description}</p>
       </div>
 
-      <Button
+      {/* PRIMARY path: free-text entry, no search/validation required. */}
+      <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-stretch">
+        <Input
+          value={draft}
+          onChange={(e) => onDraftChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && canConfirm) {
+              e.preventDefault();
+              onChoose(manualSong(draft.trim()));
+            }
+          }}
+          placeholder="örn. Bad - Michael Jackson"
+          aria-label="Şarkı ve sanatçı adını yaz"
+          className="h-14 flex-1 rounded-2xl border-border/50 bg-background/60 text-base sm:h-16"
+        />
+        <Button
+          onClick={() => onChoose(manualSong(draft.trim()))}
+          disabled={!canConfirm}
+          className="h-14 gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98] sm:h-16 sm:w-auto"
+        >
+          <Check className="h-5 w-5" />
+          Onayla
+        </Button>
+      </div>
+
+      {/* SECONDARY/optional: MusicBrainz search for artwork/metadata. Not required. */}
+      <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="mt-8 h-14 w-full gap-3 sm:mt-10 sm:h-16 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
-        <Music2 className="h-5 w-5" />
-        {selected ? "Change Song" : "Choose Song"}
-      </Button>
+        <Search className="h-3.5 w-3.5" />
+        Kapak görseli için ara (opsiyonel)
+      </button>
 
       {displayName ? (
         <p className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-primary">
@@ -81,6 +136,7 @@ export function QuestionCard({
         onOpenChange={setOpen}
         onChoose={(song) => {
           onChoose(song);
+          onDraftChange(songDisplay(song));
           setOpen(false);
         }}
       />
@@ -134,9 +190,10 @@ function SongPickerDialog({
     >
       <DialogContent className="border-border/50 bg-card/95 text-foreground sm:rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Choose a song</DialogTitle>
+          <DialogTitle className="text-xl">Kapak görseli için ara</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Search for a real song by title and/or artist. Results come from MusicBrainz.
+            Opsiyoneldir — seçmek başlık, sanatçı ve kapak görselini doldurur. Sonuçlar MusicBrainz'den gelir
+            (tüketici arama motoru değildir; aradığınız kayıt üstte çıkmayabilir).
           </DialogDescription>
         </DialogHeader>
 
@@ -203,26 +260,6 @@ function SongPickerDialog({
             <SearchState status={status} />
           )}
         </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={query.trim().length === 0}
-          onClick={() =>
-            onChoose({
-              provider: "manual",
-              providerId: crypto.randomUUID(),
-              title: query.trim(),
-              artist: "",
-              album: null,
-              artworkUrl: null,
-              isrc: null,
-            })
-          }
-          className="mt-2 w-full justify-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          Bulamadım, kendim yazacağım
-        </Button>
 
         <DialogFooter className="text-xs text-muted-foreground sm:justify-start">
           Artwork, when available, is provided by the Cover Art Archive. A song stays selectable

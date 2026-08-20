@@ -60,6 +60,9 @@ function JourneyPage() {
   // existing answers store (Supabase/localStorage); structured metadata lives
   // in memory for this journey session (persistence is a later phase).
   const [songs, setSongs] = useState<Record<number, Song>>({});
+  // Free-text draft for the current question's primary text box. Owned here so
+  // the Next button can commit it synchronously (no race with input blur).
+  const [draft, setDraft] = useState("");
   const [restored, setRestored] = useState(false);
   const [completed, setCompleted] = useState(false);
   const question = questions[current - 1];
@@ -81,6 +84,9 @@ function JourneyPage() {
         setCurrent(Math.min(Math.max(saved.current, 1), total));
         setAnswers(saved.answers);
         setSongs(saved.songs ?? {});
+        // Prefill the draft for the restored question so the text box reflects it.
+        const restoredQuestion = questions[Math.min(Math.max(saved.current, 1), total) - 1];
+        setDraft(saved.answers?.[restoredQuestion.id] ?? "");
       }
       setRestored(true);
     })();
@@ -89,6 +95,13 @@ function JourneyPage() {
       active = false;
     };
   }, [session.status, userId, total]);
+
+  // Prefill the draft when navigating between questions so the text box shows
+  // the existing answer (if any) and is empty for an unanswered question.
+  useEffect(() => {
+    setDraft(answers[question.id] ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
 
   // Persist on every change once restoration has run. Server write is async;
   // localStorage write inside saveRemoteJourney is synchronous and immediate.
@@ -110,15 +123,22 @@ function JourneyPage() {
     setCompleted(false);
     setAnswers({});
     setSongs({});
+    setDraft("");
     setCurrent(1);
   };
 
   const savedProgress = current > 1 || Object.keys(answers).length > 0;
 
   const isAnswered = Boolean(answers[question.id]);
+  const hasPendingDraft = draft.trim().length > 0;
   const unanswered = questions.filter((q) => !answers[q.id]);
   const canFinish = unanswered.length === 0;
-  const canAdvance = isLast ? canFinish : isAnswered;
+  // A typed-but-uncommitted draft for the current question also lets the user
+  // advance (Next commits it synchronously). For the last question, a draft
+  // only finishes the journey when the current question is the only one left.
+  const canAdvance = isLast
+    ? canFinish || (hasPendingDraft && unanswered.length === 1 && unanswered[0].id === question.id)
+    : isAnswered || hasPendingDraft;
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
@@ -141,6 +161,8 @@ function JourneyPage() {
             description={question.description}
             answer={answers[question.id]}
             selected={songs[question.id] ?? null}
+            draft={draft}
+            onDraftChange={setDraft}
             onChoose={(song) => {
               setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
               setSongs((prev) => ({ ...prev, [question.id]: song }));
@@ -164,6 +186,26 @@ function JourneyPage() {
                 setShowHint(true);
                 return;
               }
+              // Commit a pending draft for the current question before moving on
+              // (so typing + Next proceeds in one step, no separate "Onayla" needed).
+              let nextAnswers = answers;
+              if (!isAnswered && hasPendingDraft) {
+                const trimmed = draft.trim();
+                nextAnswers = { ...answers, [question.id]: trimmed };
+                setAnswers(nextAnswers);
+                setSongs((prev) => ({
+                  ...prev,
+                  [question.id]: {
+                    provider: "manual",
+                    providerId: crypto.randomUUID(),
+                    title: trimmed,
+                    artist: "",
+                    album: null,
+                    artworkUrl: null,
+                    isrc: null,
+                  },
+                }));
+              }
               if (isLast) {
                 // Journey finished — keep the answers persisted so /results can
                 // reload them on a direct visit / F5 (history state is lost on
@@ -171,7 +213,7 @@ function JourneyPage() {
                 // Journey" action. We only stop further auto-save by marking
                 // the local component as completed.
                 setCompleted(true);
-                navigate({ to: "/results", state: { answers } as never });
+                navigate({ to: "/results", state: { answers: nextAnswers } as never });
               } else {
                 setCurrent((c) => Math.min(total, c + 1));
               }
