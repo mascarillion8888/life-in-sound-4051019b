@@ -20,4 +20,12 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Deploy target: switch to Nitro's `vercel` preset only when built on Vercel
+  // (Vercel injects VERCEL=1 into its CI). Everywhere else — Lovable sandbox and
+  // local builds — keep the config's default (cloudflare). The preset writes
+  // .vercel/output (static + serverless NODE functions), which Vercel treats
+  // as zero-config Build Output API; server functions like
+  // src/lib/llm/generateAnalysis.server.ts then read GEMINI_API_KEY from the
+  // server-side process.env, never the client bundle.
+  nitro: process.env.VERCEL ? { preset: "vercel" } : {},
 });

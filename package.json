@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:bundle": "node scripts/verify-no-server-secrets.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

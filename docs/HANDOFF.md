@@ -12,15 +12,17 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-Testler:   201/201 geçti — 2026-08-22 (14 dosya; +3 yeni komponent test dosyası)
-tsc/build: temiz (tsc --noEmit = 0 hata; npm run build = 0)
+Testler:   201/201 geçti — 2026-08-22 (14 dosya)
+tsc/build: temiz (tsc --noEmit = 0 hata; VERCEL=1 npm run build = 0)
 Lint:      Yeni dosyalar temiz; 4 DOSYADA ÖNCEDEN VAR OLAN prettier drift'i
            (Results.tsx, SongPicker.tsx, Waveform.tsx, soundmap/data.ts)
            bilinçli dokunulmadı — minimal-değişiklik ilkesi.
-LLM:       GEMINI_API_KEY BU ORTAMDA BOŞ — canlı Gemini çıktı doğrulaması
-           (analiz + entry insight) KULLANICI makinesinde yapılmalı;
-           deterministik fallback her durumda render olur.
-Smoke:     /results SSR çıktısında "Life Feed" bölümü görüldü (dev server).
+Deploy:    Vercel preset'i koşullu (sadece VERCEL=1'de aktif; Lovable/local
+           default cloudflare kalır). `.vercel/output` gitignore'da.
+Leak check: `npm run check:bundle` (client bundle'da server-only isim
+           taraması) yeşil; negatif test exit=1.
+LLM:       GEMINI_API_KEY BU ORTAMDA BOŞ — canlı Gemini + canlı Vercel deploy
+           doğrulaması KULLANICI'DA BEKLEMEDE (§3'te adım adım).
 ```
 
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
@@ -29,89 +31,67 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ## 2. Son biten iş (NEDEN + NASIL)
 
-**Life Feed UI Suite & Dynamic Timeline Evolution (TAMAMLANDI + 201/201 test
-yeşil; canlı Gemini doğrulaması KULLANICI'DA BEKLEMEDE).**
+**Vercel Deployment & Serverless Environment Setup (TAMAMLANDI; canlı deploy
+KULLANICI'DA).** Amaç: zero-config Vercel deploy'u, Gemini server-fn'ları
+(`generateAnalysis.server.ts`, `generateEntryInsight`) Node serverless
+ortamında güvenli process.env okurken anahtar asla client bundle'a
+sızmasın; kullanıcıya adım-adım Vercel bağlantı rehberi (§3).
 
-Kullanıcı talebi: 8. şarkıdan sonra kısıtsız "Life Feed" — kullanıcı sürekli
-şarkı/not/anı ekleyebilsin; her eklemeye anında şiirsel (dost sesiyle) insight;
-timeline dinamik bölümlere (haftalık/aylık portallar) gruplansın; poster
-durmadan büyüsün.
+Değişiklikler:
+- `vite.config.ts` — `nitro: process.env.VERCEL ? { preset: "vercel" } : {}`.
+  Vercel CI `VERCEL=1` enjekte eder → Nitro `vercel` preset'i `.vercel/output`
+  üretir (static + `__server.func` Node.js 22.x, SPA fallback `/(__*server)`).
+  Lovable/local'da default cloudflare preset korunur (Lovable sandbox zaten
+  cloudflare'ı zorlar → geriye uyumlu).
+- `vercel.json` — minimal pinned config: `"framework": null` (auto-detect
+  kapalı, routes `.vercel/output/config.json`'dan), `installCommand/buildCommand`
+  ve `regions: ["fra1"]`. `.vercel/` build çıktısı `.gitignore`'a eklendi.
+- `scripts/verify-no-server-secrets.mjs` + `npm run check:bundle` — client
+  bundle'da (`.vercel/output/static`, `.output/public`, `dist/client`)
+  `GEMINI_API_KEY`/`GROQ_API_KEY`/`SERVICE_ROLE` isim taraması; sızıntıda
+  exit 1 (negatif test ile kanıtlı).
+- Testler: 201/201, tsc/build temiz (VERCEL=1 ile de).
 
-Önceki oturumdaki temel (life-feed.ts state + persistence) bu oturumda UI
-katmanıyla tamamlandı:
-
-Yeni dosyalar:
-- `src/components/feed/LifeFeedInput.tsx` — Quick Entry Bar: iTunes
-  önerileri (`suggestSongs` server fn, Fuse.js re-rank — QuestionCard'ın
-  ghost akışıyla aynı sınır) + serbest metin → manual Song fallback; bellek
-  notu textarea'sı ("Bugün seni hangi şarkı anlatıyor?"). `suggester` DI
-  prop'u testlerde gerçek fetcher değişimi sağlar (mock yok).
-- `src/components/feed/LifeFeedTimeline.tsx` — sonsuz timeline: moment
-  kartları (cover art / Disc3 fallback, başlık, sanatçı, tarih, not, şiirsel
-  insight), `groupFeedEntries` ile haftalık (≤35 gün) / aylık dinamik
-  portallar; inline not düzenleme + silme.
-- `src/components/feed/LifeFeedSection.tsx` — orkestratör: mount'ta
-  loadLifeFeed ?? graduateToLifeFeed (tek sefer), her mutasyonda kaydet,
-  `onFeedChange` ile posteri besle; insight akışı = deterministik ANINDA +
-  Gemini YERINDE upgrade (`insightFetcher` DI prop'u).
-- Testler: `LifeFeedInput.test.tsx`, `LifeFeedTimeline.test.tsx`,
-  `LifeFeedSection.test.tsx` (tam state-sync: add → anında deterministik
-  insight → Gemini upgrade → localStorage persist).
-
-Değiştirilenler:
-- `life-feed.ts` — `insight` alanı (kalıcı), `updateLifeFeedEntry` (note/
-  insight patch, eğriyi oynatmadan), `feedEntryIntensity` (deterministik
-  0.35..0.95, song+addedAt hash; not/insight edit'i eğriyi DEĞİŞTİRMEZ),
-  `groupFeedEntries` (haftalık/aylık portallar, undated güvenliği).
-- `poetic-analyzer.ts` — `deterministicEntryInsight` (5 şablon, stableHash;
-  not varsa notu örer — sadece gerçek girdiler, hiçbir şey uydurulmaz).
-- `generateAnalysis.server.ts` — `generateEntryInsight` server fn (tek
-  cümlelik prose insight; systemPrompt override + jsonMode=false desteği
-  `callGeminiPoeticAnalyzer`'a eklendi).
-- `PosterCanvas.tsx` — `feedEntries` prop'u: eğri 8+N nokta ("+1","+2"
-  işaretleri, feed barları ters gradyan), "Life Feed — the map keeps growing"
-  playlist bölümü; export `poeticPoster`'a feed'i iletir.
-- `poeticPoster.ts` — export eğrisi base 8 + feed (feed barları accent
-  renkte, "+n" etiketli).
-- `results.tsx` — ResultsPage `journey` + `feed` state'i; DynamicMusicMap
-  feedEntries alır; yeni "Life Feed" bölümü (Radio ikonu) Dynamic Music
-  Map ile Emotional Timeline arasında.
-
-Uyum: `vite.config.ts` allowedHosts (DEV-ONLY) commitlenmedi; orchestraya
-dokunulmadı; companion/memory/pattern sistemi geri getirilmedi (STATE.md 🚨).
+Uyum: `vite.config.ts`'teki DEV-ONLY allowedHosts satırı korundu; doc açıklar.
 
 ---
 
-## 3. Şu an açık/bekleyen tek şey
+## 3. Şu an açık/bekleyen tek şey — Vercel'e bağlan (kullanıcı adımları)
 
-Life Feed UI TAMAM ve push edildi. BEKLEYEN: canlı Gemini doğrulaması
-(analiz + entry insight, kullanıcı makinesinde). Validation Gate (5+ gerçek
-kişi) hâlâ geçerli öncelik; Faz 4 kullanıcı onayı olmadan başlamıyor.
+Deploy altyapısı push edildi; canlı URL sadece kullanıcının Vercel hesabını
+bekliyor:
 
-**Sıradaki tek adım:**
-```
-1) KULLANICI: git pull → GEMINI_API_KEY=<key> ile npm run dev → journey
-   tamamla → /results'ta:
-   a) "Dynamic Music Map" bölümü Gemini-zengin mi (manifesto/chapter/duality)
-   b) "Life Feed"de bir şarkı + not ekle → insight önce deterministik
-      gelip sonra tek cümlelik Gemini prose ile yerinde değişiyor mu
-   Anahtar yoksa deterministik davranış beklenendir — hata değil.
-2) Validation Gate: 5+ kişiye ürünü göster, geri bildirim topla. AI adımı YOK.
-```
+1. **Repoyu bağla:** [vercel.com → Add New → Project] → GitHub
+   `mascarillion8888/life-in-sound-4051019b` import. Framework davranışı
+   bundle'daki `vercel.json`'dan gelir (restart gerekmez).
+2. **Anahtarı gir:** Project → Settings → Environment Variables →
+   `GEMINI_API_KEY` = `<groq/gemini anahtarın>` (scope: **Production**,
+   istersen Preview da). Asla `VITE_` önekiyle girme.
+3. **Deploy:** ilk push'tan sonra Vercel otomatik build çalıştırır
+   (breadık build komutu `npm run build`; VERCEL=1 vercel preset'ini açar).
+4. **Doğrula** (canlı URL açıldığında):
+   - `/results` — Dynamic Music Map Gemini-zengin mi; Life Feed'de şarkı+not
+     ekle → insight deterministik'ten tek cümlelik Gemini prose'a yerinde
+     geçiş yapıyor mu.
+   - Anahtar girilmediyse deterministik çıktı görülür — hata değildir.
+5. **Validation Gate** (Vercel sonrası): 5+ gerçek kişiye canlı URL'yi
+   göster, geri bildirim topla. Faz 4 kullanıcı onayı olmadan başlamıyor.
+
+Yerelde aynı sonuç: `VERCEL=1 npm run build && npm run check:bundle`.
 
 ---
 
 ## 4. Olası sonuçlar
 
-**🅐 Kullanıcı Gemini-zengin analiz + entry insight görür →** Doğrulandı.
-Validation Gate'e geçilebilir. Sıradaki olası iş: feed'e göre ana analizin
-de evrilmesi (şu an PoeticAnalysis sadece 8 şarkı; feed eğri+playlist'e ekleniyor).
+**🅐 Canlı URL açılır + Gemini çıktısı zengin →** Deploy doğrulandı.
+Validation Gate'e geç.
 
-**🅑 Kullanıcı sadece deterministik çıktı görür →** GEMINI_API_KEY eksik veya
-endpoint erişimi sorunu; her iki server fn de sessizce null/fallback döner.
+**🅑 Build Vercel'de kırılırsa →** Build loglarında nitro preset hatası /
+Node 22 natives sorunu aranır; `vercel.json`'daki pinned komutlar ilk şüpheli.
 
-**🅒 Entry insight cümlesi JSON/bozuk gelirse →** İlk boş olmayan satır
-alınıyor; gerekirse prompt'a çıktı formatı sertleştirmesi küçük yama olur.
+**🅒 Sayfa açılıyor ama Gemini deterministik kalıyorsa →** `GEMINI_API_KEY`
+Production scope'ta girilmemiş (en sık hata) veya anahtar yetki yetersiz —
+Dashboard env'e bakılır, redeploy.
 
 **🅓 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden
 yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` ile push et.
@@ -120,26 +100,24 @@ yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` ile push et.
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-**Eğri kararlılığı = kimlikten türet.** Feed entry yoğunluğu `stableHash
-(title+addedAt)`'ten geliyor; not/insight edit'i eğriyi kımıldatmaz, silme/
-ekleme otomatik yeniden hesaplatır (PosterCanvas'daki curve türevlenmiş
-değer — state değil). Ayrıca: DI prop'ları (`suggester`, `insightFetcher`)
-server-fn sınırlarını mock'suz test edilebilir kıldı — deferred Promise ile
-"anında deterministik → sonra Gemini" yarışı deterministik olarak test edildi.
-jsdom'da `getByText("+1")` hem eğri hem playlist rozetlerini bulur →
-`getAllByText` kullan.
+**Deploy preset'i koşullu tut, hostu değil derli.** `@lovable.dev/...` config
+non-sandbox'ta cloudflare-module preset'ini default tutar; Vercel'i seçmenin
+tek kabul edilebilir yolu ORTAM DÜZEYİNDE koşul (`process.env.VERCEL`,
+Vercel'in injection'ı + localde bu env yok → local build aynı kalır). Böylece
+Lovable milestone'tan ayrılmadan Vercel Build Output API'sini alırsın.
+`.vercel/output`'u asla commit'leme (gitignore'da). Leak check'in değeri:
+isim bazlı basit scan, negatif testle kanıtlı.
 
 ---
 
 ## 6. Bu oturumda KESİNLİKLE yapılmaması gerekenler
 
 - Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨).
-- `vite.config.ts`'i değiştirme — DEV-ONLY allowedHosts commitleme.
-- Önceden var olan prettier drift'ini (Results.tsx, SongPicker.tsx, Waveform.tsx,
-  soundmap/data.ts) rastgele kozmetik olarak fix etme — ayrı bir temizlik
-  kararıdır, kullanıcı onayıyla.
-- Anahtarsız ortamda canlı Gemini/Groq doğrulaması yapmaya çalışma;
-  kullanıcı makinesine devret.
+- `vite.config.ts`'te DEV-ONLY allowedHosts'u commit'leme (satır doc'unda).
+- Vercel'e `VITE_GEMINI_API_KEY` `-prefixed` ortam değişkeni girme,
+  `GEMINI_API_KEY` yeterli (client bundle asla içinde değil).
+- `.vercel/` build çıktısını commit'leme (gitignore'da).
+- Önceden var olan prettier drift'ini rastgele kozmetik olarak fix etme.
 
 ---
 
@@ -147,14 +125,13 @@ jsdom'da `getByText("+1")` hem eğri hem playlist rozetlerini bulur →
 
 | Tarih | Kim | Ne | Commit |
 |---|---|---|---|
-| 2026-08-20 | OpenHands | metaLine + isValidSong artist fix | 482a292 |
-| 2026-08-20 | OpenHands | Journey Step 4 UI tersine çevirme | 7a8a56a |
 | 2026-08-20 | OpenHands | MusicBrainz arama UI'dan kaldırıldı | 7b27cd3 |
 | 2026-08-22 | OpenHands | Dynamic Music Map Engine + Poetic Gemini Analyzer | 7cf32e4 |
-| 2026-08-22 | OpenHands | Life Feed UI Suite + Evolving Poster | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
+| 2026-08-22 | OpenHands | Life Feed UI Suite + Evolving Poster | 3b4c604 |
+| 2026-08-22 | OpenHands | Vercel Deployment + Leak Check | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
 
 ---
-_2026-08-22 OpenHands tarafından tamamen yeniden yazıldı. Life Feed UI Suite
-(Quick Entry Bar, sonsuz timeline, instant insight) + Evolving PosterCanvas
-teslim edildi (201/201 test, tsc/build temiz). Canlı Gemini doğrulaması
-kullanıcı makinesine devredildi. Tek kaynak `docs/HANDOFF.md`._
+_2026-08-22 OpenHands tarafından tamamen yeniden yazıldı. Vercel deployment +
+serverless env setup teslim edildi (koşullu nitro preset, vercel.json,
+leak-check script; 201/201 test, VERCEL=1 build temiz). Canlı deploy + Gemini
+doğrulaması kullanıcıya devredildi (§3). Tek kaynak `docs/HANDOFF.md`._
