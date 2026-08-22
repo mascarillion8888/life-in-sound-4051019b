@@ -46,7 +46,7 @@ export function isValidSong(value: unknown): value is Song {
 }
 
 /** Coerce a validated Song's nullable fields to `null` when absent/non-string. */
-function normalizeSong(song: Song): Song {
+export function normalizeSong(song: Song): Song {
   return {
     provider: song.provider,
     providerId: song.providerId,

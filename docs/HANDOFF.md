@@ -3,9 +3,7 @@
 > **HER ZAMAN ÜZERİNE YAZILIR, ASLA EKLENMEZ.** Anlık durumun TEK doğru
 > fotoğrafı — günlük değil. Her operasyon sonunda TAMAMEN yeniden yazılır.
 > `STATE.md` anayasa (kalıcı kurallar), bu dosya "şu an". Her AI oturumu
-> ilk iş olarak bunu BAŞTAN SONA okur — 100 satırdan uzunsa kısalt.
-> Eski hali: `git log -p -- docs/HANDOFF.md`.
-> **TEK kaynak budur** — kök dizinde HANDOFF/ACTIVE_OPERATION dosyası TUTMA.
+> ilk iş olarak bunu BAŞTAN SONA okur. **TEK kaynak budur.**
 
 ---
 
@@ -13,140 +11,127 @@
 
 ```
 Aktif dal: main
-HEAD:      (bu dosyanın içinde asla sabit yazılmaz — her zaman
-            `git log -1 --oneline` ile kontrol et, bu doğru olan tek kaynak)
-Senkron:   `git fetch && git status` ile doğrula
-Testler:   88/88 geçti — 2026-08-20
-tsc/build: temiz
-Worktree:  temiz (vite.config.ts hariç tutuldu — DEV-ONLY, commitleme)
-LLM anahtarı: BU ORTAMDA YOK — GROQ/GEMINI/MISTRAL/OPENROUTER boş, .env yok.
-              Canlı LLM Life Story doğrulaması KULLANICI makinesinde yapılmalı.
+HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
+Testler:   172/172 geçti — 2026-08-22 (11 dosya; +3 yeni test dosyası)
+tsc/build: temiz (tsc --noEmit = 0 hata; npm run build = 0)
+Lint:      Yeni dosyalar temiz; 4 DOSYADA ÖNCEDEN VAR OLAN prettier drift'i
+           (Results.tsx, SongPicker.tsx, Waveform.tsx, soundmap/data.ts)
+           bilinçli dokunulmadı — minimal-değişiklik ilkesi.
+LLM:       GEMINI_API_KEY BU ORTAMDA BOŞ — canlı Gemini çıktı doğrulaması
+           KULLANICI makinesinde yapılmalı (deterministik fallback her
+           durumda render olur).
 ```
-Doğrula: `git status && git log --oneline -3 && npm test`. Uyuşmuyorsa git'e güven, bildir.
+
+Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
 ## 2. Son biten iş (NEDEN + NASIL)
 
-**Life Story prompt'unda grounding ayrımı netleştirildi (TAMAMLANDI +
-prompt-içerik testleri + 3 gate yeşil; canlı LLM okuma doğrulaması
-KULLANICI'DA BEKLEMEDE).**
+**Dynamic Music Map Engine & Poetic Gemini Analyzer (TAMAMLANDI + 172/172 test
+yeşil; canlı Gemini çıktısı doğrulaması KULLANICI'DA BEKLEMEDE).**
 
-Kullanıcı ChatGPT'nin orijinal deneyimdeki derinliği kanıtladı:
-"Operation: Mindcrime"i kimlik sorgulama teması olarak yorumlamıştı çünkü
-albümün gerçek içeriğini biliyordu. Eski GROUNDING_RULES bunu yasaklıyordu:
-"Treat the supplied song titles as user-provided labels, not as evidence".
-Bu kural iki farklı şeyi karıştırıyordu: (a) kullanıcının gerçek hayatını
-uydurma (YASAK kalmalı), (b) şarkının/albümün gerçek, bilinen anlamını
-kullanma (bu uydurma DEĞİL, LLM'in gerçek dünya bilgisidir — İZİN verilmeli).
+Kullanıcı talebi: 8 şarkıdan soğuk AI raporu değil, "ömrü boyu yanındaki
+bir dost" gibi yazılan şiirsel bir analiz; görsel tema/renk/tipografi/duygu
+eğrisi kullanıcının janrına göre (Metal/Gothic, 80s Synthwave, Jazz/Classical,
+Indie/Acoustic, Pop) dinamik belirlensin. Grounding ilkesi korunarak yapıldı:
+**tema ve temel palet deterministik hesaplanır, LLM sadece anlatır (aura +
+artwork prompt'u rafine eder).**
 
-Değişen dosyalar:
-- `src/lib/llm/prompts.ts` — GROUNDING_RULES'te eski tek satır ("Do not
-  invent song titles or artists. Treat the supplied song titles as
-  user-provided labels, not as evidence about the user's actual life.")
-  ikiye bölündü:
-  1. "Do not invent song titles or artists that were not supplied." (yoksa
-     uydurma — korundu)
-  2. "If you have genuine knowledge of a supplied song's or album's real
-     theme, mood, lyrical content, or cultural context, USE IT to enrich
-     the interpretation — this is not fabrication, it is real-world
-     knowledge about an existing work. What you must not do is invent facts
-     about the USER's personal life (their real relationships, locations,
-     dates, or events) — the song's own meaning is fair game, the user's
-     biography is not." (yeni — izin veren + biyografiyi yasaklayan)
-  TASK bloğuna eklendi: "Where you recognize the song or album, draw on its
-  real, known themes and emotional tone to deepen the interpretation - don't
-  just weave the title into generic prose. If you don't recognize a song,
-  interpret it through the supplied personality profile instead, without
-  pretending to know it."
-  Diğer kurallar (kişisel hayat/ilişki/tarih uydurma yasağı) DEĞİŞMEDİ.
-- `src/lib/llm/lifeStory.test.ts` — 2 yeni test: (i) yeni kural metninde
-  "USE IT to enrich"/"fair game"/"user's biography is not" geçtiğini
-  doğrular; (ii) TASK bloğunda "draw on its real, known themes"/"without
-  pretending to know it" geçtiğini doğrular. Eski "invent facts" testi
-  korundu.
+Yeni dosyalar:
+- `src/lib/llm/poetic-analyzer.ts` — tipler (PoeticAnalysis, LifeChapter,
+  VisualSpec, CoreDuality), `detectVisualTheme` (janr ×2 + şarkı başlığı ×1
+  keyword skoru, tie-break öncelik sırası, hiçbiri yoksa ambient-default),
+  `THEME_CATALOG` (5 tema + default, hex palet + tipografi + aura + artwork
+  prompt), `buildPoeticAnalyzerPrompt` (saf string; grounding kuralları
+  biography-yasağı dahil; strict JSON kontrat + KEŞİF & BÜYÜLENME /
+  GEÇİŞ PORTALLARI örnekleri; opsiyonel memory notes), `extractJsonObject`,
+  `parsePoeticAnalysis` (telafi edici parser — her alan fallback'e düşer,
+  sadece hex kabul eder, asla throw etmez; hiç JSON yoksa null),
+  `deterministicPoeticAnalysis` (tamamen render-edilebilir fallback).
+- `src/lib/llm/generateAnalysis.server.ts` — server-only Gemini köprüsü
+  (OpenAI-uyumlu endpoint, native fetch, `GEMINI_API_KEY` env; json_object
+  response_format; hiçbir hata asla client'a fırlatılmaz → null = fallback).
+- `src/components/results/PosterCanvas.tsx` — dinamik temalı poster
+  komponenti: manifesto, aura çipleri, duygusal eğri barları, chapter
+  kartları, song insights, core duality, export butonu. Tüm renkler
+  `analysis.visual.palette`'ten inline style ile sürülür.
+- `src/lib/soundmap/poeticPoster.ts` — 1600×2400 canvas → PNG indirme
+  (bağımsız canvas renderer; DOM rasterizasyonu yok).
+- `src/lib/life-feed.ts` — Life Feed state + persistence: 8. cevap tamam
+  olunca `graduateToLifeFeed`; `appendLifeFeedEntry` immutable büyütür;
+  `loadLifeFeed` yüklerken validasyon eksik base'i reddeder; map +
+  memories dizileri (analyzer'a genişleyen girdi için).
+- Testler: `poetic-analyzer.test.ts` (tema tespiti + prompt + parser +
+  deterministik fallback), `life-feed.test.ts` (graduate/append/remove +
+  localStorage round-trip), `PosterCanvas.test.tsx` (render + tema palet).
+- `src/routes/results.tsx` — "Dynamic Music Map" bölümü eklendi
+  (deterministic derhal render → Gemini gelince yerinde upgrade;
+  LifeStory ile aynı fingerprint sözleşmesi).
+- `journey-storage.ts` — `normalizeSong` artık exported (life-feed reuse).
+- `.env.example` — server-only `GEMINI_API_KEY` dokümantasyonu.
 
-**Güvenlik ilkesi korundu:** Şarkı/albüm hakkında gerçek bilgi kullanmak
-"hallucination" değil — halka açık, doğrulanabilir bir gerçektir. Yasak
-olan tek şey kullanıcının GERÇEK HAYATI hakkında (hiç sağlanmamış) bilgi
-uydurmak. Bu ayrım netleştirildi; kullanıcı biyografisi yasağı değişmedi.
-
-**Doğrulama kapıları:** tsc=0, npm test 86→88/88 (7 dosya, +2 yeni test),
-build=0. **Prompt-içerik doğrulaması:** yeni cümleler `buildLifeStoryPrompt`
-çıktısında test assertion'larıyla kanıtlandı (`prompts.ts` satır 37-38 +
-97; anılabilir album adıyla üretilen prompt'ta kurallar mevcut).
-
-**CANLI LLM DOĞRULAMASI — BEKLEMEDE:** Bu ortamda hiçbir provider anahtarı
-(GROQ/GEMINI/MISTRAL/OPENROUTER) dolu değil ve `.env` yok. Bu yüzden
-gerçek LLM Life Story çıktısını burada çalıştıramadım — uydurma çıktı
-göstermeyi grounding ilkesi gereği reddettim. Kullanıcı kendi makinesinde
-`git pull` + `npm run dev` (GROQ_API_KEY dolu) ile "Operation: Mindcrime"
-/ "Painkiller - Judas Priest" gibi tanınır albumler girip Life Story
-çıktısında o albümün gerçek temasına dair yorum var mı GÖZLE KONTROL
-ETMELİ. Bu adım AI tarafından yapılamadı — kullanıcı onayı bekleniyor.
-
-**Önceki checkpoint (7b27cd3):** MusicBrainz arama UI'dan tamamen
-kaldırıldı. Bu checkpoint onun üstüne prompt derinliğini geri getirdi.
+Uyum: `vite.config.ts` allowedHosts (DEV-ONLY) commitlenmedi; orchestraya
+dokunulmadı; companion/memory/pattern sistemi geri getirilmedi (STATE.md 🚨).
 
 ---
 
 ## 3. Şu an açık/bekleyen tek şey
 
-Prompt ayrımı TAMAMLANDI ve push edildi. BEKLEYEN: canlı LLM okuma
-doğrulaması (kullanıcı makinesinde). Sıradaki gerçek öncelik hâlâ
-**Validation Gate** (Faz 4 öncesi): ürün akışını 5+ gerçek kişiye gösterme.
+Yeni engine TAMAM ve push edildi. BEKLEYEN: canlı Gemini çıktı doğrulaması
+(kullanıcı makinesinde). Validation Gate (5+ gerçek kişi) hâlâ geçerli öncelik;
+Faz 4 kullanıcı onayı olmadan başlamıyor.
 
 **Sıradaki tek adım:**
 ```
-1) KULLANICI: git pull + npm run dev (GROQ_API_KEY dolu) → tanınır album gir →
-   Life Story'de o albumun gerçek temasına dair yorum var mı GÖZLE KONTROL ET.
-   Sonucu bildir; beklenen: "Operation: Mindcrime" → kimlik/iktidar teması
-   yorumu görünür olmalı.
+1) KULLANICI: git pull → GEMINI_API_KEY=<key> ile npm run dev → journey
+   tamamla → /results'ta "Dynamic Music Map" bölümünde manifesto/chapter/
+   duality'nin deterministikten daha zengin (Gemini) geldiğini GÖZLE KONTROL ET.
+   Anahtar yoksa deterministik render beklenen davranış — hata değil.
 2) Validation Gate: 5+ kişiye ürünü göster, geri bildirim topla. AI adımı YOK.
-   Kullanıcı onayı olmadan Faz 4 (User Accounts) başlatma.
 ```
 
 ---
 
 ## 4. Olası sonuçlar
 
-**🅐 Kullanıcı canlı LLM çıktısında album teması yorumunu görür →** Doğrulandı.
-Validation Gate'e geçebilir.
+**🅐 Kullanıcı Gemini çıktısında zengin manifesto/chapters görür →** Doğrulandı.
+Validation Gate'e geçilebilir; Life Feed UI (graduation akışı) sıradaki
+tasarım onayını bekler (`docs/TECH/DATABASE_PLAN.md` DRAFT).
 
-**🅑 Kullanıcı hâlâ generic yorum görürse →** Ayrım yeterli değil demektir;
-prompt'u daha güçlü yap (örn. TASK'e "name the specific theme you recall"
-talimatı). Yine de kullanıcı biyografi yasağını koru.
+**🅑 Kullanıcı sadece deterministik çıktı görür (Gemini yanıt vermiyor) →**
+Ortamda GEMINI_API_KEY eksik veya endpoint/model erişimi sorunu; server
+loglarında değil client'ta sessiz fallback — anahtarı kontrol et.
 
-**🅒 Kullanıcı LLM'in yanılgı yaptığını (yanlış album bilgisi) bildirirse →**
-"gerçek bilgi" izninin riski budur; prompt'a "if unsure, don't fabricate
-song lore" nötr kalkanı ekle.
+**🅒 Gemini žey/geçersiz JSON dönerse →** Parser telafisi devrede (testlerle
+kanıtlı); prompt'a "strict JSON" güçlendirmesi küçük bir yama olarak eklenebilir.
 
 **🅓 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden
-yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` formatıyla push et.
+yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` ile push et.
 
 ---
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-**Grounding kuralları aşırı geniş yazılırsa gerçek derinliği boğar.** Eski
-kural "song titles as labels, not evidence" kişisel-hayat uydurma yasağını
-korurken, meşru "şarkının gerçek anlamı" bilgisini de yasaklıyordu — bu
-LLM'i köreltiyordu. Ders: **yasak kapsamını net sınırla — yasak olan
-"uydurulan kullanıcı biyografisi", izin verilen "mevcut eserin bilinen
-anlamı".** Aynı kural içinde ikisini birden söyle: "X'i kullan AMA Y'yi
-uydurma". Ayrıca: anahtarsız ortamda canlı LLM doğrulaması yapılamaz;
-uydurma çıktı göstermek grounding ilkesini ihlal eder — kullanıcı makinesine
-devret ve şeffaf bildir.
+**LLM görsel spesifikasyonunda renkleri asla serbest bırakma.** Tema kimliği +
+palet hex'leri prompt'a deterministik girdi olarak verildi; Gemini sadece
+aura/artwork metnini rafine eder, parser de yalnızca geçerli hex kabul eder
+(aksi halde tema paleti devreye girer). Böylece "LLM hesaplar" değil "LLM
+anlatır" ilkesi renk katmanına da taşındı. Ayrıca jsdom testlerinde CSS
+shorthand hex→rgb normalize edilir; poster tema testleri bu normalize formu
+spesifik assert etmeli (PosterCanvas.test.tsx'deki helper).
 
 ---
 
 ## 6. Bu oturumda KESİNLİKLE yapılmaması gerekenler
 
-- Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨 yasak).
-- `vite.config.ts`'i commit etme — DEV-ONLY `allowedHosts` bulut preview içindir.
-- MusicBrainz backend dosyalarını SİLME / UI'a geri getirme (kullanıcı kararı).
-- Kullanıcının gerçek hayatına dair uydurma bilgi üretme — yeni kural şarkı/albüm
-  bilgisine izin verir AMA kullanıcı biyografisine değil.
+- Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨).
+- `vite.config.ts`'i değiştirme — DEV-ONLY allowedHosts commitleme.
+- Önceden var olan prettier drift'ini (Results.tsx, SongPicker.tsx, Waveform.tsx,
+  soundmap/data.ts) rastgele kozmetik olarak fix etme — ayrı bir temizlik
+  kararıdır, kullanıcı onayıyla.
+- Anahtarsız ortamda canlı Gemini/Groq doğrulaması yapmaya çalışma;
+  kullanıcı makinesine devret (aynı kural Life Story'de de geçerliydi).
 
 ---
 
@@ -154,14 +139,14 @@ devret ve şeffaf bildir.
 
 | Tarih | Kim | Ne | Commit |
 |---|---|---|---|
-| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş (provider:"manual", buton) | 053bd4a |
-| 2026-08-20 | OpenHands | metaLine + isValidSong artist restore fix | 482a292 |
-| 2026-08-20 | OpenHands | Journey Step 4 UI tersine çevirme (text birincil, MB opsiyonel) | 7a8a56a |
-| 2026-08-20 | OpenHands | MusicBrainz arama UI'dan tamamen kaldırıldı | 7b27cd3 |
-| 2026-08-20 | OpenHands | Life Story prompt grounding ayrımı (şarkı bilgisi izin, biyografi yasak) | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
+| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş | 053bd4a |
+| 2026-08-20 | OpenHands | metaLine + isValidSong artist fix | 482a292 |
+| 2026-08-20 | OpenHands | Journey Step 4 UI tersine çevirme | 7a8a56a |
+| 2026-08-20 | OpenHands | MusicBrainz arama UI'dan kaldırıldı | 7b27cd3 |
+| 2026-08-22 | OpenHands | Dynamic Music Map Engine + Poetic Gemini Analyzer | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
 
 ---
-_2026-08-20 OpenHands tarafından tamamen yeniden yazıldı. Life Story
-prompt'unda şarkı/albüm gerçek bilgisi kullanımına izin verildi, kullanıcı
-biyografisi uydurma yasağı korundu. Canlı LLM doğrulaması anahtar eksikliği
+_2026-08-22 OpenHands tarafından tamamen yeniden yazıldı. Dynamic Music Map
+Engine + Poetic Gemini Analyzer + Life Feed persistence teslim edildi
+(172/172 test, tsc/build temiz). Canlı Gemini doğrulaması anahtar eksikliği
 nedeniyle kullanıcı makinesine devredildi. Tek kaynak `docs/HANDOFF.md`._

@@ -1,16 +1,19 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock, Maximize } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Map, Maximize } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney } from "@/lib/journey-storage";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
+import { PosterCanvas } from "@/components/results/PosterCanvas";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { generateStory } from "@/lib/llm/generateStory.server";
 import { deterministicLifeStory } from "@/lib/llm/prompts";
+import { deterministicPoeticAnalysis, type PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -137,6 +140,53 @@ function LifeStory({
         ) : (
           <p className="whitespace-pre-line">{story}</p>
         )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Dynamic Music Map section — renders the deterministic analysis immediately,
+ * then upgrades it in place when the Gemini poetic analyzer responds. Follows
+ * the same contract as LifeStory: fingerprinted single call, any failure keeps
+ * the deterministic render, the page never breaks on provider errors.
+ */
+function DynamicMusicMap({
+  profile,
+  songs,
+}: {
+  profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
+  songs: string[];
+}) {
+  const fallback = useMemo(() => deterministicPoeticAnalysis(profile, songs), [profile, songs]);
+  const [analysis, setAnalysis] = useState<PoeticAnalysis>(fallback);
+
+  const fingerprint = useMemo(
+    () => JSON.stringify({ songs, archetype: profile.archetype }),
+    [songs, profile.archetype],
+  );
+
+  useEffect(() => {
+    setAnalysis(fallback);
+    let active = true;
+    generatePoeticAnalysis({ data: { profile, songs } })
+      .then((result) => {
+        if (active && result?.analysis) setAnalysis(result.analysis);
+      })
+      .catch(() => {
+        /* deterministic render already on screen — nothing to do */
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fingerprint]);
+
+  return (
+    <section>
+      <SectionHeading icon={Map} eyebrow="Your living map" title="Dynamic Music Map" />
+      <div className="mt-8">
+        <PosterCanvas analysis={analysis} songs={songs} />
       </div>
     </section>
   );
@@ -286,6 +336,11 @@ function ResultsPage() {
               ))}
             </div>
           </section>
+        </AnimatedReveal>
+
+        {/* Dynamic Music Map */}
+        <AnimatedReveal>
+          {profile ? <DynamicMusicMap profile={profile} songs={songs} /> : null}
         </AnimatedReveal>
 
         {/* Emotional Timeline */}
