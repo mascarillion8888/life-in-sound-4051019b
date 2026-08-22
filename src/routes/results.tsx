@@ -1,13 +1,15 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock, Map, Maximize } from "lucide-react";
+import { Dna, Film, Sparkles, Clock, Map, Maximize, Radio } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
-import { loadJourney } from "@/lib/journey-storage";
+import { loadJourney, type JourneyProgress } from "@/lib/journey-storage";
+import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
 import { PosterCanvas } from "@/components/results/PosterCanvas";
+import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { generateStory } from "@/lib/llm/generateStory.server";
@@ -154,9 +156,11 @@ function LifeStory({
 function DynamicMusicMap({
   profile,
   songs,
+  feedEntries,
 }: {
   profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
   songs: string[];
+  feedEntries: LifeFeedEntry[];
 }) {
   const fallback = useMemo(() => deterministicPoeticAnalysis(profile, songs), [profile, songs]);
   const [analysis, setAnalysis] = useState<PoeticAnalysis>(fallback);
@@ -186,7 +190,7 @@ function DynamicMusicMap({
     <section>
       <SectionHeading icon={Map} eyebrow="Your living map" title="Dynamic Music Map" />
       <div className="mt-8">
-        <PosterCanvas analysis={analysis} songs={songs} />
+        <PosterCanvas analysis={analysis} songs={songs} feedEntries={feedEntries} />
       </div>
     </section>
   );
@@ -234,12 +238,17 @@ function ResultsPage() {
     select: (s) => (s.location.state as { answers?: Record<number, string> })?.answers,
   });
   const [storedAnswers, setStoredAnswers] = useState<Record<number, string>>({});
+  const [journey, setJourney] = useState<JourneyProgress | null>(null);
+  const [feed, setFeed] = useState<LifeFeedState | null>(null);
   const [posterOpen, setPosterOpen] = useState(false);
 
   // Fall back to saved progress when the page is reloaded or opened directly.
   useEffect(() => {
     const saved = loadJourney();
-    if (saved) setStoredAnswers(saved.answers);
+    if (saved) {
+      setStoredAnswers(saved.answers);
+      setJourney(saved);
+    }
   }, []);
 
   // Close fullscreen poster with Escape.
@@ -338,9 +347,21 @@ function ResultsPage() {
           </section>
         </AnimatedReveal>
 
-        {/* Dynamic Music Map */}
+        {/* Dynamic Music Map — evolves with the Life Feed */}
         <AnimatedReveal>
-          {profile ? <DynamicMusicMap profile={profile} songs={songs} /> : null}
+          {profile ? (
+            <DynamicMusicMap profile={profile} songs={songs} feedEntries={feed?.entries ?? []} />
+          ) : null}
+        </AnimatedReveal>
+
+        {/* Life Feed — the unrestricted post-journey timeline */}
+        <AnimatedReveal>
+          <section>
+            <SectionHeading icon={Radio} eyebrow="Beyond the eighth song" title="Life Feed" />
+            <div className="mt-8">
+              <LifeFeedSection journey={journey} onFeedChange={setFeed} />
+            </div>
+          </section>
         </AnimatedReveal>
 
         {/* Emotional Timeline */}

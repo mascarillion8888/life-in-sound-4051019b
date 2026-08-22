@@ -12,14 +12,15 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-Testler:   172/172 geçti — 2026-08-22 (11 dosya; +3 yeni test dosyası)
+Testler:   201/201 geçti — 2026-08-22 (14 dosya; +3 yeni komponent test dosyası)
 tsc/build: temiz (tsc --noEmit = 0 hata; npm run build = 0)
 Lint:      Yeni dosyalar temiz; 4 DOSYADA ÖNCEDEN VAR OLAN prettier drift'i
            (Results.tsx, SongPicker.tsx, Waveform.tsx, soundmap/data.ts)
            bilinçli dokunulmadı — minimal-değişiklik ilkesi.
 LLM:       GEMINI_API_KEY BU ORTAMDA BOŞ — canlı Gemini çıktı doğrulaması
-           KULLANICI makinesinde yapılmalı (deterministik fallback her
-           durumda render olur).
+           (analiz + entry insight) KULLANICI makinesinde yapılmalı;
+           deterministik fallback her durumda render olur.
+Smoke:     /results SSR çıktısında "Life Feed" bölümü görüldü (dev server).
 ```
 
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
@@ -28,48 +29,53 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ## 2. Son biten iş (NEDEN + NASIL)
 
-**Dynamic Music Map Engine & Poetic Gemini Analyzer (TAMAMLANDI + 172/172 test
-yeşil; canlı Gemini çıktısı doğrulaması KULLANICI'DA BEKLEMEDE).**
+**Life Feed UI Suite & Dynamic Timeline Evolution (TAMAMLANDI + 201/201 test
+yeşil; canlı Gemini doğrulaması KULLANICI'DA BEKLEMEDE).**
 
-Kullanıcı talebi: 8 şarkıdan soğuk AI raporu değil, "ömrü boyu yanındaki
-bir dost" gibi yazılan şiirsel bir analiz; görsel tema/renk/tipografi/duygu
-eğrisi kullanıcının janrına göre (Metal/Gothic, 80s Synthwave, Jazz/Classical,
-Indie/Acoustic, Pop) dinamik belirlensin. Grounding ilkesi korunarak yapıldı:
-**tema ve temel palet deterministik hesaplanır, LLM sadece anlatır (aura +
-artwork prompt'u rafine eder).**
+Kullanıcı talebi: 8. şarkıdan sonra kısıtsız "Life Feed" — kullanıcı sürekli
+şarkı/not/anı ekleyebilsin; her eklemeye anında şiirsel (dost sesiyle) insight;
+timeline dinamik bölümlere (haftalık/aylık portallar) gruplansın; poster
+durmadan büyüsün.
+
+Önceki oturumdaki temel (life-feed.ts state + persistence) bu oturumda UI
+katmanıyla tamamlandı:
 
 Yeni dosyalar:
-- `src/lib/llm/poetic-analyzer.ts` — tipler (PoeticAnalysis, LifeChapter,
-  VisualSpec, CoreDuality), `detectVisualTheme` (janr ×2 + şarkı başlığı ×1
-  keyword skoru, tie-break öncelik sırası, hiçbiri yoksa ambient-default),
-  `THEME_CATALOG` (5 tema + default, hex palet + tipografi + aura + artwork
-  prompt), `buildPoeticAnalyzerPrompt` (saf string; grounding kuralları
-  biography-yasağı dahil; strict JSON kontrat + KEŞİF & BÜYÜLENME /
-  GEÇİŞ PORTALLARI örnekleri; opsiyonel memory notes), `extractJsonObject`,
-  `parsePoeticAnalysis` (telafi edici parser — her alan fallback'e düşer,
-  sadece hex kabul eder, asla throw etmez; hiç JSON yoksa null),
-  `deterministicPoeticAnalysis` (tamamen render-edilebilir fallback).
-- `src/lib/llm/generateAnalysis.server.ts` — server-only Gemini köprüsü
-  (OpenAI-uyumlu endpoint, native fetch, `GEMINI_API_KEY` env; json_object
-  response_format; hiçbir hata asla client'a fırlatılmaz → null = fallback).
-- `src/components/results/PosterCanvas.tsx` — dinamik temalı poster
-  komponenti: manifesto, aura çipleri, duygusal eğri barları, chapter
-  kartları, song insights, core duality, export butonu. Tüm renkler
-  `analysis.visual.palette`'ten inline style ile sürülür.
-- `src/lib/soundmap/poeticPoster.ts` — 1600×2400 canvas → PNG indirme
-  (bağımsız canvas renderer; DOM rasterizasyonu yok).
-- `src/lib/life-feed.ts` — Life Feed state + persistence: 8. cevap tamam
-  olunca `graduateToLifeFeed`; `appendLifeFeedEntry` immutable büyütür;
-  `loadLifeFeed` yüklerken validasyon eksik base'i reddeder; map +
-  memories dizileri (analyzer'a genişleyen girdi için).
-- Testler: `poetic-analyzer.test.ts` (tema tespiti + prompt + parser +
-  deterministik fallback), `life-feed.test.ts` (graduate/append/remove +
-  localStorage round-trip), `PosterCanvas.test.tsx` (render + tema palet).
-- `src/routes/results.tsx` — "Dynamic Music Map" bölümü eklendi
-  (deterministic derhal render → Gemini gelince yerinde upgrade;
-  LifeStory ile aynı fingerprint sözleşmesi).
-- `journey-storage.ts` — `normalizeSong` artık exported (life-feed reuse).
-- `.env.example` — server-only `GEMINI_API_KEY` dokümantasyonu.
+- `src/components/feed/LifeFeedInput.tsx` — Quick Entry Bar: iTunes
+  önerileri (`suggestSongs` server fn, Fuse.js re-rank — QuestionCard'ın
+  ghost akışıyla aynı sınır) + serbest metin → manual Song fallback; bellek
+  notu textarea'sı ("Bugün seni hangi şarkı anlatıyor?"). `suggester` DI
+  prop'u testlerde gerçek fetcher değişimi sağlar (mock yok).
+- `src/components/feed/LifeFeedTimeline.tsx` — sonsuz timeline: moment
+  kartları (cover art / Disc3 fallback, başlık, sanatçı, tarih, not, şiirsel
+  insight), `groupFeedEntries` ile haftalık (≤35 gün) / aylık dinamik
+  portallar; inline not düzenleme + silme.
+- `src/components/feed/LifeFeedSection.tsx` — orkestratör: mount'ta
+  loadLifeFeed ?? graduateToLifeFeed (tek sefer), her mutasyonda kaydet,
+  `onFeedChange` ile posteri besle; insight akışı = deterministik ANINDA +
+  Gemini YERINDE upgrade (`insightFetcher` DI prop'u).
+- Testler: `LifeFeedInput.test.tsx`, `LifeFeedTimeline.test.tsx`,
+  `LifeFeedSection.test.tsx` (tam state-sync: add → anında deterministik
+  insight → Gemini upgrade → localStorage persist).
+
+Değiştirilenler:
+- `life-feed.ts` — `insight` alanı (kalıcı), `updateLifeFeedEntry` (note/
+  insight patch, eğriyi oynatmadan), `feedEntryIntensity` (deterministik
+  0.35..0.95, song+addedAt hash; not/insight edit'i eğriyi DEĞİŞTİRMEZ),
+  `groupFeedEntries` (haftalık/aylık portallar, undated güvenliği).
+- `poetic-analyzer.ts` — `deterministicEntryInsight` (5 şablon, stableHash;
+  not varsa notu örer — sadece gerçek girdiler, hiçbir şey uydurulmaz).
+- `generateAnalysis.server.ts` — `generateEntryInsight` server fn (tek
+  cümlelik prose insight; systemPrompt override + jsonMode=false desteği
+  `callGeminiPoeticAnalyzer`'a eklendi).
+- `PosterCanvas.tsx` — `feedEntries` prop'u: eğri 8+N nokta ("+1","+2"
+  işaretleri, feed barları ters gradyan), "Life Feed — the map keeps growing"
+  playlist bölümü; export `poeticPoster`'a feed'i iletir.
+- `poeticPoster.ts` — export eğrisi base 8 + feed (feed barları accent
+  renkte, "+n" etiketli).
+- `results.tsx` — ResultsPage `journey` + `feed` state'i; DynamicMusicMap
+  feedEntries alır; yeni "Life Feed" bölümü (Radio ikonu) Dynamic Music
+  Map ile Emotional Timeline arasında.
 
 Uyum: `vite.config.ts` allowedHosts (DEV-ONLY) commitlenmedi; orchestraya
 dokunulmadı; companion/memory/pattern sistemi geri getirilmedi (STATE.md 🚨).
@@ -78,16 +84,18 @@ dokunulmadı; companion/memory/pattern sistemi geri getirilmedi (STATE.md 🚨).
 
 ## 3. Şu an açık/bekleyen tek şey
 
-Yeni engine TAMAM ve push edildi. BEKLEYEN: canlı Gemini çıktı doğrulaması
-(kullanıcı makinesinde). Validation Gate (5+ gerçek kişi) hâlâ geçerli öncelik;
-Faz 4 kullanıcı onayı olmadan başlamıyor.
+Life Feed UI TAMAM ve push edildi. BEKLEYEN: canlı Gemini doğrulaması
+(analiz + entry insight, kullanıcı makinesinde). Validation Gate (5+ gerçek
+kişi) hâlâ geçerli öncelik; Faz 4 kullanıcı onayı olmadan başlamıyor.
 
 **Sıradaki tek adım:**
 ```
 1) KULLANICI: git pull → GEMINI_API_KEY=<key> ile npm run dev → journey
-   tamamla → /results'ta "Dynamic Music Map" bölümünde manifesto/chapter/
-   duality'nin deterministikten daha zengin (Gemini) geldiğini GÖZLE KONTROL ET.
-   Anahtar yoksa deterministik render beklenen davranış — hata değil.
+   tamamla → /results'ta:
+   a) "Dynamic Music Map" bölümü Gemini-zengin mi (manifesto/chapter/duality)
+   b) "Life Feed"de bir şarkı + not ekle → insight önce deterministik
+      gelip sonra tek cümlelik Gemini prose ile yerinde değişiyor mu
+   Anahtar yoksa deterministik davranış beklenendir — hata değil.
 2) Validation Gate: 5+ kişiye ürünü göster, geri bildirim topla. AI adımı YOK.
 ```
 
@@ -95,16 +103,15 @@ Faz 4 kullanıcı onayı olmadan başlamıyor.
 
 ## 4. Olası sonuçlar
 
-**🅐 Kullanıcı Gemini çıktısında zengin manifesto/chapters görür →** Doğrulandı.
-Validation Gate'e geçilebilir; Life Feed UI (graduation akışı) sıradaki
-tasarım onayını bekler (`docs/TECH/DATABASE_PLAN.md` DRAFT).
+**🅐 Kullanıcı Gemini-zengin analiz + entry insight görür →** Doğrulandı.
+Validation Gate'e geçilebilir. Sıradaki olası iş: feed'e göre ana analizin
+de evrilmesi (şu an PoeticAnalysis sadece 8 şarkı; feed eğri+playlist'e ekleniyor).
 
-**🅑 Kullanıcı sadece deterministik çıktı görür (Gemini yanıt vermiyor) →**
-Ortamda GEMINI_API_KEY eksik veya endpoint/model erişimi sorunu; server
-loglarında değil client'ta sessiz fallback — anahtarı kontrol et.
+**🅑 Kullanıcı sadece deterministik çıktı görür →** GEMINI_API_KEY eksik veya
+endpoint erişimi sorunu; her iki server fn de sessizce null/fallback döner.
 
-**🅒 Gemini žey/geçersiz JSON dönerse →** Parser telafisi devrede (testlerle
-kanıtlı); prompt'a "strict JSON" güçlendirmesi küçük bir yama olarak eklenebilir.
+**🅒 Entry insight cümlesi JSON/bozuk gelirse →** İlk boş olmayan satır
+alınıyor; gerekirse prompt'a çıktı formatı sertleştirmesi küçük yama olur.
 
 **🅓 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden
 yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` ile push et.
@@ -113,13 +120,14 @@ yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` ile push et.
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-**LLM görsel spesifikasyonunda renkleri asla serbest bırakma.** Tema kimliği +
-palet hex'leri prompt'a deterministik girdi olarak verildi; Gemini sadece
-aura/artwork metnini rafine eder, parser de yalnızca geçerli hex kabul eder
-(aksi halde tema paleti devreye girer). Böylece "LLM hesaplar" değil "LLM
-anlatır" ilkesi renk katmanına da taşındı. Ayrıca jsdom testlerinde CSS
-shorthand hex→rgb normalize edilir; poster tema testleri bu normalize formu
-spesifik assert etmeli (PosterCanvas.test.tsx'deki helper).
+**Eğri kararlılığı = kimlikten türet.** Feed entry yoğunluğu `stableHash
+(title+addedAt)`'ten geliyor; not/insight edit'i eğriyi kımıldatmaz, silme/
+ekleme otomatik yeniden hesaplatır (PosterCanvas'daki curve türevlenmiş
+değer — state değil). Ayrıca: DI prop'ları (`suggester`, `insightFetcher`)
+server-fn sınırlarını mock'suz test edilebilir kıldı — deferred Promise ile
+"anında deterministik → sonra Gemini" yarışı deterministik olarak test edildi.
+jsdom'da `getByText("+1")` hem eğri hem playlist rozetlerini bulur →
+`getAllByText` kullan.
 
 ---
 
@@ -131,7 +139,7 @@ spesifik assert etmeli (PosterCanvas.test.tsx'deki helper).
   soundmap/data.ts) rastgele kozmetik olarak fix etme — ayrı bir temizlik
   kararıdır, kullanıcı onayıyla.
 - Anahtarsız ortamda canlı Gemini/Groq doğrulaması yapmaya çalışma;
-  kullanıcı makinesine devret (aynı kural Life Story'de de geçerliydi).
+  kullanıcı makinesine devret.
 
 ---
 
@@ -139,14 +147,14 @@ spesifik assert etmeli (PosterCanvas.test.tsx'deki helper).
 
 | Tarih | Kim | Ne | Commit |
 |---|---|---|---|
-| 2026-08-19 | Claude+OpenHands | QuestionCard manuel giriş | 053bd4a |
 | 2026-08-20 | OpenHands | metaLine + isValidSong artist fix | 482a292 |
 | 2026-08-20 | OpenHands | Journey Step 4 UI tersine çevirme | 7a8a56a |
 | 2026-08-20 | OpenHands | MusicBrainz arama UI'dan kaldırıldı | 7b27cd3 |
-| 2026-08-22 | OpenHands | Dynamic Music Map Engine + Poetic Gemini Analyzer | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
+| 2026-08-22 | OpenHands | Dynamic Music Map Engine + Poetic Gemini Analyzer | 7cf32e4 |
+| 2026-08-22 | OpenHands | Life Feed UI Suite + Evolving Poster | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
 
 ---
-_2026-08-22 OpenHands tarafından tamamen yeniden yazıldı. Dynamic Music Map
-Engine + Poetic Gemini Analyzer + Life Feed persistence teslim edildi
-(172/172 test, tsc/build temiz). Canlı Gemini doğrulaması anahtar eksikliği
-nedeniyle kullanıcı makinesine devredildi. Tek kaynak `docs/HANDOFF.md`._
+_2026-08-22 OpenHands tarafından tamamen yeniden yazıldı. Life Feed UI Suite
+(Quick Entry Bar, sonsuz timeline, instant insight) + Evolving PosterCanvas
+teslim edildi (201/201 test, tsc/build temiz). Canlı Gemini doğrulaması
+kullanıcı makinesine devredildi. Tek kaynak `docs/HANDOFF.md`._

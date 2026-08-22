@@ -4,6 +4,7 @@ import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import type { PersonalityProfile } from "@/lib/ai/types";
 import {
   buildPoeticAnalyzerPrompt,
+  deterministicEntryInsight,
   deterministicPoeticAnalysis,
   detectVisualTheme,
   extractJsonObject,
@@ -183,6 +184,26 @@ describe("buildPoeticAnalyzerPrompt", () => {
     memories[0] = "my brother's basement, summer of 99";
     const prompt = buildPoeticAnalyzerPrompt({ profile, songs, memories });
     expect(prompt).toContain('memory note: "my brother\'s basement, summer of 99"');
+  });
+});
+
+describe("deterministicEntryInsight", () => {
+  it("weaves the user's own note into the line", () => {
+    const insight = deterministicEntryInsight({ songTitle: "Nightcall", note: "gece sürüşü" });
+    expect(insight).toContain("Nightcall");
+    expect(insight).toContain("gece sürüşü");
+  });
+
+  it("is stable and poetic without a note", () => {
+    const a = deterministicEntryInsight({ songTitle: "Painkiller" });
+    expect(a).toBe(deterministicEntryInsight({ songTitle: "Painkiller" }));
+    expect(a).toContain("Painkiller");
+    expect(a.length).toBeGreaterThan(10);
+  });
+
+  it("falls back gracefully for an empty title", () => {
+    const insight = deterministicEntryInsight({ songTitle: "   " });
+    expect(insight).toContain("This song");
   });
 });
 

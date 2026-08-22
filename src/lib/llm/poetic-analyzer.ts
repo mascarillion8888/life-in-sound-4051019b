@@ -23,6 +23,7 @@
  */
 import type { PersonalityProfile } from "@/lib/ai/types";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
+import { stableHash } from "@/lib/ai/personalityScoring";
 import { questions } from "@/lib/questions";
 
 /* -------------------------------------------------------------------------- */
@@ -370,6 +371,37 @@ export function deterministicPoeticAnalysis(
     visual,
     source: "deterministic",
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Life Feed instant insight (deterministic)                                   */
+/* -------------------------------------------------------------------------- */
+
+const ENTRY_INSIGHT_TEMPLATES: ((title: string) => string)[] = [
+  (t) => `“${t}” — the page you chose to keep from today.`,
+  (t) => `“${t}” said what the day itself couldn't.`,
+  (t) => `Some days don't need explaining; they need “${t}”.`,
+  (t) => `“${t}” — a small light added to an already-burning map.`,
+  (t) => `You reached for “${t}”, and the day finally made sense.`,
+];
+
+/**
+ * Instant, deterministic poetic insight for a single Life Feed entry — the
+ * "lifelong friend" one-liner shown immediately on add, before (and if) the
+ * Gemini upgrade arrives. Uses ONLY the song title and the user's own note;
+ * nothing is invented. Stable per entry (title hash), so re-renders and
+ * reloads show the same line until the Gemini insight replaces it.
+ */
+export function deterministicEntryInsight(input: {
+  songTitle: string;
+  note?: string | null;
+}): string {
+  const title = input.songTitle.trim() || "This song";
+  const note = input.note?.trim();
+  if (note) {
+    return `“${title}” — and you wrote it down yourself: “${note}”. That is how a map becomes a life.`;
+  }
+  return ENTRY_INSIGHT_TEMPLATES[stableHash(title) % ENTRY_INSIGHT_TEMPLATES.length](title);
 }
 
 /* -------------------------------------------------------------------------- */

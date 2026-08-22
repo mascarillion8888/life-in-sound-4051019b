@@ -1,7 +1,8 @@
-import { Download, Sparkles } from "lucide-react";
+import { Disc3, Download, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { PoeticAnalysis, VisualSpec } from "@/lib/llm/poetic-analyzer";
+import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { exportPoeticPoster } from "@/lib/soundmap/poeticPoster";
 
 /**
@@ -26,11 +27,30 @@ function displayFont(visual: VisualSpec): string {
   return FONT_BY_TYPOGRAPHY[visual.typography] ?? "Georgia, serif";
 }
 
-export function PosterCanvas({ analysis, songs }: { analysis: PoeticAnalysis; songs: string[] }) {
+export function PosterCanvas({
+  analysis,
+  songs,
+  feedEntries = [],
+}: {
+  analysis: PoeticAnalysis;
+  songs: string[];
+  /**
+   * Life Feed entries — each one extends the emotional curve and the playlist
+   * section, so the poster evolves as the map grows beyond the original 8.
+   */
+  feedEntries?: LifeFeedEntry[];
+}) {
   const { palette, aura, typography } = analysis.visual;
   const song = (i: number) => songs[i - 1] ?? `Untitled track ${i}`;
   const font = displayFont(analysis.visual);
-  const maxIntensity = Math.max(...analysis.emotionalCurve.map((p) => p.intensity), 0.01);
+  const curve = [
+    ...analysis.emotionalCurve,
+    ...feedEntries.map((entry) => ({
+      label: entry.song.title,
+      intensity: feedEntryIntensity(entry),
+    })),
+  ];
+  const maxIntensity = Math.max(...curve.map((p) => p.intensity), 0.01);
 
   return (
     <section
@@ -82,19 +102,28 @@ export function PosterCanvas({ analysis, songs }: { analysis: PoeticAnalysis; so
           className="mt-4 flex h-28 items-end gap-2 rounded-2xl border p-4 sm:gap-3"
           style={{ borderColor: `${palette.primary}33`, background: `${palette.background}88` }}
         >
-          {analysis.emotionalCurve.map((point, i) => (
+          {curve.map((point, i) => (
             <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-2">
               <div
                 className="w-full rounded-t-md transition-all"
-                title={`${song(i + 1)} — ${point.label}`}
+                title={
+                  i < analysis.emotionalCurve.length
+                    ? `${song(i + 1)} — ${point.label}`
+                    : point.label
+                }
                 style={{
                   height: `${Math.max(10, (point.intensity / maxIntensity) * 72)}px`,
-                  background: `linear-gradient(to top, ${palette.accent}, ${palette.primary})`,
+                  background:
+                    i < analysis.emotionalCurve.length
+                      ? `linear-gradient(to top, ${palette.accent}, ${palette.primary})`
+                      : `linear-gradient(to top, ${palette.primary}, ${palette.accent})`,
                   opacity: 0.55 + point.intensity * 0.45,
                 }}
               />
               <span className="text-[10px] font-mono" style={{ color: `${palette.text}80` }}>
-                {String(i + 1).padStart(2, "0")}
+                {i < analysis.emotionalCurve.length
+                  ? String(i + 1).padStart(2, "0")
+                  : `+${i - analysis.emotionalCurve.length + 1}`}
               </span>
             </div>
           ))}
@@ -179,6 +208,57 @@ export function PosterCanvas({ analysis, songs }: { analysis: PoeticAnalysis; so
         </ol>
       </div>
 
+      {/* Life Feed playlist — the map beyond the original 8 */}
+      {feedEntries.length > 0 ? (
+        <div className="mt-10 px-6 sm:px-12">
+          <h3
+            className="text-xs font-semibold uppercase tracking-[0.25em]"
+            style={{ color: `${palette.text}99` }}
+          >
+            Life Feed — the map keeps growing
+          </h3>
+          <ol className="mt-4 space-y-2">
+            {feedEntries.map((entry, i) => (
+              <li
+                key={entry.id}
+                className="flex items-center gap-3 rounded-2xl border px-4 py-2.5"
+                style={{ borderColor: `${palette.primary}26`, background: `${palette.text}05` }}
+              >
+                {entry.song.artworkUrl ? (
+                  <img
+                    src={entry.song.artworkUrl}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-xl border object-cover"
+                    style={{ borderColor: `${palette.primary}33` }}
+                  />
+                ) : (
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
+                    style={{ borderColor: `${palette.primary}33` }}
+                  >
+                    <Disc3 className="h-4 w-4" style={{ color: palette.primary }} />
+                  </span>
+                )}
+                <span className="shrink-0 text-xs font-mono" style={{ color: palette.accent }}>
+                  +{i + 1}
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className="block truncate text-sm font-semibold"
+                    style={{ color: palette.text }}
+                  >
+                    {entry.song.title}
+                  </span>
+                  <span className="block truncate text-xs" style={{ color: `${palette.text}80` }}>
+                    {entry.song.artist || entry.note || "Life Feed entry"}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+
       {/* Core duality */}
       <div
         className="mx-6 mt-10 rounded-3xl border p-8 text-center sm:mx-12"
@@ -212,7 +292,7 @@ export function PosterCanvas({ analysis, songs }: { analysis: PoeticAnalysis; so
       {/* Footer */}
       <footer className="flex flex-col items-center gap-3 px-6 py-10 sm:px-12">
         <Button
-          onClick={() => exportPoeticPoster(analysis, songs)}
+          onClick={() => exportPoeticPoster(analysis, songs, feedEntries)}
           className="h-12 rounded-full px-8 text-sm font-semibold"
           style={{ background: palette.primary, color: palette.background }}
         >

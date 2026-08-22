@@ -6,6 +6,7 @@
  * visual spec instead of hardcoded brand values.
  */
 import type { PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 
 function hexToRgba(hex: string, alpha: number): string {
   const m = hex.replace("#", "");
@@ -45,7 +46,11 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
  * Renders the analysis as a 1600x2400 poster and triggers a PNG download.
  * No-op when a 2D context cannot be created.
  */
-export function exportPoeticPoster(analysis: PoeticAnalysis, songs: string[]): void {
+export function exportPoeticPoster(
+  analysis: PoeticAnalysis,
+  songs: string[],
+  feedEntries: LifeFeedEntry[] = [],
+): void {
   const W = 1600;
   const H = 2400;
   const canvas = document.createElement("canvas");
@@ -89,19 +94,24 @@ export function exportPoeticPoster(analysis: PoeticAnalysis, songs: string[]): v
   ctx.stroke();
   y += 120;
 
-  // Emotional curve.
-  const curve = analysis.emotionalCurve;
+  // Emotional curve — the base 8 plus every Life Feed entry.
+  const curve = [
+    ...analysis.emotionalCurve,
+    ...feedEntries.map((entry) => ({ intensity: feedEntryIntensity(entry) })),
+  ];
   if (curve.length > 0) {
     const baseY = y + 200;
     const step = (W - 480) / curve.length;
+    const baseCount = analysis.emotionalCurve.length;
     curve.forEach((point, i) => {
       const barH = Math.max(16, point.intensity * 180);
       const x = 240 + step * i + step / 2;
-      ctx.fillStyle = hexToRgba(palette.primary, 0.85);
+      ctx.fillStyle =
+        i < baseCount ? hexToRgba(palette.primary, 0.85) : hexToRgba(palette.accent, 0.85);
       ctx.fillRect(x - 18, baseY - barH, 36, barH);
       ctx.fillStyle = hexToRgba(palette.text, 0.55);
       ctx.font = "500 24px Inter, sans-serif";
-      ctx.fillText(String(i + 1), x, baseY + 44);
+      ctx.fillText(i < baseCount ? String(i + 1) : `+${i - baseCount + 1}`, x, baseY + 44);
     });
     y = baseY + 120;
   }

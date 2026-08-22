@@ -11,7 +11,10 @@
  * of it. Storage failures are swallowed exactly like journey-storage: the app
  * must never break because persistence is unavailable.
  */
+import { differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
+
 import { questions } from "./questions";
+import { stableHash } from "./ai/personalityScoring";
 import type { Song } from "./song/types";
 import { isValidSong, normalizeSong, type JourneyProgress } from "./journey-storage";
 
@@ -24,6 +27,12 @@ export type LifeFeedEntry = {
   song: Song;
   /** Optional personal memory note attached to this song. */
   note: string | null;
+  /**
+   * Poetic one-line insight for this entry — written deterministically at add
+   * time, then upgraded in place when the Gemini insight call responds.
+   * Persisted so the timeline survives a refresh.
+   */
+  insight: string | null;
   /** ISO-8601 timestamp. */
   addedAt: string;
 };
@@ -89,18 +98,50 @@ export function graduateToLifeFeed(progress: JourneyProgress | null): LifeFeedSt
  */
 export function appendLifeFeedEntry(
   state: LifeFeedState,
-  input: { song: Song; note?: string | null; addedAt?: string },
+  input: { song: Song; note?: string | null; insight?: string | null; addedAt?: string },
 ): LifeFeedState {
   const entry: LifeFeedEntry = {
     id: newId(),
     song: normalizeSong(input.song),
     note: typeof input.note === "string" && input.note.trim().length > 0 ? input.note.trim() : null,
+    insight:
+      typeof input.insight === "string" && input.insight.trim().length > 0
+        ? input.insight.trim()
+        : null,
     addedAt: input.addedAt ?? new Date().toISOString(),
   };
   return {
     ...state,
     entries: [...state.entries, entry],
     updatedAt: entry.addedAt,
+  };
+}
+
+/**
+ * Patch a single entry in place (note edit and/or insight upgrade). The map
+ * keeps its order; intensity derives from song + addedAt, so a note/insight
+ * edit never shifts the emotional curve. Unknown ids are a no-op.
+ */
+export function updateLifeFeedEntry(
+  state: LifeFeedState,
+  id: string,
+  patch: { note?: string | null; insight?: string | null },
+): LifeFeedState {
+  if (!state.entries.some((entry) => entry.id === id)) return state;
+  const clean = (v: string | null | undefined) =>
+    typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+  return {
+    ...state,
+    entries: state.entries.map((entry) =>
+      entry.id === id
+        ? {
+            ...entry,
+            note: patch.note !== undefined ? clean(patch.note) : entry.note,
+            insight: patch.insight !== undefined ? clean(patch.insight) : entry.insight,
+          }
+        : entry,
+    ),
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -111,6 +152,16 @@ export function removeLifeFeedEntry(state: LifeFeedState, id: string): LifeFeedS
     entries: state.entries.filter((entry) => entry.id !== id),
     updatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Deterministic curve intensity for a feed entry (0.35..0.95), stable per
+ * song + timestamp. Editing the note or insight never moves the point; adding
+ * or removing entries re-derives the extended curve automatically.
+ */
+export function feedEntryIntensity(entry: LifeFeedEntry): number {
+  const h = stableHash(`${entry.song.title.toLowerCase()}|${entry.addedAt}`);
+  return Number((0.35 + ((h % 100) / 100) * 0.6).toFixed(2));
 }
 
 /**
@@ -134,6 +185,73 @@ export function lifeFeedMemories(state: LifeFeedState): (string | null)[] {
   ];
 }
 
+/** A dynamic timeline chapter: entries grouped by week or by month. */
+export type FeedChapter = {
+  id: string;
+  /** Human label, e.g. "Week 34, 2026" or "August 2026". */
+  label: string;
+  /** "weekly" when the whole feed spans ≤ 35 days, otherwise "monthly". */
+  granularity: "weekly" | "monthly";
+  entries: LifeFeedEntry[];
+};
+
+const UNDATED_CHAPTER: Pick<FeedChapter, "id" | "label"> = {
+  id: "undated",
+  label: "Undated moments",
+};
+
+/**
+ * Group feed entries into dynamic timeline chapters ("portals"). Spans of
+ * 35 days or less group by ISO week; longer spans group by calendar month.
+ * Entries are sorted chronologically (oldest first) inside each chapter and
+ * chapters are ordered chronologically. Entries with unparseable dates fall
+ * into a trailing "Undated moments" chapter.
+ */
+export function groupFeedEntries(entries: LifeFeedEntry[]): FeedChapter[] {
+  const dated = entries.filter((e) => isValid(parseISO(e.addedAt)));
+  const undated = entries.filter((e) => !isValid(parseISO(e.addedAt)));
+  if (dated.length === 0) {
+    return undated.length > 0
+      ? [{ ...UNDATED_CHAPTER, granularity: "monthly", entries: undated }]
+      : [];
+  }
+
+  const sorted = [...dated].sort((a, b) => a.addedAt.localeCompare(b.addedAt));
+  const span = differenceInCalendarDays(
+    parseISO(sorted[sorted.length - 1].addedAt),
+    parseISO(sorted[0].addedAt),
+  );
+  const granularity: FeedChapter["granularity"] = span <= 35 ? "weekly" : "monthly";
+
+  const keyOf = (iso: string) => {
+    const d = parseISO(iso);
+    return granularity === "weekly" ? format(d, "RRRR-'W'II") : format(d, "yyyy-MM");
+  };
+  const labelOf = (key: string) =>
+    granularity === "weekly"
+      ? `Week ${Number(key.slice(6))}, ${key.slice(0, 4)}`
+      : format(parseISO(`${key}-02`), "LLLL yyyy");
+
+  const byKey = new Map<string, LifeFeedEntry[]>();
+  for (const entry of sorted) {
+    const key = keyOf(entry.addedAt);
+    const bucket = byKey.get(key);
+    if (bucket) bucket.push(entry);
+    else byKey.set(key, [entry]);
+  }
+
+  const chapters: FeedChapter[] = [...byKey.entries()].map(([key, chapterEntries]) => ({
+    id: key,
+    label: labelOf(key),
+    granularity,
+    entries: chapterEntries,
+  }));
+  if (undated.length > 0) {
+    chapters.push({ ...UNDATED_CHAPTER, granularity, entries: undated });
+  }
+  return chapters;
+}
+
 function isValidEntry(value: unknown): value is LifeFeedEntry {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
@@ -142,6 +260,7 @@ function isValidEntry(value: unknown): value is LifeFeedEntry {
     v.id.length > 0 &&
     isValidSong(v.song) &&
     (typeof v.note === "string" || v.note === null || v.note === undefined) &&
+    (typeof v.insight === "string" || v.insight === null || v.insight === undefined) &&
     typeof v.addedAt === "string" &&
     v.addedAt.length > 0
   );
@@ -152,6 +271,7 @@ function normalizeEntry(entry: LifeFeedEntry): LifeFeedEntry {
     id: entry.id,
     song: normalizeSong(entry.song),
     note: typeof entry.note === "string" && entry.note.length > 0 ? entry.note : null,
+    insight: typeof entry.insight === "string" && entry.insight.length > 0 ? entry.insight : null,
     addedAt: entry.addedAt,
   };
 }

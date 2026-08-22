@@ -6,7 +6,9 @@ import type { JourneyProgress } from "./journey-storage";
 import {
   appendLifeFeedEntry,
   clearLifeFeed,
+  feedEntryIntensity,
   graduateToLifeFeed,
+  groupFeedEntries,
   isJourneyComplete,
   LIFE_FEED_STORAGE_KEY,
   lifeFeedMemories,
@@ -14,6 +16,8 @@ import {
   loadLifeFeed,
   removeLifeFeedEntry,
   saveLifeFeed,
+  updateLifeFeedEntry,
+  type LifeFeedEntry,
 } from "./life-feed";
 
 function makeSong(title: string, artist = ""): Song {
@@ -102,6 +106,96 @@ describe("append / remove / expand", () => {
     const pruned = removeLifeFeedEntry(grown, grown.entries[0].id);
     expect(pruned.entries).toHaveLength(0);
     expect(Object.keys(pruned.baseAnswers)).toHaveLength(questions.length);
+  });
+});
+
+describe("updateLifeFeedEntry", () => {
+  it("patches the note and insight in place, immutably", () => {
+    const base = graduateToLifeFeed(completeProgress());
+    if (!base) throw new Error("base state required");
+    const grown = appendLifeFeedEntry(base, { song: makeSong("Patchable"), note: "original" });
+    const id = grown.entries[0].id;
+
+    const patched = updateLifeFeedEntry(grown, id, { note: "edited", insight: "a gemini line" });
+    expect(grown.entries[0].note).toBe("original"); // original untouched
+    expect(patched.entries[0].note).toBe("edited");
+    expect(patched.entries[0].insight).toBe("a gemini line");
+  });
+
+  it("clears a note when patched with null", () => {
+    const base = graduateToLifeFeed(completeProgress());
+    if (!base) throw new Error("base state required");
+    const grown = appendLifeFeedEntry(base, { song: makeSong("X"), note: "temp" });
+    const cleared = updateLifeFeedEntry(grown, grown.entries[0].id, { note: null });
+    expect(cleared.entries[0].note).toBeNull();
+  });
+
+  it("is a no-op for unknown ids", () => {
+    const base = graduateToLifeFeed(completeProgress());
+    if (!base) throw new Error("base state required");
+    expect(updateLifeFeedEntry(base, "missing", { note: "x" })).toBe(base);
+  });
+});
+
+describe("feedEntryIntensity", () => {
+  it("is deterministic and within 0.35..0.95", () => {
+    const base = graduateToLifeFeed(completeProgress());
+    if (!base) throw new Error("base state required");
+    const grown = appendLifeFeedEntry(base, {
+      song: makeSong("Curve"),
+      addedAt: "2026-08-22T10:00:00.000Z",
+    });
+    const entry = grown.entries[0];
+
+    const first = feedEntryIntensity(entry);
+    expect(first).toBe(feedEntryIntensity(entry));
+    expect(first).toBeGreaterThanOrEqual(0.35);
+    expect(first).toBeLessThanOrEqual(0.95);
+
+    // Editing note/insight must NOT move the curve point.
+    const edited = updateLifeFeedEntry(grown, entry.id, { note: "new", insight: "new" });
+    expect(feedEntryIntensity(edited.entries[0])).toBe(first);
+  });
+});
+
+describe("groupFeedEntries", () => {
+  function makeEntry(title: string, addedAt: string): LifeFeedEntry {
+    return {
+      id: `e-${title}-${addedAt}`,
+      song: makeSong(title),
+      note: null,
+      insight: null,
+      addedAt,
+    };
+  }
+
+  it("groups short spans into weekly chapters, chronological order", () => {
+    const entries = [
+      makeEntry("later", "2026-08-20T09:00:00.000Z"),
+      makeEntry("earlier", "2026-08-03T09:00:00.000Z"),
+    ];
+    const chapters = groupFeedEntries(entries);
+    expect(chapters.every((c) => c.granularity === "weekly")).toBe(true);
+    expect(chapters[0].label).toMatch(/^Week \d+, 2026$/);
+    // Chronological: August 3 chapter comes before August 20.
+    expect(chapters[0].entries[0].song.title).toBe("earlier");
+    expect(chapters[chapters.length - 1].entries[0].song.title).toBe("later");
+  });
+
+  it("groups long spans into monthly chapters", () => {
+    const chapters = groupFeedEntries([
+      makeEntry("a", "2026-01-05T09:00:00.000Z"),
+      makeEntry("b", "2026-05-05T09:00:00.000Z"),
+    ]);
+    expect(chapters.every((c) => c.granularity === "monthly")).toBe(true);
+    expect(chapters.map((c) => c.label)).toEqual(["January 2026", "May 2026"]);
+  });
+
+  it("collects undated entries in a trailing chapter and returns [] for none", () => {
+    expect(groupFeedEntries([])).toEqual([]);
+    const chapters = groupFeedEntries([makeEntry("ghost", "not-a-date")]);
+    expect(chapters).toHaveLength(1);
+    expect(chapters[0].label).toBe("Undated moments");
   });
 });
 

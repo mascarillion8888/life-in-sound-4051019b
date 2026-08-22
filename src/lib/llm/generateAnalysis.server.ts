@@ -37,6 +37,32 @@ export type GenerateAnalysisOutput = {
   analysis: PoeticAnalysis | null;
 };
 
+export type GenerateEntryInsightInput = {
+  songTitle: string;
+  artist?: string;
+  note?: string | null;
+};
+
+export type GenerateEntryInsightOutput = {
+  insight: string | null;
+};
+
+/** Grounded prompt for a single Life Feed entry's instant poetic insight. */
+export function buildEntryInsightPrompt(input: GenerateEntryInsightInput): string {
+  const note = input.note?.trim();
+  return [
+    "You are the poetic voice of Life in a Sound — a lifelong friend, not a report.",
+    "",
+    `Song: ${input.songTitle}${input.artist ? ` — ${input.artist}` : ""}`,
+    note ? `The user's own memory note: "${note}"` : "No memory note supplied.",
+    "",
+    "RULES:",
+    "1. Write ONE sentence only — a warm, poetic insight a lifelong friend might say about this moment.",
+    "2. Use only the supplied song and note. Do not invent facts about the user's real life; if you genuinely know the song's real theme, you may allude to it.",
+    "3. Plain prose only. No JSON, no quotes around the whole sentence, no preamble.",
+  ].join("\n");
+}
+
 function getGeminiServerKey(): string | null {
   const value = process.env?.GEMINI_API_KEY;
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -58,12 +84,19 @@ function extractContent(payload: unknown): string | null {
  */
 export async function callGeminiPoeticAnalyzer(
   prompt: string,
-  options: { fetchImpl?: typeof fetch; signal?: AbortSignal } = {},
+  options: {
+    fetchImpl?: typeof fetch;
+    signal?: AbortSignal;
+    /** Override the default strict-JSON system instruction (e.g. prose insights). */
+    systemPrompt?: string;
+    jsonMode?: boolean;
+  } = {},
 ): Promise<string | null> {
   const apiKey = getGeminiServerKey();
   if (!apiKey) return null;
 
   const fetchImpl = options.fetchImpl ?? fetch;
+  const jsonMode = options.jsonMode ?? true;
 
   let response: Response;
   try {
@@ -80,13 +113,14 @@ export async function callGeminiPoeticAnalyzer(
           {
             role: "system",
             content:
+              options.systemPrompt ??
               "You are a poetic music analyst. You answer with strict JSON only — no markdown, no code fences, no commentary.",
           },
           { role: "user", content: prompt },
         ],
         temperature: 0.8,
         max_tokens: 2400,
-        response_format: { type: "json_object" },
+        ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
       }),
     });
   } catch {
@@ -123,5 +157,30 @@ export const generatePoeticAnalysis = createServerFn({ method: "POST" })
       return { analysis } satisfies GenerateAnalysisOutput;
     } catch {
       return { analysis: null } satisfies GenerateAnalysisOutput;
+    }
+  });
+
+/**
+ * Instant Gemini insight for one Life Feed entry. `null` means "keep the
+ * deterministic line" — the timeline never blocks on the provider.
+ */
+export const generateEntryInsight = createServerFn({ method: "POST" })
+  .validator((input: GenerateEntryInsightInput): GenerateEntryInsightInput => input)
+  .handler(async ({ data }) => {
+    if (!data?.songTitle?.trim()) {
+      return { insight: null } satisfies GenerateEntryInsightOutput;
+    }
+    try {
+      const prompt = buildEntryInsightPrompt(data);
+      const raw = await callGeminiPoeticAnalyzer(prompt, {
+        signal: AbortSignal.timeout(8000),
+        systemPrompt:
+          "You are a poetic music analyst writing as a lifelong friend. Answer with ONE plain-prose sentence — no JSON, no markdown, no preamble.",
+        jsonMode: false,
+      });
+      const insight = raw?.split("\n").find((line) => line.trim().length > 0) ?? null;
+      return { insight } satisfies GenerateEntryInsightOutput;
+    } catch {
+      return { insight: null } satisfies GenerateEntryInsightOutput;
     }
   });

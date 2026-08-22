@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { PosterCanvas } from "./PosterCanvas";
 
@@ -72,5 +73,66 @@ describe("PosterCanvas", () => {
     };
     expect(style).toContain(rgb(analysis.visual.palette.background));
     expect(style).toContain(rgb(analysis.visual.palette.text));
+  });
+
+  it("evolves: Life Feed entries extend the curve and the playlist", () => {
+    const analysis = makeAnalysis();
+    const feedEntries: LifeFeedEntry[] = [
+      {
+        id: "lf-1",
+        song: {
+          provider: "manual",
+          providerId: "m1",
+          title: "Nightcall",
+          artist: "Kavinsky",
+          album: null,
+          artworkUrl: null,
+          isrc: null,
+        },
+        note: "gece sürüşü",
+        insight: null,
+        addedAt: "2026-08-22T21:00:00.000Z",
+      },
+      {
+        id: "lf-2",
+        song: {
+          provider: "manual",
+          providerId: "m2",
+          title: "Sunset Runner",
+          artist: "",
+          album: null,
+          artworkUrl: null,
+          isrc: null,
+        },
+        note: null,
+        insight: null,
+        addedAt: "2026-08-22T22:00:00.000Z",
+      },
+    ];
+
+    render(<PosterCanvas analysis={analysis} songs={SONGS} feedEntries={feedEntries} />);
+
+    // Playlist section lists the new entries.
+    expect(screen.getByText(/the map keeps growing/i)).toBeInTheDocument();
+    expect(screen.getByText("Nightcall")).toBeInTheDocument();
+    expect(screen.getByText("Sunset Runner")).toBeInTheDocument();
+
+    // The emotional curve grew from 8 to 10 points: "+1"/"+2" markers exist
+    // (both in the curve and in the playlist badges).
+    expect(screen.getAllByText("+1").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("+2").length).toBeGreaterThanOrEqual(1);
+    const first = screen.getByTitle("Nightcall");
+    const maxIntensity = Math.max(
+      ...analysis.emotionalCurve.map((p) => p.intensity),
+      ...feedEntries.map(feedEntryIntensity),
+      0.01,
+    );
+    const expectedHeight = Math.max(10, (feedEntryIntensity(feedEntries[0]) / maxIntensity) * 72);
+    expect(first.style.height).toBe(`${expectedHeight}px`);
+  });
+
+  it("without feed entries there is no playlist section", () => {
+    render(<PosterCanvas analysis={makeAnalysis()} songs={SONGS} />);
+    expect(screen.queryByText(/the map keeps growing/i)).not.toBeInTheDocument();
   });
 });
