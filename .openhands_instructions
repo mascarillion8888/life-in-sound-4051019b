@@ -1,0 +1,14 @@
+# OPENHANDS GLOBAL EXECUTION RULES
+
+1. NO HEAVY DIRECTORY SCANS:
+   - Do NOT scan node_modules, .git, or build folders.
+   - Do NOT loop indefinitely trying to index the entire repository.
+   - Focus strictly on files inside `src/`.
+
+2. NO UNAPPROVED "DONE" STATEMENTS:
+   - Never claim a task or test is "passed/done" based solely on terminal output.
+   - If UI changes are made, run `npm run dev` and provide the live Web Preview link.
+
+3. WORKFLOW RULES:
+   - Always implement explicit user confirmation steps for inputs (e.g. Song/Artist Confirmation Cards).
+   - Prioritize UI/UX rendering and user visual feedback over writing exhaustive unit tests.
