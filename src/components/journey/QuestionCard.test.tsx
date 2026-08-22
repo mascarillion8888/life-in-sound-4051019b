@@ -19,12 +19,16 @@ function renderCard(
     selected?: Song | null;
     answer?: string;
     draft?: string;
+    verified?: boolean;
+    ghostCompletion?: string | null;
+    onGhostAccept?: () => void;
     onDraftChange?: (text: string) => void;
     onChoose?: (song: Song) => void;
   } = {},
 ) {
   const onChoose = overrides.onChoose ?? vi.fn();
   const onDraftChange = overrides.onDraftChange ?? vi.fn();
+  const onGhostAccept = overrides.onGhostAccept ?? vi.fn();
   render(
     <QuestionCard
       number={1}
@@ -32,12 +36,15 @@ function renderCard(
       description="Think of a track that takes you back."
       answer={overrides.answer}
       selected={overrides.selected}
+      verified={overrides.verified}
+      ghostCompletion={overrides.ghostCompletion}
+      onGhostAccept={onGhostAccept}
       draft={overrides.draft ?? ""}
       onDraftChange={onDraftChange}
       onChoose={onChoose}
     />,
   );
-  return { onChoose, onDraftChange };
+  return { onChoose, onDraftChange, onGhostAccept };
 }
 
 describe("QuestionCard", () => {
@@ -60,14 +67,14 @@ describe("QuestionCard", () => {
 
   it("disables the Onayla button until the user types text", () => {
     renderCard();
-    expect(screen.getByRole("button", { name: /onayla/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /ritüele ekle/i })).toBeDisabled();
   });
 
   it("enables the Onayla button once draft text is present", () => {
     const { onDraftChange } = renderCard({ draft: "Sting - Fragile" });
     // draft is controlled by the parent; the card reflects it.
     expect(onDraftChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /onayla/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /ritüele ekle/i })).not.toBeDisabled();
   });
 
   it("shows the selected song as 'title — artist'", () => {
@@ -84,7 +91,7 @@ describe("QuestionCard", () => {
     renderCard();
     // The only song-entry affordances are the text box and Onayla.
     expect(screen.getByLabelText("Şarkı ve sanatçı adını yaz")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /onayla/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ritüele ekle/i })).toBeInTheDocument();
     // No MusicBrainz search link or modal is present.
     expect(
       screen.queryByRole("button", { name: /kapak görseli için ara/i }),
@@ -94,7 +101,7 @@ describe("QuestionCard", () => {
 
   it("commits the typed text as a manual Song via the Onayla button", () => {
     const { onChoose } = renderCard({ draft: "Sting - Fragile" });
-    fireEvent.click(screen.getByRole("button", { name: /onayla/i }));
+    fireEvent.click(screen.getByRole("button", { name: /ritüele ekle/i }));
     expect(onChoose).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(onChoose).mock.calls[0][0];
     expect(arg.provider).toBe("manual");
@@ -126,7 +133,7 @@ describe("QuestionCard", () => {
 
   it("trims the draft before building the manual Song title", () => {
     const { onChoose } = renderCard({ draft: "  Yesterday  " });
-    fireEvent.click(screen.getByRole("button", { name: /onayla/i }));
+    fireEvent.click(screen.getByRole("button", { name: /ritüele ekle/i }));
     expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Yesterday");
   });
 
@@ -166,5 +173,75 @@ describe("QuestionCard — manual song entry (only path)", () => {
     // No trailing " — " when artist is empty.
     expect(screen.getByText("Bad - Michael Jackson")).toBeInTheDocument();
     expect(screen.queryByText(/^Bad - Michael Jackson — $/)).not.toBeInTheDocument();
+  });
+});
+
+describe("QuestionCard — ghost text & soft verification badge", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders no hard verification text anywhere", () => {
+    renderCard({ draft: "Sting - Fragile" });
+    expect(screen.queryByText(/doğrulanıyor/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/doğrulandı/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/doğrulanamadı/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the green check only for a verified entry", () => {
+    renderCard({ draft: "Sting - Fragile", verified: true });
+    expect(screen.getByLabelText("tanındı")).toBeInTheDocument();
+  });
+
+  it("shows no green check for an unverified manual entry", () => {
+    renderCard({ draft: "Stnig Fragile" });
+    expect(screen.queryByLabelText("tanındı")).not.toBeInTheDocument();
+  });
+
+  it("renders the ghost completion as translucent suffix text", () => {
+    renderCard({ draft: "Stin", ghostCompletion: "g" });
+    // The ghost overlay contains the invisible typed prefix + the visible suffix.
+    const ghost = screen.getByText("g");
+    expect(ghost).toBeInTheDocument();
+    expect(ghost.parentElement?.querySelector(".invisible")?.textContent).toBe("Stin");
+  });
+
+  it("aligns the ghost suffix after the typed prefix even with a separator in the draft", () => {
+    // The parent already sliced the completion at the raw prefix length, so the
+    // card receives only the suffix to render after the typed text.
+    renderCard({ draft: "sting-frag", ghostCompletion: "ile" });
+    const ghost = screen.getByText("ile");
+    expect(ghost).toBeInTheDocument();
+    expect(ghost.parentElement?.querySelector(".invisible")?.textContent).toBe("sting-frag");
+  });
+
+  it("accepts the ghost completion on Tab", () => {
+    const { onGhostAccept, onChoose } = renderCard({ draft: "Stin", ghostCompletion: "Sting" });
+    fireEvent.keyDown(screen.getByLabelText("Şarkı ve sanatçı adını yaz"), { key: "Tab" });
+    expect(onGhostAccept).toHaveBeenCalledTimes(1);
+    expect(onChoose).not.toHaveBeenCalled();
+  });
+
+  it("accepts the ghost completion on ArrowRight", () => {
+    const { onGhostAccept } = renderCard({ draft: "Stin", ghostCompletion: "Sting" });
+    fireEvent.keyDown(screen.getByLabelText("Şarkı ve sanatçı adını yaz"), { key: "ArrowRight" });
+    expect(onGhostAccept).toHaveBeenCalledTimes(1);
+  });
+
+  it("Tab falls through to normal focus behavior when there is no ghost text", () => {
+    const { onGhostAccept } = renderCard({ draft: "Stin" });
+    fireEvent.keyDown(screen.getByLabelText("Şarkı ve sanatçı adını yaz"), { key: "Tab" });
+    expect(onGhostAccept).not.toHaveBeenCalled();
+  });
+
+  it("manual entry still commits with no check and no ghost text", () => {
+    const { onChoose } = renderCard({ draft: "Stnig Fragile" });
+    expect(screen.queryByLabelText("tanındı")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /ritüele ekle/i }));
+    expect(onChoose).toHaveBeenCalledTimes(1);
+    const arg = vi.mocked(onChoose).mock.calls[0][0];
+    expect(arg.provider).toBe("manual");
+    expect(arg.title).toBe("Stnig Fragile");
+    expect(arg.verified).toBeUndefined();
   });
 });

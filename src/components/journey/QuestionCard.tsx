@@ -6,10 +6,10 @@ import type { Song } from "@/lib/song/types";
 
 // Build a manual Song (provider: "manual") from free text. The typed string
 // becomes the title; no artist/album/artwork is inferred. This is the ONLY
-// song-entry path — MusicBrainz search was removed from the UI (2026-08-19)
-// after repeatedly producing irrelevant/obscure results. The backend modules
-// (`searchSong.server.ts`, `musicbrainz-mapping.ts`) are kept in the codebase
-// but no UI component calls them; a future cover-art API may revisit this.
+// song-entry path — the old MusicBrainz search dialog was removed from the UI
+// (2026-08-19). Manual entries are enriched in the background by the
+// server-side iTunes verification (`searchSong.server.ts`); the typed text
+// itself is never rewritten.
 function manualSong(text: string): Song {
   return {
     provider: "manual",
@@ -28,6 +28,9 @@ export function QuestionCard({
   description,
   answer,
   selected,
+  verified,
+  ghostCompletion,
+  onGhostAccept,
   draft,
   onDraftChange,
   onChoose,
@@ -39,6 +42,12 @@ export function QuestionCard({
   answer?: string;
   /** Structured Song chosen for this question, when available. */
   selected?: Song | null;
+  /** True only when iTunes verification matched this entry — renders the green check. */
+  verified?: boolean;
+  /** Full iTunes suggestion that extends the current draft (ghost-text completion). */
+  ghostCompletion?: string | null;
+  /** Called when the user accepts the ghost completion (Tab / ArrowRight). */
+  onGhostAccept?: () => void;
   /** Current text in the primary free-text box (owned by the parent). */
   draft: string;
   /** Update the primary free-text box. */
@@ -64,34 +73,69 @@ export function QuestionCard({
         <p className="text-base leading-relaxed text-foreground/80 sm:text-lg">{description}</p>
       </div>
 
-      {/* The ONLY song-entry path: free-text input + Onayla. No search UI. */}
+      {/* The ONLY song-entry path: free-text input + Ritüele Ekle. No search UI.
+          The iTunes suggestion appears as translucent ghost text inside the
+          input and is accepted with Tab / ArrowRight — never typed over. */}
       <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-stretch">
-        <Input
-          value={draft}
-          onChange={(e) => onDraftChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && canConfirm) {
-              e.preventDefault();
-              onChoose(manualSong(draft.trim()));
-            }
-          }}
-          placeholder="örn. Bad - Michael Jackson"
-          aria-label="Şarkı ve sanatçı adını yaz"
-          className="h-14 flex-1 rounded-2xl border-border/50 bg-background/60 text-base sm:h-16"
-        />
+        <div className="relative flex-1">
+          <Input
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.key === "Tab" || e.key === "ArrowRight") && ghostCompletion) {
+                e.preventDefault();
+                onGhostAccept?.();
+                return;
+              }
+              if (e.key === "Enter" && canConfirm) {
+                e.preventDefault();
+                onChoose(manualSong(draft.trim()));
+              }
+            }}
+            placeholder="örn. Bad - Michael Jackson"
+            aria-label="Şarkı ve sanatçı adını yaz"
+            className="h-14 w-full rounded-2xl border-border/50 bg-background/60 pr-11 text-base sm:h-16"
+          />
+          {ghostCompletion ? (
+            <>
+              {/* Invisible full-width text sets the exact overlay position. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 flex h-14 items-center truncate rounded-2xl px-3 py-1 pr-11 text-base opacity-0 sm:h-16"
+              >
+                {ghostCompletion}
+              </span>
+              {/* Visible, high-contrast silver suffix aligned right after the typed text. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 flex h-14 items-center truncate rounded-2xl px-3 py-1 pr-11 text-base opacity-100 sm:h-16"
+                style={{ color: "#a1a1aa" }}
+              >
+                <span className="invisible">{draft}</span>
+                {ghostCompletion.slice(draft.length)}
+              </span>
+            </>
+          ) : null}
+          {verified ? (
+            <Check
+              aria-label="tanındı"
+              className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-500"
+            />
+          ) : null}
+        </div>
         <Button
           onClick={() => onChoose(manualSong(draft.trim()))}
           disabled={!canConfirm}
           className="h-14 gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98] sm:h-16 sm:w-auto"
         >
           <Check className="h-5 w-5" />
-          Onayla
+          Ritüele Ekle
         </Button>
       </div>
 
       {displayName ? (
         <p className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-primary">
-          <Check className="h-4 w-4" />
+          <Check className={`h-4 w-4 ${verified ? "text-emerald-500" : ""}`} />
           {displayName}
         </p>
       ) : null}

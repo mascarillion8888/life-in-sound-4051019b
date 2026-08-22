@@ -1,18 +1,23 @@
 /**
  * Provider-neutral Song model.
  *
- * The external music provider (MusicBrainz today; could be replaced later) must
- * NOT become the internal application model. All provider responses are mapped
- * into this shape before they cross into the UI or any downstream layer.
+ * The external music provider (iTunes Search API today; "musicbrainz" survives
+ * only in already-persisted rows) must NOT become the internal application
+ * model. All provider responses are mapped into this shape before they cross
+ * into the UI or any downstream layer.
  *
  * Only `title` and `artist` are guaranteed; everything else is nullable because
- * the source (MusicBrainz + Cover Art Archive) does not always supply it and a
- * song must remain selectable even when artwork/album/isrc is missing.
+ * the source does not always supply it and a song must remain selectable even
+ * when artwork/album/isrc is missing.
  */
 export type Song = {
-  /** Stable provider slug: "musicbrainz" (external) or "manual" (user-typed). */
-  provider: "musicbrainz" | "manual";
-  /** Provider-specific identifier (MusicBrainz MBID or a generated UUID for manual entries). */
+  /**
+   * Stable provider slug: "itunes" (external, verified), "manual" (user-typed),
+   * or "musicbrainz" (legacy — only in journeys persisted before the iTunes
+   * switch; kept so old rows remain type-valid).
+   */
+  provider: "musicbrainz" | "itunes" | "manual";
+  /** Provider-specific identifier (iTunes trackId, legacy MusicBrainz MBID, or a generated UUID for manual entries). */
   providerId: string;
   /** Display title (track/recording name, or a user-typed string). Always present. */
   title: string;
@@ -20,11 +25,23 @@ export type Song = {
   artist: string;
   /** Album/release name when known. */
   album: string | null;
-  /** Cover Art Archive image URL when one exists. */
+  /** Artwork image URL when one exists. */
   artworkUrl: string | null;
-  /** ISRC when the recording carries one. */
+  /** ISRC when the recording carries one (iTunes does not supply one — always null for itunes). */
   isrc: string | null;
+  /**
+   * True only when an external provider confidently matched this song against
+   * the user's query. Absent/false for manual entries that were never
+   * (or could not be) verified — verification never fabricates a song.
+   */
+  verified?: boolean;
 };
+
+/**
+ * Background verification state for a manually entered song. Informational
+ * only — it never blocks or replaces the user's input.
+ */
+export type VerifyStatus = "checking" | "verified" | "failed";
 
 /** Input to the song search server function. */
 export type SearchSongsInput = {

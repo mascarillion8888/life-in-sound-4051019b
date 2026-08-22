@@ -13,7 +13,12 @@ import {
   loadRemoteJourney,
   saveRemoteJourney,
 } from "@/lib/supabase/journey-remote";
+import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
+import { bestGhostMatch, catalogGhostCompletion } from "@/lib/song/itunes-mapping";
 import type { Song } from "@/lib/song/types";
+
+const VERIFICATION_DEBOUNCE_MS = 300;
+const SUGGESTION_DEBOUNCE_MS = 300;
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -65,6 +70,17 @@ function JourneyPage() {
   const [draft, setDraft] = useState("");
   const [restored, setRestored] = useState(false);
   const [completed, setCompleted] = useState(false);
+  // Per-question background verification (iTunes), keyed by the exact text it
+  // was run for. Enrichment only — it never blocks, rewrites, or replaces the
+  // user's typed text, and no button ever waits on it.
+  const [verifications, setVerifications] = useState<
+    Record<number, { text: string; status: "checking" | "verified" | "failed"; match: Song | null }>
+  >({});
+  // Per-question ghost-text suggestions (iTunes top hits), keyed by the text
+  // they were fetched for. Display-only: never authoritative, never blocks input.
+  const [suggestions, setSuggestions] = useState<Record<number, { text: string; songs: Song[] }>>(
+    {},
+  );
   const question = questions[current - 1];
   const isLast = current === total;
 
@@ -114,6 +130,130 @@ function JourneyPage() {
     }
   }, [restored, completed, current, answers, songs, userId]);
 
+  // Background verification pipeline. Fires for the typed draft (debounced)
+  // and never blocks the UI: Onayla/Next commit synchronously without waiting
+  // for it, `answers` always keeps the raw typed text, and any failure leaves
+  // the manual song untouched. Never invents data.
+  const runVerification = async (questionId: number, text: string) => {
+    setVerifications((prev) => ({
+      ...prev,
+      [questionId]: { text, status: "checking" as const, match: null },
+    }));
+    let match: Song | null = null;
+    try {
+      const out = await searchSongs({ data: { query: text } });
+      match = out.results[0] ?? null;
+    } catch {
+      match = null;
+    }
+    setVerifications((prev) => {
+      // A newer draft superseded this request while it was in flight.
+      if (prev[questionId]?.text !== text) return prev;
+      return {
+        ...prev,
+        [questionId]: { text, status: match ? ("verified" as const) : ("failed" as const), match },
+      };
+    });
+    if (match) {
+      // Enrich the committed song only if it is still the manual entry for
+      // this exact text — never clobber a newer choice.
+      setSongs((prev) => {
+        const latest = prev[questionId];
+        if (!latest || latest.provider !== "manual" || latest.title !== text) return prev;
+        return { ...prev, [questionId]: match };
+      });
+    }
+  };
+
+  // Debounced live verification: 300ms after the user stops typing, verify the
+  // draft in the background (one request per pause, never per keystroke).
+  const draftText = draft.trim();
+  useEffect(() => {
+    if (draftText.length < 2) return;
+    const existing = verifications[question.id];
+    if (existing && existing.text === draftText) return;
+    const timer = setTimeout(() => {
+      void runVerification(question.id, draftText);
+    }, VERIFICATION_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [draftText, question.id, verifications]);
+
+  // Debounced ghost-text suggestion: 300ms after the user stops typing, fetch
+  // the iTunes top hit for the translucent completion. Display-only.
+  useEffect(() => {
+    if (draftText.length < 3) return;
+    const existing = suggestions[question.id];
+    if (existing && existing.text === draftText) return;
+    const timer = setTimeout(() => {
+      void (async () => {
+        let songs: Song[] = [];
+        try {
+          const out = await suggestSongs({ data: { query: draftText } });
+          songs = out.results;
+        } catch {
+          songs = [];
+        }
+        if (songs.length > 0) {
+          setSuggestions((prev) => {
+            if (prev[question.id]?.text === draftText) return prev;
+            return { ...prev, [question.id]: { text: draftText, songs } };
+          });
+        }
+      })();
+    }, SUGGESTION_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [draftText, question.id, suggestions]);
+
+  // Ghost text, zero-latency first: the embedded popular catalog resolves
+  // synchronously (token-free, fuzzy, order-independent), so "bad mic" or
+  // "frag stin" completes instantly with no network wait. If the local catalog
+  // has nothing, fall back to the debounced iTunes suggestions (same strict
+  // extends-typed-text prefix rule, never invented).
+  const ghost = (() => {
+    if (draftText.length < 3) return null;
+    const local = catalogGhostCompletion(draftText);
+    if (local) return { completion: local, display: local };
+    const s = suggestions[question.id];
+    if (!s) return null;
+    const m = bestGhostMatch(draftText, s.songs);
+    if (!m) return null;
+    return { completion: m.completion, display: m.completion.slice(m.rawPrefixLength) };
+  })();
+
+  // Green check: only for an entry the iTunes verification actually matched.
+  const selectedSong = songs[question.id];
+  const verified =
+    verifications[question.id]?.status === "verified" ||
+    (selectedSong?.provider === "itunes" && selectedSong?.verified === true);
+
+  const acceptGhost = () => {
+    if (ghost) setDraft(ghost.completion);
+  };
+
+  const handleDraftChange = (text: string) => {
+    setDraft(text);
+    // Any edit invalidates stale verification/suggestion state for this question.
+    setVerifications((prev) => {
+      if (!(question.id in prev)) return prev;
+      const next = { ...prev };
+      delete next[question.id];
+      return next;
+    });
+    setSuggestions((prev) => {
+      if (!(question.id in prev)) return prev;
+      const next = { ...prev };
+      delete next[question.id];
+      return next;
+    });
+  };
+
+  // Use an already-resolved verification for this exact text at commit time,
+  // without waiting for anything still in flight.
+  const withVerifiedMatch = (questionId: number, manual: Song): Song => {
+    const v = verifications[questionId];
+    return v && v.text === manual.title && v.match ? v.match : manual;
+  };
+
   const startNewJourney = () => {
     if (userId) {
       void clearRemoteJourney(userId);
@@ -124,6 +264,8 @@ function JourneyPage() {
     setAnswers({});
     setSongs({});
     setDraft("");
+    setVerifications({});
+    setSuggestions({});
     setCurrent(1);
   };
 
@@ -161,11 +303,20 @@ function JourneyPage() {
             description={question.description}
             answer={answers[question.id]}
             selected={songs[question.id] ?? null}
+            verified={verified}
+            ghostCompletion={ghost?.display ?? null}
+            onGhostAccept={acceptGhost}
             draft={draft}
-            onDraftChange={setDraft}
+            onDraftChange={handleDraftChange}
             onChoose={(song) => {
+              // answers keeps the raw typed text; the structured song is
+              // enriched only when a verification for this exact text has
+              // already resolved — committing never waits on it.
               setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
-              setSongs((prev) => ({ ...prev, [question.id]: song }));
+              setSongs((prev) => ({
+                ...prev,
+                [question.id]: withVerifiedMatch(question.id, song),
+              }));
             }}
           />
         </div>
@@ -195,7 +346,7 @@ function JourneyPage() {
                 setAnswers(nextAnswers);
                 setSongs((prev) => ({
                   ...prev,
-                  [question.id]: {
+                  [question.id]: withVerifiedMatch(question.id, {
                     provider: "manual",
                     providerId: crypto.randomUUID(),
                     title: trimmed,
@@ -203,7 +354,7 @@ function JourneyPage() {
                     album: null,
                     artworkUrl: null,
                     isrc: null,
-                  },
+                  }),
                 }));
               }
               if (isLast) {

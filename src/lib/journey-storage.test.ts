@@ -177,6 +177,19 @@ describe("journey-storage structured Song persistence", () => {
     localStorage.setItem(JOURNEY_STORAGE_KEY, JSON.stringify({ current: 1, answers: { 1: "x" } }));
     expect(loadJourney()?.songs).toEqual({});
   });
+
+  it("preserves the verified flag on round-trip and coerces garbage to absent", () => {
+    const verified = song({ provider: "itunes", providerId: "14617433", verified: true });
+    saveJourney({ current: 1, answers: { 1: verified.title }, songs: { 1: verified } });
+    expect(loadJourney()?.songs[1].verified).toBe(true);
+
+    const garbage = { ...song(), verified: "yes" };
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({ current: 1, answers: { 1: "x" }, songs: { 1: garbage } }),
+    );
+    expect(loadJourney()?.songs[1].verified).toBeUndefined();
+  });
 });
 
 describe("mergeJourneys reconciliation", () => {

@@ -128,6 +128,7 @@ function toProgress(
           album: typeof song.album === "string" ? song.album : null,
           artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
           isrc: typeof song.isrc === "string" ? song.isrc : null,
+          verified: song.verified === true ? true : undefined,
         };
       }
     }
