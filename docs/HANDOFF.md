@@ -13,16 +13,17 @@
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
 Testler:   201/201 geçti — 2026-08-22 (14 dosya)
-tsc/build: temiz (tsc --noEmit = 0 hata; VERCEL=1 npm run build = 0)
-Lint:      Yeni dosyalar temiz; 4 DOSYADA ÖNCEDEN VAR OLAN prettier drift'i
-           (Results.tsx, SongPicker.tsx, Waveform.tsx, soundmap/data.ts)
-           bilinçli dokunulmadı — minimal-değişiklik ilkesi.
-Deploy:    Vercel preset'i koşullu (sadece VERCEL=1'de aktif; Lovable/local
-           default cloudflare kalır). `.vercel/output` gitignore'da.
-Leak check: `npm run check:bundle` (client bundle'da server-only isim
-           taraması) yeşil; negatif test exit=1.
-LLM:       GEMINI_API_KEY BU ORTAMDA BOŞ — canlı Gemini + canlı Vercel deploy
-           doğrulaması KULLANICI'DA BEKLEMEDE (§3'te adım adım).
+tsc/build: temiz (tsc --noEmit = 0 hata; VERCEL=1 npm run build = 0;
+           VERCEL'siz plain build = 0, postbuild no-op)
+Lint:      vite.config.ts + scripts/ temiz; 4 DOSYADA ÖNCEDEN VAR OLAN
+           prettier drift'i (Results.tsx, SongPicker.tsx, Waveform.tsx,
+           soundmap/data.ts) bilinçli dokunulmadı — minimal-değişiklik ilkesi.
+Deploy:    Vercel = STATİK SPA SHELL + serverless /_serverFn. Sayfa
+           navigasyonları static index.html'den, server-fn'lar Node
+           function'dan çalışır. Runtime SSR Vercel'de ARTIK YOK.
+Leak check: `npm run check:bundle` yeşil (shell dahil static çıktı temiz).
+LLM:       GEMINI_API_KEY BU ORTAMDA BOŞ — canlı Gemini doğrulaması
+           KULLANICI'DA BEKLEMEDE (§3).
 ```
 
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
@@ -31,50 +32,64 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ## 2. Son biten iş (NEDEN + NASIL)
 
-**Vercel Deployment & Serverless Environment Setup (TAMAMLANDI; canlı deploy
-KULLANICI'DA).** Amaç: zero-config Vercel deploy'u, Gemini server-fn'ları
-(`generateAnalysis.server.ts`, `generateEntryInsight`) Node serverless
-ortamında güvenli process.env okurken anahtar asla client bundle'a
-sızmasın; kullanıcıya adım-adım Vercel bağlantı rehberi (§3).
+**Vercel SSR çökmesinin ("This page didn't load") kök-neden tespiti + SPA
+moduna geçiş (TAMAMLANDI; canlı deploy KULLANICI'DA).**
 
-Değişiklikler:
-- `vite.config.ts` — `nitro: process.env.VERCEL ? { preset: "vercel" } : {}`.
-  Vercel CI `VERCEL=1` enjekte eder → Nitro `vercel` preset'i `.vercel/output`
-  üretir (static + `__server.func` Node.js 22.x, SPA fallback `/(__*server)`).
-  Lovable/local'da default cloudflare preset korunur (Lovable sandbox zaten
-  cloudflare'ı zorlar → geriye uyumlu).
-- `vercel.json` — minimal pinned config: `"framework": null` (auto-detect
-  kapalı, routes `.vercel/output/config.json`'dan), `installCommand/buildCommand`
-  ve `regions: ["fra1"]`. `.vercel/` build çıktısı `.gitignore`'a eklendi.
-- `scripts/verify-no-server-secrets.mjs` + `npm run check:bundle` — client
-  bundle'da (`.vercel/output/static`, `.output/public`, `dist/client`)
-  `GEMINI_API_KEY`/`GROQ_API_KEY`/`SERVICE_ROLE` isim taraması; sızıntıda
-  exit 1 (negatif test ile kanıtlı).
-- Testler: 201/201, tsc/build temiz (VERCEL=1 ile de).
+**Kök neden (lokal olarak yeniden üretildi):** Sayfadaki hata bizim kendi
+`src/lib/error-page.ts` çıktımızmış. Gerçek çökme:
+`TypeError: createCsrfMiddleware is not a function` — rolldown/nitro
+serverless SSR bundle'ını DÖNGÜSEL import eden chunk'lara bölüyor
+(`_ssr/server-A.mjs` ↔ `_ssr/server-B.mjs`); `var` hoisting binding'i
+`undefined` çözüyor → her isteğin modül-init'i patlıyor → wrapper hata
+sayfasını basıyor.
 
-Uyum: `vite.config.ts`'teki DEV-ONLY allowedHosts satırı korundu; doc açıklar.
+**Çözüm — üç katman:**
+
+1. `vite.config.ts` — VERCEL=1 iken nitro'ya `inlineDynamicImports: true`
+   eklendi → tek dosyalık server bundle, chunk sınırı/döngü yok. (Lovable
+   config runtime'da tüm nitro opsiyonlarını spread eder; TS tipi dar
+   olduğundan `as { preset?: string }` cast'i var.) Lovable/local preset
+   (cloudflare) olduğu gibi korunur.
+2. `scripts/postbuild-vercel-spa.mjs` (npm run build'e zincirli) —
+   `.vercel/output` varsa: (a) build edilmiş function bundle'ını import
+   edip `X-TSS_SHELL: true` isteğiyle shell render eder, doğrular
+   (status 200, hata sayfası marker'ı yok, #root/asset var — biri
+   tutmazsa build FAIL) ve `static/index.html`'e yazar; (b)
+   `config.json` route'larını yazar: `/_serverFn*` → `/__server`,
+   geri kalan her şey → `/index.html`. `.vercel/output` yoksa NO-OP
+   (plain build bununla kanıtlı). Sayfalar artık statik shell'den
+   client-side hydrate olur — runtime SSR çökmesi sayfayı artık
+   düşüremez.
+3. Doğrulama: shell HTML gerçek layout + client entry + yalnız
+   `__root__` dehydrated match (ssr:true) içeriyor; `/_serverFn` POST'u
+   bundle üzerinden 403 CSRF dönüyor (init çökmesi YOK); tüm asset
+   yolları static'te mevcut; 201/201 test, tsc, eslint, prettier,
+   check:bundle yeşil.
+
+Not: TanStack'in built-in `spa` modu nitro build'iyle UYUMSUZ (preview
+server `dist/server/server.js` bekler, nitro oraya yazmaz) — denenip
+vazgeçildi; postbuild yaklaşımı hem preset-agnostik hem build-time
+doğrulamalı.
 
 ---
 
 ## 3. Şu an açık/bekleyen tek şey — Vercel'e bağlan (kullanıcı adımları)
 
-Deploy altyapısı push edildi; canlı URL sadece kullanıcının Vercel hesabını
-bekliyor:
+Deploy altyapısı push edildi; canlı URL kullanıcının Vercel hesabını
+bekliyor (repo zaten bağlıysa sadece redeploy yeterli):
 
-1. **Repoyu bağla:** [vercel.com → Add New → Project] → GitHub
-   `mascarillion8888/life-in-sound-4051019b` import. Framework davranışı
-   bundle'daki `vercel.json`'dan gelir (restart gerekmez).
+1. **Repoyu bağla / redeploy:** Vercel projesi `life-in-sound-4051019b`.
+   Bu push otomatik yeni build tetikler. Build logunda
+   `[postbuild-vercel-spa] Shell written ...` satırı görülmeli.
 2. **Anahtarı gir:** Project → Settings → Environment Variables →
-   `GEMINI_API_KEY` = `<groq/gemini anahtarın>` (scope: **Production**,
-   istersen Preview da). Asla `VITE_` önekiyle girme.
-3. **Deploy:** ilk push'tan sonra Vercel otomatik build çalıştırır
-   (breadık build komutu `npm run build`; VERCEL=1 vercel preset'ini açar).
-4. **Doğrula** (canlı URL açıldığında):
+   `GEMINI_API_KEY` (scope: **Production**). Asla `VITE_` önekiyle girme.
+3. **Doğrula** (canlı URL açıldığında):
+   - `/` ve `/results` açılıyor mu — "This page didn't load" GİTMİŞ olmalı
+     (bu görevin asıl kabul kriteri).
    - `/results` — Dynamic Music Map Gemini-zengin mi; Life Feed'de şarkı+not
-     ekle → insight deterministik'ten tek cümlelik Gemini prose'a yerinde
-     geçiş yapıyor mu.
+     ekle → insight tek cümlelik Gemini prose'a yerinde geçiyor mu.
    - Anahtar girilmediyse deterministik çıktı görülür — hata değildir.
-5. **Validation Gate** (Vercel sonrası): 5+ gerçek kişiye canlı URL'yi
+4. **Validation Gate** (Vercel sonrası): 5+ gerçek kişiye canlı URL'yi
    göster, geri bildirim topla. Faz 4 kullanıcı onayı olmadan başlamıyor.
 
 Yerelde aynı sonuç: `VERCEL=1 npm run build && npm run check:bundle`.
@@ -83,30 +98,39 @@ Yerelde aynı sonuç: `VERCEL=1 npm run build && npm run check:bundle`.
 
 ## 4. Olası sonuçlar
 
-**🅐 Canlı URL açılır + Gemini çıktısı zengin →** Deploy doğrulandı.
-Validation Gate'e geç.
+**🅐 Canlı URL açılır + sayfalar yüklenir →** SSR çökmesi çözüldü. Gemini
+zenginse Validation Gate'e geç.
 
-**🅑 Build Vercel'de kırılırsa →** Build loglarında nitro preset hatası /
-Node 22 natives sorunu aranır; `vercel.json`'daki pinned komutlar ilk şüpheli.
+**🅑 Vercel build'i kırmızı →** Build logunda `[postbuild-vercel-spa]`
+hatası aranır (script shell'i doğrulayamazsa kasıtlı exit 1 atar — bu,
+bozuk deploy'un önüne geçen kapıdır). Lokal `VERCEL=1 npm run build` ile
+yeniden üret.
 
-**🅒 Sayfa açılıyor ama Gemini deterministik kalıyorsa →** `GEMINI_API_KEY`
-Production scope'ta girilmemiş (en sık hata) veya anahtar yetki yetersiz —
-Dashboard env'e bakılır, redeploy.
+**🅒 Sayfa açılıyor ama Gemini deterministik →** `GEMINI_API_KEY`
+Production scope'ta girilmemiş — Dashboard env + redeploy.
 
-**🅓 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden
+**🅓 `/results` boş kalırsa →** Shell hydrate sorunu: browser console'da
+hydration hatası aranır; dehydrated `__root__`-only state client'ta
+route match'lerini kendisi yükleyemiyor demektir.
+
+**🅔 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN yeniden
 yaz, `checkpoint: [özet] — HANDOFF.md güncellendi` ile push et.
 
 ---
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-**Deploy preset'i koşullu tut, hostu değil derli.** `@lovable.dev/...` config
-non-sandbox'ta cloudflare-module preset'ini default tutar; Vercel'i seçmenin
-tek kabul edilebilir yolu ORTAM DÜZEYİNDE koşul (`process.env.VERCEL`,
-Vercel'in injection'ı + localde bu env yok → local build aynı kalır). Böylece
-Lovable milestone'tan ayrılmadan Vercel Build Output API'sini alırsın.
-`.vercel/output`'u asla commit'leme (gitignore'da). Leak check'in değeri:
-isim bazlı basit scan, negatif testle kanıtlı.
+**Hata sayfasını tanı.** "This page didn't load" bizim
+`src/lib/error-page.ts` — dış platform hatası sanıp Vercel'de aramaya
+başlama; önce bundle'ı lokal çalıştır:
+`import('./.vercel/output/functions/__server.func/index.mjs')` →
+`default.fetch(new Request('http://localhost/'))` — çökme mesajı console'a
+düşer. **Rolldown döngüsel chunk bug'ı:** nitro SSR bundle'ı statik
+döngüsel import'lu chunk'lara bölünürse `var` hoisting undefined üretir;
+`inlineDynamicImports: true` ile tek dosya = kesin çözüm. TanStack
+`spa.enabled` nitro'yla uyumsuz (preview `dist/server/server.js` bekler) —
+shell'i postbuild'de `X-TSS_SHELL` header'ıyla üretmek hem daha genel hem
+build'i bozuk shell'e karşı korur.
 
 ---
 
@@ -118,20 +142,6 @@ isim bazlı basit scan, negatif testle kanıtlı.
   `GEMINI_API_KEY` yeterli (client bundle asla içinde değil).
 - `.vercel/` build çıktısını commit'leme (gitignore'da).
 - Önceden var olan prettier drift'ini rastgele kozmetik olarak fix etme.
-
----
-
-## 7. Devir kaydı (son 5 satır)
-
-| Tarih | Kim | Ne | Commit |
-|---|---|---|---|
-| 2026-08-20 | OpenHands | MusicBrainz arama UI'dan kaldırıldı | 7b27cd3 |
-| 2026-08-22 | OpenHands | Dynamic Music Map Engine + Poetic Gemini Analyzer | 7cf32e4 |
-| 2026-08-22 | OpenHands | Life Feed UI Suite + Evolving Poster | 3b4c604 |
-| 2026-08-22 | OpenHands | Vercel Deployment + Leak Check | (bu checkpoint — `git log -1 --oneline` ile doğrula) |
-
----
-_2026-08-22 OpenHands tarafından tamamen yeniden yazıldı. Vercel deployment +
-serverless env setup teslim edildi (koşullu nitro preset, vercel.json,
-leak-check script; 201/201 test, VERCEL=1 build temiz). Canlı deploy + Gemini
-doğrulaması kullanıcıya devredildi (§3). Tek kaynak `docs/HANDOFF.md`._
+- `inlineDynamicImports`'u kaldırma — runtime SSR çökmesini geri getirir.
+- `scripts/postbuild-vercel-spa.mjs`'teki shell doğrulama kapılarını
+  gevşetme — bozuk shell'in Vercel'e çıkmasını engelleyen tek kapı.

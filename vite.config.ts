@@ -27,5 +27,14 @@ export default defineConfig({
   // as zero-config Build Output API; server functions like
   // src/lib/llm/generateAnalysis.server.ts then read GEMINI_API_KEY from the
   // server-side process.env, never the client bundle.
-  nitro: process.env.VERCEL ? { preset: "vercel" } : {},
+  //
+  // inlineDynamicImports: the default multi-chunk SSR bundle crashes at module
+  // init ("createCsrfMiddleware is not a function") — rolldown splits the start
+  // server entry into circularly-imported chunks and `var` hoisting resolves
+  // the binding to undefined. Single-file output removes the chunk boundary.
+  // (The lovable config spreads unknown nitro options through to Nitro at
+  // runtime; its TS type is just narrower, hence the cast.)
+  nitro: (process.env.VERCEL ? { preset: "vercel", inlineDynamicImports: true } : {}) as {
+    preset?: string;
+  },
 });
