@@ -26,6 +26,7 @@ import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { stableHash } from "@/lib/ai/personalityScoring";
 import { questions } from "@/lib/questions";
 import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, type Language } from "@/lib/i18n/languages";
+import { EXTRAS_BY_THEME, resolveDynamicTheme } from "@/lib/soundmap/dynamicThemes";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -53,6 +54,11 @@ export type VisualSpec = {
   aura: string[];
   /** Prompt an image model could use to render matching artwork. */
   artworkPrompt: string;
+  /** Dynamic extras from the theme engine (frame, waveform gradient, texture, glow). */
+  frame?: "arch" | "double-rule" | "rough-edge" | "neon-glow" | "hairline" | "none";
+  waveGradient?: [string, string];
+  texture?: "smoke" | "grid" | "silk" | "paper" | "gloss" | "nebula";
+  auraGlow?: string;
 };
 
 export type LifeChapter = {
@@ -109,6 +115,11 @@ export type PoeticAnalyzerInput = {
    * language. Defaults to English when omitted.
    */
   language?: Language;
+  /**
+   * Optional life-phase labels (chapter age ranges / phase titles) that let
+   * the dynamic theme engine factor age & era into theme scoring.
+   */
+  lifePhases?: string[];
 };
 
 /* -------------------------------------------------------------------------- */
@@ -246,22 +257,7 @@ function countKeywordHits(text: string, keywords: string[]): number {
  * "ambient-default" when nothing matches — never fabricates a theme.
  */
 export function detectVisualTheme(genres: string[], songs: string[]): VisualThemeId {
-  const genreText = genres.join(" ");
-  const songText = songs.join(" ");
-
-  let best: VisualThemeId = "ambient-default";
-  let bestScore = 0;
-
-  for (const themeId of THEME_PRIORITY) {
-    const keywords = THEME_KEYWORDS[themeId];
-    const score = countKeywordHits(genreText, keywords) * 2 + countKeywordHits(songText, keywords);
-    if (score > bestScore) {
-      best = themeId;
-      bestScore = score;
-    }
-  }
-
-  return best;
+  return resolveDynamicTheme({ genres, songs }).themeId;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -355,8 +351,12 @@ export function deterministicPoeticAnalysis(
   profile: PersonalityProfile,
   songs: string[],
 ): PoeticAnalysis {
-  const theme = detectVisualTheme(profile.recommendedGenres, songs);
-  const visual = THEME_CATALOG[theme];
+  const theme = resolveDynamicTheme({
+    genres: profile.recommendedGenres,
+    songs,
+    emotionalTone: [profile.emotions.dominantEmotion, ...profile.emotions.secondaryEmotions],
+  }).themeId;
+  const visual: VisualSpec = { ...THEME_CATALOG[theme], ...EXTRAS_BY_THEME[theme] };
   const s = (i: number) => songs[i - 1] ?? `Untitled track ${i}`;
 
   const dominant = profile.emotions.dominantEmotion;
@@ -466,8 +466,14 @@ const ANALYZER_GROUNDING_RULES = [
  * fixed facts; Gemini narrates within them rather than inventing a theme.
  */
 export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
-  const { profile, songs, memories, language } = input;
-  const theme = detectVisualTheme(profile.recommendedGenres, songs);
+  const { profile, songs, memories, language, lifePhases } = input;
+  const resolved = resolveDynamicTheme({
+    genres: profile.recommendedGenres,
+    songs,
+    emotionalTone: [profile.emotions.dominantEmotion, ...profile.emotions.secondaryEmotions],
+    lifePhases,
+  });
+  const theme = resolved.themeId;
   const spec = THEME_CATALOG[theme];
 
   const songsBlock = songs
@@ -491,14 +497,15 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     "SELECTED SONGS (journey order):",
     songsBlock,
     "",
-    "DETERMINISTIC PROFILE (factual):",
+    "DETERMINISTIC PROFILE (factual — these demographics shape your reading):",
     `Archetype: ${profile.archetype} — ${profile.title}`,
     `Emotions: ${profile.emotionalProfile.join(", ")}`,
     `Traits: ${profile.traits.join(", ")}`,
-    `Mood: ${profile.music.mood}; Genres: ${profile.recommendedGenres.join(", ")}`,
+    `Mood: ${profile.music.mood}; Listening style: ${profile.music.listeningStyle}; Genres: ${profile.recommendedGenres.join(", ")}`,
+    `Life phases: ${(lifePhases ?? CHAPTER_SLOTS.map((slot) => `${slot.title} (${slot.ageRange})`)).join("; ")}`,
     "",
-    "VISUAL THEME (already decided — narrate within it, do not replace it):",
-    `Theme: ${theme}; palette primary ${spec.palette.primary}, accent ${spec.palette.accent}, background ${spec.palette.background}, text ${spec.palette.text}; typography: ${spec.typography}.`,
+    "VISUAL THEME (already decided by the theme engine from genres, emotional tone and life phases — narrate within it, do not replace it):",
+    `Theme: ${theme} (vibe: ${resolved.vibe}); palette primary ${spec.palette.primary}, accent ${spec.palette.accent}, background ${spec.palette.background}, text ${spec.palette.text}; typography: ${spec.typography}; frame: ${resolved.extras.frame}; texture: ${resolved.extras.texture}.`,
     "",
     "RULES:",
     rulesBlock,
@@ -512,7 +519,7 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     '"songInsights": 8 objects {"index","title","insight"} — one warm, specific one-sentence insight per song, in journey order.',
     '"emotionalCurve": 8 objects {"label","intensity"} — intensity 0..1, one per song, tracing the emotional arc of the life.',
     '"coreDuality": {"axis","left","right","resolution"} — the two poles this person moves between (e.g. "Steel / Rain") and one sentence resolving how they hold both.',
-    '"visual": {"aura":["2-4 vibe keywords"],"artworkPrompt":"one vivid image-generation prompt matching the supplied theme and palette"}.',
+    '"visual": {"aura":["2-4 vibe keywords"],"artworkPrompt":"one vivid image-generation prompt matching the supplied theme and palette","visualVibe":"one of: gothic-dark | vintage-jazz | vibrant-pop | raw-melancholy — the closest match to the supplied theme"}.',
   ].join("\n");
 }
 

@@ -68,6 +68,10 @@ describe("PosterCanvas", () => {
 
     // Export action.
     expect(screen.getByRole("button", { name: /download poster/i })).toBeInTheDocument();
+
+    // Aura pill glassmorphism styling hook.
+    const pill = screen.getByText(analysis.visual.aura[0]);
+    expect(pill.className).toContain("backdrop-blur-sm");
   });
 
   it("renders the age phase roadmap with 4 phases", () => {
@@ -92,6 +96,13 @@ describe("PosterCanvas", () => {
     const svg = document.querySelector("svg[aria-label='Emotional intensity waveform']");
     expect(svg).toBeInTheDocument();
     expect(svg?.querySelector("path")).toBeInTheDocument();
+
+    // Dynamic gradient follows the theme engine's waveGradient stops.
+    const stops = svg?.querySelectorAll("linearGradient stop");
+    expect(stops?.length).toBeGreaterThanOrEqual(2);
+    expect(analysis.visual.waveGradient).toBeTruthy();
+    expect(stops?.[0].getAttribute("stop-color")).toBe(analysis.visual.waveGradient![0]);
+    expect(stops?.[1].getAttribute("stop-color")).toBe(analysis.visual.waveGradient![1]);
   });
 
   it("renders poetic footer quotes", () => {
@@ -99,7 +110,9 @@ describe("PosterCanvas", () => {
     render(<PosterCanvas analysis={analysis} songs={SONGS} />);
 
     expect(screen.getByText(/first i tried to understand/i)).toBeInTheDocument();
-    expect(screen.getByText(/music changes\. we change\. but it always stays with us\./i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/music changes\. we change\. but it always stays with us\./i),
+    ).toBeInTheDocument();
   });
 
   it("applies the dynamic theme palette to the poster surface", () => {
@@ -108,6 +121,8 @@ describe("PosterCanvas", () => {
 
     const section = screen.getByLabelText("Dynamic Music Map poster");
     expect(analysis.visual.themeId).toBe("metal-gothic");
+    expect(section.getAttribute("data-frame")).toBe("arch");
+    expect(section.getAttribute("data-texture")).toBe("smoke");
     const style = section.getAttribute("style") ?? "";
     const rgb = (hex: string) => {
       const int = Number.parseInt(hex.slice(1), 16);

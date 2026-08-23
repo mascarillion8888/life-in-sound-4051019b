@@ -5,9 +5,26 @@
  * the approach of `poster.ts`, but every color comes from the PoeticAnalysis
  * visual spec instead of hardcoded brand values.
  */
-import type { PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import type { PoeticAnalysis, VisualSpec } from "@/lib/llm/poetic-analyzer";
 import type { Song } from "@/lib/song/types";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
+import { EXTRAS_BY_THEME } from "@/lib/soundmap/dynamicThemes";
+type PosterExtras = {
+  frame: string;
+  waveGradient: [string, string];
+  texture: string;
+  auraGlow: string;
+};
+function posterExtras(visual: VisualSpec): PosterExtras {
+  const fallback = EXTRAS_BY_THEME[visual.themeId];
+  return {
+    frame: visual.frame ?? fallback?.frame ?? "hairline",
+    waveGradient:
+      visual.waveGradient ?? ([visual.palette.accent, visual.palette.primary] as [string, string]),
+    texture: visual.texture ?? fallback?.texture ?? "nebula",
+    auraGlow: visual.auraGlow ?? fallback?.auraGlow ?? visual.palette.accent,
+  };
+}
 
 function hexToRgba(hex: string, alpha: number): string {
   const m = hex.replace("#", "");
@@ -47,13 +64,22 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
  * Renders the analysis as a 1600x2400 poster and triggers a PNG download.
  * No-op when a 2D context cannot be created.
  */
+const FONT_BY_TYPOGRAPHY: Record<string, string> = {
+  "blackletter-display": "'Cinzel', Georgia, serif",
+  "neon-chrome": "'Plus Jakarta Sans', 'Segoe UI', sans-serif",
+  "elegant-serif": "'Playfair Display', Georgia, serif",
+  "handwritten-warm": "'Playfair Display', Georgia, serif",
+  "bold-grotesque": "'Inter', 'Helvetica Neue', sans-serif",
+  "cinematic-serif": "'Cinzel', Georgia, serif",
+};
+
 export function exportPoeticPoster(
   analysis: PoeticAnalysis,
   songs: Song[],
   feedEntries: LifeFeedEntry[] = [],
 ): void {
-  const W = 1600;
-  const H = 2400;
+  const W = 2400;
+  const H = 3600;
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -66,12 +92,35 @@ export function exportPoeticPoster(
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, W, H);
 
-  const glow = ctx.createRadialGradient(W / 2, 260, 0, W / 2, 260, 1300);
-  glow.addColorStop(0, hexToRgba(palette.primary, 0.24));
-  glow.addColorStop(0.5, hexToRgba(palette.accent, 0.1));
-  glow.addColorStop(1, hexToRgba(palette.background, 0));
-  ctx.fillStyle = glow;
+  const extras = posterExtras(analysis.visual);
+  const display = FONT_BY_TYPOGRAPHY[analysis.visual.typography] ?? "'Cinzel', Georgia, serif";
+  const auraColor = extras.auraGlow ?? palette.accent;
+
+  // Glowing aura circles (top + bottom) matching the on-screen radial glow.
+  const glowTop = ctx.createRadialGradient(W / 2, 390, 0, W / 2, 390, 1950);
+  glowTop.addColorStop(0, hexToRgba(palette.primary, 0.24));
+  glowTop.addColorStop(0.5, hexToRgba(auraColor, 0.1));
+  glowTop.addColorStop(1, hexToRgba(palette.background, 0));
+  ctx.fillStyle = glowTop;
   ctx.fillRect(0, 0, W, H);
+
+  const glowBottom = ctx.createRadialGradient(W / 2, H - 600, 0, W / 2, H - 600, 1500);
+  glowBottom.addColorStop(0, hexToRgba(auraColor, 0.14));
+  glowBottom.addColorStop(1, hexToRgba(palette.background, 0));
+  ctx.fillStyle = glowBottom;
+  ctx.fillRect(0, 0, W, H);
+
+  // Frame border per theme (arch / double-rule / neon glow / hairline).
+  ctx.strokeStyle = hexToRgba(palette.primary, extras.frame === "hairline" ? 0.35 : 0.5);
+  ctx.lineWidth = extras.frame === "double-rule" ? 10 : 6;
+  if (extras.frame !== "none") {
+    ctx.strokeRect(90, 90, W - 180, H - 180);
+  }
+  if (extras.frame === "double-rule") {
+    ctx.strokeStyle = hexToRgba(palette.accent, 0.4);
+    ctx.lineWidth = 3;
+    ctx.strokeRect(120, 120, W - 240, H - 240);
+  }
 
   ctx.textAlign = "center";
   ctx.fillStyle = hexToRgba(palette.accent, 0.9);

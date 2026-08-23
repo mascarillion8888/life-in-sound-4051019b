@@ -178,6 +178,16 @@ describe("buildPoeticAnalyzerPrompt", () => {
     expect(prompt).toContain("FIRST SPARK");
   });
 
+  it("embeds the demographics block and the decided vibe/frame", () => {
+    const { profile, songs } = ctx();
+    const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
+    expect(prompt).toContain("these demographics shape your reading");
+    expect(prompt).toContain("Life phases:");
+    expect(prompt).toContain("(vibe:");
+    expect(prompt).toContain("frame:");
+    expect(prompt).toContain("visualVibe");
+    expect(prompt).toContain("gothic-dark | vintage-jazz | vibrant-pop | raw-melancholy");
+  });
   it("keeps the biography grounding rule", () => {
     const { profile, songs } = ctx();
     const prompt = buildPoeticAnalyzerPrompt({ profile, songs });

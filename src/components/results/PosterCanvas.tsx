@@ -17,17 +17,60 @@ import type { Song } from "@/lib/song/types";
  */
 
 const FONT_BY_TYPOGRAPHY: Record<string, string> = {
-  "blackletter-display": "Georgia, 'Times New Roman', serif",
-  "neon-chrome": "'Segoe UI', Verdana, sans-serif",
-  "elegant-serif": "Georgia, 'Palatino Linotype', serif",
-  "handwritten-warm": "'Segoe Script', 'Bradley Hand', cursive",
-  "bold-grotesque": "Inter, 'Helvetica Neue', sans-serif",
-  "cinematic-serif": "Georgia, 'Times New Roman', serif",
+  "blackletter-display": "'Cinzel', Georgia, 'Times New Roman', serif",
+  "neon-chrome": "'Plus Jakarta Sans', 'Segoe UI', Verdana, sans-serif",
+  "elegant-serif": "'Playfair Display', Georgia, 'Palatino Linotype', serif",
+  "handwritten-warm": "'Playfair Display', Georgia, serif",
+  "bold-grotesque": "'Inter', 'Helvetica Neue', sans-serif",
+  "cinematic-serif": "'Cinzel', Georgia, 'Times New Roman', serif",
 };
+
+export const FALLBACK_EXTRAS = {
+  frame: "hairline",
+  waveGradient: null as [string, string] | null,
+  texture: "nebula",
+  auraGlow: null as string | null,
+};
+
+export function posterExtras(visual: VisualSpec) {
+  return {
+    frame: visual.frame ?? FALLBACK_EXTRAS.frame,
+    waveGradient:
+      visual.waveGradient ?? ([visual.palette.accent, visual.palette.primary] as [string, string]),
+    texture: visual.texture ?? FALLBACK_EXTRAS.texture,
+    auraGlow: visual.auraGlow ?? visual.palette.accent,
+  };
+}
 
 function displayFont(visual: VisualSpec): string {
   return FONT_BY_TYPOGRAPHY[visual.typography] ?? "Georgia, serif";
 }
+
+function hexToRgbaCss(hex: string, alpha: number): string | null {
+  const m = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return null;
+  const full =
+    m[1].length === 3
+      ? m[1]
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : m[1];
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** Frame border style resolved from the dynamic theme extras. */
+const FRAME_STYLES: Record<string, string> = {
+  arch: "rounded-t-full",
+  "double-rule": "rounded-[2rem]",
+  "rough-edge": "rounded-2xl",
+  "neon-glow": "rounded-[2rem]",
+  hairline: "rounded-[2rem]",
+  none: "rounded-none",
+};
 
 /** Build a smooth SVG path through the emotional curve points. */
 function buildWaveformPath(points: { x: number; y: number }[]): string {
@@ -59,15 +102,19 @@ export function PosterCanvas({
 }) {
   const { t } = useLanguage();
   const { palette, aura, typography } = analysis.visual;
-  const song = (i: number) => songs[i - 1] ?? {
-    provider: "manual" as const,
-    providerId: `missing-${i}`,
-    title: `Untitled track ${i}`,
-    artist: "",
-    album: null,
-    artworkUrl: null,
-    isrc: null,
-  };
+  const extras = posterExtras(analysis.visual);
+  const auraGlowColor = extras.auraGlow;
+  const glowRgba = hexToRgbaCss(extras.auraGlow, 0.35);
+  const song = (i: number) =>
+    songs[i - 1] ?? {
+      provider: "manual" as const,
+      providerId: `missing-${i}`,
+      title: `Untitled track ${i}`,
+      artist: "",
+      album: null,
+      artworkUrl: null,
+      isrc: null,
+    };
   const font = displayFont(analysis.visual);
   const curve = [
     ...analysis.emotionalCurve,
@@ -85,14 +132,31 @@ export function PosterCanvas({
   }));
   const wavePath = buildWaveformPath(wavePoints);
 
+  const frameClass = FRAME_STYLES[extras.frame] ?? FRAME_STYLES.hairline;
+  const frameShadow =
+    extras.frame === "neon-glow"
+      ? {
+          boxShadow: `0 0 40px ${glowRgba ?? `${palette.accent}55`}, inset 0 0 24px ${glowRgba ?? `${palette.accent}33`}`,
+        }
+      : extras.frame === "arch"
+        ? { boxShadow: `0 0 60px ${glowRgba ?? `${palette.accent}44`}` }
+        : extras.frame === "double-rule"
+          ? {
+              boxShadow: `0 0 0 1px ${palette.primary}22, 0 0 30px ${glowRgba ?? `${palette.accent}22`}`,
+            }
+          : { boxShadow: `0 0 24px ${glowRgba ?? `${palette.primary}22`}` };
+
   return (
     <section
       aria-label={t.poster.ariaLabel}
-      className="overflow-hidden rounded-[2rem] border backdrop-blur-xl"
+      data-frame={extras.frame}
+      data-texture={extras.texture}
+      className={`overflow-hidden border backdrop-blur-xl ${frameClass}`}
       style={{
         borderColor: `${palette.primary}55`,
         background: `radial-gradient(ellipse at top, ${palette.primary}26, transparent 55%), radial-gradient(ellipse at bottom, ${palette.accent}1f, transparent 60%), ${palette.background}`,
         color: palette.text,
+        ...frameShadow,
       }}
     >
       {/* Top Header: personalized title + signature motto + phase roadmap */}
@@ -105,8 +169,8 @@ export function PosterCanvas({
           {analysis.source === "gemini" ? " · Gemini" : ""}
         </p>
         <blockquote
-          className="mx-auto mt-6 max-w-2xl text-2xl italic leading-snug sm:text-3xl"
-          style={{ fontFamily: font }}
+          className="mx-auto mt-6 max-w-2xl border-l-2 pl-4 text-left text-2xl italic leading-snug sm:text-3xl"
+          style={{ fontFamily: font, borderColor: `${palette.accent}80` }}
         >
           “{analysis.manifesto}”
         </blockquote>
@@ -114,8 +178,12 @@ export function PosterCanvas({
           {aura.map((keyword) => (
             <li
               key={keyword}
-              className="rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-widest"
-              style={{ borderColor: `${palette.primary}66`, color: palette.primary }}
+              className="rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-widest backdrop-blur-sm"
+              style={{
+                borderColor: `${palette.accent}33`,
+                background: `${palette.accent}1a`,
+                color: palette.primary,
+              }}
             >
               {keyword}
             </li>
@@ -143,10 +211,7 @@ export function PosterCanvas({
                 >
                   {t.poster.phaseTitles[chapter.id] ?? chapter.title}
                 </p>
-                <p
-                  className="mt-1 text-[10px] font-medium"
-                  style={{ color: palette.accent }}
-                >
+                <p className="mt-1 text-[10px] font-medium" style={{ color: palette.accent }}>
                   {t.poster.phaseAgeRanges[chapter.id] ?? chapter.ageRange}
                 </p>
                 <p
@@ -255,16 +320,16 @@ export function PosterCanvas({
             aria-label={t.poster.waveformAria}
           >
             <defs>
-              <linearGradient id="waveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor={palette.accent} stopOpacity="0.9" />
-                <stop offset="100%" stopColor={palette.primary} stopOpacity="0.6" />
+              <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={extras.waveGradient[0]} stopOpacity="0.95" />
+                <stop offset="100%" stopColor={extras.waveGradient[1]} stopOpacity="0.7" />
               </linearGradient>
             </defs>
             {/* Glow line */}
             <path
               d={wavePath}
               fill="none"
-              stroke={palette.accent}
+              stroke={auraGlowColor}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -293,10 +358,15 @@ export function PosterCanvas({
               />
             ))}
           </svg>
-          <div className="mt-2 flex justify-between text-[10px] font-mono" style={{ color: `${palette.text}80` }}>
+          <div
+            className="mt-2 flex justify-between text-[10px] font-mono"
+            style={{ color: `${palette.text}80` }}
+          >
             {curve.map((p, i) => (
               <span key={i} className="truncate" style={{ maxWidth: "10%" }}>
-                {i < analysis.emotionalCurve.length ? String(i + 1).padStart(2, "0") : `+${i - analysis.emotionalCurve.length + 1}`}
+                {i < analysis.emotionalCurve.length
+                  ? String(i + 1).padStart(2, "0")
+                  : `+${i - analysis.emotionalCurve.length + 1}`}
               </span>
             ))}
           </div>
@@ -318,7 +388,10 @@ export function PosterCanvas({
               <li
                 key={insight.index}
                 className="flex items-start gap-4 rounded-2xl border px-4 py-3"
-                style={{ borderColor: `${palette.primary}26`, background: `${palette.background}66` }}
+                style={{
+                  borderColor: `${palette.primary}26`,
+                  background: `${palette.background}66`,
+                }}
               >
                 {s.artworkUrl ? (
                   <img
@@ -455,17 +528,19 @@ export function PosterCanvas({
         >
           “{t.poster.footerQuote1}”
         </blockquote>
-        <p
-          className="text-sm font-medium tracking-wide"
-          style={{ color: palette.accent }}
-        >
+        <p className="text-sm font-medium tracking-wide" style={{ color: palette.accent }}>
           {t.poster.footerQuote2}
         </p>
 
         <Button
           onClick={() => exportPoeticPoster(analysis, songs, feedEntries)}
-          className="h-12 rounded-full px-8 text-sm font-semibold"
-          style={{ background: palette.primary, color: palette.background }}
+          className="h-12 rounded-full border px-8 text-sm font-semibold"
+          style={{
+            background: palette.primary,
+            color: palette.background,
+            borderColor: `${palette.accent}4d`,
+            boxShadow: `0 0 18px ${glowRgba ?? `${palette.primary}33`}`,
+          }}
         >
           <Download className="mr-2 h-4 w-4" />
           {t.poster.downloadPoster}

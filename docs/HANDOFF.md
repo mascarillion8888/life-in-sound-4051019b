@@ -11,8 +11,8 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-Testler:   219/219 geçti — bu oturumda yeniden koşturuldu (16 dosya;
-           9 i18n + 1 prompt language-enforcement testi)
+Testler:   228/228 geçti (17 dosya; +9 dinamik tema motoru +1 prompt
+           demografi/vibe + PosterCanvas derinlesen assertionlar)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Build:     `npm run build` = 0 (postbuild-vercel-spa shell 3287 byte,
            route patch yapıldı)
@@ -20,6 +20,12 @@ Lint:      0 hata (1 react-refresh uyarısı LanguageContext.tsx'te — kabul
            edilebilir, gate'i bloklamıyor)
 i18n:      LanguageContext + LanguageSwitcher aktif; 5 dil (en/tr/es/de/fr),
            varsayılan en, localStorage "soundmap:language"
+Tema motoru: src/lib/soundmap/dynamicThemes.ts — 3 eksenli skorlama
+           (tur x2, duygu x1, yas/faz x1); VisualSpec'e frame /
+           waveGradient / texture / auraGlow eklendi; PosterCanvas +
+           poeticPoster.ts (2400x3600) ayni extralardan besleniyor.
+Fontlar:   Cinzel / Playfair Display / Inter / Plus Jakarta Sans
+           (styles.css Google Fonts import + tipografi->font haritalari)
 Gemini:    `GEMINI_API_KEY` server-only; analiz prose'u aktif dilde
            üretiliyor (prompt'ta güçlü LANGUAGE REQUIREMENT kuralı +
            TASK öncesi REMINDER; her JSON value hedef dilde)
