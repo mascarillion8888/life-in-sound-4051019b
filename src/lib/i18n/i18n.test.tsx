@@ -24,13 +24,33 @@ describe("i18n dictionaries", () => {
     }
   });
 
-  it("phase roadmap labels exist for all four deterministic chapters in every language", () => {
+  it("phase roadmap labels exist for all six deterministic chapters in every language", () => {
     for (const lang of SUPPORTED_LANGUAGES) {
       const dict: Dictionary = dictionaries[lang];
-      for (const id of ["chapter-i", "chapter-ii", "chapter-iii", "chapter-iv"]) {
+      for (const id of [
+        "chapter-i",
+        "chapter-ii",
+        "chapter-iii",
+        "chapter-iv",
+        "chapter-v",
+        "chapter-vi",
+      ]) {
         expect(dict.poster.phaseTitles[id], `${lang} ${id} title`).toBeTruthy();
         expect(dict.poster.phaseAgeRanges[id], `${lang} ${id} ageRange`).toBeTruthy();
       }
+    }
+  });
+
+  it("canvas labels exist in every language with 4 tree branches and 8 journey nodes", () => {
+    for (const lang of SUPPORTED_LANGUAGES) {
+      const dict: Dictionary = dictionaries[lang];
+      expect(dict.poster.canvas.mapTitle).toBeTruthy();
+      expect(dict.poster.canvas.mapSubtitle).toBeTruthy();
+      expect(dict.poster.canvas.emotionalJourney).toBeTruthy();
+      expect(dict.poster.canvas.lifePlaylist).toBeTruthy();
+      expect(dict.poster.canvas.treeBranches).toHaveLength(4);
+      expect(dict.poster.canvas.journeyNodes).toHaveLength(8);
+      expect(dict.poster.canvas.moreOnMap).toBeTruthy();
     }
   });
 

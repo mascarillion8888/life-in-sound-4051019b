@@ -74,19 +74,42 @@ describe("PosterCanvas", () => {
     expect(pill.className).toContain("backdrop-blur-sm");
   });
 
-  it("renders the age phase roadmap with 4 phases", () => {
+  it("renders the age phase roadmap with 6 phases", () => {
     const analysis = makeAnalysis();
     render(<PosterCanvas analysis={analysis} songs={SONGS} />);
 
     expect(screen.getByText(/life phase roadmap/i)).toBeInTheDocument();
-    expect(screen.getAllByText("FIRST SPARK").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("AWAKENING").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("PASSAGES").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("DEEP RESONANCE").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("DISCOVERY & WONDER").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("MENTAL AWAKENING").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("STRENGTH & TRIUMPH").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("THRESHOLD PORTALS").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("PURE ENERGY & JOY").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("IDENTITY & SYNTHESIS").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Ages 9–12")).toBeInTheDocument();
     expect(screen.getByText("Ages 12–18")).toBeInTheDocument();
-    expect(screen.getByText("Ages 18–28")).toBeInTheDocument();
+    expect(screen.getByText("Ages 18–24")).toBeInTheDocument();
+    expect(screen.getByText("Ages 24–30")).toBeInTheDocument();
+    expect(screen.getByText("Ages 30–35")).toBeInTheDocument();
     expect(screen.getByText("Ages 35+")).toBeInTheDocument();
+  });
+
+  it("makes every album art clickable — a Spotify search deep link", () => {
+    const analysis = makeAnalysis();
+    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+
+    const links = screen.getAllByRole("link", { name: /listen to .+ on spotify/i });
+    // At least one link per song (chapter strip + playlist rows).
+    expect(links.length).toBeGreaterThanOrEqual(SONGS.length);
+    for (const link of links) {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+      expect(link.getAttribute("href")).toMatch(/^https:\/\/open\.spotify\.com\/search\//);
+    }
+    expect(
+      screen
+        .getAllByRole("link", { name: /listen to judas priest - painkiller on spotify/i })[0]
+        .getAttribute("href"),
+    ).toContain(encodeURIComponent("Judas Priest - Painkiller"));
   });
 
   it("renders SVG waveform instead of bar chart", () => {

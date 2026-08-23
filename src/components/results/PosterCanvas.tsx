@@ -5,6 +5,7 @@ import type { PoeticAnalysis, VisualSpec } from "@/lib/llm/poetic-analyzer";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { exportPoeticPoster } from "@/lib/soundmap/poeticPoster";
+import { spotifySearchUrl } from "@/lib/song/listen";
 import type { Song } from "@/lib/song/types";
 
 /**
@@ -169,8 +170,8 @@ export function PosterCanvas({
           {analysis.source === "gemini" ? " · Gemini" : ""}
         </p>
         <blockquote
-          className="mx-auto mt-6 max-w-2xl border-l-2 pl-4 text-left text-2xl italic leading-snug sm:text-3xl"
-          style={{ fontFamily: font, borderColor: `${palette.accent}80` }}
+          className="mx-auto mt-6 max-w-2xl text-center text-2xl italic leading-snug sm:text-3xl"
+          style={{ fontFamily: font }}
         >
           “{analysis.manifesto}”
         </blockquote>
@@ -198,7 +199,7 @@ export function PosterCanvas({
           >
             {t.poster.lifePhaseRoadmap}
           </p>
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {analysis.chapters.map((chapter) => (
               <div
                 key={chapter.id}
@@ -234,7 +235,7 @@ export function PosterCanvas({
         >
           {t.poster.narrativeChapters}
         </h3>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {analysis.chapters.map((chapter) => (
             <article
               key={chapter.id}
@@ -254,26 +255,35 @@ export function PosterCanvas({
                 {t.poster.phaseAgeRanges[chapter.id] ?? chapter.ageRange} · {chapter.mood}
               </p>
 
-              {/* Album artwork strip */}
+              {/* Album artwork strip — click to listen on Spotify */}
               <div className="mt-4 flex gap-2 overflow-hidden">
                 {chapter.songIndexes.map((i) => {
                   const s = song(i);
-                  return s.artworkUrl ? (
-                    <img
+                  return (
+                    <a
                       key={i}
-                      src={s.artworkUrl}
-                      alt={`${s.title} album artwork`}
-                      className="h-16 w-16 shrink-0 rounded-xl border object-cover"
-                      style={{ borderColor: `${palette.primary}33` }}
-                    />
-                  ) : (
-                    <span
-                      key={i}
-                      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border"
-                      style={{ borderColor: `${palette.primary}33` }}
+                      href={spotifySearchUrl(s.title, s.artist)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Listen to ${s.title} on Spotify`}
+                      className="shrink-0 transition-transform hover:scale-105"
                     >
-                      <Disc3 className="h-6 w-6" style={{ color: palette.primary }} />
-                    </span>
+                      {s.artworkUrl ? (
+                        <img
+                          src={s.artworkUrl}
+                          alt={`${s.title} album artwork`}
+                          className="h-16 w-16 rounded-xl border object-cover"
+                          style={{ borderColor: `${palette.primary}33` }}
+                        />
+                      ) : (
+                        <span
+                          className="flex h-16 w-16 items-center justify-center rounded-xl border"
+                          style={{ borderColor: `${palette.primary}33` }}
+                        >
+                          <Disc3 className="h-6 w-6" style={{ color: palette.primary }} />
+                        </span>
+                      )}
+                    </a>
                   );
                 })}
               </div>
@@ -393,21 +403,29 @@ export function PosterCanvas({
                   background: `${palette.background}66`,
                 }}
               >
-                {s.artworkUrl ? (
-                  <img
-                    src={s.artworkUrl}
-                    alt=""
-                    className="h-12 w-12 shrink-0 rounded-xl border object-cover"
-                    style={{ borderColor: `${palette.primary}33` }}
-                  />
-                ) : (
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border"
-                    style={{ borderColor: `${palette.primary}33` }}
-                  >
-                    <Disc3 className="h-5 w-5" style={{ color: palette.primary }} />
-                  </span>
-                )}
+                <a
+                  href={spotifySearchUrl(s.title, s.artist)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Listen to ${s.title} on Spotify`}
+                  className="shrink-0 transition-transform hover:scale-105"
+                >
+                  {s.artworkUrl ? (
+                    <img
+                      src={s.artworkUrl}
+                      alt=""
+                      className="h-12 w-12 rounded-xl border object-cover"
+                      style={{ borderColor: `${palette.primary}33` }}
+                    />
+                  ) : (
+                    <span
+                      className="flex h-12 w-12 items-center justify-center rounded-xl border"
+                      style={{ borderColor: `${palette.primary}33` }}
+                    >
+                      <Disc3 className="h-5 w-5" style={{ color: palette.primary }} />
+                    </span>
+                  )}
+                </a>
                 <span
                   className="mt-0.5 shrink-0 text-xs font-mono"
                   style={{ color: palette.primary }}
@@ -455,21 +473,29 @@ export function PosterCanvas({
                 className="flex items-center gap-3 rounded-2xl border px-4 py-2.5"
                 style={{ borderColor: `${palette.primary}26`, background: `${palette.text}05` }}
               >
-                {entry.song.artworkUrl ? (
-                  <img
-                    src={entry.song.artworkUrl}
-                    alt=""
-                    className="h-9 w-9 shrink-0 rounded-xl border object-cover"
-                    style={{ borderColor: `${palette.primary}33` }}
-                  />
-                ) : (
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"
-                    style={{ borderColor: `${palette.primary}33` }}
-                  >
-                    <Disc3 className="h-4 w-4" style={{ color: palette.primary }} />
-                  </span>
-                )}
+                <a
+                  href={spotifySearchUrl(entry.song.title, entry.song.artist)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Listen to ${entry.song.title} on Spotify`}
+                  className="shrink-0 transition-transform hover:scale-105"
+                >
+                  {entry.song.artworkUrl ? (
+                    <img
+                      src={entry.song.artworkUrl}
+                      alt=""
+                      className="h-9 w-9 rounded-xl border object-cover"
+                      style={{ borderColor: `${palette.primary}33` }}
+                    />
+                  ) : (
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border"
+                      style={{ borderColor: `${palette.primary}33` }}
+                    >
+                      <Disc3 className="h-4 w-4" style={{ color: palette.primary }} />
+                    </span>
+                  )}
+                </a>
                 <span className="shrink-0 text-xs font-mono" style={{ color: palette.accent }}>
                   +{i + 1}
                 </span>
@@ -533,7 +559,7 @@ export function PosterCanvas({
         </p>
 
         <Button
-          onClick={() => exportPoeticPoster(analysis, songs, feedEntries)}
+          onClick={() => exportPoeticPoster(analysis, songs, feedEntries, t.poster.canvas)}
           className="h-12 rounded-full border px-8 text-sm font-semibold"
           style={{
             background: palette.primary,

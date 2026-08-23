@@ -69,10 +69,20 @@ export type Dictionary = {
     footerQuote1: string;
     footerQuote2: string;
     themeLabel: string;
-    /** Localized titles for deterministic chapter ids (chapter-i..iv). */
+    /** Localized titles for deterministic chapter ids (chapter-i..vi). */
     phaseTitles: Record<string, string>;
     /** Localized age-range labels for deterministic chapter ids. */
     phaseAgeRanges: Record<string, string>;
+    /** Canvas export labels (map title, sections, tree branches, journey nodes). */
+    canvas: {
+      mapTitle: string;
+      mapSubtitle: string;
+      emotionalJourney: string;
+      lifePlaylist: string;
+      treeBranches: string[];
+      journeyNodes: string[];
+      moreOnMap: string;
+    };
   };
 };
 
@@ -137,16 +147,38 @@ const en: Dictionary = {
     footerQuote2: "Music changes. We change. But it always stays with us.",
     themeLabel: "Theme:",
     phaseTitles: {
-      "chapter-i": "FIRST SPARK",
-      "chapter-ii": "AWAKENING",
-      "chapter-iii": "PASSAGES",
-      "chapter-iv": "DEEP RESONANCE",
+      "chapter-i": "DISCOVERY & WONDER",
+      "chapter-ii": "MENTAL AWAKENING",
+      "chapter-iii": "STRENGTH & TRIUMPH",
+      "chapter-iv": "THRESHOLD PORTALS",
+      "chapter-v": "PURE ENERGY & JOY",
+      "chapter-vi": "IDENTITY & SYNTHESIS",
     },
     phaseAgeRanges: {
       "chapter-i": "Ages 9–12",
       "chapter-ii": "Ages 12–18",
-      "chapter-iii": "Ages 18–28",
-      "chapter-iv": "Ages 35+",
+      "chapter-iii": "Ages 18–24",
+      "chapter-iv": "Ages 24–30",
+      "chapter-v": "Ages 30–35",
+      "chapter-vi": "Ages 35+",
+    },
+    canvas: {
+      mapTitle: "MUSIC MAP",
+      mapSubtitle: "SOUNDTRACK OF A LIFE",
+      emotionalJourney: "EMOTIONAL JOURNEY",
+      lifePlaylist: "MY LIFE PLAYLIST",
+      treeBranches: ["MIND", "POWER", "DARKNESS", "ACCEPTANCE"],
+      journeyNodes: [
+        "Discovery",
+        "Rebellion",
+        "Inquiry",
+        "Darkness",
+        "Triumph",
+        "Longing",
+        "Portal",
+        "Depth",
+      ],
+      moreOnMap: "more on your living map",
     },
   },
 };
@@ -211,16 +243,38 @@ const tr: Dictionary = {
     footerQuote2: "Müzik değişir. Biz değişiriz. Ama o hep bizimle kalır.",
     themeLabel: "Tema:",
     phaseTitles: {
-      "chapter-i": "İLK KIVILCIM",
-      "chapter-ii": "UYANIŞ",
-      "chapter-iii": "GEÇİŞLER",
-      "chapter-iv": "DERİN YANKI",
+      "chapter-i": "KEŞİF & BÜYÜLENME",
+      "chapter-ii": "ZİHİNSEL UYANIŞ",
+      "chapter-iii": "GÜÇ & AYAĞA KALKIŞ",
+      "chapter-iv": "GEÇİŞ PORTALLARI",
+      "chapter-v": "SAF ENERJİ & KEYİF",
+      "chapter-vi": "SON NOKTA: KİMLİK",
     },
     phaseAgeRanges: {
       "chapter-i": "9–12 Yaş",
       "chapter-ii": "12–18 Yaş",
-      "chapter-iii": "18–28 Yaş",
-      "chapter-iv": "35+ Yaş",
+      "chapter-iii": "18–24 Yaş",
+      "chapter-iv": "24–30 Yaş",
+      "chapter-v": "30–35 Yaş",
+      "chapter-vi": "35+ Yaş",
+    },
+    canvas: {
+      mapTitle: "MÜZİK HARİTASI",
+      mapSubtitle: "BİR HAYATIN SOUNDTRACK'İ",
+      emotionalJourney: "DUYGUSAL YOLCULUK",
+      lifePlaylist: "HAYAT PLAYLIST'İM",
+      treeBranches: ["ZİHİN", "GÜÇ", "KARANLIK", "KABULLENİŞ"],
+      journeyNodes: [
+        "Keşif",
+        "İsyan",
+        "Sorgulama",
+        "Karanlık",
+        "Zafer",
+        "Özlem",
+        "Portal",
+        "Derinlik",
+      ],
+      moreOnMap: "daha fazlası yaşayan haritanızda",
     },
   },
 };
@@ -285,16 +339,38 @@ const es: Dictionary = {
     footerQuote2: "La música cambia. Nosotros cambiamos. Pero siempre permanece con nosotros.",
     themeLabel: "Tema:",
     phaseTitles: {
-      "chapter-i": "PRIMERA CHISPA",
-      "chapter-ii": "DESPERTAR",
-      "chapter-iii": "TRAVESÍAS",
-      "chapter-iv": "RESONANCIA PROFUNDA",
+      "chapter-i": "DESCUBRIMIENTO & ASOMBRO",
+      "chapter-ii": "DESPERTAR MENTAL",
+      "chapter-iii": "FUERZA & TRIUNFO",
+      "chapter-iv": "PORTALES DE PASO",
+      "chapter-v": "ENERGÍA PURA & ALEGRÍA",
+      "chapter-vi": "IDENTIDAD & SÍNTESIS",
     },
     phaseAgeRanges: {
       "chapter-i": "9–12 años",
       "chapter-ii": "12–18 años",
-      "chapter-iii": "18–28 años",
-      "chapter-iv": "35+ años",
+      "chapter-iii": "18–24 años",
+      "chapter-iv": "24–30 años",
+      "chapter-v": "30–35 años",
+      "chapter-vi": "35+ años",
+    },
+    canvas: {
+      mapTitle: "MAPA MUSICAL",
+      mapSubtitle: "LA BANDA SONORA DE UNA VIDA",
+      emotionalJourney: "VIAJE EMOCIONAL",
+      lifePlaylist: "MI PLAYLIST DE VIDA",
+      treeBranches: ["MENTE", "PODER", "OSCURIDAD", "ACEPTACIÓN"],
+      journeyNodes: [
+        "Descubrimiento",
+        "Rebelión",
+        "Indagación",
+        "Oscuridad",
+        "Triunfo",
+        "Añoranza",
+        "Portal",
+        "Profundidad",
+      ],
+      moreOnMap: "más en tu mapa vivo",
     },
   },
 };
@@ -359,16 +435,38 @@ const de: Dictionary = {
     footerQuote2: "Musik verändert sich. Wir verändern uns. Aber sie bleibt immer bei uns.",
     themeLabel: "Thema:",
     phaseTitles: {
-      "chapter-i": "ERSTER FUNKEN",
-      "chapter-ii": "ERWACHEN",
-      "chapter-iii": "ÜBERGÄNGE",
-      "chapter-iv": "TIEFE RESONANZ",
+      "chapter-i": "ENTDECKUNG & STAUNEN",
+      "chapter-ii": "GEISTIGES ERWACHEN",
+      "chapter-iii": "STÄRKE & TRIUMPH",
+      "chapter-iv": "SCHWELLENPORTALE",
+      "chapter-v": "REINE ENERGIE & FREUDE",
+      "chapter-vi": "IDENTITÄT & SYNTHESE",
     },
     phaseAgeRanges: {
       "chapter-i": "9–12 Jahre",
       "chapter-ii": "12–18 Jahre",
-      "chapter-iii": "18–28 Jahre",
-      "chapter-iv": "35+ Jahre",
+      "chapter-iii": "18–24 Jahre",
+      "chapter-iv": "24–30 Jahre",
+      "chapter-v": "30–35 Jahre",
+      "chapter-vi": "35+ Jahre",
+    },
+    canvas: {
+      mapTitle: "MUSIKKARTE",
+      mapSubtitle: "DER SOUNDTRACK EINES LEBENS",
+      emotionalJourney: "EMOTIONALE REISE",
+      lifePlaylist: "MEINE LEBENS-PLAYLIST",
+      treeBranches: ["GEIST", "KRAFT", "DUNKELHEIT", "ANNAHME"],
+      journeyNodes: [
+        "Entdeckung",
+        "Rebellion",
+        "Hinterfragung",
+        "Dunkelheit",
+        "Triumph",
+        "Sehnsucht",
+        "Portal",
+        "Tiefe",
+      ],
+      moreOnMap: "mehr auf deiner lebendigen Karte",
     },
   },
 };
@@ -434,16 +532,38 @@ const fr: Dictionary = {
     footerQuote2: "La musique change. Nous changeons. Mais elle reste toujours avec nous.",
     themeLabel: "Thème :",
     phaseTitles: {
-      "chapter-i": "PREMIÈRE ÉTINCELLE",
-      "chapter-ii": "ÉVEIL",
-      "chapter-iii": "PASSAGES",
-      "chapter-iv": "RÉSONANCE PROFONDE",
+      "chapter-i": "DÉCOUVERTE & ÉMERVEILLEMENT",
+      "chapter-ii": "ÉVEIL MENTAL",
+      "chapter-iii": "FORCE & TRIOMPHE",
+      "chapter-iv": "PORTAILS DE PASSAGE",
+      "chapter-v": "ÉNERGIE PURE & JOIE",
+      "chapter-vi": "IDENTITÉ & SYNTHÈSE",
     },
     phaseAgeRanges: {
       "chapter-i": "9–12 ans",
       "chapter-ii": "12–18 ans",
-      "chapter-iii": "18–28 ans",
-      "chapter-iv": "35+ ans",
+      "chapter-iii": "18–24 ans",
+      "chapter-iv": "24–30 ans",
+      "chapter-v": "30–35 ans",
+      "chapter-vi": "35+ ans",
+    },
+    canvas: {
+      mapTitle: "CARTE MUSICALE",
+      mapSubtitle: "LA BANDE-SON D'UNE VIE",
+      emotionalJourney: "VOYAGE ÉMOTIONNEL",
+      lifePlaylist: "MA PLAYLIST DE VIE",
+      treeBranches: ["ESPRIT", "FORCE", "TÉNÈBRES", "ACCEPTATION"],
+      journeyNodes: [
+        "Découverte",
+        "Rébellion",
+        "Questionnement",
+        "Ténèbres",
+        "Triomphe",
+        "Nostalgie",
+        "Portail",
+        "Profondeur",
+      ],
+      moreOnMap: "de plus sur votre carte vivante",
     },
   },
 };

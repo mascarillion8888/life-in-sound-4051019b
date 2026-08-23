@@ -284,33 +284,69 @@ const CHAPTER_SLOTS: {
 }[] = [
   {
     id: "chapter-i",
-    title: "FIRST SPARK",
+    title: "DISCOVERY & WONDER",
     ageRange: "Ages 9–12",
-    indexes: [1, 2],
+    indexes: [1],
     mood: "wide-eyed",
   },
   {
     id: "chapter-ii",
-    title: "AWAKENING",
+    title: "MENTAL AWAKENING",
     ageRange: "Ages 12–18",
-    indexes: [3, 4, 5],
+    indexes: [2],
     mood: "electric",
   },
   {
     id: "chapter-iii",
-    title: "PASSAGES",
-    ageRange: "Ages 18–28",
-    indexes: [6, 7],
-    mood: "threshold",
+    title: "STRENGTH & TRIUMPH",
+    ageRange: "Ages 18–24",
+    indexes: [3, 4],
+    mood: "defiant",
   },
   {
     id: "chapter-iv",
-    title: "DEEP RESONANCE",
+    title: "THRESHOLD PORTALS",
+    ageRange: "Ages 24–30",
+    indexes: [5],
+    mood: "threshold",
+  },
+  {
+    id: "chapter-v",
+    title: "PURE ENERGY & JOY",
+    ageRange: "Ages 30–35",
+    indexes: [6, 7],
+    mood: "radiant",
+  },
+  {
+    id: "chapter-vi",
+    title: "IDENTITY & SYNTHESIS",
     ageRange: "Ages 35+",
     indexes: [8],
     mood: "luminous",
   },
 ];
+
+/**
+ * Labels for the four main branches of the Tree of Life on the gothic map —
+ * the four forces the user's chapters hang from. UI locales override these
+ * via the poster dictionary.
+ */
+export const TREE_BRANCH_LABELS = ["MIND", "POWER", "DARKNESS", "ACCEPTANCE"] as const;
+
+/**
+ * Journey-node labels for the emotional journey line — one per song, in
+ * journey order. UI locales override these via the poster dictionary.
+ */
+export const JOURNEY_NODE_LABELS = [
+  "Discovery",
+  "Rebellion",
+  "Inquiry",
+  "Darkness",
+  "Triumph",
+  "Longing",
+  "Portal",
+  "Depth",
+] as const;
 
 /** One deterministic insight template per journey question (1-based). */
 function deterministicInsight(questionId: number, song: string, emotions: string[]): string {
@@ -350,30 +386,45 @@ function rankedDimensionPoles(profile: PersonalityProfile): [string, string] {
  */
 const CHAPTER_NARRATIVES: Record<string, ((first: string, last: string) => string)[]> = {
   "chapter-i": [
-    (first, last) =>
-      `“${first}” was the first proof that a feeling could have a soundtrack; “${last}” taught the map to keep growing.`,
-    (first, last) =>
-      `Before there were words for it, there was “${first}” — and “${last}” arrived like the room getting bigger.`,
-    (first, last) =>
-      `Nobody hands you your first song; “${first}” simply stayed, and “${last}” made sure the door stayed open.`,
+    (first) =>
+      `“${first}” was the first proof that a feeling could have a soundtrack — the seed the whole map grew from.`,
+    (first) =>
+      `Before there were words for it, there was “${first}”; wonder arrived as a melody and never left.`,
+    (first) =>
+      `Nobody hands you your first song; “${first}” simply stayed, and the door stayed open.`,
   ],
   "chapter-ii": [
-    (first, last) =>
-      `Between “${first}” and “${last}” there were no small questions — only volume, honesty, and doors you walked through alone.`,
-    (first, last) =>
-      `“${first}” asked the question and “${last}” refused to let it go; those years were the rehearsal for becoming someone.`,
-    (first, last) =>
-      `Love, weight, and the refusal to kneel — “${first}” on one side of the door, “${last}” waiting on the other.`,
+    (first) =>
+      `“${first}” asked the question out loud — the year the mind woke up and refused to go back to sleep.`,
+    (first) =>
+      `Somewhere in “${first}” the world stopped being scenery and became a question you had to answer.`,
+    (first) =>
+      `“${first}” was the rehearsal for becoming someone: volume, honesty, and a door you walked through alone.`,
   ],
   "chapter-iii": [
     (first, last) =>
-      `“${first}” opened from the inside; “${last}” is why some people are carried in melody rather than words.`,
+      `Between “${first}” and “${last}” there were no small feelings — love, weight, and the refusal to kneel.`,
+    (first, last) =>
+      `“${first}” taught the spine what it was for; “${last}” proved the heart could carry it.`,
+    (first, last) =>
+      `First love and first scar live in the same room: “${first}” on one side of the door, “${last}” on the other.`,
+  ],
+  "chapter-iv": [
+    (first) => `“${first}” is a threshold — the kind of song that only opens from the inside.`,
+    (first) =>
+      `“${first}” marked the portal: who you were on one side, who you became on the other.`,
+    (first) =>
+      `Some songs are doors. “${first}” is the one you walked through and never fully came back from.`,
+  ],
+  "chapter-v": [
+    (first, last) =>
+      `“${first}” is why some people are carried in melody rather than words; “${last}” turned the memory into light.`,
     (first, last) =>
       `Somewhere between “${first}” and “${last}”, the roads turned inward — and finally opened.`,
     (first, last) =>
       `You learned “${first}” by heart; “${last}” explained what the heart was keeping.`,
   ],
-  "chapter-iv": [
+  "chapter-vi": [
     (first) =>
       `“${first}” is not an ending — it is the frequency left on for whoever finds this map after you.`,
     (first) =>
@@ -502,7 +553,8 @@ const ANALYZER_GROUNDING_RULES = [
   "If you genuinely know a supplied song's or album's real theme, mood, or cultural context, USE IT to deepen the interpretation — the song's own meaning is fair game; the user's biography is not.",
   "Write like a lifelong friend who has listened beside them for years: warm, poetic, specific. Never like a report, never clinical, never motivational-poster generic.",
   'Narratives and the manifesto must read like an editorial magazine biography — atmospheric, personal, specific. Formulaic scaffold structures are forbidden: never start a narrative with "It begins with", "By the time", "First you tried", "And in the end", "What remains is" or any sentence whose only job is to list the chapter\'s songs. Weave the songs into real flowing prose.',
-  'Chapter titles must be short, evocative and uppercase, matching the four life-phase archetypes: "FIRST SPARK" (Ages 9–12, Discovery & Enchantment), "AWAKENING" (Ages 12–18, Energy & Defiance), "PASSAGES" (Ages 18–28, Mental Awakening), "DEEP RESONANCE" (Ages 35+, Stillness & Acceptance).',
+  'Chapter titles must be short, evocative and uppercase, matching the six life-phase archetypes: "DISCOVERY & WONDER" (Ages 9–12), "MENTAL AWAKENING" (Ages 12–18), "STRENGTH & TRIUMPH" (Ages 18–24), "THRESHOLD PORTALS" (Ages 24–30), "PURE ENERGY & JOY" (Ages 30–35), "IDENTITY & SYNTHESIS" (Ages 35+).',
+  "Weave the song titles deeply into each chapter narrative — the song should feel like the scene, not a citation. The tone is that of a gothic fantasy map of a life: mythic, warm, existential, never clinical.",
   "Frame every genre and song as an honored chapter of human experience — no genre is 'guilty pleasure', no taste is wrong. Each choice reveals something true about the person.",
   "Return STRICT JSON only — no markdown, no code fences, no commentary.",
 ];
@@ -562,7 +614,7 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     "TASK:",
     "Return ONE JSON object with EXACTLY these keys:",
     '"manifesto": one unifying existential quote — a life manifesto in a single sentence that could only belong to THIS selection of songs. Write it like the closing line of a magazine profile: quotable, personal, never a summary.',
-    '"chapters": 2-4 objects {"id","title","songIndexes":[1-based ints],"narrative","mood"} grouping all 8 songs into meaningful life phases; every index 1-8 must appear exactly once. Each "narrative" is 2–3 sentences of editorial biography that flows like prose — never a disguised list of the chapter\'s songs.',
+    '"chapters": 4-6 objects {"id","title","songIndexes":[1-based ints],"narrative","mood"} grouping all 8 songs into meaningful life phases; every index 1-8 must appear exactly once. Each "narrative" is 2–3 sentences of editorial biography that flows like prose — never a disguised list of the chapter\'s songs.',
     '"songInsights": 8 objects {"index","title","insight"} — one warm, specific one-sentence insight per song, in journey order.',
     '"emotionalCurve": 8 objects {"label","intensity"} — intensity 0..1, one per song, tracing the emotional arc of the life.',
     '"coreDuality": {"axis","left","right","resolution"} — the two poles this person moves between (e.g. "Steel / Rain") and one sentence resolving how they hold both.',
