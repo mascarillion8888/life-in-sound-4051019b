@@ -192,6 +192,23 @@ describe("buildPoeticAnalyzerPrompt", () => {
     const prompt = buildPoeticAnalyzerPrompt({ profile, songs, memories });
     expect(prompt).toContain('memory note: "my brother\'s basement, summer of 99"');
   });
+
+  it("enforces the requested target language for the whole story body", () => {
+    const { profile, songs } = ctx();
+
+    const turkish = buildPoeticAnalyzerPrompt({ profile, songs, language: "tr" });
+    expect(turkish).toContain("LANGUAGE REQUIREMENT");
+    expect(turkish).toContain("MUST be written in Türkçe");
+    expect(turkish).toContain("REMINDER: Respond entirely in Türkçe.");
+    expect(turkish).toContain("every JSON value, not only top-level fields");
+
+    const german = buildPoeticAnalyzerPrompt({ profile, songs, language: "de" });
+    expect(german).toContain("MUST be written in Deutsch");
+
+    // Omitted language defaults to English.
+    const fallback = buildPoeticAnalyzerPrompt({ profile, songs });
+    expect(fallback).toContain("MUST be written in English");
+  });
 });
 
 describe("deterministicEntryInsight", () => {

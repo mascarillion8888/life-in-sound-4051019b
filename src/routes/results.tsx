@@ -306,15 +306,15 @@ function ResultsPage() {
         <AnimatedReveal>
           <header className="space-y-5 text-center">
             <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-              Your SoundMap
+              {t.results.yourSoundmap}
             </span>
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-6xl">
-              <span className="text-gold-gradient">Eight songs.</span>
+              <span className="text-gold-gradient">{t.results.heroAccent}</span>
               <br />
-              One life, in sound.
+              {t.results.heroTagline}
             </h1>
             <p className="mx-auto max-w-xl text-base leading-relaxed text-foreground/70 sm:text-lg">
-              Everything below was shaped by the answers you just gave.
+              {t.results.heroSub}
             </p>
           </header>
         </AnimatedReveal>

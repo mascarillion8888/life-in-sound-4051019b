@@ -11,8 +11,8 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-Testler:   218/218 geçti — bu oturumda yeniden koşturuldu (17 dosya;
-           9 yeni i18n testi eklendi)
+Testler:   219/219 geçti — bu oturumda yeniden koşturuldu (16 dosya;
+           9 i18n + 1 prompt language-enforcement testi)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Build:     `npm run build` = 0 (postbuild-vercel-spa shell 3287 byte,
            route patch yapıldı)
@@ -21,7 +21,8 @@ Lint:      0 hata (1 react-refresh uyarısı LanguageContext.tsx'te — kabul
 i18n:      LanguageContext + LanguageSwitcher aktif; 5 dil (en/tr/es/de/fr),
            varsayılan en, localStorage "soundmap:language"
 Gemini:    `GEMINI_API_KEY` server-only; analiz prose'u aktif dilde
-           üretiliyor (language param prompt'a ekleniyor)
+           üretiliyor (prompt'ta güçlü LANGUAGE REQUIREMENT kuralı +
+           TASK öncesi REMINDER; her JSON value hedef dilde)
 Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
            dropdown Spotify primary → iTunes fallback → serbest-metin
 ```
@@ -68,6 +69,13 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
    - QuestionCard artık sözlükten okuyor (varsayılan en: "Add to Ritual",
      "Type a song and artist name" vb.); QuestionCard testleri en
      varsayılanına güncellendi.
+
+**İkinci i18n turu (bu oturum):** results hero ("Your SoundMap" / "Eight
+songs." / "One life, in sound." / sub-cümle) sözlüğe bağlandı
+(`results.yourSoundmap|heroAccent|heroTagline|heroSub`, 5 dil);
+poetic-analyzer prompt'una güçlü dil kuralı ("LANGUAGE REQUIREMENT: The
+ENTIRE story body ... MUST be written in <dil>", her JSON value dahil) +
+TASK öncesi "REMINDER: Respond entirely in <dil>" eklendi.
 
 **Bilerek kapsam dışı bırakılanlar:** Life Story prompt'ları (korumalı),
 `feed/` bileşenleri içi (mevcut Türkçe stringler duruyor), landing hero

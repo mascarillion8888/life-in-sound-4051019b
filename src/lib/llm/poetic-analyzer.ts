@@ -479,7 +479,8 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     })
     .join("\n");
 
-  const languageRule = `Write ALL prose — manifesto, chapter titles and narratives, song insights, emotional-curve labels, core duality and aura keywords — in ${LANGUAGE_NAMES[language ?? DEFAULT_LANGUAGE]}. Keep song titles and artist names in their original form.`;
+  const targetLanguage = LANGUAGE_NAMES[language ?? DEFAULT_LANGUAGE];
+  const languageRule = `LANGUAGE REQUIREMENT: The ENTIRE story body and every human-readable string you produce — manifesto, chapter titles and narratives, song insights, emotional-curve labels, core duality and aura keywords — MUST be written in ${targetLanguage}, with natural, fluent, idiomatic phrasing (not translated word-for-word). This applies to every JSON value, not only top-level fields. Only song titles, artist names and album names stay in their original form; JSON keys stay exactly as specified.`;
   const rulesBlock = [...ANALYZER_GROUNDING_RULES, languageRule]
     .map((r, i) => `${i + 1}. ${r}`)
     .join("\n");
@@ -501,6 +502,8 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     "",
     "RULES:",
     rulesBlock,
+    "",
+    `REMINDER: Respond entirely in ${targetLanguage}.`,
     "",
     "TASK:",
     "Return ONE JSON object with EXACTLY these keys:",

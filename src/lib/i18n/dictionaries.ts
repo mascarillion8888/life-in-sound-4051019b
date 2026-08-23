@@ -32,6 +32,10 @@ export type Dictionary = {
     recognizedAria: string;
   };
   results: {
+    yourSoundmap: string;
+    heroAccent: string;
+    heroTagline: string;
+    heroSub: string;
     lifeStoryEyebrow: string;
     lifeStoryTitle: string;
     lifeStoryLocked: string;
@@ -95,6 +99,10 @@ const en: Dictionary = {
     recognizedAria: "recognized",
   },
   results: {
+    yourSoundmap: "Your SoundMap",
+    heroAccent: "Eight songs.",
+    heroTagline: "One life, in sound.",
+    heroSub: "Everything below was shaped by the answers you just gave.",
     lifeStoryEyebrow: "Chapter one",
     lifeStoryTitle: "Life Story",
     lifeStoryLocked: "Complete your journey to unlock your Life Story.",
@@ -165,6 +173,10 @@ const tr: Dictionary = {
     recognizedAria: "tanındı",
   },
   results: {
+    yourSoundmap: "SoundMap'in",
+    heroAccent: "Sekiz şarkı.",
+    heroTagline: "Seslerle anlatılan bir hayat.",
+    heroSub: "Aşağıdaki her şey az önce verdiğin cevaplarla şekillendi.",
     lifeStoryEyebrow: "Birinci bölüm",
     lifeStoryTitle: "Hayat Hikâyesi",
     lifeStoryLocked: "Hayat Hikâyeni açmak için yolculuğunu tamamla.",
@@ -235,6 +247,10 @@ const es: Dictionary = {
     recognizedAria: "reconocida",
   },
   results: {
+    yourSoundmap: "Tu SoundMap",
+    heroAccent: "Ocho canciones.",
+    heroTagline: "Una vida, en sonido.",
+    heroSub: "Todo lo que sigue fue moldeado por las respuestas que acabas de dar.",
     lifeStoryEyebrow: "Capítulo uno",
     lifeStoryTitle: "Historia de vida",
     lifeStoryLocked: "Completa tu viaje para desbloquear tu Historia de vida.",
@@ -305,6 +321,10 @@ const de: Dictionary = {
     recognizedAria: "erkannt",
   },
   results: {
+    yourSoundmap: "Deine SoundMap",
+    heroAccent: "Acht Songs.",
+    heroTagline: "Ein Leben, in Klang.",
+    heroSub: "Alles Folgende wurde von den Antworten geformt, die du gerade gegeben hast.",
     lifeStoryEyebrow: "Kapitel eins",
     lifeStoryTitle: "Lebensgeschichte",
     lifeStoryLocked: "Schließe deine Reise ab, um deine Lebensgeschichte freizuschalten.",
@@ -375,6 +395,10 @@ const fr: Dictionary = {
     recognizedAria: "reconnue",
   },
   results: {
+    yourSoundmap: "Ta SoundMap",
+    heroAccent: "Huit chansons.",
+    heroTagline: "Une vie, en sons.",
+    heroSub: "Tout ce qui suit a été façonné par les réponses que tu viens de donner.",
     lifeStoryEyebrow: "Chapitre un",
     lifeStoryTitle: "Histoire de vie",
     lifeStoryLocked: "Termine ton voyage pour débloquer ton Histoire de vie.",
