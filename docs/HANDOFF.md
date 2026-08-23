@@ -14,9 +14,8 @@ HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
            origin/main = 2c2b60c → bu oturum commit'landi:
              **91b5cea** "feat(soundmap): overhaul gothic map canvas,
              click-to-listen & 6-phase narrative" (11 dosya, +994/−465).
-           PUSH DENENDİ — sistem tokenı geçersiz (401); kullanıcıdan taze token bekleniyor.
-           origin/main = 2c2b60c (2 commit geride: 1efb9e3 + 91b5cea).
-           Çalışma ağacı TEMİZ (commit sonrası).
+           PUSH TAMAM — **176c6db** artık origin/main (`2c2b60c..176c6db`
+           push edildi, kullanıcı tokenı ile). Çalışma ağacı TEMİZ.
 Testler:   252/252 geçti (19 dosya; 241 + 3 listen + 6 poeticPoster
            tree/nodeColors/labels + PosterCanvas link/6-faz + i18n canvas)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
