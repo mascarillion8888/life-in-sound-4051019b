@@ -18,6 +18,8 @@ Build:     plain = 0 (postbuild no-op); VERCEL=1 = 0 (shell 3503 byte,
 Lint:      `check:bundle` yeşil — SPOTIFY_CLIENT_SECRET de tarandı, sızıntı yok
 SPA/Static: TAMAM — Vercel deploy altyapısı push edildi; canlı URL
             KULLANICI'DA BEKLEMEDE (§3)
+Git:       origin/main = a1e12ad (force-push 2026-08-23); eski tarih
+           backup-pre-spotify-83d8961 branch'inde korunuyor
 Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
            dropdown Spotify primary → iTunes fallback → serbest-metin
 Gemini:    `GEMINI_API_KEY` bu ortamda BOŞ — server-only; `poetic-analyzer`
