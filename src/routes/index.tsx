@@ -3,6 +3,8 @@ import { Dna, Heart, Image as ImageIcon } from "lucide-react";
 import { lazy, Suspense } from "react";
 
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const HowItWorksSection = lazy(() => import("@/components/landing/HowItWorksSection"));
 const PreviewSection = lazy(() => import("@/components/landing/PreviewSection"));
@@ -66,6 +68,7 @@ function SectionFallback() {
 }
 
 function Header() {
+  const { t } = useLanguage();
   return (
     <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="flex items-center gap-3">
@@ -74,14 +77,17 @@ function Header() {
         </div>
         <span className="text-lg font-semibold tracking-tight text-foreground">SoundMap</span>
       </div>
-      <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
-        <a href="#features" className="transition-colors hover:text-foreground">
-          Features
-        </a>
-        <a href="#" className="transition-colors hover:text-foreground">
-          About
-        </a>
-      </nav>
+      <div className="flex items-center gap-4">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground sm:flex">
+          <a href="#features" className="transition-colors hover:text-foreground">
+            {t.nav.features}
+          </a>
+          <a href="#" className="transition-colors hover:text-foreground">
+            {t.nav.about}
+          </a>
+        </nav>
+        <LanguageSwitcher />
+      </div>
     </header>
   );
 }

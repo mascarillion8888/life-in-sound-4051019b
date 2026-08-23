@@ -42,22 +42,29 @@ function validGeminiPayload() {
     chapters: [
       {
         id: "c1",
-        title: "KEŞİF & BÜYÜLENME",
+        title: "FIRST SPARK",
         songIndexes: [1, 2],
         narrative: "Where the first riff became a compass.",
         mood: "feral",
       },
       {
         id: "c2",
-        title: "GEÇİŞ PORTALLARI",
+        title: "AWAKENING",
         songIndexes: [3, 4, 5],
         narrative: "The doors that only open at full volume.",
         mood: "threshold",
       },
       {
         id: "c3",
-        title: "THE LONG ECHO",
-        songIndexes: [6, 7, 8],
+        title: "PASSAGES",
+        songIndexes: [6, 7],
+        narrative: "The roads that only open from the inside.",
+        mood: "threshold",
+      },
+      {
+        id: "c4",
+        title: "DEEP RESONANCE",
+        songIndexes: [8],
         narrative: "What remains when the amps cool.",
         mood: "ember",
       },
@@ -168,7 +175,7 @@ describe("buildPoeticAnalyzerPrompt", () => {
     expect(prompt).toContain('"emotionalCurve"');
     expect(prompt).toContain('"coreDuality"');
     expect(prompt).toContain("STRICT JSON");
-    expect(prompt).toContain("KEŞİF & BÜYÜLENME");
+    expect(prompt).toContain("FIRST SPARK");
   });
 
   it("keeps the biography grounding rule", () => {
@@ -233,9 +240,10 @@ describe("parsePoeticAnalysis", () => {
     const a = analysis as PoeticAnalysis;
     expect(a.source).toBe("gemini");
     expect(a.manifesto).toBe("You were forged, not born — and every scar hums in tune.");
-    expect(a.chapters).toHaveLength(3);
-    expect(a.chapters[0].title).toBe("KEŞİF & BÜYÜLENME");
+    expect(a.chapters).toHaveLength(4);
+    expect(a.chapters[0].title).toBe("FIRST SPARK");
     expect(a.chapters[1].songIndexes).toEqual([3, 4, 5]);
+    expect(a.chapters[2].songIndexes).toEqual([6, 7]);
     expect(a.songInsights).toHaveLength(8);
     expect(a.emotionalCurve).toHaveLength(8);
     expect(a.coreDuality.axis).toBe("Steel / Rain");
@@ -249,7 +257,7 @@ describe("parsePoeticAnalysis", () => {
     const raw = `Sure! Here is the analysis:\n\`\`\`json\n${JSON.stringify(validGeminiPayload())}\n\`\`\``;
     const analysis = parsePoeticAnalysis(raw, ctx());
     expect(analysis?.source).toBe("gemini");
-    expect(analysis?.chapters).toHaveLength(3);
+    expect(analysis?.chapters).toHaveLength(4);
   });
 
   it("accepts an already-decoded object", () => {

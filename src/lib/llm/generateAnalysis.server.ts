@@ -18,6 +18,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import type { PersonalityProfile } from "@/lib/ai/types";
+import type { Language } from "@/lib/i18n/languages";
 import {
   buildPoeticAnalyzerPrompt,
   parsePoeticAnalysis,
@@ -31,6 +32,8 @@ export type GenerateAnalysisInput = {
   profile: PersonalityProfile;
   songs: string[];
   memories?: (string | null)[];
+  /** Active UI language — the analysis prose is written in this language. */
+  language?: Language;
 };
 
 export type GenerateAnalysisOutput = {
@@ -143,14 +146,14 @@ export async function callGeminiPoeticAnalyzer(
 export const generatePoeticAnalysis = createServerFn({ method: "POST" })
   .validator((input: GenerateAnalysisInput): GenerateAnalysisInput => input)
   .handler(async ({ data }) => {
-    const { profile, songs, memories } = data;
+    const { profile, songs, memories, language } = data;
 
     if (!profile || !Array.isArray(songs) || songs.length === 0) {
       return { analysis: null } satisfies GenerateAnalysisOutput;
     }
 
     try {
-      const prompt = buildPoeticAnalyzerPrompt({ profile, songs, memories });
+      const prompt = buildPoeticAnalyzerPrompt({ profile, songs, memories, language });
       const raw = await callGeminiPoeticAnalyzer(prompt);
       if (!raw) return { analysis: null } satisfies GenerateAnalysisOutput;
       const analysis = parsePoeticAnalysis(raw, { profile, songs });

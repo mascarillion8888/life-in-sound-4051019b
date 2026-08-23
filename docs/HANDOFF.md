@@ -11,114 +11,119 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-Testler:   201/201 geçti — bu oturumda yeniden koşturuldu (14 dosya)
+Testler:   218/218 geçti — bu oturumda yeniden koşturuldu (17 dosya;
+           9 yeni i18n testi eklendi)
 tsc:       temiz (`npm run typecheck` = 0 hata)
-Build:     plain = 0 (postbuild no-op); VERCEL=1 = 0 (shell 3503 byte,
+Build:     `npm run build` = 0 (postbuild-vercel-spa shell 3287 byte,
            route patch yapıldı)
-Lint:      `check:bundle` yeşil — SPOTIFY_CLIENT_SECRET de tarandı, sızıntı yok
-SPA/Static: TAMAM — Vercel deploy altyapısı push edildi; canlı URL
-            KULLANICI'DA BEKLEMEDE (§3)
-Git:       origin/main = a1e12ad (force-push 2026-08-23); eski tarih
-           backup-pre-spotify-83d8961 branch'inde korunuyor
+Lint:      0 hata (1 react-refresh uyarısı LanguageContext.tsx'te — kabul
+           edilebilir, gate'i bloklamıyor)
+i18n:      LanguageContext + LanguageSwitcher aktif; 5 dil (en/tr/es/de/fr),
+           varsayılan en, localStorage "soundmap:language"
+Gemini:    `GEMINI_API_KEY` server-only; analiz prose'u aktif dilde
+           üretiliyor (language param prompt'a ekleniyor)
 Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
            dropdown Spotify primary → iTunes fallback → serbest-metin
-Gemini:    `GEMINI_API_KEY` bu ortamda BOŞ — server-only; `poetic-analyzer`
-           testleri 29/29 (canlı ağ yok)
 ```
 
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Vercel SSR çökmesi → SPA/Static (TAM, doğrulandı)
+## 2. Son biten iş — Çoklu Dil Desteği (i18n + Language Switcher) + poetic 4-faz chapter sistemi (TAM, push edildi)
 
-**Kök neden:** `createCsrfMiddleware is not a function` — rolldown/nitro
-serverless bundle'ı döngüsel chunk'lara bölüyordu (`_ssr/server-A` ↔
-`_ssr/server-B`); her istek modül-init patlıyor → kendi `error-page.ts`
-çıktımız.
+**İki iş tek oturumda, iki ayrı commit:**
 
-**Çözüm (üç katman, hepsi commit'li):**
-1. `vite.config.ts` — `VERCEL=1` iken `inlineDynamicImports: true` → tek
-   dosya, chunk sınırı/döngü yok (cloudflare preset korunur).
-2. `scripts/postbuild-vercel-spa.mjs` — build zincirli: bundle'ı import
-   edip `X-TSS_SHELL` ile shell render, doğrula, `static/index.html`'e
-   yaz; `config.json` route'larını `/_serverFn* → /__server`, fallback →
-   `/index.html`. `.vercel/output` yoksa NO-OP.
-3. Doğrulama kapıları — status 200 + hata marker yok + `#root`/asset var;
-   biri tutmazsa build FAIL.
+1. `feat: poetic analyzer 4-faz chapter + poster roadmap` (önceki görev,
+   daha önce commit'lenmemişti):
+   - `poetic-analyzer.ts`: 4 faz (FIRST SPARK / AWAKENING / PASSAGES /
+     DEEP RESONANCE), chapter'lara `ageRange` alanı, 8 şarkı fazlara
+     eşleştiriliyor.
+   - `PosterCanvas.tsx`: `songs: Song[]` prop, albüm kapağı küçük
+     resimleri, SVG waveform, 4-fazlı "Life Phase Roadmap".
+   - `results.tsx`: `songs: Song[]` türetimi (journey + manual fallback);
+     LifeStory hâlâ `string[]` alıyor.
+   - `poeticPoster.ts` canvas export aynı yapıyı çiziyor.
 
-**Bu oturumda doğrulanan:**
-- `npm test` → **201/201 (14 dosya)**
-- `npm run typecheck` → **0 hata**
-- `VERCEL=1 npm run build` → shell **3503 byte**, route patch OK
-- `npm run check:bundle` → static çıktıda GEMINI/GROQ/SUPABASE_SERVICE_ROLE
-  **sızmamış** ✅
-- `npx vitest run src/lib/llm/poetic-analyzer.test.ts` → **29/29** (JSON
-  schema, grounding, fallback)
+2. `feat: multi-language support (i18n + language switcher)`:
+   - `src/lib/i18n/languages.ts` — `Language` tipi ('en'|'tr'|'es'|'de'|'fr'),
+     `SUPPORTED_LANGUAGES`, `LANGUAGE_NAMES`, `isLanguage` guard.
+   - `src/lib/i18n/dictionaries.ts` — `Dictionary` tipi + 5 sözlük;
+     nav / journey / questionCard / results / poster (roadmap etiketleri,
+     chapter başlıkları, footer alıntıları dahil).
+   - `src/lib/i18n/LanguageContext.tsx` — `LanguageProvider` +
+     `useLanguage()`; varsayılan **en**; localStorage `soundmap:language`;
+     `document.documentElement.lang` güncellenir; **provider olmadan**
+     `useLanguage()` İngilizce fallback döner (testler provider'sız
+     çalışmaya devam eder).
+   - `src/components/LanguageSwitcher.tsx` — Globe + dil kodu pill,
+     Radix dropdown-menu; index Header'da, journey ve results
+     sayfalarında sağ-üst köşede.
+   - LLM lokalizasyonu: `PoeticAnalyzerInput.language?: Language`;
+     `buildPoeticAnalyzerPrompt` son kural olarak dil direktifi ekler
+     ("Write ALL prose ... in <Language>"; varsayılan English).
+     `generateAnalysis.server.ts` → `GenerateAnalysisInput.language`;
+     `results.tsx` fingerprint'e `language` eklendi → dil değişince
+     analiz yeniden üretilir.
+   - QuestionCard artık sözlükten okuyor (varsayılan en: "Add to Ritual",
+     "Type a song and artist name" vb.); QuestionCard testleri en
+     varsayılanına güncellendi.
 
----
-
-## 3. Şu an açık/bekleyen tek şey — Vercel'e bağlan (kullanıcı adımları)
-
-Deploy altyapısı push edildi; canlı URL kullanıcının Vercel hesabını
-bekliyor (repo zaten bağlıysa sadece redeploy yeterli):
-
-1. **Repoyu bağla / redeploy:** Vercel projesi `life-in-sound-4051019b`.
-   Build logunda `[postbuild-vercel-spa] Shell written ...` görülmeli.
-2. **Anahtarı gir:** Dashboard → Environment Variables → `GEMINI_API_KEY`
-   (scope: **Production**). Asla `VITE_` önekiyle değil (client bundle'a
-   girmez).
-3. **Doğrula** (canlı URL açıldığında):
-   - `/` ve `/results` — "This page didn't load" **gitmiş olmalı**.
-   - `/results` — Dynamic Music Map Gemini-zengin mi; Life Feed'de insight
-     tek cümlelik Gemini prose'a geçiyor mu.
-4. **Validation Gate** — 5+ gerçek kişiye canlı URL; Faz 4 kullanıcı onayı
-   olmadan başlamıyor.
-
-Yerelde aynı sonuç: `VERCEL=1 npm run build && npm run check:bundle`.
+**Bilerek kapsam dışı bırakılanlar:** Life Story prompt'ları (korumalı),
+`feed/` bileşenleri içi (mevcut Türkçe stringler duruyor), landing hero
+metinleri, `deterministicPoeticAnalysis`/`deterministicLifeStory` çıktısı
+(her zaman İngilizce — dictionary değil), `poeticPoster.ts` canvas export
+etiketleri (marka İngilizce).
 
 ---
 
-## 4. Olası sonuçlar
+## 3. Olası sonraki adımlar
 
-**🅐 Canlı URL açılır + sayfalar yüklenir →** SSR çökmesi çözüldü. Gemini
-zenginse Validation Gate'e geç.
+- `feed/` bileşenlerini (LifeFeedInput/Timeline/Section) sözlüğe bağla —
+  şu an Türkçe hard-coded; dictionary'ye `feed` bölümü eklenecek.
+- `buildEntryInsightPrompt` (Life Feed insight cümleleri) için language
+  param — `GenerateEntryInsightInput.language` altyapısı hazır değil.
+- Landing hero/section copy'lerinin çevirisi (şu an İngilizce sabit).
+- LLM chapter başlıkları `chapter.id` "c1..c4" olduğunda sözlük
+  override'ı devreye girmez — Gemini zaten aktif dilde yazıyor; gerekirse
+  id'leri "chapter-i..iv" sabitle.
 
-**🅑 Vercel build kırmızı →** Build logunda `[postbuild-vercel-spa]`
-hatası aranır (kapı kasıtlı FAIL atar). Lokal `VERCEL=1 npm run build`
-ile yeniden üret.
+---
 
-**🅒 Sayfa açılıyor ama Gemini deterministik →** `GEMINI_API_KEY`
-Production scope'ta girilmemiş.
+## 4. Karar ağacı
 
-**🅓 `/results` boş →** Hydration sorunu: browser console'da hata aranır.
+**🅐 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN
+yeniden yaz, `checkpoint: ... — HANDOFF.md güncellendi` ile commit et.
 
-**🅔 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN
-yeniden yaz, `checkpoint: ... — HANDOFF.md güncellendi` ile push et.
+**🅑 i18n'e yeni string eklerken →** `en`'e ekle → diğer 4 dile kopyala →
+`i18n.test.tsx` key-parity testi otomatik yakalar.
+
+**🅒 Testler kızarsa →** `npm test`; QuestionCard/PosterCanvas testleri
+İngilizce varsayılan sözlüğe bağlı — provider'la dil değiştirilmedikçe
+en stringleri bekle.
 
 ---
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-**Hata sayfasını tanı.** "This page didn't load" bizim
-`src/lib/error-page.ts` — dış platform sanma; önce bundle'ı lokal çalıştır:
-`import('./.vercel/output/functions/__server.func/index.mjs')` →
-`default.fetch(new Request('http://localhost/'))`. **Rolldown döngüsel
-chunk bug'ı:** statik döngüsel import'lu chunk'larda `var` hoisting
-undefined üretir; `inlineDynamicImports: true` = kesin çözüm. TanStack
-`spa.enabled` nitro'yla uyumsuz (preview `dist/server/server.js` bekler) —
-shell'i postbuild'de `X-TSS_SHELL` ile üretmek preset-agnostik.
+- **`useLanguage()` provider'sız çalışmalı.** Context default değeri en
+  sözlüğü + no-op setter; böylece mevcut bileşen testleri (PosterCanvas
+  dahil) provider sarmadan geçer.
+- **Dil değişimi = yeni analiz.** `results.tsx` fingerprint'ine `language`
+  eklenmezse eski dildeki cache'li analiz kalır; eklendi.
+- Prettier drift'i `--fix` ile temizlendi; rastgele kozmetik fix YOK.
 
 ---
 
 ## 6. Bu oturumda KESİNLİKLE yapılmaması gerekenler
 
 - Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨).
-- `vite.config.ts`'te DEV-ONLY allowedHosts'u commit'leme (satır doc'unda).
-- Vercel'e `VITE_GEMINI_API_KEY` `-prefixed` env girme (`GEMINI_API_KEY`
-  yeterli; client bundle'a asla girmesin).
+- Life Story prompt'larına / `GROUNDING_RULES`'a / `buildLifeStoryPrompt`'a
+  DOKUNMA (kullanıcı kuralı #2 — yalnız `buildPoeticAnalyzerPrompt`'a dil
+  kuralı eklendi, onaylı plan kapsamında).
+- `vite.config.ts`'te DEV-ONLY allowedHosts'u commit'leme.
+- Vercel'e `VITE_`-prefixed secret env girme.
 - `.vercel/` build çıktısını commit'leme (gitignore'da).
-- Prettier drift'ini rastgele kozmetik fix etme.
 - `inlineDynamicImports`'u kaldırma — SSR çökmesini geri getirir.
-- `postbuild-vercel-spa.mjs`'teki shell doğrulama kapılarını gevşetme —
-  bozuk shell'in Vercel'e çıkmasını engelleyen tek kapı.
+- Eski MusicBrainz dialog/arama UI'ını geri getirme; serbest-metin girişi
+  birincil UX olarak kalır.

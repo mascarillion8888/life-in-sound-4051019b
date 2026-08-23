@@ -25,6 +25,7 @@ import type { PersonalityProfile } from "@/lib/ai/types";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { stableHash } from "@/lib/ai/personalityScoring";
 import { questions } from "@/lib/questions";
+import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, type Language } from "@/lib/i18n/languages";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -56,8 +57,10 @@ export type VisualSpec = {
 
 export type LifeChapter = {
   id: string;
-  /** Evocative uppercase phase title, e.g. "KEŞİF & BÜYÜLENME". */
+  /** Evocative uppercase phase title, e.g. "FIRST SPARK". */
   title: string;
+  /** Age-range label for the phase roadmap, e.g. "Ages 9–12". */
+  ageRange: string;
   /** 1-based song positions (into the journey order) grouped in this chapter. */
   songIndexes: number[];
   narrative: string;
@@ -100,6 +103,12 @@ export type PoeticAnalyzerInput = {
   songs: string[];
   /** Optional personal memory notes attached to songs (Life Feed entries). */
   memories?: (string | null)[];
+  /**
+   * Active UI language — the generated prose (manifesto, chapter titles and
+   * narratives, insights, curve labels, duality, aura) is written in this
+   * language. Defaults to English when omitted.
+   */
+  language?: Language;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -270,10 +279,41 @@ const POLE_BY_DIMENSION: Record<string, string> = {
   connection: "Warmth",
 };
 
-const CHAPTER_SLOTS: { id: string; title: string; indexes: number[]; mood: string }[] = [
-  { id: "chapter-i", title: "DISCOVERY & ENCHANTMENT", indexes: [1, 2], mood: "wide-eyed" },
-  { id: "chapter-ii", title: "PORTALS OF PASSAGE", indexes: [3, 4, 5], mood: "tempest-to-triumph" },
-  { id: "chapter-iii", title: "THE LONG ECHO", indexes: [6, 7, 8], mood: "luminous" },
+const CHAPTER_SLOTS: {
+  id: string;
+  title: string;
+  ageRange: string;
+  indexes: number[];
+  mood: string;
+}[] = [
+  {
+    id: "chapter-i",
+    title: "FIRST SPARK",
+    ageRange: "Ages 9–12",
+    indexes: [1, 2],
+    mood: "wide-eyed",
+  },
+  {
+    id: "chapter-ii",
+    title: "AWAKENING",
+    ageRange: "Ages 12–18",
+    indexes: [3, 4, 5],
+    mood: "electric",
+  },
+  {
+    id: "chapter-iii",
+    title: "PASSAGES",
+    ageRange: "Ages 18–28",
+    indexes: [6, 7],
+    mood: "threshold",
+  },
+  {
+    id: "chapter-iv",
+    title: "DEEP RESONANCE",
+    ageRange: "Ages 35+",
+    indexes: [8],
+    mood: "luminous",
+  },
 ];
 
 /** One deterministic insight template per journey question (1-based). */
@@ -326,13 +366,15 @@ export function deterministicPoeticAnalysis(
     const first = s(slot.indexes[0]);
     const last = s(slot.indexes[slot.indexes.length - 1]);
     const narrativeByChapter: Record<string, string> = {
-      "chapter-i": `It opens with “${first}”, and by “${last}” the world has already grown larger. This is the part of the map where everything was still possible — the years that taught your heart which frequencies to trust.`,
-      "chapter-ii": `Here the road narrows and climbs: “${first}” through “${last}”. Love, weight, and the refusal to kneel — the doors that only open from the inside.`,
-      "chapter-iii": `And then the echo: “${first}” to “${last}”. What you keep, what you carry, and the light you would leave on for whoever finds this map after you.`,
+      "chapter-i": `It begins with “${first}” — before you knew what the feeling was, you knew it was yours. By “${last}” the world had already grown larger, and music was the first language that made sense of it.`,
+      "chapter-ii": `First you tried to understand: “${first}” through “${last}”. Love, weight, and the refusal to kneel — the years where every song felt like a door you had to walk through alone.`,
+      "chapter-iii": `And in the end, you allowed yourself to feel: “${first}” to “${last}”. The roads that only open from the inside, the people you carry in melody because words were never enough.`,
+      "chapter-iv": `What remains is the echo: “${first}”. Not an ending — a frequency you would leave on for whoever finds this map after you.`,
     };
     return {
       id: slot.id,
       title: slot.title,
+      ageRange: slot.ageRange,
       songIndexes: [...slot.indexes],
       narrative: narrativeByChapter[slot.id],
       mood: slot.mood,
@@ -413,7 +455,8 @@ const ANALYZER_GROUNDING_RULES = [
   "Do not invent song titles or artists that were not supplied.",
   "If you genuinely know a supplied song's or album's real theme, mood, or cultural context, USE IT to deepen the interpretation — the song's own meaning is fair game; the user's biography is not.",
   "Write like a lifelong friend who has listened beside them for years: warm, poetic, specific. Never like a report, never clinical, never motivational-poster generic.",
-  'Chapter titles must be short, evocative and uppercase (e.g. "KEŞİF & BÜYÜLENME", "GEÇİŞ PORTALLARI"). Write all prose in the dominant language of the supplied song titles and memory notes, defaulting to English.',
+  'Chapter titles must be short, evocative and uppercase, matching the four life-phase archetypes: "FIRST SPARK" (Ages 9–12, Discovery & Enchantment), "AWAKENING" (Ages 12–18, Energy & Defiance), "PASSAGES" (Ages 18–28, Mental Awakening), "DEEP RESONANCE" (Ages 35+, Stillness & Acceptance).',
+  "Frame every genre and song as an honored chapter of human experience — no genre is 'guilty pleasure', no taste is wrong. Each choice reveals something true about the person.",
   "Return STRICT JSON only — no markdown, no code fences, no commentary.",
 ];
 
@@ -423,7 +466,7 @@ const ANALYZER_GROUNDING_RULES = [
  * fixed facts; Gemini narrates within them rather than inventing a theme.
  */
 export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
-  const { profile, songs, memories } = input;
+  const { profile, songs, memories, language } = input;
   const theme = detectVisualTheme(profile.recommendedGenres, songs);
   const spec = THEME_CATALOG[theme];
 
@@ -436,7 +479,10 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     })
     .join("\n");
 
-  const rulesBlock = ANALYZER_GROUNDING_RULES.map((r, i) => `${i + 1}. ${r}`).join("\n");
+  const languageRule = `Write ALL prose — manifesto, chapter titles and narratives, song insights, emotional-curve labels, core duality and aura keywords — in ${LANGUAGE_NAMES[language ?? DEFAULT_LANGUAGE]}. Keep song titles and artist names in their original form.`;
+  const rulesBlock = [...ANALYZER_GROUNDING_RULES, languageRule]
+    .map((r, i) => `${i + 1}. ${r}`)
+    .join("\n");
 
   return [
     "You are the poetic voice of Life in a Sound — a lifelong friend writing a tribute to someone's life in eight songs, not an AI producing a report.",
@@ -550,6 +596,7 @@ export function parsePoeticAnalysis(
       chapters.push({
         id: asNonEmptyString(chapter.id) ?? `chapter-${chapters.length + 1}`,
         title,
+        ageRange: asNonEmptyString(chapter.ageRange) ?? "",
         songIndexes: [...new Set(indexes)],
         narrative,
         mood: asNonEmptyString(chapter.mood) ?? "luminous",

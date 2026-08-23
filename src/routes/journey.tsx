@@ -5,6 +5,8 @@ import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { questions } from "@/lib/questions";
 import { clearJourney, loadJourney, saveJourney } from "@/lib/journey-storage";
 import { useSession } from "@/lib/supabase/use-session";
@@ -58,6 +60,7 @@ function JourneyPage() {
   const total = questions.length;
   const navigate = useNavigate();
   const session = useSession();
+  const { t } = useLanguage();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   // Structured Song objects chosen for each question, kept in component state
@@ -279,6 +282,9 @@ function JourneyPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
+      <div className="absolute right-5 top-5 z-20 sm:right-6 sm:top-6">
+        <LanguageSwitcher />
+      </div>
       <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-16 sm:px-6 md:py-24">
         <div className="w-full max-w-2xl">
           <ProgressBar current={current} total={total} />
@@ -297,7 +303,7 @@ function JourneyPage() {
             onSelectSuggestion={(song) => {
               setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
               setSongs((prev) => ({ ...prev, [question.id]: song }));
-              setDraft('');
+              setDraft("");
             }}
             draft={draft}
             onDraftChange={handleDraftChange}
@@ -368,7 +374,7 @@ function JourneyPage() {
               canAdvance ? "" : "opacity-50"
             }`}
           >
-            {isLast ? "See Your Results" : "Next"}
+            {isLast ? t.journey.seeResults : t.journey.next}
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -380,10 +386,8 @@ function JourneyPage() {
           >
             <AlertCircle className="h-4 w-4 shrink-0" />
             {isLast
-              ? `Still missing an answer for question${unanswered.length > 1 ? "s" : ""} ${unanswered
-                  .map((q) => q.id)
-                  .join(", ")}.`
-              : "Choose a song before moving on."}
+              ? t.journey.missingAnswers(unanswered.map((q) => q.id).join(", "))
+              : t.journey.chooseSongHint}
           </p>
         ) : null}
 
@@ -393,7 +397,7 @@ function JourneyPage() {
             className="mt-10 inline-flex items-center gap-2 rounded-full border border-border/60 px-5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
           >
             <RotateCcw className="h-4 w-4" />
-            Start New Journey
+            {t.journey.startNewJourney}
           </button>
         ) : null}
       </main>

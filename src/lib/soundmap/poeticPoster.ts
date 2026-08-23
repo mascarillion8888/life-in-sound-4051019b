@@ -6,6 +6,7 @@
  * visual spec instead of hardcoded brand values.
  */
 import type { PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import type { Song } from "@/lib/song/types";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -48,7 +49,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
  */
 export function exportPoeticPoster(
   analysis: PoeticAnalysis,
-  songs: string[],
+  songs: Song[],
   feedEntries: LifeFeedEntry[] = [],
 ): void {
   const W = 1600;
@@ -60,7 +61,7 @@ export function exportPoeticPoster(
   if (!ctx) return;
 
   const { palette, aura } = analysis.visual;
-  const song = (i: number) => songs[i - 1] ?? `Untitled track ${i}`;
+  const song = (i: number) => songs[i - 1]?.title ?? `Untitled track ${i}`;
 
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, W, H);

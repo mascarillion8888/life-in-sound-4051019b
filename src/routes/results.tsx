@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney, type JourneyProgress } from "@/lib/journey-storage";
 import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
+import type { Song } from "@/lib/song/types";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
 import { PosterCanvas } from "@/components/results/PosterCanvas";
@@ -85,18 +88,19 @@ type StoryStatus = "idle" | "loading" | "ready" | "fallback";
  */
 function LifeStory({
   profile,
-  songs,
+  songs: songTitles,
 }: {
   profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
   songs: string[];
 }) {
-  const fallback = useMemo(() => deterministicLifeStory(songs), [songs]);
+  const { t } = useLanguage();
+  const fallback = useMemo(() => deterministicLifeStory(songTitles), [songTitles]);
 
   // Stable fingerprint of the inputs — prevents duplicate LLM calls on re-render
   // for the same Results state. Kept client-side only; contains no secrets.
   const fingerprint = useMemo(
-    () => JSON.stringify({ songs, archetype: profile.archetype }),
-    [songs, profile.archetype],
+    () => JSON.stringify({ songs: songTitles, archetype: profile.archetype }),
+    [songTitles, profile.archetype],
   );
 
   const [story, setStory] = useState<string | null>(null);
@@ -108,7 +112,7 @@ function LifeStory({
     let active = true;
     setStatus("loading");
 
-    generateStory({ data: { profile, songs } })
+    generateStory({ data: { profile, songs: songTitles } })
       .then((result) => {
         if (!active) return;
         if (result && typeof result.story === "string" && result.story.length > 0) {
@@ -133,12 +137,16 @@ function LifeStory({
 
   return (
     <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
-      <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
+      <SectionHeading
+        icon={Sparkles}
+        eyebrow={t.results.lifeStoryEyebrow}
+        title={t.results.lifeStoryTitle}
+      />
       <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
         {showFallback ? (
           fallback
             .split("\n\n")
-            .map((paragraph, i) => <p key={i}>{highlightSongs(paragraph, songs)}</p>)
+            .map((paragraph, i) => <p key={i}>{highlightSongs(paragraph, songTitles)}</p>)
         ) : (
           <p className="whitespace-pre-line">{story}</p>
         )}
@@ -159,21 +167,30 @@ function DynamicMusicMap({
   feedEntries,
 }: {
   profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
-  songs: string[];
+  songs: Song[];
   feedEntries: LifeFeedEntry[];
 }) {
-  const fallback = useMemo(() => deterministicPoeticAnalysis(profile, songs), [profile, songs]);
+  const { language, t } = useLanguage();
+  const fallback = useMemo(
+    () =>
+      deterministicPoeticAnalysis(
+        profile,
+        songs.map((s) => s.title),
+      ),
+    [profile, songs],
+  );
   const [analysis, setAnalysis] = useState<PoeticAnalysis>(fallback);
 
   const fingerprint = useMemo(
-    () => JSON.stringify({ songs, archetype: profile.archetype }),
-    [songs, profile.archetype],
+    () =>
+      JSON.stringify({ songs: songs.map((s) => s.title), archetype: profile.archetype, language }),
+    [songs, profile.archetype, language],
   );
 
   useEffect(() => {
     setAnalysis(fallback);
     let active = true;
-    generatePoeticAnalysis({ data: { profile, songs } })
+    generatePoeticAnalysis({ data: { profile, songs: songs.map((s) => s.title), language } })
       .then((result) => {
         if (active && result?.analysis) setAnalysis(result.analysis);
       })
@@ -188,7 +205,7 @@ function DynamicMusicMap({
 
   return (
     <section>
-      <SectionHeading icon={Map} eyebrow="Your living map" title="Dynamic Music Map" />
+      <SectionHeading icon={Map} eyebrow={t.results.mapEyebrow} title={t.results.mapTitle} />
       <div className="mt-8">
         <PosterCanvas analysis={analysis} songs={songs} feedEntries={feedEntries} />
       </div>
@@ -262,12 +279,28 @@ function ResultsPage() {
   }, [posterOpen]);
 
   const answers = stateAnswers ?? storedAnswers;
-  const songs = questions.map((q) => answers?.[q.id] ?? `Untitled track ${q.id}`);
+  const songTitles = questions.map((q) => answers?.[q.id] ?? `Untitled track ${q.id}`);
+  const songs = questions.map(
+    (q) =>
+      journey?.songs?.[q.id] ?? {
+        provider: "manual" as const,
+        providerId: `manual-${q.id}`,
+        title: answers?.[q.id] ?? `Untitled track ${q.id}`,
+        artist: "",
+        album: null,
+        artworkUrl: null,
+        isrc: null,
+      },
+  );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+  const { t } = useLanguage();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
+      <div className="absolute right-5 top-5 z-20 sm:right-6 sm:top-6">
+        <LanguageSwitcher />
+      </div>
 
       <main className="relative z-10 mx-auto max-w-4xl space-y-16 px-5 py-16 sm:px-6 md:space-y-24 md:py-32">
         <AnimatedReveal>
@@ -289,12 +322,16 @@ function ResultsPage() {
         {/* Life Story */}
         <AnimatedReveal>
           {profile ? (
-            <LifeStory profile={profile} songs={songs} />
+            <LifeStory profile={profile} songs={songTitles} />
           ) : (
             <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
-              <SectionHeading icon={Sparkles} eyebrow="Chapter one" title="Life Story" />
+              <SectionHeading
+                icon={Sparkles}
+                eyebrow={t.results.lifeStoryEyebrow}
+                title={t.results.lifeStoryTitle}
+              />
               <p className="mt-8 text-base text-muted-foreground sm:text-lg">
-                Complete your journey to unlock your Life Story.
+                {t.results.lifeStoryLocked}
               </p>
             </section>
           )}
@@ -308,19 +345,19 @@ function ResultsPage() {
         {/* Music DNA */}
         <AnimatedReveal>
           <section>
-            <SectionHeading icon={Dna} eyebrow="Your signature" title="Music DNA" />
+            <SectionHeading icon={Dna} eyebrow={t.results.dnaEyebrow} title={t.results.dnaTitle} />
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {[
                 {
-                  label: "Favorite emotions",
+                  label: t.results.favoriteEmotions,
                   items: profile?.emotionalProfile ?? [],
                 },
                 {
-                  label: "Music style",
+                  label: t.results.musicStyle,
                   items: profile?.music ? [profile.music.mood] : [],
                 },
                 {
-                  label: "Recommended genres",
+                  label: t.results.recommendedGenres,
                   items: profile?.recommendedGenres ?? [],
                 },
               ].map((group) => (
@@ -357,7 +394,11 @@ function ResultsPage() {
         {/* Life Feed — the unrestricted post-journey timeline */}
         <AnimatedReveal>
           <section>
-            <SectionHeading icon={Radio} eyebrow="Beyond the eighth song" title="Life Feed" />
+            <SectionHeading
+              icon={Radio}
+              eyebrow={t.results.feedEyebrow}
+              title={t.results.feedTitle}
+            />
             <div className="mt-8">
               <LifeFeedSection journey={journey} onFeedChange={setFeed} />
             </div>
@@ -367,7 +408,11 @@ function ResultsPage() {
         {/* Emotional Timeline */}
         <AnimatedReveal>
           <section>
-            <SectionHeading icon={Clock} eyebrow="In order" title="Emotional Timeline" />
+            <SectionHeading
+              icon={Clock}
+              eyebrow={t.results.timelineEyebrow}
+              title={t.results.timelineTitle}
+            />
             <ol className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8">
               {questions.map((q, i) => {
                 const emotionLabels = getQuestionEmotionLabels(q.id);
@@ -380,7 +425,7 @@ function ResultsPage() {
                       {q.title}
                     </p>
                     <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
-                      {songs[i]}
+                      {songTitles[i]}
                     </p>
                     {emotionLabels.length > 0 ? (
                       <ul className="mt-2 flex flex-wrap gap-2">
@@ -404,18 +449,22 @@ function ResultsPage() {
         {/* Cinematic Poster */}
         <AnimatedReveal>
           <section>
-            <SectionHeading icon={Film} eyebrow="Framed" title="Cinematic Poster" />
+            <SectionHeading
+              icon={Film}
+              eyebrow={t.results.posterEyebrow}
+              title={t.results.posterTitle}
+            />
             <div className="group relative mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
               <img
                 src={posterPreview}
-                alt="Placeholder cinematic poster of your personal SoundMap"
+                alt={t.results.posterAlt}
                 loading="lazy"
                 className="w-full rounded-[1.5rem] object-cover"
               />
               <button
                 onClick={() => setPosterOpen(true)}
                 className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg sm:right-6 sm:top-6 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-card md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
-                aria-label="View poster fullscreen"
+                aria-label={t.results.posterFullscreenAria}
               >
                 <Maximize className="h-5 w-5" />
               </button>

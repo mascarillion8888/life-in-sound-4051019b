@@ -4,9 +4,10 @@ import { render, screen } from "@testing-library/react";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import type { Song } from "@/lib/song/types";
 import { PosterCanvas } from "./PosterCanvas";
 
-const SONGS = [
+const SONG_TITLES = [
   "Judas Priest - Painkiller",
   "Metallica - Fade to Black",
   "Black Sabbath - Iron Man",
@@ -17,14 +18,24 @@ const SONGS = [
   "Pink Floyd - Wish You Were Here",
 ];
 
+const SONGS: Song[] = SONG_TITLES.map((title, i) => ({
+  provider: "manual" as const,
+  providerId: `test-${i + 1}`,
+  title,
+  artist: title.split(" - ")[0] ?? "",
+  album: null,
+  artworkUrl: null,
+  isrc: null,
+}));
+
 function makeAnalysis() {
   const answers: Record<number, string> = {};
-  SONGS.forEach((song, i) => {
+  SONG_TITLES.forEach((song, i) => {
     answers[i + 1] = song;
   });
   const profile = analyzeUserJourney(answers);
   if (!profile) throw new Error("fixture profile must exist");
-  return deterministicPoeticAnalysis(profile, SONGS);
+  return deterministicPoeticAnalysis(profile, SONG_TITLES);
 }
 
 describe("PosterCanvas", () => {
@@ -37,7 +48,7 @@ describe("PosterCanvas", () => {
 
     // Chapter cards with their songs.
     for (const chapter of analysis.chapters) {
-      expect(screen.getByText(chapter.title)).toBeInTheDocument();
+      expect(screen.getAllByText(chapter.title).length).toBeGreaterThanOrEqual(1);
     }
 
     // One insight row per song.
@@ -56,7 +67,39 @@ describe("PosterCanvas", () => {
     }
 
     // Export action.
-    expect(screen.getByRole("button", { name: /export high-res poster/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /download poster/i })).toBeInTheDocument();
+  });
+
+  it("renders the age phase roadmap with 4 phases", () => {
+    const analysis = makeAnalysis();
+    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+
+    expect(screen.getByText(/life phase roadmap/i)).toBeInTheDocument();
+    expect(screen.getAllByText("FIRST SPARK").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("AWAKENING").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("PASSAGES").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("DEEP RESONANCE").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Ages 9–12")).toBeInTheDocument();
+    expect(screen.getByText("Ages 12–18")).toBeInTheDocument();
+    expect(screen.getByText("Ages 18–28")).toBeInTheDocument();
+    expect(screen.getByText("Ages 35+")).toBeInTheDocument();
+  });
+
+  it("renders SVG waveform instead of bar chart", () => {
+    const analysis = makeAnalysis();
+    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+
+    const svg = document.querySelector("svg[aria-label='Emotional intensity waveform']");
+    expect(svg).toBeInTheDocument();
+    expect(svg?.querySelector("path")).toBeInTheDocument();
+  });
+
+  it("renders poetic footer quotes", () => {
+    const analysis = makeAnalysis();
+    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+
+    expect(screen.getByText(/first i tried to understand/i)).toBeInTheDocument();
+    expect(screen.getByText(/music changes\. we change\. but it always stays with us\./i)).toBeInTheDocument();
   });
 
   it("applies the dynamic theme palette to the poster surface", () => {
@@ -65,7 +108,6 @@ describe("PosterCanvas", () => {
 
     const section = screen.getByLabelText("Dynamic Music Map poster");
     expect(analysis.visual.themeId).toBe("metal-gothic");
-    // jsdom normalizes hex → rgb in CSSOM, so compare in rgb form.
     const style = section.getAttribute("style") ?? "";
     const rgb = (hex: string) => {
       const int = Number.parseInt(hex.slice(1), 16);
@@ -118,17 +160,8 @@ describe("PosterCanvas", () => {
     expect(screen.getByText("Sunset Runner")).toBeInTheDocument();
 
     // The emotional curve grew from 8 to 10 points: "+1"/"+2" markers exist
-    // (both in the curve and in the playlist badges).
     expect(screen.getAllByText("+1").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("+2").length).toBeGreaterThanOrEqual(1);
-    const first = screen.getByTitle("Nightcall");
-    const maxIntensity = Math.max(
-      ...analysis.emotionalCurve.map((p) => p.intensity),
-      ...feedEntries.map(feedEntryIntensity),
-      0.01,
-    );
-    const expectedHeight = Math.max(10, (feedEntryIntensity(feedEntries[0]) / maxIntensity) * 72);
-    expect(first.style.height).toBe(`${expectedHeight}px`);
   });
 
   it("without feed entries there is no playlist section", () => {

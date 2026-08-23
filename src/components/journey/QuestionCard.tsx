@@ -2,6 +2,7 @@ import { Check, Music } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { Song } from "@/lib/song/types";
 
 // Build a manual Song (provider: "manual") from free text. The typed string
@@ -55,6 +56,7 @@ export function QuestionCard({
   onDraftChange: (text: string) => void;
   onChoose: (song: Song) => void;
 }) {
+  const { t } = useLanguage();
   const displayName = selected
     ? selected.artist
       ? `${selected.title} — ${selected.artist}`
@@ -66,7 +68,7 @@ export function QuestionCard({
     <div className="w-full rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
       <div className="space-y-4">
         <span className="text-sm font-semibold uppercase tracking-widest text-primary">
-          Question {number}
+          {t.journey.questionLabel} {number}
         </span>
         <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
           {title}
@@ -88,14 +90,14 @@ export function QuestionCard({
                 onChoose(manualSong(draft.trim()));
               }
             }}
-            placeholder="örn. Bad - Michael Jackson"
-            aria-label="Şarkı ve sanatçı adını yaz"
+            placeholder={t.questionCard.placeholder}
+            aria-label={t.questionCard.inputAria}
             className="h-14 w-full rounded-2xl border-border/50 bg-background/60 pr-11 text-base sm:h-16"
           />
           {suggestions && suggestions.length > 0 ? (
             <ul
               role="listbox"
-              aria-label="Şarkı önerileri"
+              aria-label={t.questionCard.suggestionsAria}
               className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-xl backdrop-blur-xl"
             >
               {suggestions.map((song) => (
@@ -135,7 +137,7 @@ export function QuestionCard({
           ) : null}
           {verified ? (
             <Check
-              aria-label="tanındı"
+              aria-label={t.questionCard.recognizedAria}
               className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-500"
             />
           ) : null}
@@ -146,7 +148,7 @@ export function QuestionCard({
           className="h-14 gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98] sm:h-16 sm:w-auto"
         >
           <Check className="h-5 w-5" />
-          Ritüele Ekle
+          {t.questionCard.addToRitual}
         </Button>
       </div>
 

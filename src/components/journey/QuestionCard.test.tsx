@@ -61,20 +61,20 @@ describe("QuestionCard", () => {
 
   it("renders the primary free-text input with the song-entry placeholder", () => {
     renderCard();
-    expect(screen.getByLabelText("Şarkı ve sanatçı adını yaz")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("örn. Bad - Michael Jackson")).toBeInTheDocument();
+    expect(screen.getByLabelText("Type a song and artist name")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("e.g. Bad - Michael Jackson")).toBeInTheDocument();
   });
 
   it("disables the Onayla button until the user types text", () => {
     renderCard();
-    expect(screen.getByRole("button", { name: /ritüele ekle/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /add to ritual/i })).toBeDisabled();
   });
 
   it("enables the Onayla button once draft text is present", () => {
     const { onDraftChange } = renderCard({ draft: "Sting - Fragile" });
     // draft is controlled by the parent; the card reflects it.
     expect(onDraftChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /ritüele ekle/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /add to ritual/i })).not.toBeDisabled();
   });
 
   it("shows the selected song as 'title — artist'", () => {
@@ -90,8 +90,8 @@ describe("QuestionCard", () => {
   it("renders no search/lookup UI — only the free-text input and Onayla", () => {
     renderCard();
     // The only song-entry affordances are the text box and Onayla.
-    expect(screen.getByLabelText("Şarkı ve sanatçı adını yaz")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ritüele ekle/i })).toBeInTheDocument();
+    expect(screen.getByLabelText("Type a song and artist name")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add to ritual/i })).toBeInTheDocument();
     // No MusicBrainz search link or modal is present.
     expect(
       screen.queryByRole("button", { name: /kapak görseli için ara/i }),
@@ -101,7 +101,7 @@ describe("QuestionCard", () => {
 
   it("commits the typed text as a manual Song via the Onayla button", () => {
     const { onChoose } = renderCard({ draft: "Sting - Fragile" });
-    fireEvent.click(screen.getByRole("button", { name: /ritüele ekle/i }));
+    fireEvent.click(screen.getByRole("button", { name: /add to ritual/i }));
     expect(onChoose).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(onChoose).mock.calls[0][0];
     expect(arg.provider).toBe("manual");
@@ -116,7 +116,7 @@ describe("QuestionCard", () => {
 
   it("commits a manual Song when the user presses Enter in the text box", () => {
     const { onChoose, onDraftChange } = renderCard({ draft: "Fragile" });
-    const input = screen.getByLabelText("Şarkı ve sanatçı adını yaz");
+    const input = screen.getByLabelText("Type a song and artist name");
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onChoose).toHaveBeenCalledTimes(1);
     expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Fragile");
@@ -126,20 +126,20 @@ describe("QuestionCard", () => {
 
   it("does not commit on Enter when the draft is empty", () => {
     const { onChoose } = renderCard({ draft: "   " });
-    const input = screen.getByLabelText("Şarkı ve sanatçı adını yaz");
+    const input = screen.getByLabelText("Type a song and artist name");
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onChoose).not.toHaveBeenCalled();
   });
 
   it("trims the draft before building the manual Song title", () => {
     const { onChoose } = renderCard({ draft: "  Yesterday  " });
-    fireEvent.click(screen.getByRole("button", { name: /ritüele ekle/i }));
+    fireEvent.click(screen.getByRole("button", { name: /add to ritual/i }));
     expect(vi.mocked(onChoose).mock.calls[0][0].title).toBe("Yesterday");
   });
 
   it("forwards draft edits to onDraftChange", () => {
     const { onDraftChange } = renderCard();
-    const input = screen.getByLabelText("Şarkı ve sanatçı adını yaz");
+    const input = screen.getByLabelText("Type a song and artist name");
     fireEvent.change(input, { target: { value: "Imagine" } });
     expect(onDraftChange).toHaveBeenCalledWith("Imagine");
   });
@@ -190,12 +190,12 @@ describe("QuestionCard — ghost text & soft verification badge", () => {
 
   it("shows the green check only for a verified entry", () => {
     renderCard({ draft: "Sting - Fragile", verified: true });
-    expect(screen.getByLabelText("tanındı")).toBeInTheDocument();
+    expect(screen.getByLabelText("recognized")).toBeInTheDocument();
   });
 
   it("shows no green check for an unverified manual entry", () => {
     renderCard({ draft: "Stnig Fragile" });
-    expect(screen.queryByLabelText("tanındı")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("recognized")).not.toBeInTheDocument();
   });
 
   it("renders the suggestion dropdown with artwork, title, artist, and year", () => {
@@ -217,7 +217,10 @@ describe("QuestionCard — ghost text & soft verification badge", () => {
     expect(screen.getByRole("listbox")).toBeInTheDocument();
     expect(screen.getByText("Fragile")).toBeInTheDocument();
     expect(screen.getByText("Sting · 1987")).toBeInTheDocument();
-    expect(screen.getByRole("listbox").querySelector("img")).toHaveAttribute("src", "https://i.scdn.co/image/fragile");
+    expect(screen.getByRole("listbox").querySelector("img")).toHaveAttribute(
+      "src",
+      "https://i.scdn.co/image/fragile",
+    );
   });
 
   it("hides the dropdown when there are no suggestions", () => {
@@ -243,8 +246,8 @@ describe("QuestionCard — ghost text & soft verification badge", () => {
 
   it("manual entry still commits with no check and no ghost text", () => {
     const { onChoose } = renderCard({ draft: "Stnig Fragile" });
-    expect(screen.queryByLabelText("tanındı")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /ritüele ekle/i }));
+    expect(screen.queryByLabelText("recognized")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /add to ritual/i }));
     expect(onChoose).toHaveBeenCalledTimes(1);
     const arg = vi.mocked(onChoose).mock.calls[0][0];
     expect(arg.provider).toBe("manual");
