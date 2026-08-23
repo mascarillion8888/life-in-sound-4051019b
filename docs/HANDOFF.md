@@ -11,24 +11,28 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-Testler:   228/228 geçti (17 dosya; +9 dinamik tema motoru +1 prompt
-           demografi/vibe + PosterCanvas derinlesen assertionlar)
-tsc:       temiz (`npm run typecheck` = 0 hata)
-Build:     `npm run build` = 0 (postbuild-vercel-spa shell 3287 byte,
-           route patch yapıldı)
-Lint:      0 hata (1 react-refresh uyarısı LanguageContext.tsx'te — kabul
-           edilebilir, gate'i bloklamıyor)
+           Son commit hâlâ 04d9a00; BU OTURUMUN DEĞİŞİKLİKLERİ HENÜZ
+           COMMIT EDİLMEDİ (kullanıcı kuralı: onaysız commit yok).
+           Çalışma ağacında 4 dosya değişik/yeni:
+             M  src/lib/llm/poetic-analyzer.ts
+             M  src/lib/llm/poetic-analyzer.test.ts
+             M  src/lib/soundmap/poeticPoster.ts
+             ?? src/lib/soundmap/poeticPoster.test.ts
+Testler:   241/241 geçti (18 dosya; 228 + 3 poetic-analyzer narrative/
+           prompt testi + 10 poeticPoster saf-yardımcı testi)
+tsc:       temiz (`npx tsc --noEmit` = 0 hata)
+Build:     `npm run build` = 0 (postbuild-vercel-spa shell, route patch tamam)
+Lint:      değişen dosyalarda 0 hata (repo genelinde bilinen 1
+           react-refresh uyarısı LanguageContext.tsx'te — kabul edilebilir)
 i18n:      LanguageContext + LanguageSwitcher aktif; 5 dil (en/tr/es/de/fr),
            varsayılan en, localStorage "soundmap:language"
 Tema motoru: src/lib/soundmap/dynamicThemes.ts — 3 eksenli skorlama
-           (tur x2, duygu x1, yas/faz x1); VisualSpec'e frame /
-           waveGradient / texture / auraGlow eklendi; PosterCanvas +
-           poeticPoster.ts (2400x3600) ayni extralardan besleniyor.
+           (tür x2, duygu x1, yaş/faz x1); VisualSpec frame /
+           waveGradient / texture / auraGlow
 Fontlar:   Cinzel / Playfair Display / Inter / Plus Jakarta Sans
-           (styles.css Google Fonts import + tipografi->font haritalari)
+           (styles.css Google Fonts import + tipografi->font haritaları)
 Gemini:    `GEMINI_API_KEY` server-only; analiz prose'u aktif dilde
-           üretiliyor (prompt'ta güçlü LANGUAGE REQUIREMENT kuralı +
-           TASK öncesi REMINDER; her JSON value hedef dilde)
+           üretiliyor (LANGUAGE REQUIREMENT + REMINDER kuralları)
 Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
            dropdown Spotify primary → iTunes fallback → serbest-metin
 ```
@@ -37,77 +41,84 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Çoklu Dil Desteği (i18n + Language Switcher) + poetic 4-faz chapter sistemi (TAM, push edildi)
+## 2. Son biten iş — Narrative de-robotizasyonu + Canvas poster motoru yeniden inşası (TAM, COMMIT EDİLMEDİ)
 
-**İki iş tek oturumda, iki ayrı commit:**
+Kullanıcı onayı ile (kapsam: sadece `poetic-analyzer.ts` +
+`poeticPoster.ts`, API imzaları ve veri akışı korunarak):
 
-1. `feat: poetic analyzer 4-faz chapter + poster roadmap` (önceki görev,
-   daha önce commit'lenmemişti):
-   - `poetic-analyzer.ts`: 4 faz (FIRST SPARK / AWAKENING / PASSAGES /
-     DEEP RESONANCE), chapter'lara `ageRange` alanı, 8 şarkı fazlara
-     eşleştiriliyor.
-   - `PosterCanvas.tsx`: `songs: Song[]` prop, albüm kapağı küçük
-     resimleri, SVG waveform, 4-fazlı "Life Phase Roadmap".
-   - `results.tsx`: `songs: Song[]` türetimi (journey + manual fallback);
-     LifeStory hâlâ `string[]` alıyor.
-   - `poeticPoster.ts` canvas export aynı yapıyı çiziyor.
+1. **`src/lib/llm/poetic-analyzer.ts` — prompt revizyonu + deterministik şablonların kaldırılması:**
+   - `ANALYZER_GROUNDING_RULES`'a yeni kural: "Formulaic scaffold structures
+     are forbidden" — "It begins with…", "By the time…", "First you tried…",
+     "And in the end…", "What remains is…" gibi kalıp açılışlar yasak;
+     narrative'ler editoryal dergi biyografisi gibi akmalı.
+   - TASK bloğunda `manifesto` ve `chapters` tanımları güçlendirildi
+     (editoryal biyografi, şarkı listesi sayma yasağı).
+   - `deterministicPoeticAnalysis`: sabit `narrativeByChapter` Record'u
+     kaldırıldı; yerine `CHAPTER_NARRATIVES` — her faz için 3 editoryal
+     varyant, `stableHash(first‖last)` ile deterministik seçim. Tüm
+     varyantlar gerçek şarkı başlıklarını akan prose içine örüyor.
+   - Life Story prompt'larına / `GROUNDING_RULES`'a / `buildLifeStoryPrompt`'a
+     DOKUNULMADI (kural #2'ye uygun — yalnız poetic-analyzer'ın kendi
+     prompt'u onaylı plan kapsamında güncellendi).
 
-2. `feat: multi-language support (i18n + language switcher)`:
-   - `src/lib/i18n/languages.ts` — `Language` tipi ('en'|'tr'|'es'|'de'|'fr'),
-     `SUPPORTED_LANGUAGES`, `LANGUAGE_NAMES`, `isLanguage` guard.
-   - `src/lib/i18n/dictionaries.ts` — `Dictionary` tipi + 5 sözlük;
-     nav / journey / questionCard / results / poster (roadmap etiketleri,
-     chapter başlıkları, footer alıntıları dahil).
-   - `src/lib/i18n/LanguageContext.tsx` — `LanguageProvider` +
-     `useLanguage()`; varsayılan **en**; localStorage `soundmap:language`;
-     `document.documentElement.lang` güncellenir; **provider olmadan**
-     `useLanguage()` İngilizce fallback döner (testler provider'sız
-     çalışmaya devam eder).
-   - `src/components/LanguageSwitcher.tsx` — Globe + dil kodu pill,
-     Radix dropdown-menu; index Header'da, journey ve results
-     sayfalarında sağ-üst köşede.
-   - LLM lokalizasyonu: `PoeticAnalyzerInput.language?: Language`;
-     `buildPoeticAnalyzerPrompt` son kural olarak dil direktifi ekler
-     ("Write ALL prose ... in <Language>"; varsayılan English).
-     `generateAnalysis.server.ts` → `GenerateAnalysisInput.language`;
-     `results.tsx` fingerprint'e `language` eklendi → dil değişince
-     analiz yeniden üretilir.
-   - QuestionCard artık sözlükten okuyor (varsayılan en: "Add to Ritual",
-     "Type a song and artist name" vb.); QuestionCard testleri en
-     varsayılanına güncellendi.
+2. **`src/lib/soundmap/poeticPoster.ts` — Canvas motoru sıfırdan:**
+   - İmza aynı: `exportPoeticPoster(analysis, songs, feedEntries)`;
+     2400x3600 high-DPI korundu.
+   - `seededRandom` (mulberry32) — tüm texture/rough-edge geometrisi
+     seed-deterministik; aynı analiz her zaman aynı PNG'yi üretir.
+   - 6 tema texture'ı: smoke / grid (perspektif) / silk / paper / gloss /
+     nebula (yıldız + glow).
+   - 5 frame stili: gotik **pointed arch** (çift katman), double-rule,
+     rough-edge (jitter), neon-glow (3 geçişli glow), hairline + köşe tick.
+   - Yeni tipografik harita düzeni: brand eyebrow → manifesto hero → aura
+     chip'leri → 4'lü Life-Phase Roadmap → 2x2 Narrative Chapter kartları
+     (elmas ornament + numaralı şarkı listesi + narrative paragraf) →
+     düzgünleştirilmiş bezier **waveform** paneli (glow + gradient stroke +
+     numaralı noktalar; Life Feed entry'leri eğriyi uzatır) → "The Eight
+     Tracks" playlist satırları (vinyl disc placeholder + numara + başlık +
+     sanatçı + insight) → Life Feed satırları (`fitFeedRows` ile taşma
+     koruması + doğru "+N more on your living map" notu) → Core Duality
+     paneli (3 renkli eksen) → footer (tema imzası + brand).
+   - Test edilebilir saf yardımcılar export edildi: `seededRandom`,
+     `buildWaveformPoints`, `fitFeedRows`.
 
-**İkinci i18n turu (bu oturum):** results hero ("Your SoundMap" / "Eight
-songs." / "One life, in sound." / sub-cümle) sözlüğe bağlandı
-(`results.yourSoundmap|heroAccent|heroTagline|heroSub`, 5 dil);
-poetic-analyzer prompt'una güçlü dil kuralı ("LANGUAGE REQUIREMENT: The
-ENTIRE story body ... MUST be written in <dil>", her JSON value dahil) +
-TASK öncesi "REMINDER: Respond entirely in <dil>" eklendi.
+3. **Testler:**
+   - `poetic-analyzer.test.ts` +3: scaffold açılışları yasak testi,
+     narrative örgü testi (her chapter'ın ilk/son şarkısı narrative'de),
+     prompt scaffold-yasağı kuralı testi.
+   - `poeticPoster.test.ts` (YENİ, 10 test): PRNG determinizmi ve aralığı,
+     waveform geometrisi (sayı, aralık, tepe eşleme, tek nokta, boş),
+     feed satır bütçesi (yeterli/kısıtlı/yok).
 
-**Bilerek kapsam dışı bırakılanlar:** Life Story prompt'ları (korumalı),
-`feed/` bileşenleri içi (mevcut Türkçe stringler duruyor), landing hero
-metinleri, `deterministicPoeticAnalysis`/`deterministicLifeStory` çıktısı
-(her zaman İngilizce — dictionary değil), `poeticPoster.ts` canvas export
-etiketleri (marka İngilizce).
+**Bilerek kapsam dışı bırakılanlar:** PosterCanvas.tsx (ekran posteri),
+routing, Supabase, auth, görsel tema kataloğu, Journey soru sayısı,
+Life Story pipeline'ı, QuestionCard/serbest-metin UX'i.
 
 ---
 
 ## 3. Olası sonraki adımlar
 
+- **Bu oturumun değişikliklerini commit/push et** — kullanıcı onayı
+  bekleniyor (kural: onaysız commit yok; push için kullanıcı her seferinde
+  taze token veriyor).
+- **iTunes Search API ile gerçek şarkı doğrulaması** — bu konuşmanın
+  orijinal TASK'ı. Kullanıcı önceliği narrative/canvas işine verdi;
+  iTunes planı sunuldu ama implementasyon için ayrı onay turu bekleniyor.
+  Kurallar: eski MusicBrainz dialog'u GERİ GELMEZ, serbest-metin girişi
+  birincil UX kalır, LLM yok, sahte/mock şarkı yok, `searchSong.server.ts`
+  soyutlaması korunur, testlerde canlı ağ çağrısı yok.
 - `feed/` bileşenlerini (LifeFeedInput/Timeline/Section) sözlüğe bağla —
-  şu an Türkçe hard-coded; dictionary'ye `feed` bölümü eklenecek.
-- `buildEntryInsightPrompt` (Life Feed insight cümleleri) için language
-  param — `GenerateEntryInsightInput.language` altyapısı hazır değil.
-- Landing hero/section copy'lerinin çevirisi (şu an İngilizce sabit).
-- LLM chapter başlıkları `chapter.id` "c1..c4" olduğunda sözlük
-  override'ı devreye girmez — Gemini zaten aktif dilde yazıyor; gerekirse
-  id'leri "chapter-i..iv" sabitle.
+  şu an Türkçe hard-coded.
+- `buildEntryInsightPrompt` için language param.
+- Landing hero/section copy çevirileri.
 
 ---
 
 ## 4. Karar ağacı
 
 **🅐 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN
-yeniden yaz, `checkpoint: ... — HANDOFF.md güncellendi` ile commit et.
+yeniden yaz, onaylıysa `checkpoint: ... — HANDOFF.md güncellendi` ile
+commit et (onay yoksa değişiklikleri çalışma ağacında bırak ve bildir).
 
 **🅑 i18n'e yeni string eklerken →** `en`'e ekle → diğer 4 dile kopyala →
 `i18n.test.tsx` key-parity testi otomatik yakalar.
@@ -116,16 +127,21 @@ yeniden yaz, `checkpoint: ... — HANDOFF.md güncellendi` ile commit et.
 İngilizce varsayılan sözlüğe bağlı — provider'la dil değiştirilmedikçe
 en stringleri bekle.
 
+**🅓 Canvas export'a dokunurken →** Rastgelelik her zaman `seededRandom`
+üzerinden; asla `Math.random()` kullanma (export tekrarlanabilirliği bozulur).
+
 ---
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-- **`useLanguage()` provider'sız çalışmalı.** Context default değeri en
-  sözlüğü + no-op setter; böylece mevcut bileşen testleri (PosterCanvas
-  dahil) provider sarmadan geçer.
-- **Dil değişimi = yeni analiz.** `results.tsx` fingerprint'ine `language`
-  eklenmezse eski dildeki cache'li analiz kalır; eklendi.
-- Prettier drift'i `--fix` ile temizlendi; rastgele kozmetik fix YOK.
+- **eslint --fix'i SADECE değişen dosyalarda çalıştır.** Repo genelinde
+  çalıştırmak daha önce `src/lib/soundmap/data.ts`'te istenmeyen prettier
+  drift'i yaratmıştı (geri alınmıştı).
+- `ctx.letterSpacing` TS DOM tiplerinde mevcut (TS 5.8); tracked başlıklar
+  için güvenle kullanılabilir, eski tarayıcılarda sessizce yok sayılır.
+- `npm run lint` (repo geneli) bu ortamda >180 sn sürebiliyor; hızlı gate
+  için değişen dosyalara scoped eslint yeterli, finalde repo geneli koş.
+- Vitest sayacı: 228 → 241 (18 dosya).
 
 ---
 
@@ -133,11 +149,13 @@ en stringleri bekle.
 
 - Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨).
 - Life Story prompt'larına / `GROUNDING_RULES`'a / `buildLifeStoryPrompt`'a
-  DOKUNMA (kullanıcı kuralı #2 — yalnız `buildPoeticAnalyzerPrompt`'a dil
-  kuralı eklendi, onaylı plan kapsamında).
+  DOKUNMA (kullanıcı kuralı #2 — yalnız `buildPoeticAnalyzerPrompt`'a
+  onaylı değişiklik yapıldı).
+- Kullanıcı onayı olmadan commit/push etme; main'e push etme; dal birleştirme.
 - `vite.config.ts`'te DEV-ONLY allowedHosts'u commit'leme.
 - Vercel'e `VITE_`-prefixed secret env girme.
 - `.vercel/` build çıktısını commit'leme (gitignore'da).
 - `inlineDynamicImports`'u kaldırma — SSR çökmesini geri getirir.
 - Eski MusicBrainz dialog/arama UI'ını geri getirme; serbest-metin girişi
-  birincil UX olarak kalır.
+  birincil UX olarak kalır (iTunes görevi için de geçerli).
+- Canvas export'ta `Math.random()` kullanma — determinizmi bozar.

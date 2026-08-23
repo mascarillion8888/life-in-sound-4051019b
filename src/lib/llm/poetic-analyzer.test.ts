@@ -160,6 +160,34 @@ describe("deterministicPoeticAnalysis", () => {
       deterministicPoeticAnalysis(profile, songs),
     );
   });
+
+  it("never uses formulaic scaffold openers in chapter narratives", () => {
+    const { profile, songs } = ctx();
+    const SCAFFOLDS = [
+      /^It begins with/i,
+      /^By the time/i,
+      /^First you tried/i,
+      /^And in the end/i,
+      /^What remains is/i,
+    ];
+    const analysis = deterministicPoeticAnalysis(profile, songs);
+    for (const chapter of analysis.chapters) {
+      for (const scaffold of SCAFFOLDS) {
+        expect(chapter.narrative).not.toMatch(scaffold);
+      }
+    }
+  });
+
+  it("weaves each chapter's first and last songs into the narrative", () => {
+    const { profile, songs } = ctx();
+    const analysis = deterministicPoeticAnalysis(profile, songs);
+    for (const chapter of analysis.chapters) {
+      const firstIndex = chapter.songIndexes[0];
+      const lastIndex = chapter.songIndexes[chapter.songIndexes.length - 1];
+      expect(chapter.narrative).toContain(songs[firstIndex - 1]);
+      expect(chapter.narrative).toContain(songs[lastIndex - 1]);
+    }
+  });
 });
 
 describe("buildPoeticAnalyzerPrompt", () => {
@@ -193,6 +221,13 @@ describe("buildPoeticAnalyzerPrompt", () => {
     const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
     expect(prompt).toContain("the user's biography is not");
     expect(prompt).toContain("Do not invent facts about the user's real life");
+  });
+
+  it("forbids formulaic scaffold templates in narratives", () => {
+    const { profile, songs } = ctx();
+    const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
+    expect(prompt).toContain("Formulaic scaffold structures are forbidden");
+    expect(prompt).toContain("editorial magazine biography");
   });
 
   it("includes memory notes when supplied", () => {

@@ -343,6 +343,58 @@ function rankedDimensionPoles(profile: PersonalityProfile): [string, string] {
 }
 
 /**
+ * Deterministic chapter narratives — a small bank of editorial variants per
+ * life phase, picked by a stable hash of the chapter's first/last song titles
+ * so repeating frames never surface across different maps. All variants weave
+ * the actual song titles into flowing prose (no scaffold openers).
+ */
+const CHAPTER_NARRATIVES: Record<string, ((first: string, last: string) => string)[]> = {
+  "chapter-i": [
+    (first, last) =>
+      `“${first}” was the first proof that a feeling could have a soundtrack; “${last}” taught the map to keep growing.`,
+    (first, last) =>
+      `Before there were words for it, there was “${first}” — and “${last}” arrived like the room getting bigger.`,
+    (first, last) =>
+      `Nobody hands you your first song; “${first}” simply stayed, and “${last}” made sure the door stayed open.`,
+  ],
+  "chapter-ii": [
+    (first, last) =>
+      `Between “${first}” and “${last}” there were no small questions — only volume, honesty, and doors you walked through alone.`,
+    (first, last) =>
+      `“${first}” asked the question and “${last}” refused to let it go; those years were the rehearsal for becoming someone.`,
+    (first, last) =>
+      `Love, weight, and the refusal to kneel — “${first}” on one side of the door, “${last}” waiting on the other.`,
+  ],
+  "chapter-iii": [
+    (first, last) =>
+      `“${first}” opened from the inside; “${last}” is why some people are carried in melody rather than words.`,
+    (first, last) =>
+      `Somewhere between “${first}” and “${last}”, the roads turned inward — and finally opened.`,
+    (first, last) =>
+      `You learned “${first}” by heart; “${last}” explained what the heart was keeping.`,
+  ],
+  "chapter-iv": [
+    (first) =>
+      `“${first}” is not an ending — it is the frequency left on for whoever finds this map after you.`,
+    (first) =>
+      `If the whole map became a single room with a light left burning, “${first}” would be that room.`,
+    (first) =>
+      `The echo you chose to keep: “${first}”. It does not close the map; it keeps it warm.`,
+  ],
+};
+
+function chapterNarrative(
+  slot: (typeof CHAPTER_SLOTS)[number],
+  first: string,
+  last: string,
+): string {
+  const variants = CHAPTER_NARRATIVES[slot.id];
+  if (!variants?.length) return `“${first}” stays on the map.`;
+  const pick = variants[stableHash(`${first}‖${last}`) % variants.length];
+  return pick(first, last);
+}
+
+/**
  * The complete deterministic analysis — always renderable, no provider access.
  * Used as the immediate client render and as the permanent fallback when the
  * Gemini call is unavailable.
@@ -365,18 +417,12 @@ export function deterministicPoeticAnalysis(
   const chapters: LifeChapter[] = CHAPTER_SLOTS.map((slot) => {
     const first = s(slot.indexes[0]);
     const last = s(slot.indexes[slot.indexes.length - 1]);
-    const narrativeByChapter: Record<string, string> = {
-      "chapter-i": `It begins with “${first}” — before you knew what the feeling was, you knew it was yours. By “${last}” the world had already grown larger, and music was the first language that made sense of it.`,
-      "chapter-ii": `First you tried to understand: “${first}” through “${last}”. Love, weight, and the refusal to kneel — the years where every song felt like a door you had to walk through alone.`,
-      "chapter-iii": `And in the end, you allowed yourself to feel: “${first}” to “${last}”. The roads that only open from the inside, the people you carry in melody because words were never enough.`,
-      "chapter-iv": `What remains is the echo: “${first}”. Not an ending — a frequency you would leave on for whoever finds this map after you.`,
-    };
     return {
       id: slot.id,
       title: slot.title,
       ageRange: slot.ageRange,
       songIndexes: [...slot.indexes],
-      narrative: narrativeByChapter[slot.id],
+      narrative: chapterNarrative(slot, first, last),
       mood: slot.mood,
     };
   });
@@ -455,6 +501,7 @@ const ANALYZER_GROUNDING_RULES = [
   "Do not invent song titles or artists that were not supplied.",
   "If you genuinely know a supplied song's or album's real theme, mood, or cultural context, USE IT to deepen the interpretation — the song's own meaning is fair game; the user's biography is not.",
   "Write like a lifelong friend who has listened beside them for years: warm, poetic, specific. Never like a report, never clinical, never motivational-poster generic.",
+  'Narratives and the manifesto must read like an editorial magazine biography — atmospheric, personal, specific. Formulaic scaffold structures are forbidden: never start a narrative with "It begins with", "By the time", "First you tried", "And in the end", "What remains is" or any sentence whose only job is to list the chapter\'s songs. Weave the songs into real flowing prose.',
   'Chapter titles must be short, evocative and uppercase, matching the four life-phase archetypes: "FIRST SPARK" (Ages 9–12, Discovery & Enchantment), "AWAKENING" (Ages 12–18, Energy & Defiance), "PASSAGES" (Ages 18–28, Mental Awakening), "DEEP RESONANCE" (Ages 35+, Stillness & Acceptance).',
   "Frame every genre and song as an honored chapter of human experience — no genre is 'guilty pleasure', no taste is wrong. Each choice reveals something true about the person.",
   "Return STRICT JSON only — no markdown, no code fences, no commentary.",
@@ -514,8 +561,8 @@ export function buildPoeticAnalyzerPrompt(input: PoeticAnalyzerInput): string {
     "",
     "TASK:",
     "Return ONE JSON object with EXACTLY these keys:",
-    '"manifesto": one unifying existential quote — a life manifesto in a single sentence that could only belong to THIS selection of songs.',
-    '"chapters": 2-4 objects {"id","title","songIndexes":[1-based ints],"narrative","mood"} grouping all 8 songs into meaningful life phases; every index 1-8 must appear exactly once.',
+    '"manifesto": one unifying existential quote — a life manifesto in a single sentence that could only belong to THIS selection of songs. Write it like the closing line of a magazine profile: quotable, personal, never a summary.',
+    '"chapters": 2-4 objects {"id","title","songIndexes":[1-based ints],"narrative","mood"} grouping all 8 songs into meaningful life phases; every index 1-8 must appear exactly once. Each "narrative" is 2–3 sentences of editorial biography that flows like prose — never a disguised list of the chapter\'s songs.',
     '"songInsights": 8 objects {"index","title","insight"} — one warm, specific one-sentence insight per song, in journey order.',
     '"emotionalCurve": 8 objects {"label","intensity"} — intensity 0..1, one per song, tracing the emotional arc of the life.',
     '"coreDuality": {"axis","left","right","resolution"} — the two poles this person moves between (e.g. "Steel / Rain") and one sentence resolving how they hold both.',
