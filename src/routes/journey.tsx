@@ -14,7 +14,7 @@ import {
   saveRemoteJourney,
 } from "@/lib/supabase/journey-remote";
 import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
-import { bestGhostMatch, catalogGhostCompletion } from "@/lib/song/itunes-mapping";
+import { spotifySuggestSongs } from "@/lib/song/spotify.server";
 import type { Song } from "@/lib/song/types";
 
 const VERIFICATION_DEBOUNCE_MS = 300;
@@ -76,8 +76,9 @@ function JourneyPage() {
   const [verifications, setVerifications] = useState<
     Record<number, { text: string; status: "checking" | "verified" | "failed"; match: Song | null }>
   >({});
-  // Per-question ghost-text suggestions (iTunes top hits), keyed by the text
-  // they were fetched for. Display-only: never authoritative, never blocks input.
+  // Per-question live suggestions (Spotify primary, iTunes fallback), keyed by
+  // the text they were fetched for. Display-only: never authoritative, never
+  // blocks input.
   const [suggestions, setSuggestions] = useState<Record<number, { text: string; songs: Song[] }>>(
     {},
   );
@@ -178,8 +179,8 @@ function JourneyPage() {
     return () => clearTimeout(timer);
   }, [draftText, question.id, verifications]);
 
-  // Debounced ghost-text suggestion: 300ms after the user stops typing, fetch
-  // the iTunes top hit for the translucent completion. Display-only.
+  // Debounced live suggestion: 300ms after the user stops typing, fetch the
+  // provider list for the dropdown. Display-only; free-text always wins.
   useEffect(() => {
     if (draftText.length < 3) return;
     const existing = suggestions[question.id];
@@ -188,10 +189,18 @@ function JourneyPage() {
       void (async () => {
         let songs: Song[] = [];
         try {
-          const out = await suggestSongs({ data: { query: draftText } });
+          const out = await spotifySuggestSongs({ data: { query: draftText } });
           songs = out.results;
         } catch {
           songs = [];
+        }
+        if (songs.length === 0) {
+          try {
+            const out = await suggestSongs({ data: { query: draftText } });
+            songs = out.results;
+          } catch {
+            songs = [];
+          }
         }
         if (songs.length > 0) {
           setSuggestions((prev) => {
@@ -204,31 +213,11 @@ function JourneyPage() {
     return () => clearTimeout(timer);
   }, [draftText, question.id, suggestions]);
 
-  // Ghost text, zero-latency first: the embedded popular catalog resolves
-  // synchronously (token-free, fuzzy, order-independent), so "bad mic" or
-  // "frag stin" completes instantly with no network wait. If the local catalog
-  // has nothing, fall back to the debounced iTunes suggestions (same strict
-  // extends-typed-text prefix rule, never invented).
-  const ghost = (() => {
-    if (draftText.length < 3) return null;
-    const local = catalogGhostCompletion(draftText);
-    if (local) return { completion: local, display: local };
-    const s = suggestions[question.id];
-    if (!s) return null;
-    const m = bestGhostMatch(draftText, s.songs);
-    if (!m) return null;
-    return { completion: m.completion, display: m.completion.slice(m.rawPrefixLength) };
-  })();
-
   // Green check: only for an entry the iTunes verification actually matched.
   const selectedSong = songs[question.id];
   const verified =
     verifications[question.id]?.status === "verified" ||
     (selectedSong?.provider === "itunes" && selectedSong?.verified === true);
-
-  const acceptGhost = () => {
-    if (ghost) setDraft(ghost.completion);
-  };
 
   const handleDraftChange = (text: string) => {
     setDraft(text);
@@ -304,8 +293,12 @@ function JourneyPage() {
             answer={answers[question.id]}
             selected={songs[question.id] ?? null}
             verified={verified}
-            ghostCompletion={ghost?.display ?? null}
-            onGhostAccept={acceptGhost}
+            suggestions={suggestions[question.id]?.songs}
+            onSelectSuggestion={(song) => {
+              setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
+              setSongs((prev) => ({ ...prev, [question.id]: song }));
+              setDraft('');
+            }}
             draft={draft}
             onDraftChange={handleDraftChange}
             onChoose={(song) => {
@@ -353,6 +346,7 @@ function JourneyPage() {
                     artist: "",
                     album: null,
                     artworkUrl: null,
+                    releaseYear: null,
                     isrc: null,
                   }),
                 }));

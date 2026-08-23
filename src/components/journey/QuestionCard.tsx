@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Music } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ function manualSong(text: string): Song {
     artist: "",
     album: null,
     artworkUrl: null,
+    releaseYear: null,
     isrc: null,
   };
 }
@@ -29,8 +30,8 @@ export function QuestionCard({
   answer,
   selected,
   verified,
-  ghostCompletion,
-  onGhostAccept,
+  suggestions,
+  onSelectSuggestion,
   draft,
   onDraftChange,
   onChoose,
@@ -44,10 +45,10 @@ export function QuestionCard({
   selected?: Song | null;
   /** True only when iTunes verification matched this entry — renders the green check. */
   verified?: boolean;
-  /** Full iTunes suggestion that extends the current draft (ghost-text completion). */
-  ghostCompletion?: string | null;
-  /** Called when the user accepts the ghost completion (Tab / ArrowRight). */
-  onGhostAccept?: () => void;
+  /** Live suggestion list (Spotify primary, iTunes fallback) shown as a dropdown. */
+  suggestions?: Song[];
+  /** Called when the user picks a suggestion from the dropdown. */
+  onSelectSuggestion?: (song: Song) => void;
   /** Current text in the primary free-text box (owned by the parent). */
   draft: string;
   /** Update the primary free-text box. */
@@ -82,11 +83,6 @@ export function QuestionCard({
             value={draft}
             onChange={(e) => onDraftChange(e.target.value)}
             onKeyDown={(e) => {
-              if ((e.key === "Tab" || e.key === "ArrowRight") && ghostCompletion) {
-                e.preventDefault();
-                onGhostAccept?.();
-                return;
-              }
               if (e.key === "Enter" && canConfirm) {
                 e.preventDefault();
                 onChoose(manualSong(draft.trim()));
@@ -96,25 +92,46 @@ export function QuestionCard({
             aria-label="Şarkı ve sanatçı adını yaz"
             className="h-14 w-full rounded-2xl border-border/50 bg-background/60 pr-11 text-base sm:h-16"
           />
-          {ghostCompletion ? (
-            <>
-              {/* Invisible full-width text sets the exact overlay position. */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 flex h-14 items-center truncate rounded-2xl px-3 py-1 pr-11 text-base opacity-0 sm:h-16"
-              >
-                {ghostCompletion}
-              </span>
-              {/* Visible, high-contrast silver suffix aligned right after the typed text. */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 flex h-14 items-center truncate rounded-2xl px-3 py-1 pr-11 text-base opacity-100 sm:h-16"
-                style={{ color: "#a1a1aa" }}
-              >
-                <span className="invisible">{draft}</span>
-                {ghostCompletion.slice(draft.length)}
-              </span>
-            </>
+          {suggestions && suggestions.length > 0 ? (
+            <ul
+              role="listbox"
+              aria-label="Şarkı önerileri"
+              className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-xl backdrop-blur-xl"
+            >
+              {suggestions.map((song) => (
+                <li key={song.providerId}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-primary/10"
+                    onClick={() => onSelectSuggestion?.(song)}
+                  >
+                    {song.artworkUrl ? (
+                      <img
+                        src={song.artworkUrl}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-md object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <Music className="h-5 w-5" />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">
+                        {song.title}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {song.artist}
+                        {song.releaseYear ? ` · ${song.releaseYear}` : ""}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : null}
           {verified ? (
             <Check

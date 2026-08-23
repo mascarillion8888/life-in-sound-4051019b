@@ -12,7 +12,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const FORBIDDEN = ["GEMINI_API_KEY", "GROQ_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+const FORBIDDEN = ["GEMINI_API_KEY", "GROQ_API_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SPOTIFY_CLIENT_SECRET"];
 const SCAN_DIRS = [".vercel/output/static", ".output/public", "dist/client"];
 const TEXT_EXTENSIONS = new Set([".js", ".css", ".html", ".json", ".map"]);
 

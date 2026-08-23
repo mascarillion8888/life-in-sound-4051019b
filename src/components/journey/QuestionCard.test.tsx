@@ -20,15 +20,15 @@ function renderCard(
     answer?: string;
     draft?: string;
     verified?: boolean;
-    ghostCompletion?: string | null;
-    onGhostAccept?: () => void;
+    suggestions?: import("@/lib/song/types").Song[];
+    onSelectSuggestion?: (song: import("@/lib/song/types").Song) => void;
     onDraftChange?: (text: string) => void;
     onChoose?: (song: Song) => void;
   } = {},
 ) {
   const onChoose = overrides.onChoose ?? vi.fn();
   const onDraftChange = overrides.onDraftChange ?? vi.fn();
-  const onGhostAccept = overrides.onGhostAccept ?? vi.fn();
+  const onSelectSuggestion = overrides.onSelectSuggestion ?? vi.fn();
   render(
     <QuestionCard
       number={1}
@@ -37,14 +37,14 @@ function renderCard(
       answer={overrides.answer}
       selected={overrides.selected}
       verified={overrides.verified}
-      ghostCompletion={overrides.ghostCompletion}
-      onGhostAccept={onGhostAccept}
+      suggestions={overrides.suggestions}
+      onSelectSuggestion={onSelectSuggestion}
       draft={overrides.draft ?? ""}
       onDraftChange={onDraftChange}
       onChoose={onChoose}
     />,
   );
-  return { onChoose, onDraftChange, onGhostAccept };
+  return { onChoose, onDraftChange, onSelectSuggestion };
 }
 
 describe("QuestionCard", () => {
@@ -198,40 +198,47 @@ describe("QuestionCard — ghost text & soft verification badge", () => {
     expect(screen.queryByLabelText("tanındı")).not.toBeInTheDocument();
   });
 
-  it("renders the ghost completion as translucent suffix text", () => {
-    renderCard({ draft: "Stin", ghostCompletion: "g" });
-    // The ghost overlay contains the invisible typed prefix + the visible suffix.
-    const ghost = screen.getByText("g");
-    expect(ghost).toBeInTheDocument();
-    expect(ghost.parentElement?.querySelector(".invisible")?.textContent).toBe("Stin");
+  it("renders the suggestion dropdown with artwork, title, artist, and year", () => {
+    renderCard({
+      draft: "Fragile",
+      suggestions: [
+        {
+          provider: "spotify",
+          providerId: "sp-1",
+          title: "Fragile",
+          artist: "Sting",
+          album: "...Nothing Like the Sun",
+          artworkUrl: "https://i.scdn.co/image/fragile",
+          releaseYear: 1987,
+          isrc: null,
+        },
+      ],
+    });
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(screen.getByText("Fragile")).toBeInTheDocument();
+    expect(screen.getByText("Sting · 1987")).toBeInTheDocument();
+    expect(screen.getByRole("listbox").querySelector("img")).toHaveAttribute("src", "https://i.scdn.co/image/fragile");
   });
 
-  it("aligns the ghost suffix after the typed prefix even with a separator in the draft", () => {
-    // The parent already sliced the completion at the raw prefix length, so the
-    // card receives only the suffix to render after the typed text.
-    renderCard({ draft: "sting-frag", ghostCompletion: "ile" });
-    const ghost = screen.getByText("ile");
-    expect(ghost).toBeInTheDocument();
-    expect(ghost.parentElement?.querySelector(".invisible")?.textContent).toBe("sting-frag");
+  it("hides the dropdown when there are no suggestions", () => {
+    renderCard({ draft: "zzzz", suggestions: [] });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
-  it("accepts the ghost completion on Tab", () => {
-    const { onGhostAccept, onChoose } = renderCard({ draft: "Stin", ghostCompletion: "Sting" });
-    fireEvent.keyDown(screen.getByLabelText("Şarkı ve sanatçı adını yaz"), { key: "Tab" });
-    expect(onGhostAccept).toHaveBeenCalledTimes(1);
-    expect(onChoose).not.toHaveBeenCalled();
-  });
-
-  it("accepts the ghost completion on ArrowRight", () => {
-    const { onGhostAccept } = renderCard({ draft: "Stin", ghostCompletion: "Sting" });
-    fireEvent.keyDown(screen.getByLabelText("Şarkı ve sanatçı adını yaz"), { key: "ArrowRight" });
-    expect(onGhostAccept).toHaveBeenCalledTimes(1);
-  });
-
-  it("Tab falls through to normal focus behavior when there is no ghost text", () => {
-    const { onGhostAccept } = renderCard({ draft: "Stin" });
-    fireEvent.keyDown(screen.getByLabelText("Şarkı ve sanatçı adını yaz"), { key: "Tab" });
-    expect(onGhostAccept).not.toHaveBeenCalled();
+  it("selecting a suggestion commits that structured Song", () => {
+    const song = {
+      provider: "itunes" as const,
+      providerId: "it-1",
+      title: "Dönence",
+      artist: "Barış Manço",
+      album: "Dönence",
+      artworkUrl: null,
+      releaseYear: 1982,
+      isrc: null,
+    };
+    const { onSelectSuggestion } = renderCard({ draft: "dön", suggestions: [song] });
+    fireEvent.click(screen.getByText("Dönence"));
+    expect(onSelectSuggestion).toHaveBeenCalledWith(song);
   });
 
   it("manual entry still commits with no check and no ghost text", () => {

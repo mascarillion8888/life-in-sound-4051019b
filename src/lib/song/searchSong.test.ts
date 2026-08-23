@@ -28,6 +28,7 @@ const TRACK_FRAGILE = {
   artistName: "Sting",
   collectionName: "...Nothing Like the Sun",
   artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/100x100bb.jpg",
+  releaseDate: "1987-10-01T07:00:00Z",
 };
 
 const TRACK_PAINKILLER = {
@@ -77,6 +78,7 @@ describe("itunes mapping: trackToSong", () => {
       artist: "Sting",
       album: "...Nothing Like the Sun",
       artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/100x100bb.jpg",
+      releaseYear: 1987,
       isrc: null,
       verified: true,
     });

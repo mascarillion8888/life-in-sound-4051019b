@@ -23,6 +23,7 @@ function manualSong(title: string): Song {
     artist: "",
     album: null,
     artworkUrl: null,
+    releaseYear: null,
     isrc: null,
   };
 }

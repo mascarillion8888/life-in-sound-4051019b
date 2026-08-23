@@ -12,11 +12,11 @@
  */
 export type Song = {
   /**
-   * Stable provider slug: "itunes" (external, verified), "manual" (user-typed),
-   * or "musicbrainz" (legacy — only in journeys persisted before the iTunes
+   * Stable provider slug: "itunes" (external, verified), "spotify" (external, verified),
+   * or "musicbrainz" (legacy — only in journeys persisted before the provider/
    * switch; kept so old rows remain type-valid).
    */
-  provider: "musicbrainz" | "itunes" | "manual";
+  provider: "musicbrainz" | "itunes" | "spotify" | "manual";
   /** Provider-specific identifier (iTunes trackId, legacy MusicBrainz MBID, or a generated UUID for manual entries). */
   providerId: string;
   /** Display title (track/recording name, or a user-typed string). Always present. */
@@ -27,6 +27,8 @@ export type Song = {
   album: string | null;
   /** Artwork image URL when one exists. */
   artworkUrl: string | null;
+  /** Release year (4-digit) when the provider supplies a release date. */
+  releaseYear?: number | null;
   /** ISRC when the recording carries one (iTunes does not supply one — always null for itunes). */
   isrc: string | null;
   /**

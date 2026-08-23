@@ -32,6 +32,7 @@ export type ITunesTrack = {
   artistName?: unknown;
   collectionName?: unknown;
   artworkUrl100?: unknown;
+  releaseDate?: unknown;
 };
 
 export type ITunesSearchResponse = {
@@ -62,6 +63,16 @@ function asTrackId(value: unknown): string | null {
   if (s && /^\d+$/.test(s)) return s;
   return null;
 }
+/** Parse the 4-digit release year out of an ISO date (iTunes/Spotify both use YYYY-...). */
+function extractReleaseYear(value: unknown): number | null {
+  const s = asString(value);
+  if (!s) return null;
+  const m = s.match(/^(\d{4})/);
+  if (!m) return null;
+  const y = Number(m[1]);
+  return Number.isInteger(y) && y > 0 ? y : null;
+}
+
 
 /** Lowercase, strip diacritics and punctuation, collapse whitespace. */
 function normalize(text: string): string {
@@ -177,6 +188,7 @@ export function trackToSong(track: ITunesTrack): Song | null {
     artist,
     album: asString(track.collectionName),
     artworkUrl: asString(track.artworkUrl100),
+    releaseYear: extractReleaseYear(track.releaseDate),
     isrc: null,
     verified: true,
   };

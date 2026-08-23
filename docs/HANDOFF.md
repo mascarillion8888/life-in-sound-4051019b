@@ -15,9 +15,11 @@ Testler:   201/201 geçti — bu oturumda yeniden koşturuldu (14 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Build:     plain = 0 (postbuild no-op); VERCEL=1 = 0 (shell 3503 byte,
            route patch yapıldı)
-Lint:      `check:bundle` yeşil — static çıktı sızıntısız
+Lint:      `check:bundle` yeşil — SPOTIFY_CLIENT_SECRET de tarandı, sızıntı yok
 SPA/Static: TAMAM — Vercel deploy altyapısı push edildi; canlı URL
             KULLANICI'DA BEKLEMEDE (§3)
+Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
+           dropdown Spotify primary → iTunes fallback → serbest-metin
 Gemini:    `GEMINI_API_KEY` bu ortamda BOŞ — server-only; `poetic-analyzer`
            testleri 29/29 (canlı ağ yok)
 ```
