@@ -11,14 +11,11 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-           origin/main = 2c2b60c (narrative/canvas overhaul push edildi).
-           BU OTURUMUN DEĞİŞİKLİKLERİ HENÜZ COMMIT EDİLMEDİ (kural:
-           onaysız commit yok). Çalışma ağacında 8 dosya değişik + 2 yeni:
-             M  src/components/results/PosterCanvas.tsx (+ test)
-             M  src/lib/i18n/dictionaries.ts (+ i18n.test.tsx)
-             M  src/lib/llm/poetic-analyzer.ts (+ test)
-             M  src/lib/soundmap/poeticPoster.ts (+ test)
-             ?? src/lib/song/listen.ts (+ listen.test.ts)
+           origin/main = 2c2b60c → bu oturum commit'landi:
+             **91b5cea** "feat(soundmap): overhaul gothic map canvas,
+             click-to-listen & 6-phase narrative" (11 dosya, +994/−465).
+           HENÜZ PUSH EDİLMEDİ (origin/main 1 commit geride).
+           Çalışma ağacı TEMİZ (commit sonrası).
 Testler:   252/252 geçti (19 dosya; 241 + 3 listen + 6 poeticPoster
            tree/nodeColors/labels + PosterCanvas link/6-faz + i18n canvas)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
@@ -45,7 +42,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Gotik Müzik Haritası: 6 faz + click-to-listen + gotik canvas haritası (TAM, COMMIT EDİLMEDİ)
+## 2. Son biten iş — Gotik Müzik Haritası: 6 faz + click-to-listen + gotik canvas haritası (TAM, 91b5cea COMMIT'Lİ, push bekliyor)
 
 Kullanıcı onaylı mimari kararlar (English-first, 6 faz, Spotify deep link):
 
