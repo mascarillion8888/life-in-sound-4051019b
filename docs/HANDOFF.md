@@ -11,15 +11,25 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-           origin/main = 2c2b60c → bu oturum commit'landi:
-             **91b5cea** "feat(soundmap): overhaul gothic map canvas,
-             click-to-listen & 6-phase narrative" (11 dosya, +994/−465).
-           PUSH TAMAM — **176c6db** artık origin/main (`2c2b60c..176c6db`
-           push edildi, kullanıcı tokenı ile). Çalışma ağacı TEMİZ.
-Testler:   252/252 geçti (19 dosya; 241 + 3 listen + 6 poeticPoster
-           tree/nodeColors/labels + PosterCanvas link/6-faz + i18n canvas)
+           origin/main = **088535f** (HEAD ile eşit; keep-alive işi
+           COMMIT'LENMEDİ — working tree'de 5 dosya bekliyor:
+           M scripts/postbuild-vercel-spa.mjs, M src/server.ts,
+           M vercel.json, ?? src/lib/supabase/keep-alive.ts,
+           ?? src/lib/supabase/keep-alive.test.ts)
+Testler:   257/257 geçti (20 dosya; +5 keep-alive unit testi:
+           ok / env-yok-skip / query-failure / throw / client-seçici)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
-Build:     `npm run build` = 0 (postbuild-vercel-spa shell, route patch tamam)
+Build:     `npm run build` = 0; VERCEL=1 build ile uçtan uca smoke
+           tamam — `/api/keep-alive` → 503 `{"ok":false,...}` (env yok,
+           beklendiği gibi skip), `/__server?action=keep-alive` → aynı,
+           `/` shell → 200. NOT: `.vercel/output` eski build'de stale
+           kalıyor — smoke öncesi `rm -rf .vercel/output && VERCEL=1
+           npm run build` şart, yoksa eski bundle test edilir.
+Keep-alive: Vercel Cron `0 6 * * *` → `GET /api/keep-alive`;
+           `src/server.ts` entry intercept edip `keepAliveLogic()` çalıştırır
+           (Supabase `journeys.select("id",{count:"exact",head:true})`).
+           `?action=keep-alive` fallback'i de aynı handler'dan geçer.
+           Asla throw etmez → `{ok,reason,ms}` JSON (200 veya 503).
 Lint:      değişen dosyalarda 0 hata; PosterCanvas.tsx'te 2 react-refresh
            UYARISI var (FALLBACK_EXTRAS/posterExtras export'ları — önceki
            oturumdan beri mevcut, kabul edilebilir, gate bloklamıyor)
@@ -42,7 +52,40 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Gotik Müzik Haritası: 6 faz + click-to-listen + gotik canvas haritası (TAM, 91b5cea COMMIT'Lİ, push bekliyor)
+## 2. Son biten iş — Supabase keep-alive cron endpoint (working tree'de, COMMIT BEKLİYOR)
+
+Vercel Cron ile günde 1 kez (`0 6 * * *`) minimal bir Supabase okuma sorgusu
+atıp free-tier pasiflik duraklamasını önler. **Kritik bulgu:** bu SPA
+pipeline'ında `src/routes/api/*` route'ları CALI'daki server bundle'a ULAŞMAZ
+— `postbuild-vercel-spa.mjs` `/(.*)` → statik shell'e düşürüyor; `/_serverFn*`
+server'a gidiyor ama api dosyası değil. Çözüm: `src/server.ts`'nin entry
+fetch'i path'i **TanStack router'dan ÖNCE** intercept eder.
+
+1. **`src/lib/supabase/keep-alive.ts` (YENİ):** `keepAliveLogic(opts?)` —
+   `clientImpl` enjekte edilebilir (test). URL+anon key eksikse
+   `{ok:false, reason:"supabase-not-configured", ms:0}` döner; query atıp
+   `{ok:true, ms}` döner; hata/throw → `{ok:false, reason:"query-failed:
+   <msg>", ms}` — asla throw etmez. HTTP wiring notu yalnızca yorumda.
+2. **`src/lib/supabase/keep-alive.test.ts` (YENİ):** 5 test — ok, env-yok-
+   skip, query-failure, throw → never-throws, createClient seçici (VITE_
+   veya SUPABASE_ fallback'leri).
+3. **`src/server.ts`:** fetch girişinde keep-alive guard'ı eklendi —
+   `/api/keep-alive` veya `?action=keep-alive` ise `keepAliveLogic()`
+   → `Response.json(r, {status: ok?200:503})`. Router'dan önce, shell/SSR
+   normalize'den bağımsız.
+4. **`vercel.json`:** cron path `/api/keep-alive`, schedule `0 6 * * *`,
+   regions `["fra1"]`.
+5. **`scripts/postbuild-vercel-spa.mjs`:** route kalıbı artık
+   `${SERVER_FN_BASE}(.*)|^${FUNCTION_DEST}$` — doğrudan `/__server` de
+   server'a düşer (fallback cron hedefi). Yorum satırları güncellendi.
+
+Smoke (VERCEL=1 build): env'siz 503 `{"ok":false,"supabase-not-configured"}`,
+env'li-erişilemez-host 503 `query-failed: TypeError: fetch failed` — ikisi
+de doğru davranış, handler h3/router'a girmeden yanıt veriyor.
+`src/routes/api/keep-alive.ts` ve `src/keep-alive-handler.ts` kaldırıldı;
+`keepAliveFn` createServerFn export'u da kaldırıldı.
+
+## 2a. Önceki iş — Gotik Müzik Haritası (TAM, 91b5cea COMMIT'Lİ, 088535f'e kadar push edildi)
 
 Kullanıcı onaylı mimari kararlar (English-first, 6 faz, Spotify deep link):
 

@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { keepAliveLogic } from "./lib/supabase/keep-alive";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -44,8 +45,30 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Vercel Cron keep-alive target: `GET /api/keep-alive` (see vercel.json).
+// The entry intercepts this path BEFORE the TanStack router: the deployed
+// pipeline routes /_serverFn* → /__server explicitly (static shell catches
+// /(.*)) — but direct calls to the Nitro `__server` function (Vercel
+// serverless invocation) always reach this handler, so a plain path check
+// works regardless of router/rewrites. Param check also kept for
+// /__server?action=keep-alive compatibility.
+function isKeepAliveRequest(request: Request): boolean {
+  try {
+    const url = new URL(request.url);
+    return (
+      url.pathname === "/api/keep-alive" || url.searchParams.get("action") === "keep-alive"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    if (isKeepAliveRequest(request)) {
+      const result = await keepAliveLogic();
+      return Response.json(result, { status: result.ok ? 200 : 503 });
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

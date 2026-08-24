@@ -14,6 +14,9 @@
  * 2. ROUTES — rewrite the generated `config.json` catch-all: navigations
  *    (`/(.*)`) serve the static shell, only server functions (`/_serverFn/*`
  *    — Gemini analyzer, entry insights, suggestions) reach `__server`.
+ *    Additionally, the route pattern covers the direct `/__server` path so
+ *    a keep-alive call targeting it hits the server bundle instead of the
+ *    static SPA shell.
  *
  * No-op when `.vercel/output` doesn't exist (local/Lovable cloudflare build).
  */
@@ -86,8 +89,11 @@ if (filesystemIndex === -1) {
 
 config.routes = [
   ...routes.slice(0, filesystemIndex + 1),
-  // Server functions (Gemini analyzer, entry insights, suggestions) → Node function
-  { src: `${SERVER_FN_BASE}(.*)`, dest: FUNCTION_DEST },
+  // Server functions (Gemini analyzer, entry insights, suggestions) → Node
+  // function. Direct /__server path (fallback cron target — primary is
+  // /api/keep-alive but either shape reaches the server entry's normalizer
+  // before the shell).
+  { src: `${SERVER_FN_BASE}(.*)|^${FUNCTION_DEST}$`, dest: FUNCTION_DEST },
   // Everything else is a client-side route → static SPA shell
   { src: "/(.*)", dest: "/index.html" },
 ];
