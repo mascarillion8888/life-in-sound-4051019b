@@ -29,6 +29,12 @@ export type Song = {
   artworkUrl: string | null;
   /** Release year (4-digit) when the provider supplies a release date. */
   releaseYear?: number | null;
+  /**
+   * 30-second audio preview URL when the provider supplies one (iTunes
+   * returns an AAC m4a preview for most tracks). Absent/null for manual
+   * entries that were never verified — never fabricated.
+   */
+  previewUrl?: string | null;
   /** ISRC when the recording carries one (iTunes does not supply one — always null for itunes). */
   isrc: string | null;
   /**

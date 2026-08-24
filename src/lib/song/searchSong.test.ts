@@ -29,6 +29,7 @@ const TRACK_FRAGILE = {
   collectionName: "...Nothing Like the Sun",
   artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/100x100bb.jpg",
   releaseDate: "1987-10-01T07:00:00Z",
+  previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
 };
 
 const TRACK_PAINKILLER = {
@@ -79,9 +80,18 @@ describe("itunes mapping: trackToSong", () => {
       album: "...Nothing Like the Sun",
       artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/100x100bb.jpg",
       releaseYear: 1987,
+      previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
       isrc: null,
       verified: true,
     });
+  });
+
+  it("maps the 30s preview URL only when the API supplies one", () => {
+    expect(trackToSong(TRACK_FRAGILE)?.previewUrl).toBe(
+      "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
+    );
+    const { previewUrl: _omitted, ...noPreview } = TRACK_FRAGILE;
+    expect(trackToSong(noPreview)?.previewUrl).toBeNull();
   });
 
   it("leaves album/artwork null when the API does not supply them (no invented data)", () => {

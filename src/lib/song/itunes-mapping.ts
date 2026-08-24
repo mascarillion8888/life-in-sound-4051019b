@@ -33,6 +33,7 @@ export type ITunesTrack = {
   collectionName?: unknown;
   artworkUrl100?: unknown;
   releaseDate?: unknown;
+  previewUrl?: unknown;
 };
 
 export type ITunesSearchResponse = {
@@ -72,7 +73,6 @@ function extractReleaseYear(value: unknown): number | null {
   const y = Number(m[1]);
   return Number.isInteger(y) && y > 0 ? y : null;
 }
-
 
 /** Lowercase, strip diacritics and punctuation, collapse whitespace. */
 function normalize(text: string): string {
@@ -189,6 +189,8 @@ export function trackToSong(track: ITunesTrack): Song | null {
     album: asString(track.collectionName),
     artworkUrl: asString(track.artworkUrl100),
     releaseYear: extractReleaseYear(track.releaseDate),
+    // 30s AAC preview straight from the API — null when iTunes has none.
+    previewUrl: asString(track.previewUrl),
     isrc: null,
     verified: true,
   };

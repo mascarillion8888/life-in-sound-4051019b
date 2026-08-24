@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 
+import type { PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import type { LifeFeedEntry } from "@/lib/life-feed";
+import type { Song } from "@/lib/song/types";
+
 import {
   buildTree,
   buildWaveformPoints,
   DEFAULT_POSTER_LABELS,
   fitFeedRows,
   nodeColors,
+  renderMap,
   seededRandom,
 } from "./poeticPoster";
+import { TR_LIFE_CARD_STRINGS } from "./lifeCards";
 
 describe("seededRandom", () => {
   it("is deterministic for the same seed", () => {
@@ -76,6 +82,145 @@ describe("fitFeedRows", () => {
   it("shows nothing when no budget is available", () => {
     expect(fitFeedRows(4, 0, 68)).toEqual({ shown: 0, hidden: 4 });
     expect(fitFeedRows(4, -200, 68)).toEqual({ shown: 0, hidden: 4 });
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* renderMap — flow-layout height fitting (recording stub context)            */
+/* -------------------------------------------------------------------------- */
+
+function stubCanvas(): HTMLCanvasElement {
+  const gradient = { addColorStop: () => {} };
+  const target: Record<string, unknown> = {};
+  const ctx = new Proxy(target, {
+    get(t, prop) {
+      if (prop === "measureText") {
+        return (text: unknown) => ({ width: String(text).length * 12 });
+      }
+      if (prop === "createRadialGradient" || prop === "createLinearGradient") {
+        return () => gradient;
+      }
+      if (typeof prop === "string" && prop in t) return t[prop];
+      return () => {};
+    },
+    set(t, prop, value) {
+      if (typeof prop === "string") t[prop] = value;
+      return true;
+    },
+  }) as unknown as CanvasRenderingContext2D;
+  return {
+    width: 0,
+    height: 0,
+    getContext: () => ctx,
+  } as unknown as HTMLCanvasElement;
+}
+
+// jsdom has no Path2D; the waveform path only needs the method surface.
+if (typeof globalThis.Path2D === "undefined") {
+  (globalThis as Record<string, unknown>).Path2D = class {
+    moveTo() {}
+    lineTo() {}
+    quadraticCurveTo() {}
+  };
+}
+
+function fakeSong(i: number): Song {
+  return {
+    provider: "manual",
+    providerId: `song-${i}`,
+    title: `Track ${i}`,
+    artist: `Artist ${i}`,
+    album: null,
+    artworkUrl: null,
+    isrc: null,
+  };
+}
+
+function fakeAnalysis(): PoeticAnalysis {
+  return {
+    manifesto: "A life measured in choruses and static.",
+    chapters: Array.from({ length: 6 }, (_, i) => ({
+      id: `chapter-${i}`,
+      title: `Phase ${i + 1}`,
+      ageRange: "Ages 9–12",
+      songIndexes: i === 2 || i === 4 ? [i + 1, i + 2] : [i + 1],
+      narrative: "A chapter of the map.",
+      mood: "wide-eyed",
+    })),
+    songInsights: Array.from({ length: 8 }, (_, i) => ({
+      index: i + 1,
+      title: `Track ${i + 1}`,
+      insight: "It stayed with you.",
+    })),
+    emotionalCurve: Array.from({ length: 8 }, (_, i) => ({
+      label: `T${i + 1}`,
+      intensity: 0.3 + (i % 4) * 0.2,
+    })),
+    coreDuality: { axis: "Steel / Rain", left: "Steel", right: "Rain", resolution: "Both." },
+    visual: {
+      themeId: "metal-gothic",
+      palette: { primary: "#a7b0c0", accent: "#b3122e", background: "#0b0b10", text: "#e8e6df" },
+      typography: "blackletter-display",
+      aura: ["iron", "cathedral", "thunder"],
+      artworkPrompt: "",
+    },
+    source: "deterministic",
+  };
+}
+
+function fakeFeed(count: number): LifeFeedEntry[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `feed-${i}`,
+    song: fakeSong(100 + i),
+    note: null,
+    insight: null,
+    addedAt: `2026-08-${String(i + 1).padStart(2, "0")}T00:00:00Z`,
+  }));
+}
+
+describe("renderMap", () => {
+  const songs = Array.from({ length: 8 }, (_, i) => fakeSong(i));
+
+  it("fits the whole flow layout (incl. the 8 life cards) into the canvas", () => {
+    const canvas = stubCanvas();
+    renderMap(canvas, fakeAnalysis(), songs, [], DEFAULT_POSTER_LABELS, []);
+    expect(Number.isFinite(canvas.height)).toBe(true);
+    // 8 cards in a 4×2 grid (~1.7k px) plus the map sections: the measured
+    // height must exceed the old fixed 3600 canvas, never clip it.
+    expect(canvas.height).toBeGreaterThan(3600);
+  });
+
+  it("grows the canvas when the Life Feed grows", () => {
+    const small = stubCanvas();
+    renderMap(small, fakeAnalysis(), songs, [], DEFAULT_POSTER_LABELS, []);
+    const big = stubCanvas();
+    renderMap(big, fakeAnalysis(), songs, fakeFeed(12), DEFAULT_POSTER_LABELS, []);
+    expect(big.height).toBeGreaterThan(small.height);
+  });
+
+  it("is deterministic (same input, same measured height)", () => {
+    const a = stubCanvas();
+    const b = stubCanvas();
+    renderMap(a, fakeAnalysis(), songs, fakeFeed(3), DEFAULT_POSTER_LABELS, []);
+    renderMap(b, fakeAnalysis(), songs, fakeFeed(3), DEFAULT_POSTER_LABELS, []);
+    expect(a.height).toBe(b.height);
+  });
+
+  it("accepts localized life-card copy without changing the layout contract", () => {
+    const canvas = stubCanvas();
+    renderMap(
+      canvas,
+      fakeAnalysis(),
+      songs,
+      [],
+      {
+        ...DEFAULT_POSTER_LABELS,
+        lifeCards: "HAYAT KARTLARI",
+        lifeCardStrings: TR_LIFE_CARD_STRINGS,
+      },
+      [],
+    );
+    expect(canvas.height).toBeGreaterThan(3600);
   });
 });
 

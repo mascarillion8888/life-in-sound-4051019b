@@ -39,6 +39,7 @@ type SpotifyTrack = {
   name?: unknown;
   artists?: unknown;
   album?: unknown;
+  preview_url?: unknown;
 };
 type SpotifySearchResponse = { tracks?: { items?: unknown } };
 
@@ -147,6 +148,8 @@ function trackToSong(track: SpotifyTrack): Song | null {
     album: asString(album.name),
     artworkUrl: firstImageUrl(album.images),
     releaseYear: extractReleaseYear(album.release_date),
+    // 30s MP3 preview straight from the API — null when Spotify has none.
+    previewUrl: asString(track.preview_url),
     isrc: null,
     verified: true,
   };

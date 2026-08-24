@@ -31,6 +31,12 @@ export type Dictionary = {
     addToRitual: string;
     recognizedAria: string;
   };
+  quizCard: {
+    intensityLabel: string;
+    playPreviewAria: string;
+    mutePreviewAria: string;
+    previewUnavailableAria: string;
+  };
   results: {
     yourSoundmap: string;
     heroAccent: string;
@@ -82,6 +88,7 @@ export type Dictionary = {
       treeBranches: string[];
       journeyNodes: string[];
       moreOnMap: string;
+      lifeCards: string;
     };
   };
 };
@@ -107,6 +114,12 @@ const en: Dictionary = {
     suggestionsAria: "Song suggestions",
     addToRitual: "Add to Ritual",
     recognizedAria: "recognized",
+  },
+  quizCard: {
+    intensityLabel: "Intensity",
+    playPreviewAria: "Play preview",
+    mutePreviewAria: "Mute preview",
+    previewUnavailableAria: "Preview unavailable",
   },
   results: {
     yourSoundmap: "Your SoundMap",
@@ -179,6 +192,7 @@ const en: Dictionary = {
         "Depth",
       ],
       moreOnMap: "more on your living map",
+      lifeCards: "LIFE CARDS",
     },
   },
 };
@@ -203,6 +217,12 @@ const tr: Dictionary = {
     suggestionsAria: "Şarkı önerileri",
     addToRitual: "Ritüele Ekle",
     recognizedAria: "tanındı",
+  },
+  quizCard: {
+    intensityLabel: "Yoğunluk",
+    playPreviewAria: "Önizlemeyi çal",
+    mutePreviewAria: "Önizlemeyi sustur",
+    previewUnavailableAria: "Önizleme yok",
   },
   results: {
     yourSoundmap: "SoundMap'in",
@@ -275,6 +295,7 @@ const tr: Dictionary = {
         "Derinlik",
       ],
       moreOnMap: "daha fazlası yaşayan haritanızda",
+      lifeCards: "HAYAT KARTLARI",
     },
   },
 };
@@ -299,6 +320,12 @@ const es: Dictionary = {
     suggestionsAria: "Sugerencias de canciones",
     addToRitual: "Añadir al ritual",
     recognizedAria: "reconocida",
+  },
+  quizCard: {
+    intensityLabel: "Intensity",
+    playPreviewAria: "Play preview",
+    mutePreviewAria: "Mute preview",
+    previewUnavailableAria: "Preview unavailable",
   },
   results: {
     yourSoundmap: "Tu SoundMap",
@@ -371,6 +398,7 @@ const es: Dictionary = {
         "Profundidad",
       ],
       moreOnMap: "más en tu mapa vivo",
+      lifeCards: "LIFE CARDS",
     },
   },
 };
@@ -395,6 +423,12 @@ const de: Dictionary = {
     suggestionsAria: "Song-Vorschläge",
     addToRitual: "Zum Ritual hinzufügen",
     recognizedAria: "erkannt",
+  },
+  quizCard: {
+    intensityLabel: "Intensity",
+    playPreviewAria: "Play preview",
+    mutePreviewAria: "Mute preview",
+    previewUnavailableAria: "Preview unavailable",
   },
   results: {
     yourSoundmap: "Deine SoundMap",
@@ -467,6 +501,7 @@ const de: Dictionary = {
         "Tiefe",
       ],
       moreOnMap: "mehr auf deiner lebendigen Karte",
+      lifeCards: "LIFE CARDS",
     },
   },
 };
@@ -491,6 +526,12 @@ const fr: Dictionary = {
     suggestionsAria: "Suggestions de chansons",
     addToRitual: "Ajouter au rituel",
     recognizedAria: "reconnue",
+  },
+  quizCard: {
+    intensityLabel: "Intensity",
+    playPreviewAria: "Play preview",
+    mutePreviewAria: "Mute preview",
+    previewUnavailableAria: "Preview unavailable",
   },
   results: {
     yourSoundmap: "Ta SoundMap",
@@ -564,6 +605,7 @@ const fr: Dictionary = {
         "Profondeur",
       ],
       moreOnMap: "de plus sur votre carte vivante",
+      lifeCards: "LIFE CARDS",
     },
   },
 };

@@ -1,8 +1,8 @@
 /**
  * High-resolution PNG export for the Dynamic Music Map — the gothic map.
  *
- * Canvas-only renderer (no extra dependency, no DOM rasterization) at
- * 2400x3600. The layout mirrors the reference "MUSIC MAP — SOUNDTRACK OF A
+ * Canvas-only renderer (no extra dependency, no DOM rasterization), 2400
+ * wide; the height is measured from the flow layout (minimum 3600). The layout mirrors the reference "MUSIC MAP — SOUNDTRACK OF A
  * LIFE" architecture: a central Tree of Life whose four main branches carry
  * the chapter portals (gothic arches framing album artwork), a multi-colored
  * emotional journey line with named nodes, a multi-column life playlist and
@@ -17,10 +17,21 @@ import {
 } from "@/lib/llm/poetic-analyzer";
 import type { Song } from "@/lib/song/types";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
+import { drawHarmonizedArtwork } from "@/lib/soundmap/artworkHarmonize";
 import { EXTRAS_BY_THEME } from "@/lib/soundmap/dynamicThemes";
+import {
+  buildLifeCards,
+  LIFE_CARD_TONE_COLORS,
+  type LifeCard,
+  type LifeCardStrings,
+} from "@/lib/soundmap/lifeCards";
 
 const W = 2400;
 const H = 3600;
+/** Provisional canvas height for the layout measuring pass (resized after). */
+const PROVISIONAL_H = 24000;
+/** Space reserved below the content bottom for the footer block. */
+const FOOTER_RESERVE = 420;
 const MARGIN = 170;
 const CONTENT_W = W - MARGIN * 2;
 
@@ -51,6 +62,10 @@ export type PosterLabels = {
   treeBranches: string[];
   journeyNodes: string[];
   moreOnMap: string;
+  /** Section title above the 8 MTG-style life cards grid. */
+  lifeCards: string;
+  /** Full card copy (era titles, type line, narratives) for the card grid. */
+  lifeCardStrings?: LifeCardStrings;
 };
 
 export const DEFAULT_POSTER_LABELS: PosterLabels = {
@@ -61,6 +76,7 @@ export const DEFAULT_POSTER_LABELS: PosterLabels = {
   treeBranches: [...TREE_BRANCH_LABELS],
   journeyNodes: [...JOURNEY_NODE_LABELS],
   moreOnMap: "more on your living map",
+  lifeCards: "LIFE CARDS",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -296,6 +312,8 @@ function drawTexture(
   ctx: CanvasRenderingContext2D,
   extras: PosterExtras,
   palette: VisualSpec["palette"],
+  /** Canvas height — shadows the module constant so textures cover it all. */
+  H: number,
 ): void {
   const rng = seededRandom(0x51f2a7);
   ctx.save();
@@ -403,6 +421,8 @@ function drawFrame(
   ctx: CanvasRenderingContext2D,
   extras: PosterExtras,
   palette: VisualSpec["palette"],
+  /** Canvas height — shadows the module constant so the frame wraps it all. */
+  H: number,
 ): void {
   const x = 96;
   const y = 96;
@@ -591,11 +611,116 @@ function loadArtwork(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
+/* MTG-style life card (one journey era)                                      */
+/* -------------------------------------------------------------------------- */
+
+function drawLifeCard(
+  ctx: CanvasRenderingContext2D,
+  palette: VisualSpec["palette"],
+  display: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  card: LifeCard,
+  song: Song | undefined,
+  image: HTMLImageElement | null,
+): void {
+  const gem = LIFE_CARD_TONE_COLORS[card.tone];
+  const pad = 18;
+
+  // Frame.
+  ctx.strokeStyle = hexToRgba(gem, 0.55);
+  ctx.fillStyle = "rgba(14, 12, 9, 0.92)";
+  ctx.lineWidth = 3;
+  roundRectPath(ctx, x, y, w, h, 26);
+  ctx.fill();
+  ctx.stroke();
+
+  // Title bar: era title left, age badge right.
+  ctx.fillStyle = "rgba(28, 24, 18, 0.95)";
+  roundRectPath(ctx, x + pad, y + pad, w - pad * 2, 56, 12);
+  ctx.fill();
+  ctx.textAlign = "left";
+  ctx.font = `700 26px ${display}`;
+  ctx.fillStyle = "#e8dfc8";
+  ctx.fillText(fitLine(ctx, card.eraTitle, w - pad * 2 - 150), x + pad + 16, y + pad + 37);
+  ctx.textAlign = "right";
+  ctx.font = "600 20px Inter, sans-serif";
+  ctx.fillStyle = gem;
+  ctx.fillText(card.ageRange.toUpperCase(), x + w - pad - 14, y + pad + 36);
+
+  // Artwork window: harmonized cover, or an empty dark frame (never fake).
+  const ax = x + pad;
+  const ay = y + pad + 70;
+  const aw = w - pad * 2;
+  ctx.save();
+  roundRectPath(ctx, ax, ay, aw, aw, 16);
+  ctx.clip();
+  if (image) {
+    drawHarmonizedArtwork(ctx, image, ax, ay, aw, aw, card.songIndex * 7919);
+  } else {
+    ctx.fillStyle = "rgba(10, 9, 7, 1)";
+    ctx.fillRect(ax, ay, aw, aw);
+    ctx.strokeStyle = hexToRgba(gem, 0.5);
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ax + aw / 2, ay + aw / 2, aw * 0.2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(ax + aw / 2, ay + aw / 2, aw * 0.08, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.strokeStyle = "rgba(42, 36, 24, 1)";
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, ax, ay, aw, aw, 16);
+  ctx.stroke();
+
+  // Type line + tone gem.
+  let cy = ay + aw + 34;
+  ctx.textAlign = "left";
+  ctx.font = `italic 500 21px ${display}`;
+  ctx.fillStyle = "#c9b995";
+  ctx.fillText(card.typeLine, x + pad + 2, cy);
+  ctx.fillStyle = gem;
+  ctx.beginPath();
+  ctx.arc(x + w - pad - 10, cy - 7, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Stats row.
+  cy += 36;
+  ctx.font = "600 19px Inter, sans-serif";
+  ctx.fillStyle = "#a89a7c";
+  ctx.fillText(card.tag.toUpperCase(), x + pad + 2, cy);
+  ctx.textAlign = "right";
+  ctx.fillText(`INT ${Math.round(card.intensity * 100)}`, x + w - pad - 2, cy);
+
+  // Gothic narrative (max 3 lines).
+  cy += 32;
+  ctx.textAlign = "left";
+  ctx.font = `italic 400 20px ${display}`;
+  ctx.fillStyle = "#d8ccb0";
+  for (const line of wrapText(ctx, card.narrative, w - pad * 2 - 4).slice(0, 3)) {
+    ctx.fillText(line, x + pad + 2, cy);
+    cy += 28;
+  }
+
+  // Song credit pinned to the card bottom — only when a real song exists.
+  if (song) {
+    ctx.font = "500 18px Inter, sans-serif";
+    ctx.fillStyle = "#8f8168";
+    const credit = song.artist ? `${song.title} — ${song.artist}` : song.title;
+    ctx.fillText(fitLine(ctx, credit, w - pad * 2 - 4), x + pad + 2, y + h - 22);
+  }
+  ctx.textAlign = "center";
+}
+
 /* -------------------------------------------------------------------------- */
 /* The gothic map itself                                                      */
 /* -------------------------------------------------------------------------- */
 
-function renderMap(
+export function renderMap(
   canvas: HTMLCanvasElement,
   analysis: PoeticAnalysis,
   songs: Song[],
@@ -604,10 +729,29 @@ function renderMap(
   artwork: (HTMLImageElement | null)[],
 ): void {
   canvas.width = W;
-  canvas.height = H;
+  // Measuring pass on a very tall canvas: the flow layout reports its real
+  // content bottom, then the canvas is resized to fit exactly — nothing is
+  // ever clipped and the footer always sits below the last panel.
+  canvas.height = PROVISIONAL_H;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+  const contentBottom = drawMap(ctx, PROVISIONAL_H, analysis, songs, feedEntries, labels, artwork);
+  canvas.height = Math.max(H, Math.ceil(contentBottom) + FOOTER_RESERVE);
+  drawMap(ctx, canvas.height, analysis, songs, feedEntries, labels, artwork);
+}
 
+/** Draws the whole map; returns the y where the last panel ends. The canvas
+ * height parameter shadows the module constant so every H-anchored position
+ * (bottom glow, feed budget, footer) follows the measured height. */
+function drawMap(
+  ctx: CanvasRenderingContext2D,
+  H: number,
+  analysis: PoeticAnalysis,
+  songs: Song[],
+  feedEntries: LifeFeedEntry[],
+  labels: PosterLabels,
+  artwork: (HTMLImageElement | null)[],
+): number {
   const { palette } = analysis.visual;
   const extras = posterExtras(analysis.visual);
   const display = displayFont(analysis.visual);
@@ -631,8 +775,8 @@ function renderMap(
   glowBottom.addColorStop(1, hexToRgba(palette.background, 0));
   ctx.fillStyle = glowBottom;
   ctx.fillRect(0, 0, W, H);
-  drawTexture(ctx, extras, palette);
-  drawFrame(ctx, extras, palette);
+  drawTexture(ctx, extras, palette, H);
+  drawFrame(ctx, extras, palette, H);
 
   // 2. Header: map title + subtitle + manifesto.
   ctx.textAlign = "center";
@@ -717,6 +861,37 @@ function renderMap(
     y = portalZoneY + rows * (ph + 150) + 20;
   } else {
     y = treeBase + 130;
+  }
+
+  // 4b. Life cards — 8 MTG-style frames in a 4×2 grid, one per journey song.
+  // Harmonized artwork inside; a missing song stays an empty dark frame.
+  const lifeCards = buildLifeCards({ t: labels.lifeCardStrings });
+  {
+    ctx.font = "600 26px Inter, sans-serif";
+    ctx.fillStyle = hexToRgba(palette.text, 0.55);
+    tracked(ctx, labels.lifeCards, W / 2, y + 10);
+    y += 80;
+    const cardCols = 4;
+    const cardGap = 44;
+    const cardW = (CONTENT_W - cardGap * (cardCols - 1)) / cardCols;
+    const cardH = 770;
+    lifeCards.forEach((card, i) => {
+      const col = i % cardCols;
+      const row = Math.floor(i / cardCols);
+      drawLifeCard(
+        ctx,
+        palette,
+        display,
+        MARGIN + col * (cardW + cardGap),
+        y + row * (cardH + cardGap),
+        cardW,
+        cardH,
+        card,
+        songAt(card.songIndex),
+        artwork[card.songIndex - 1] ?? null,
+      );
+    });
+    y += Math.ceil(lifeCards.length / cardCols) * (cardH + cardGap) + 30;
   }
 
   // 5. Emotional journey — multi-colored signal line with named nodes.
@@ -910,6 +1085,8 @@ function renderMap(
   ctx.font = "600 28px Inter, sans-serif";
   ctx.fillStyle = hexToRgba(palette.accent, 0.8);
   tracked(ctx, "Life in a Sound", W / 2, H - 100);
+
+  return y + 300;
 }
 
 /**

@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import type { PoeticAnalysis, VisualSpec } from "@/lib/llm/poetic-analyzer";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { buildLifeCards, lifeCardStringsFor } from "@/lib/soundmap/lifeCards";
 import { exportPoeticPoster } from "@/lib/soundmap/poeticPoster";
 import { spotifySearchUrl } from "@/lib/song/listen";
 import type { Song } from "@/lib/song/types";
+
+import { QuizCard } from "./QuizCard";
 
 /**
  * PosterCanvas — the exportable Dynamic Music Map.
@@ -101,7 +104,8 @@ export function PosterCanvas({
    */
   feedEntries?: LifeFeedEntry[];
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const lifeCards = buildLifeCards({ locale: language });
   const { palette, aura, typography } = analysis.visual;
   const extras = posterExtras(analysis.visual);
   const auraGlowColor = extras.auraGlow;
@@ -307,6 +311,28 @@ export function PosterCanvas({
                 {chapter.narrative}
               </p>
             </article>
+          ))}
+        </div>
+      </div>
+
+      {/* Life Cards: 8 MTG-style era frames (4×2) with harmonized artwork.
+          The first card attempts a 30s preview autoplay; the singleton hook
+          guarantees only one card ever sounds at a time. */}
+      <div className="mt-10 px-6 sm:px-12">
+        <h3
+          className="text-xs font-semibold uppercase tracking-[0.25em]"
+          style={{ color: `${palette.text}99` }}
+        >
+          {t.poster.canvas.lifeCards}
+        </h3>
+        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {lifeCards.map((card) => (
+            <QuizCard
+              key={card.songIndex}
+              card={card}
+              song={songs[card.songIndex - 1] ?? null}
+              autoPlayPreview={card.index === 0}
+            />
           ))}
         </div>
       </div>
@@ -559,7 +585,12 @@ export function PosterCanvas({
         </p>
 
         <Button
-          onClick={() => exportPoeticPoster(analysis, songs, feedEntries, t.poster.canvas)}
+          onClick={() =>
+            exportPoeticPoster(analysis, songs, feedEntries, {
+              ...t.poster.canvas,
+              lifeCardStrings: lifeCardStringsFor(language),
+            })
+          }
           className="h-12 rounded-full border px-8 text-sm font-semibold"
           style={{
             background: palette.primary,

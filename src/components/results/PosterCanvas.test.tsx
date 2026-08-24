@@ -85,12 +85,26 @@ describe("PosterCanvas", () => {
     expect(screen.getAllByText("THRESHOLD PORTALS").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("PURE ENERGY & JOY").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("IDENTITY & SYNTHESIS").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Ages 9–12")).toBeInTheDocument();
-    expect(screen.getByText("Ages 12–18")).toBeInTheDocument();
-    expect(screen.getByText("Ages 18–24")).toBeInTheDocument();
-    expect(screen.getByText("Ages 24–30")).toBeInTheDocument();
-    expect(screen.getByText("Ages 30–35")).toBeInTheDocument();
+    // These age ranges also appear as badges on the MTG life cards below.
+    expect(screen.getAllByText("Ages 9–12").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 12–18").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 18–24").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 24–30").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 30–35").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Ages 35+")).toBeInTheDocument();
+  });
+
+  it("renders the 8 MTG-style life cards in a 4×2 grid section", () => {
+    const analysis = makeAnalysis();
+    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+
+    expect(screen.getByText("LIFE CARDS")).toBeInTheDocument();
+    const cards = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => screen.getByTestId(`quiz-card-${i + 1}`));
+    expect(cards).toHaveLength(8);
+    // Each card carries its era frame: title, type line, stats, narrative.
+    expect(screen.getByText("FIRST SPARK")).toBeInTheDocument();
+    expect(screen.getAllByText("ACCEPTANCE").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Legendary Life Era")).toHaveLength(8);
   });
 
   it("makes every album art clickable — a Spotify search deep link", () => {
