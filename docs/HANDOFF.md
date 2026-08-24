@@ -10,9 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      64f0dc8 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
-           commit/push YAPILMADI)
+HEAD:      ebbeb5f — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (`64f0dc8..ebbeb5f main -> main`; `git status` temiz).
 Testler:   319/319 geçti (29 dosya; 315'ten +4 reset-session)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
@@ -40,7 +39,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Auto-Reset / Clean Restart (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — Auto-Reset / Clean Restart (TAM, ebbeb5f, push'lu)
 
 Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
 temiz yeniden başlangıç. Uygulama:
@@ -143,9 +142,8 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (onaysız commit/push yok). Onay gelirse:
-  `feat: auto-reset / clean restart on landing entry + always-on Start Over`
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, ebbeb5f = origin/main).
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
