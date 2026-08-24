@@ -10,10 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      4cb9210 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (önceki oturumun decoupling işi
-           + bu oturumun adaptive-scene işi birlikte; kullanıcı onayı
-           bekleniyor; commit/push YAPILMADI).
+HEAD:      28d7a9b — decoupling + adaptive-scene işi COMMIT'LENDİ ve PUSH
+           TAMAM (`4cb9210..28d7a9b main -> main`; `git status` temiz).
 Testler:   341/341 geçti (31 dosya; 334'ten +7 scene/prompt/collision testi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
@@ -41,7 +39,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, 28d7a9b, push'lu)
 
 Önceki oturumun decoupling işinin üzerine: tek-statik-gotik prompt yerine
 4 sahne ailesi + sinyal önceliği. Değişiklikler sadece
@@ -69,7 +67,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
   akışıyla çalışıyor (sandbox'ta key yok); preview toggle aktif.
 - 341/341, tsc 0, lint 0, build 0.
 
-## 2a. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, COMMIT BEKLİYOR — bu oturumla birlikte)
+## 2a. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, 28d7a9b ile birlikte push'lu)
 
 Kullanıcı görevi: iTunes/Spotify SADECE metadata + 30s preview; kart yüzündeki
 görsel Gemini/Imagen ile ÜRETİLEN gotik yağlıboya sahne. Provider kapağı artık
@@ -246,9 +244,8 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (onaysız commit/push yok). Onay gelirse:
-  `feat: user & genre-adaptive AI artwork — decouple audio/visual, dynamic scene prompts`
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, 28d7a9b = origin/main).
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
