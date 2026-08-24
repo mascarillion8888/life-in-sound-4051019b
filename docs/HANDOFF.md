@@ -148,10 +148,8 @@ serbest-metin UX'i, eski MusicBrainz dialog'u, görsel tema kataloğu,
 ## 3. Olası sonraki adımlar
 
 - ~~Bu işi push etme~~ — PUSH TAMAM (kullanıcı isteğiyle, e0b15dd = origin/main).
-- **iTunes Search API ile gerçek şarkı doğrulaması** — hâlâ açık; ayrı
-  onay turu bekliyor. Kurallar: eski MusicBrainz dialog'u GERİ GELMEZ,
-  serbest-metin birincil UX, LLM yok, sahte/mock şarkı yok,
-  `searchSong.server.ts` soyutlaması korunur, testlerde canlı ağ yok.
+- ~~iTunes Search API ile gerçek şarkı doğrulaması~~ — TAMAM; bu oturumda
+  hi-res artwork ile kapatıldı (bkz. bölüm 2). Yeni commit push bekliyor.
 - es/de/fr sözlüklerinde İngilizce kalan `quizCard` + `lifeCards`
   string'lerinin gerçek çevirileri (kullanıcı isterse).
 - `feed/` bileşenlerini sözlüğe bağla (şu an Türkçe hard-coded).
