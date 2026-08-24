@@ -11,8 +11,8 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-           iTunes hi-res artwork işi bu oturumda commit'lendi;
-           PUSH DURUMU `git status` ile doğrulanmalı.
+           iTunes hi-res artwork işi commit'lendi ve PUSH TAMAM
+           (`61adddf..2b3c8db main -> main`; `git status` temiz).
 Testler:   292/292 geçti (24 dosya; 290'dan +2: hi-res artwork
            upgrade testi + non-standard URL passthrough testi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
@@ -149,7 +149,7 @@ serbest-metin UX'i, eski MusicBrainz dialog'u, görsel tema kataloğu,
 
 - ~~Bu işi push etme~~ — PUSH TAMAM (kullanıcı isteğiyle, e0b15dd = origin/main).
 - ~~iTunes Search API ile gerçek şarkı doğrulaması~~ — TAMAM; bu oturumda
-  hi-res artwork ile kapatıldı (bkz. bölüm 2). Yeni commit push bekliyor.
+  hi-res artwork ile kapatıldı (bkz. bölüm 2); push TAMAM.
 - es/de/fr sözlüklerinde İngilizce kalan `quizCard` + `lifeCards`
   string'lerinin gerçek çevirileri (kullanıcı isterse).
 - `feed/` bileşenlerini sözlüğe bağla (şu an Türkçe hard-coded).
