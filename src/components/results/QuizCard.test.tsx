@@ -48,6 +48,22 @@ describe("QuizCard", () => {
     expect(img.style.filter).toContain("sepia");
   });
 
+  it("adapts the artwork scene to the song's era and shows the era badge", () => {
+    const { rerender } = render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("cassette-desk");
+    expect(screen.getByText("'80s")).toBeTruthy();
+
+    rerender(<QuizCard card={cards[0]} song={song({ releaseYear: 1974 })} />);
+    expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("vinyl-sleeve");
+    expect(screen.getByText("'70s")).toBeTruthy();
+
+    // No release year → mount falls back to the card's journey position,
+    // and no era badge is shown.
+    rerender(<QuizCard card={cards[0]} song={song()} />);
+    expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("vinyl-sleeve");
+    expect(screen.queryByText("'80s")).toBeNull();
+  });
+
   it("renders an empty dark frame — no fabricated artwork — when the song is missing", () => {
     render(<QuizCard card={cards[1]} song={null} />);
     expect(screen.queryByRole("img")).toBeNull();

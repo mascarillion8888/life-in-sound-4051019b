@@ -21,8 +21,10 @@ function itunesSong(title: string, artist: string): Song {
 describe("LifeFeedInput", () => {
   it("renders the memory-note prompt and a disabled add button initially", () => {
     render(<LifeFeedInput onAdd={() => {}} />);
-    expect(screen.getByPlaceholderText("Bugün seni hangi şarkı anlatıyor?")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /haritaya ekle/i })).toBeDisabled();
+    expect(
+      screen.getByPlaceholderText("Which song is speaking for you today?"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add to the map/i })).toBeDisabled();
   });
 
   it("adds a manual song from free text, with the note", async () => {
@@ -30,9 +32,9 @@ describe("LifeFeedInput", () => {
     const user = userEvent.setup();
     render(<LifeFeedInput onAdd={onAdd} debounceMs={0} />);
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "Painkiller");
-    await user.type(screen.getByLabelText(/bellek notu/i), "gece vardiyası");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Search songs"), "Painkiller");
+    await user.type(screen.getByLabelText(/memory note/i), "gece vardiyası");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     expect(onAdd).toHaveBeenCalledTimes(1);
     const { song, note } = onAdd.mock.calls[0][0];
@@ -41,8 +43,8 @@ describe("LifeFeedInput", () => {
     expect(note).toBe("gece vardiyası");
 
     // Fields reset after add.
-    expect(screen.getByLabelText("Şarkı ara")).toHaveValue("");
-    expect(screen.getByLabelText(/bellek notu/i)).toHaveValue("");
+    expect(screen.getByLabelText("Search songs")).toHaveValue("");
+    expect(screen.getByLabelText(/memory note/i)).toHaveValue("");
   });
 
   it("passes null note when the textarea is empty", async () => {
@@ -50,8 +52,8 @@ describe("LifeFeedInput", () => {
     const user = userEvent.setup();
     render(<LifeFeedInput onAdd={onAdd} debounceMs={0} />);
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "Duster");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Search songs"), "Duster");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     expect(onAdd.mock.calls[0][0].note).toBeNull();
   });
@@ -62,13 +64,13 @@ describe("LifeFeedInput", () => {
     const user = userEvent.setup();
     render(<LifeFeedInput onAdd={onAdd} suggester={suggester} debounceMs={0} />);
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "frag");
+    await user.type(screen.getByLabelText("Search songs"), "frag");
     await waitFor(() => expect(screen.getByText("Fragile")).toBeInTheDocument());
     await user.click(screen.getByText("Fragile"));
 
     // Selected chip shows; submitting uses the verified song.
-    expect(screen.getByLabelText("Seçimi kaldır")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    expect(screen.getByLabelText("Remove selection")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     const { song } = onAdd.mock.calls[0][0];
     expect(song.provider).toBe("itunes");
@@ -82,13 +84,13 @@ describe("LifeFeedInput", () => {
     const user = userEvent.setup();
     render(<LifeFeedInput onAdd={onAdd} suggester={suggester} debounceMs={0} />);
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "frag");
+    await user.type(screen.getByLabelText("Search songs"), "frag");
     await waitFor(() => expect(screen.getByText("Fragile")).toBeInTheDocument());
     await user.click(screen.getByText("Fragile"));
-    await user.click(screen.getByLabelText("Seçimi kaldır"));
+    await user.click(screen.getByLabelText("Remove selection"));
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "manual tune");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Search songs"), "manual tune");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     const { song } = onAdd.mock.calls[0][0];
     expect(song.provider).toBe("manual");
@@ -97,6 +99,6 @@ describe("LifeFeedInput", () => {
 
   it("disables the button while pending", () => {
     render(<LifeFeedInput onAdd={() => {}} pending />);
-    expect(screen.getByRole("button", { name: /ekleniyor/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /adding/i })).toBeDisabled();
   });
 });

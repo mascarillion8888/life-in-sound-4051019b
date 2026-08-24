@@ -104,8 +104,9 @@ export function PosterCanvas({
    */
   feedEntries?: LifeFeedEntry[];
 }) {
-  const { t, language } = useLanguage();
-  const lifeCards = buildLifeCards({ locale: language });
+  const { t } = useLanguage();
+  // Card copy is English-only — the master poster is a full-English layout.
+  const lifeCards = buildLifeCards({ locale: "en" });
   const { palette, aura, typography } = analysis.visual;
   const extras = posterExtras(analysis.visual);
   const auraGlowColor = extras.auraGlow;
@@ -588,7 +589,7 @@ export function PosterCanvas({
           onClick={() =>
             exportPoeticPoster(analysis, songs, feedEntries, {
               ...t.poster.canvas,
-              lifeCardStrings: lifeCardStringsFor(language),
+              lifeCardStrings: lifeCardStringsFor("en"),
             })
           }
           className="h-12 rounded-full border px-8 text-sm font-semibold"

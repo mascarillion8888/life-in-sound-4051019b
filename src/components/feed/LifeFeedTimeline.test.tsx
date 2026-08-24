@@ -90,13 +90,13 @@ describe("LifeFeedTimeline", () => {
     );
 
     await user.click(screen.getByLabelText("Edit note for Editable"));
-    const editor = screen.getByLabelText("Notu düzenle");
+    const editor = screen.getByLabelText("Edit note");
     await user.clear(editor);
     await user.type(editor, "new words");
-    await user.click(screen.getByRole("button", { name: /kaydet/i }));
+    await user.click(screen.getByRole("button", { name: /save/i }));
 
     expect(onEditNote).toHaveBeenCalledWith("e-Editable", "new words");
-    expect(screen.queryByLabelText("Notu düzenle")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Edit note")).not.toBeInTheDocument();
   });
 
   it("edit note with empty text passes null (clears the note)", async () => {
@@ -111,9 +111,9 @@ describe("LifeFeedTimeline", () => {
     );
 
     await user.click(screen.getByLabelText("Edit note for Clearable"));
-    const editor = screen.getByLabelText("Notu düzenle");
+    const editor = screen.getByLabelText("Edit note");
     await user.clear(editor);
-    await user.click(screen.getByRole("button", { name: /kaydet/i }));
+    await user.click(screen.getByRole("button", { name: /save/i }));
 
     expect(onEditNote).toHaveBeenCalledWith("e-Clearable", null);
   });

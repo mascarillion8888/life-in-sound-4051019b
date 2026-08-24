@@ -5,10 +5,12 @@ import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
+import { EraCardReveal } from "@/components/journey/EraCardReveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { questions } from "@/lib/questions";
 import { clearJourney, loadJourney, saveJourney } from "@/lib/journey-storage";
+import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
 import {
   clearRemoteJourney,
@@ -73,6 +75,12 @@ function JourneyPage() {
   const [draft, setDraft] = useState("");
   const [restored, setRestored] = useState(false);
   const [completed, setCompleted] = useState(false);
+  // Step-by-step era flow: after a song is committed for the current
+  // question, the era card is revealed (artwork + autoplay preview) before
+  // advancing. Holds the revealed question id, null during the prompt phase.
+  const [reveal, setReveal] = useState<number | null>(null);
+  // English-only card copy — the era card flow is a full-English experience.
+  const lifeCards = buildLifeCards({ locale: "en" });
   // Per-question background verification (iTunes), keyed by the exact text it
   // was run for. Enrichment only — it never blocks, rewrites, or replaces the
   // user's typed text, and no button ever waits on it.
@@ -258,6 +266,7 @@ function JourneyPage() {
     setDraft("");
     setVerifications({});
     setSuggestions({});
+    setReveal(null);
     setCurrent(1);
   };
 
@@ -291,93 +300,112 @@ function JourneyPage() {
         </div>
 
         <div className="mt-8 w-full max-w-2xl md:mt-12">
-          <QuestionCard
-            key={question.id}
-            number={current}
-            title={question.title}
-            description={question.description}
-            answer={answers[question.id]}
-            selected={songs[question.id] ?? null}
-            verified={verified}
-            suggestions={suggestions[question.id]?.songs}
-            onSelectSuggestion={(song) => {
-              setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
-              setSongs((prev) => ({ ...prev, [question.id]: song }));
-              setDraft("");
-            }}
-            draft={draft}
-            onDraftChange={handleDraftChange}
-            onChoose={(song) => {
-              // answers keeps the raw typed text; the structured song is
-              // enriched only when a verification for this exact text has
-              // already resolved — committing never waits on it.
-              setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
-              setSongs((prev) => ({
-                ...prev,
-                [question.id]: withVerifiedMatch(question.id, song),
-              }));
-            }}
-          />
-        </div>
-
-        <div className="mt-8 flex w-full max-w-2xl md:mt-12 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="outline"
-            disabled={current === 1}
-            onClick={() => setCurrent((c) => Math.max(1, c - 1))}
-            className="h-12 w-full rounded-full px-8 text-base font-medium sm:w-auto"
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Previous
-          </Button>
-          <Button
-            onClick={() => {
-              if (!canAdvance) {
-                setShowHint(true);
-                return;
-              }
-              // Commit a pending draft for the current question before moving on
-              // (so typing + Next proceeds in one step, no separate "Onayla" needed).
-              let nextAnswers = answers;
-              if (!isAnswered && hasPendingDraft) {
-                const trimmed = draft.trim();
-                nextAnswers = { ...answers, [question.id]: trimmed };
-                setAnswers(nextAnswers);
+          {reveal === question.id ? (
+            <EraCardReveal
+              card={lifeCards[current - 1]}
+              song={songs[question.id] ?? null}
+              isLast={isLast}
+              onContinue={() => {
+                // Unmounting the reveal fades out the preview (audio
+                // singleton cleanup), then the journey advances — or, after
+                // the eighth era, the Master Poster opens.
+                setReveal(null);
+                if (isLast) {
+                  // Journey finished — keep the answers persisted so /results
+                  // can reload them on a direct visit / F5 (history state is
+                  // lost on refresh). The user can still wipe progress via
+                  // "Start New Journey". We only stop further auto-save by
+                  // marking the local component as completed.
+                  setCompleted(true);
+                  navigate({ to: "/results", state: { answers } as never });
+                } else {
+                  setCurrent((c) => Math.min(total, c + 1));
+                }
+              }}
+            />
+          ) : (
+            <QuestionCard
+              key={question.id}
+              number={current}
+              title={question.title}
+              description={question.description}
+              answer={answers[question.id]}
+              selected={songs[question.id] ?? null}
+              verified={verified}
+              suggestions={suggestions[question.id]?.songs}
+              onSelectSuggestion={(song) => {
+                setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
+                setSongs((prev) => ({ ...prev, [question.id]: song }));
+                setDraft("");
+                setReveal(question.id);
+              }}
+              draft={draft}
+              onDraftChange={handleDraftChange}
+              onChoose={(song) => {
+                // answers keeps the raw typed text; the structured song is
+                // enriched only when a verification for this exact text has
+                // already resolved — committing never waits on it.
+                setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
                 setSongs((prev) => ({
                   ...prev,
-                  [question.id]: withVerifiedMatch(question.id, {
-                    provider: "manual",
-                    providerId: crypto.randomUUID(),
-                    title: trimmed,
-                    artist: "",
-                    album: null,
-                    artworkUrl: null,
-                    releaseYear: null,
-                    isrc: null,
-                  }),
+                  [question.id]: withVerifiedMatch(question.id, song),
                 }));
-              }
-              if (isLast) {
-                // Journey finished — keep the answers persisted so /results can
-                // reload them on a direct visit / F5 (history state is lost on
-                // refresh). The user can still wipe progress via the "Start New
-                // Journey" action. We only stop further auto-save by marking
-                // the local component as completed.
-                setCompleted(true);
-                navigate({ to: "/results", state: { answers: nextAnswers } as never });
-              } else {
-                setCurrent((c) => Math.min(total, c + 1));
-              }
-            }}
-            aria-disabled={!canAdvance}
-            className={`h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto ${
-              canAdvance ? "" : "opacity-50"
-            }`}
-          >
-            {isLast ? t.journey.seeResults : t.journey.next}
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
+                // The era card reveals immediately — artwork scene + preview.
+                setReveal(question.id);
+              }}
+            />
+          )}
         </div>
+
+        {reveal === question.id ? null : (
+          <div className="mt-8 flex w-full max-w-2xl md:mt-12 flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="outline"
+              disabled={current === 1}
+              onClick={() => setCurrent((c) => Math.max(1, c - 1))}
+              className="h-12 w-full rounded-full px-8 text-base font-medium sm:w-auto"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              onClick={() => {
+                if (!canAdvance) {
+                  setShowHint(true);
+                  return;
+                }
+                // Commit a pending draft for the current question, then reveal
+                // the era card (typing + Next proceeds in one step, no separate
+                // "Add to Ritual" needed).
+                if (!isAnswered && hasPendingDraft) {
+                  const trimmed = draft.trim();
+                  setAnswers((prev) => ({ ...prev, [question.id]: trimmed }));
+                  setSongs((prev) => ({
+                    ...prev,
+                    [question.id]: withVerifiedMatch(question.id, {
+                      provider: "manual",
+                      providerId: crypto.randomUUID(),
+                      title: trimmed,
+                      artist: "",
+                      album: null,
+                      artworkUrl: null,
+                      releaseYear: null,
+                      isrc: null,
+                    }),
+                  }));
+                }
+                setReveal(question.id);
+              }}
+              aria-disabled={!canAdvance}
+              className={`h-12 w-full rounded-full px-8 text-base font-semibold sm:w-auto ${
+                canAdvance ? "" : "opacity-50"
+              }`}
+            >
+              {isLast ? t.journey.seeResults : t.journey.next}
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {showHint && !canAdvance ? (
           <p

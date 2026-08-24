@@ -10,33 +10,30 @@
 
 ```
 Aktif dal: main
-HEAD:      180ab4b — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (`3b3a720..180ab4b main -> main`; `git status` temiz).
-Testler:   298/298 geçti (25 dosya; 292'den +6: 1 i18n no-fallback testi,
-           4 buildEntryInsightPrompt language testi [yeni dosya
-           generateAnalysis.server.test.ts], 1 LifeFeedSection language
-           passthrough testi)
+HEAD:      ee9a66b (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
+           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
+           commit/push YAPILMADI)
+Testler:   315/315 geçti (28 dosya; 298'den +17: 8 eraStyle, 2
+           OrganicArtwork, 5 EraCardReveal, +1 QuizCard era-scene, +1
+           mevcut testlerin İngilizce güncellemesi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
-Lint:      `npm run lint` = 0 HATA, repo geneli YEŞİL (exit 0). Kalan
-           9 react-refresh uyarısı (ui/* shadcn + PosterCanvas.tsx +
-           LanguageContext.tsx) pre-existing, kabul edilebilir.
-           ÖNCEKİ PRETTIER BORCU KAPANDI: data.ts, spotify.server.test.ts
-           + 6 dosya daha (verify-no-server-secrets.mjs, Results.tsx,
-           SongPicker.tsx, Waveform.tsx, keep-alive.ts, server.ts)
-           prettier --write ile formatlandı — saf formatlama, semantik
-           değişiklik yok, testler onaylıyor.
-i18n:      5 dil (en/tr/es/de/fr). quizCard + poster.canvas.lifeCards
-           artık es/de/fr'de GERÇEK ÇEVİRİ (önceki "English-first bilinçli
-           bırakıldı" kararı kullanıcı göreviyle geçersiz kılındı):
-           es Intensidad/TARJETAS DE VIDA, de Intensität/LEBENSKARTEN,
-           fr Intensité/CARTES DE VIE. Key-parity + yeni no-fallback
-           testi yeşil.
-Gemini:    `GEMINI_API_KEY` server-only; prose aktif dilde üretiliyor.
-           YENİ: `buildEntryInsightPrompt` artık `language?: Language`
-           alıyor (default en) — kullanıcı prompt'unda kural 3 +
-           system prompt'ta hedef dil takviyesi; Life Feed insight'ı
-           artık aktif UI dilinde yazılıyor.
+Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
+           (ui/* shadcn + PosterCanvas.tsx + LanguageContext.tsx)
+           pre-existing, kabul edilebilir.
+i18n:      5 dil korunuyor (en/tr/es/de/fr sözlükleri, key-parity testleri
+           yeşil). ANCAK yeni Era Card akışı + Master Poster kart kopyası
+           TASARIM GEREĞİ English-only: kullanıcının "Full English
+           Experience" görevi. Journey soruları/placeholder'lar hâlâ
+           sözlükten gelir (varsayılan en); kart başlıkları, narrative'ler,
+           poster kartları her zaman İngilizce render edilir.
+Era flow:  Adım-adım kart akışı CANLI: şarkı commit → Era Card reveal
+           (organik artwork + 30s preview autoplay + İngilizce narrative)
+           → "Next Era / Continue" (audio fade-out + ilerleme) → 8. kartta
+           "See Your Master Poster" → /results. Tarayıcıda uçtan uca
+           doğrulandı (Painkiller 1990 → vintage-poster mount, '90s rozeti,
+           crimson metal accent, Q2'ye temiz geçiş).
+Gemini:    `GEMINI_API_KEY` server-only; prose aktif dilde (önceki oturum).
 Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
            dropdown Spotify primary → iTunes fallback → serbest-metin
 ```
@@ -45,76 +42,85 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — i18n tamamlama + dinamik Gemini dili + repo prettier temizliği (TAM, 180ab4b, push'lu)
+## 2. Son biten iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, COMMIT BEKLİYOR)
 
-Kullanıcı görevi üç parçalıydı; üçü de tamamlandı, gate'ler yeşil:
+Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
+uçtan uca doğrulandı:
 
-1. **es/de/fr tam çeviri (`src/lib/i18n/dictionaries.ts`):** `quizCard`
-   bloğu (intensityLabel, playPreviewAria, mutePreviewAria,
-   previewUnavailableAria) ve `poster.canvas.lifeCards` üç dilde de artık
-   gerçek çeviri — İngilizce fallback kalmadı. `i18n.test.tsx`'e yeni
-   test: "quiz card and life cards labels leave no English fallback gaps"
-   (footerQuote testinin deseni; her non-en dilde quizCard değerlerinin
-   hiçbiri İngilizce değere eşit olamaz + lifeCards farklı olmalı).
-2. **Dinamik Gemini prompt dili (`src/lib/llm/generateAnalysis.server.ts`
-   + `src/components/feed/LifeFeedSection.tsx`):**
-   - `GenerateEntryInsightInput.language?: Language` eklendi;
-     `buildEntryInsightPrompt` `LANGUAGE_NAMES[language ?? "en"]` ile
-     kural 3'te hedef dili bildiriyor ("only the song title and artist
-     name stay in their original form").
-   - `generateEntryInsight` handler'ının systemPrompt'u da hedef dili
-     içeriyor (çift katman: user prompt + system prompt).
-   - `EntryInsightFetcher` input'una `language: Language` eklendi;
-     `LifeFeedSection` `useLanguage()` ile aktif dili okuyup fetcher'a
-     geçiriyor. Provider'sız render'da `useLanguage` en'e düşer (mevcut
-     fallback davranışı) — testler etkilenmedi.
-   - Yeni test dosyası `src/lib/llm/generateAnalysis.server.test.ts`
-     (server modülünü import eder ama ağ çağrısı yok — saf prompt
-     string testi). LifeFeedSection.test.tsx'e LanguageProvider'lı
-     passthrough testi eklendi (localStorage "de" → fetcher language:"de").
-3. **Prettier borcu kapatıldı (repo geneli):** `npx prettier --write` 8
-   dosyada; `npm run lint` artık 0 hata. NOT: önceki oturumun "eslint
-   --fix'i sadece değişen dosyalarda çalıştır" kuralı bu görevde kullanıcı
-   talimatıyla ("Ensure npm run lint passes cleanly across the entire
-   repository") bilinçli olarak aşıldı — formatlama-only drift kabul edildi.
+1. **Full English:** feed bileşenlerindeki hard-coded Türkçe string'ler
+   İngilizce'ye çevrildi (LifeFeedInput: "Which song is speaking for you
+   today?", "Search songs", "Add to the Map", "Remove selection";
+   LifeFeedTimeline: "Edit note"/"Save"/"Cancel"). Feed testleri güncellendi.
+   Master Poster'ın life-card kopyası (`buildLifeCards({ locale: "en" })` +
+   export'ta `lifeCardStringsFor("en")`) ve yeni reveal akışı English-only.
+   i18n altyapısı/sözlükleri korundu — parity testleri hâlâ yeşil.
+2. **Organik artwork (`src/components/results/OrganicArtwork.tsx` — YENİ):**
+   Kapak artık düz kare thumbnail DEĞİL; sahneye gömülü: `vinyl-sleeve`
+   (kılıftan çıkan oluklu plak + etiket), `cassette-desk` (J-card + makara
+   penceresi + neon underglow), `vintage-poster` (katlanma çizgileri + raptiye
+   + eskitilmiş kağıt tint), `framed-portrait` (paspartulu galeri çerçevesi +
+   picture light). Hepsinde ortam ışığı: backdrop gradient "oda", screen-blend
+   ışık yıkaması, era color grading — kapak sahnenin ışığıyla aydınlanıyor.
+3. **Dinamik era/genre adaptasyonu (`src/lib/soundmap/eraStyle.ts` — YENİ,
+   saf/deterministik):** `eraStyleFor(song, cardIndex)` → releaseYear
+   onyılı mount+palette'i belirler (≤1979 vinyl/amber, 80s cassette/neon,
+   90s poster/grunge, 2000+ portrait/galeri); genre keyword'leri
+   (title/artist/album) accent'i override eder (metal crimson #b3122e, jazz
+   brass, synth cyan, pop pink, folk moss, classical ivory); releaseYear
+   yoksa kartın journey pozisyonu kullanıcının o dönemdeki yaşını temsilen
+   mount seçer (çocukluk→vinyl, gençlik→cassette, 20'ler→poster, sonrası→
+   portrait). `eraLabel` rozeti ("'90s") QuizCard başlığında. SANATÇI
+   KÖKENİ/KÜLTÜR UYDURULMAZ — provider verisi yok; kodda belgelendi.
+4. **Adım-adım akış (`src/components/journey/EraCardReveal.tsx` — YENİ +
+   `src/routes/journey.tsx`):** onChoose / onSelectSuggestion / Next-with-
+   draft → `setReveal(question.id)`; reveal fazında EraCardReveal render
+   edilir ("Era N of 8" + QuizCard autoPlayPreview + "Next Era / Continue";
+   8.'de "See Your Master Poster" → setCompleted + navigate /results).
+   Continue reveal'ı unmount eder → audio singleton fade-out (mevcut
+   useAudioPreview cleanup). startNewJourney reveal'ı da sıfırlar.
+   Persistence davranışı değişmedi.
+5. **Master Poster:** PosterCanvas grid'i QuizCard kullandığı için 8 kart
+   otomatik olarak era-adaptive organik sahnelerle render ediliyor (her kart
+   kendi şarkısının onyılına/genre'sine göre farklı sahne).
+6. **Gate'ler:** tsc 0 hata, 315/315 (28 dosya), lint exit 0 (9 pre-existing
+   uyarı), build exit 0. Tarayıcı smoke test: journey akışı canlıda
+   doğrulandı.
 
-**Gate'ler:** tsc 0 hata, `npm test` 298/298 (25 dosya), `npm run lint`
-exit 0 (0 hata, 9 pre-existing uyarı), `npm run build` temiz.
+**Bilerek kapsam dışı:** PNG canvas export (`poeticPoster.ts`) hâlâ eski
+`drawHarmonizedArtwork` kare-crop tarzını kullanıyor — organik sahneler
+DOM-only (canvas'a port etmek büyük iş, görev DOM kartlarını kapsıyordu).
+`soundmap/` legacy bileşenleri (Wizard/Results/SongPicker/Waveform)
+kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
+Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
+fabricate edilmez).
 
-**Bilerek kapsam dışı:** `deterministicEntryInsight` şablonları hâlâ
-İngilizce-only (anında fallback satırı; görev yalnızca Gemini prompt'unu
-kapsıyordu). `feed/` bileşenlerinin Türkçe hard-coded string'leri sözlüğe
-bağlanmadı. Life Story prompt'ları / GROUNDING_RULES / `buildLifeStoryPrompt`
-dokunulmadı (kullanıcı kuralı #2). Companion/memory sistemi geri getirilmedi.
+## 2a. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
 
-## 2a. Önceki iş — iTunes hi-res artwork + MTG Life Cards (TAM, push'lu, 2b3c8db)
-
-- iTunes `artworkUrl100` → `600x600` upgrade (`highResArtworkUrl`); 300 ms
-  debounce'lu non-blocking doğrulama altyapısı zaten vardı, değişmedi.
-- MTG-Style Dynamic Life Cards + Master Poster + Audio Preview (e0b15dd):
-  8 era kartı 4×2 grid, `drawHarmonizedArtwork` canvas shader, singleton
-  `useAudioPreview` (fade 900/450 ms, volume [0,1] clamp), `renderMap`
-  iki geçişli dinamik yükseklik, `lifeCardStringsFor(locale)` TR kopya.
+- es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
+- `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
+- Repo-geneli prettier; lint exit 0. 298 test.
 
 ## 2b. Önceki işler (commit'li ve push'lu)
 
-- **Supabase keep-alive cron** (152da7f): Vercel Cron → `/api/keep-alive`;
-  `keepAliveLogic()` asla throw etmez; 5 unit test.
+- **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
+  8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
+  renderMap iki geçişli dinamik yükseklik.
+- **Supabase keep-alive cron** (152da7f): Vercel Cron → `/api/keep-alive`.
 - **Gotik Müzik Haritası** (088535f'e kadar): 6 fazlı chapter yapısı,
-  Hayat Ağacı, kemer portallar, Spotify deep link, 5-dil poster.canvas
-  sözlüğü, dinamik tema motoru.
+  Hayat Ağacı, kemer portallar, Spotify deep link, dinamik tema motoru.
 
 ---
 
 ## 3. Olası sonraki adımlar
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, 180ab4b = origin/main).
-- `feed/` bileşenlerini sözlüğe bağla (şu an Türkçe hard-coded).
-- `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only;
-  Gemini yoksa Life Feed anında satırı her dilde İngilizce görünür).
+- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
+  (görev kuralı: onaysız commit/push yok). Onay gelirse:
+  `checkpoint: era-adaptive step-by-step card flow + organic artwork + full English — HANDOFF.md güncellendi`.
+- Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
+  mount başına çizim) — büyük iş, ayrı görev.
+- `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
 - 9 react-refresh uyarısını temizleme (ui/* export ayrıştırma) — düşük
-  öncelik, kabul edilebilir durumda.
+  öncelik.
 
 ---
 
@@ -124,41 +130,37 @@ dokunulmadı (kullanıcı kuralı #2). Companion/memory sistemi geri getirilmedi
 yeniden yaz, onaylıysa `checkpoint: ... — HANDOFF.md güncellendi` ile
 commit et (onay yoksa değişiklikleri çalışma ağacında bırak ve bildir).
 
-**🅑 i18n'e yeni string eklerken →** `en`'e ekle → diğer 4 dile kopyala →
-`i18n.test.tsx` key-parity + no-fallback testleri otomatik yakalar.
+**🅑 Kart sahnesine dokunurken →** Stil kararları her zaman `eraStyleFor`
+üzerinden (saf, deterministik); DOM sahneleri `OrganicArtwork.tsx`'te.
+Yeni mount eklersen `SCENE_BY_MOUNT` + `eraStyle.test.ts` güncelle.
 
-**🅒 Testler kızarsa →** `npm test`; QuestionCard/PosterCanvas testleri
-İngilizce varsayılan sözlüğe bağlı.
+**🅒 Testler kızarsa →** `npm test`; jsdom hex renkleri rgb()'ye
+normalize eder — stil assertion'larında rgb karşılığını kullan. Senkron
+rAF mock'larında saati +1000ms ileri sar (yoksa fade recursion'ı stack
+taşırır).
 
 **🅓 Canvas export'a dokunurken →** Rastgelelik her zaman `seededRandom`
-üzerinden; asla `Math.random()` kullanma (export tekrarlanabilirliği
-bozulur). Yeni bölüm eklersen akış `y`'yi ilerletir; yükseklik ölçümü
-otomatik — ama `return y + 300` (duality dibi) kontratını bozma.
+üzerinden; asla `Math.random()` kullanma. `return y + 300` (duality dibi)
+kontratını bozma.
 
-**🅔 Poster layout'una bölüm eklerken →** `drawMap` içindeki akışa ekle
-(portallar sonrası gibi), sabit H'ye GÖRELİ konumlandırma; H'yi shadow'la,
-modül sabitini değil.
+**🅔 i18n'e yeni string eklerken →** `en`'e ekle → diğer 4 dile kopyala →
+key-parity testi otomatik yakalar. Era Card akışı English-only kalır
+(tasarım kararı); sözlüğe bağlama.
 
 ---
 
 ## 5. Dikkat — bu oturumda öğrenilen
 
-- **Taze ortamda `npx tsc` yerel binary yoksa npm'den sahte `tsc@2.0.4`
-  paketi çekmeye çalışır ve askıda kalır** — önce `npm install`, sonra
-  gate'ler. `node_modules` gitignore'lu; ağaç temiz kalır.
-- **LLM dil kuralları çift katmanlı olmalı:** user prompt kuralı +
-  systemPrompt takviyesi (`buildPoeticAnalyzerPrompt` deseni; entry
-  insight'a da aynısı uygulandı).
-- **Repo-geneli prettier --write güvenli ama bilinçli karar:** 8 dosyada
-  saf formatlama drift'i yarattı; tam test + tsc + build ile doğrulandı.
-  Kullanıcı repo-geneli lint yeşilliği istediğinde bu kabul edilebilir.
-- jsdom'da `audio.volume = 1.0000000000000002` IndexSizeError fırlatır —
-  rAF tween'lerinde her zaman [0,1] clamp.
-- Singleton audio handoff'ta eski sahibin `playing` flag'ini temizlemek
-  için `onInactive` callback'i şart.
-- renderMap iki geçişli ölçüm: PROVISIONAL_H=24000 yeterli (32767 canvas
-  limitinin altında).
-- Vitest sayacı: 290 → 298 (25 dosya).
+- **jsdom stil normalize eder:** `style.background` hex'i `rgb(r, g, b)`
+  olarak döndürür — backdrop assertion'ları rgb'ye çevrilerek yapılmalı.
+- **Senkron rAF mock tuzak:** `cb(performance.now())` fade ramp'ini sonsuz
+  recursion'a sokar (saat ilerlemez, t<1 kalır, stack taşar). Mevcut
+  useAudioPreview.test.tsx kalıbı: `cb(performance.now() + 1000)`.
+- **Era başlığı iki yerde render edilir** (reveal heading + kart title
+  bar) — testlerde `getAllByText`.
+- **Reveal'da audio stop = unmount:** onContinue mock'u unmount etmez;
+  testte açıkça `unmount()` çağırıp pause assertion'ı yapılır.
+- Vitest sayacı: 298 → 315 (28 dosya).
 
 ---
 
@@ -172,4 +174,4 @@ modül sabitini değil.
 - `vite.config.ts`'te DEV-ONLY allowedHosts'u commit'leme.
 - Vercel'e `VITE_`-prefixed secret env girme.
 - Sahte/mock şarkı, sahte artwork, sahte preview URL'si ÜRETME — gerçek
-  dış veri tek otorite.
+  dış veri tek otorite. Sanatçı kökeni/kültürü UYDURMA (provider verisi yok).

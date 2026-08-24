@@ -49,7 +49,7 @@ describe("LifeFeedSection", () => {
     render(<LifeFeedSection journey={completeProgress()} onFeedChange={onFeedChange} />);
 
     // Input unlocked, empty timeline hint, graduation persisted.
-    expect(screen.getByRole("button", { name: /haritaya ekle/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add to the map/i })).toBeInTheDocument();
     expect(screen.getByText(/the map is listening/i)).toBeInTheDocument();
     const stored = loadLifeFeed();
     expect(stored).not.toBeNull();
@@ -73,9 +73,9 @@ describe("LifeFeedSection", () => {
       />,
     );
 
-    await user.type(screen.getByLabelText("Bellek notu (optional)"), "gece sürüşü");
-    await user.type(screen.getByLabelText("Şarkı ara"), "Nightcall");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Memory note (optional)"), "gece sürüşü");
+    await user.type(screen.getByLabelText("Search songs"), "Nightcall");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     // Instant deterministic insight — the friend answers immediately.
     const expectedFallback = deterministicEntryInsight({
@@ -105,8 +105,8 @@ describe("LifeFeedSection", () => {
     const user = userEvent.setup();
     render(<LifeFeedSection journey={completeProgress()} insightFetcher={insightFetcher} />);
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "Silent Song");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Search songs"), "Silent Song");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     const expected = deterministicEntryInsight({ songTitle: "Silent Song", note: null });
     await waitFor(() => expect(loadLifeFeed()?.entries).toHaveLength(1));
@@ -123,8 +123,8 @@ describe("LifeFeedSection", () => {
       </LanguageProvider>,
     );
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "Nightcall");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Search songs"), "Nightcall");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
 
     await waitFor(() =>
       expect(insightFetcher).toHaveBeenCalledWith(expect.objectContaining({ language: "de" })),
@@ -136,8 +136,8 @@ describe("LifeFeedSection", () => {
     const user = userEvent.setup();
     render(<LifeFeedSection journey={completeProgress()} insightFetcher={insightFetcher} />);
 
-    await user.type(screen.getByLabelText("Şarkı ara"), "Temporary");
-    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+    await user.type(screen.getByLabelText("Search songs"), "Temporary");
+    await user.click(screen.getByRole("button", { name: /add to the map/i }));
     await waitFor(() => expect(loadLifeFeed()?.entries).toHaveLength(1));
 
     await user.click(screen.getByLabelText("Delete Temporary"));

@@ -2,20 +2,23 @@
  * QuizCard — Magic: The Gathering style frame for one life era.
  *
  * Renders a LifeCard (era title, type line, stats, gothic narrative) with the
- * era's song artwork harmonized into the dark bronze style via a CSS filter
- * approximation of the canvas shader recipe (the PNG export uses the real
- * pipeline in `artworkHarmonize.ts`). A subtle mute/play toggle rides the
- * artwork corner and plays the provider's 30s preview — only when the song
- * actually carries one; a missing song/artwork stays a dark placeholder,
- * never a fabricated cover.
+ * era's song artwork embedded organically into an era-adaptive scene (vinyl
+ * sleeve / cassette desk / vintage poster / framed portrait — resolved by
+ * `eraStyleFor` from the song's release year, genre signal and the card's
+ * journey position). A subtle mute/play toggle rides the scene corner and
+ * plays the provider's 30s preview — only when the song actually carries
+ * one; a missing song/artwork stays a dark placeholder, never a fabricated
+ * cover.
  */
 import { Music, Volume2, VolumeX } from "lucide-react";
 
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { harmonizeFilter } from "@/lib/soundmap/artworkHarmonize";
+import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import { LIFE_CARD_TONE_COLORS, type LifeCard } from "@/lib/soundmap/lifeCards";
 import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
 import type { Song } from "@/lib/song/types";
+
+import { OrganicArtwork } from "./OrganicArtwork";
 
 export function QuizCard({
   card,
@@ -31,11 +34,13 @@ export function QuizCard({
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
   const gem = LIFE_CARD_TONE_COLORS[card.tone];
+  const era = eraStyleFor(song, card.index);
 
   return (
     <article
       data-testid={`quiz-card-${card.songIndex}`}
       data-tone={card.tone}
+      data-mount={era.mount}
       className="flex flex-col overflow-hidden rounded-2xl border bg-[#12100c]/90 shadow-lg"
       style={{
         borderColor: `${gem}55`,
@@ -47,43 +52,34 @@ export function QuizCard({
         <h3 className="truncate font-serif text-sm font-bold uppercase tracking-wide text-[#e8dfc8]">
           {card.eraTitle}
         </h3>
-        <span
-          className="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#d8c9a8]"
-          style={{ borderColor: `${gem}66` }}
-        >
-          {card.ageRange}
+        <span className="flex shrink-0 items-center gap-1.5">
+          {era.eraLabel ? (
+            <span
+              className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider"
+              style={{ borderColor: `${era.palette.accent}66`, color: era.palette.accent }}
+            >
+              {era.eraLabel}
+            </span>
+          ) : null}
+          <span
+            className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#d8c9a8]"
+            style={{ borderColor: `${gem}66` }}
+          >
+            {card.ageRange}
+          </span>
         </span>
       </header>
 
-      {/* Artwork window — harmonized cover, or an empty dark frame. */}
+      {/* Artwork window — the cover embedded organically in its era scene,
+          or an empty dark frame when no real artwork exists. */}
       <div className="relative m-2 mb-0 aspect-square overflow-hidden rounded-lg border border-[#2a2418] bg-[#0b0a08]">
         {song?.artworkUrl ? (
-          <img
-            src={song.artworkUrl}
-            alt={`${song.title} — ${song.artist}`}
-            loading="lazy"
-            className="h-full w-full object-cover"
-            style={{ filter: harmonizeFilter() }}
-          />
+          <OrganicArtwork song={song} style={era} />
         ) : (
           <span className="flex h-full w-full items-center justify-center text-[#3a342a]">
             <Music className="h-10 w-10" aria-hidden />
           </span>
         )}
-        {/* Bronze tint + edge vignette overlays (DOM twin of the canvas recipe). */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 45%, rgba(8,6,10,0.55) 100%)",
-            mixBlendMode: "multiply",
-          }}
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[#96693a] opacity-[0.14] mix-blend-multiply"
-        />
         {/* Gothic mute/play toggle — only real previews can sound. */}
         <button
           type="button"

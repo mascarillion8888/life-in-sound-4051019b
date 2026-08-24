@@ -109,8 +109,8 @@ export function LifeFeedInput({
         id="life-feed-note"
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Bugün seni hangi şarkı anlatıyor?"
-        aria-label="Bellek notu (optional)"
+        placeholder="Which song is speaking for you today?"
+        aria-label="Memory note (optional)"
         className="mt-3 min-h-20 rounded-2xl border-border/50 bg-background/60 text-base"
       />
 
@@ -128,7 +128,7 @@ export function LifeFeedInput({
           <button
             type="button"
             onClick={() => setSelected(null)}
-            aria-label="Seçimi kaldır"
+            aria-label="Remove selection"
             className="shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground"
           >
             <X className="h-4 w-4" />
@@ -153,8 +153,8 @@ export function LifeFeedInput({
                 submit();
               }
             }}
-            placeholder="Şarkı veya sanatçı ara…"
-            aria-label="Şarkı ara"
+            placeholder="Search for a song or artist…"
+            aria-label="Search songs"
             className="h-12 rounded-2xl border-border/50 bg-background/60 pl-11 text-base"
           />
           {listOpen && suggestions.length > 0 ? (
@@ -189,7 +189,7 @@ export function LifeFeedInput({
         className="mt-4 h-12 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
       >
         <Music className="mr-2 h-4 w-4" />
-        {pending ? "Ekleniyor…" : "Haritaya Ekle"}
+        {pending ? "Adding…" : "Add to the Map"}
         {!pending && canAdd ? <Check className="ml-2 h-4 w-4" /> : null}
       </Button>
     </div>

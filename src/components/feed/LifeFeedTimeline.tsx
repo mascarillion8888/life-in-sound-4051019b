@@ -85,13 +85,13 @@ function MomentCard({
             <Textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              aria-label="Notu düzenle"
+              aria-label="Edit note"
               className="min-h-16 rounded-xl border-border/50 bg-background/60 text-sm"
             />
             <div className="mt-2 flex gap-2">
               <Button size="sm" onClick={saveNote} className="h-8 rounded-full px-4">
                 <Check className="mr-1 h-3.5 w-3.5" />
-                Kaydet
+                Save
               </Button>
               <Button
                 size="sm"
@@ -100,7 +100,7 @@ function MomentCard({
                 className="h-8 rounded-full px-4"
               >
                 <X className="mr-1 h-3.5 w-3.5" />
-                Vazgeç
+                Cancel
               </Button>
             </div>
           </div>
