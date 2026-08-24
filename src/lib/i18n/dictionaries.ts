@@ -168,11 +168,11 @@ const en: Dictionary = {
       "chapter-vi": "IDENTITY & SYNTHESIS",
     },
     phaseAgeRanges: {
-      "chapter-i": "Ages 9–12",
-      "chapter-ii": "Ages 12–18",
-      "chapter-iii": "Ages 18–24",
-      "chapter-iv": "Ages 24–30",
-      "chapter-v": "Ages 30–35",
+      "chapter-i": "Ages 9-12",
+      "chapter-ii": "Ages 12-18",
+      "chapter-iii": "Ages 18-24",
+      "chapter-iv": "Ages 24-30",
+      "chapter-v": "Ages 30-35",
       "chapter-vi": "Ages 35+",
     },
     canvas: {

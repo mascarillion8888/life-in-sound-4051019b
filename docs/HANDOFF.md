@@ -10,9 +10,10 @@
 
 ```
 Aktif dal: main
-HEAD:      ebbeb5f — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (`64f0dc8..ebbeb5f main -> main`; `git status` temiz).
-Testler:   319/319 geçti (29 dosya; 315'ten +4 reset-session)
+HEAD:      23ec9ad (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
+           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
+           commit/push YAPILMADI).
+Testler:   320/320 geçti (29 dosya; 319'dan +1 OrganicArtwork painterly)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
@@ -39,7 +40,42 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Auto-Reset / Clean Restart (TAM, ebbeb5f, push'lu)
+## 2. Son biten iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, COMMIT BEKLİYOR)
+
+Kullanıcı görevi: kapak fotoğraf karesi gibi yapışmayacak; gotik illüstratörün
+fırçasından çıkmış gibi görünecek (image_9 Sting-Fragile örneği = iyi,
+image_8 MJ-Bad = kötü) + kart yüzü tam İngilizce.
+
+- **`OrganicArtwork.tsx` — `PaintedArtwork` (style transfer katmanı):**
+  1) deterministik SVG `feTurbulence`+`feDisplacementMap` warp
+     (`#soundmap-painterly-warp`, seed=7 — rastgelelik yok) fotoğrafın düz
+     kenarlarını elle çizilmiş fırça darbesine çevirir;
+  2) tiled fractal-noise "paper tooth" (data-URI SVG, overlay blend) — boya
+     dokulu kağıda oturur;
+  3) palette-accent multiply wash — kaynak renkler sahnenin ışığına çekilir;
+  4) brush-faded edge vignette — sert fotoğraf dikdörtgeni kalmaz.
+  4 mount da PaintedArtwork kullanıyor. FramedPortrait matı koyulaştı
+  (#e6ddc8 krem → #211a13 koyu mat + accent pinline + iç gölge) — Sting
+  örneğindeki "dark matted frame" birebir.
+- **eraStyle grading güçlendi** (daha illüstratif): sepia/contrast arttı,
+  saturate düştü, hafif warm hue-rotate; testler sadece `sepia` içerdiğini
+  assert ediyor — yeşil.
+- **English kart yüzü:** type line artık UPPERCASE non-italic
+  ("LEGENDARY LIFE ERA"); yaş rozetleri ASCII tire + uppercase
+  ("AGES 5-9" — QuizCard rozeti + EraCardReveal alt yazısı); en-dash
+  "–" → "-" tüm İngilizce yaş aralıklarında (lifeCards, dictionaries
+  phaseAgeRanges, poetic-analyzer fallback + ilgili testler).
+- **Dinamik adaptasyon korunuyor:** mount/palette/accent hâlâ
+  `eraStyleFor`'dan (onyıl + genre keyword + kart pozisyonu); painterly
+  katman tümünü tek gotik-fantastik estetikte birleştiriyor.
+- **Tarayıcı kanıtı:** MJ "Bad" (1987 → cassette-desk, '80s neon) ve Adele
+  "Rolling in the Deep" (2011 → dark matted framed portrait, '10s) reveal
+  ekranlarında doğrulandı — ikisinde de kapak "yeniden çizilmiş" görünümde,
+  tüm metinler İngilizce/uppercase.
+- **Testler:** OrganicArtwork.test +1 painterly assertion (warp url, defs,
+  texture/wash overlay'leri). 320/320, tsc 0, lint 0, build 0.
+
+## 2a. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
 
 Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
 temiz yeniden başlangıç. Uygulama:
@@ -71,7 +107,7 @@ temiz yeniden başlangıç. Uygulama:
 persistence ürün özelliği; sadece açık başlangıç noktaları (landing CTA,
 Start Over, Start New Journey) sıfırlar.
 
-## 2a. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
+## 2b. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
 
 Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
 uçtan uca doğrulandı:
@@ -123,13 +159,13 @@ kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
 Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
 fabricate edilmez).
 
-## 2b. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
+## 2c. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
 
 - es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
 - `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
 - Repo-geneli prettier; lint exit 0. 298 test.
 
-## 2c. Önceki işler (commit'li ve push'lu)
+## 2d. Önceki işler (commit'li ve push'lu)
 
 - **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
   8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
@@ -142,8 +178,9 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, ebbeb5f = origin/main).
+- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
+  (onaysız commit/push yok). Onay gelirse:
+  `feat: painterly style transfer for album covers + full English card face`
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).

@@ -32,7 +32,7 @@ describe("QuizCard", () => {
   it("renders the MTG frame: era title, age badge, type line, stats, narrative", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     expect(screen.getByText("FIRST SPARK")).toBeTruthy();
-    expect(screen.getByText("Ages 5–9")).toBeTruthy();
+    expect(screen.getByText("Ages 5-9")).toBeTruthy();
     expect(screen.getByText("Legendary Life Era")).toBeTruthy();
     expect(screen.getByText("Innocence")).toBeTruthy();
     expect(screen.getByText(/Intensity 35/)).toBeTruthy();

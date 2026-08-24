@@ -71,7 +71,7 @@ const DECADE_SPECS: { maxYear: number; spec: DecadeSpec }[] = [
         backdrop: ["#241a10", "#0e0a06"],
         light: "#ffca7a",
       },
-      grading: "sepia(0.55) contrast(1.08) brightness(0.9) saturate(0.8)",
+      grading: "sepia(0.6) contrast(1.14) brightness(0.88) saturate(0.72) hue-rotate(-6deg)",
     },
   },
   {
@@ -84,7 +84,7 @@ const DECADE_SPECS: { maxYear: number; spec: DecadeSpec }[] = [
         backdrop: ["#1a0f24", "#0a0612"],
         light: "#22d3ee",
       },
-      grading: "sepia(0.2) contrast(1.15) brightness(0.95) saturate(1.2)",
+      grading: "sepia(0.28) contrast(1.2) brightness(0.92) saturate(1.05) hue-rotate(-8deg)",
     },
   },
   {
@@ -97,7 +97,7 @@ const DECADE_SPECS: { maxYear: number; spec: DecadeSpec }[] = [
         backdrop: ["#1c1a16", "#0d0c0a"],
         light: "#e8dcc0",
       },
-      grading: "sepia(0.4) contrast(1.1) brightness(0.92) saturate(0.75)",
+      grading: "sepia(0.45) contrast(1.16) brightness(0.9) saturate(0.66) hue-rotate(-4deg)",
     },
   },
   {
@@ -110,7 +110,7 @@ const DECADE_SPECS: { maxYear: number; spec: DecadeSpec }[] = [
         backdrop: ["#14161c", "#0a0b0f"],
         light: "#dfe8ff",
       },
-      grading: "sepia(0.15) contrast(1.05) brightness(0.98) saturate(1)",
+      grading: "sepia(0.22) contrast(1.1) brightness(0.95) saturate(0.88) hue-rotate(-3deg)",
     },
   },
 ];

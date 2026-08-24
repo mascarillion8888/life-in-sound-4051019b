@@ -8,14 +8,68 @@
  *   - vintage-poster:  aged gig poster with fold lines and paper tint.
  *   - framed-portrait: matted gallery frame under a picture light.
  *
- * Every mount shares the scene's ambient lighting: the backdrop gradient is
- * the room, a screen-blend light wash + the era's color grading make the
- * cover feel lit by the same environment as the card around it. Only the
- * song's real artworkUrl is ever rendered — a missing cover is the caller's
- * placeholder concern, never a fabricated image.
+ * THE STING RULE: the cover is never a clean photograph pasted into the
+ * scene — `PaintedArtwork` re-renders it as if the same illustrator painted
+ * it onto the card: a deterministic SVG turbulence displacement gives the
+ * image hand-drawn edges, a fractal-noise paper/canvas tooth reads as
+ * pigment on textured stock, a palette-matched multiply wash pulls the
+ * source colors into the scene's lighting, and brush-faded edges remove
+ * every hard photographic rectangle. Every mount shares the ambient
+ * lighting: the backdrop gradient is the room, a screen-blend light wash +
+ * the era's color grading make the cover feel lit by the same environment
+ * as the card around it. Only the song's real artworkUrl is ever rendered —
+ * a missing cover is the caller's placeholder concern, never a fabricated
+ * image.
  */
 import type { EraStyle } from "@/lib/soundmap/eraStyle";
 import type { Song } from "@/lib/song/types";
+
+/**
+ * Hand-drawn edge warp — a fixed-seed fractal turbulence displacement. The
+ * seed is constant so the same artwork always warps identically (no
+ * randomness); the effect breaks the photographic straight edges into
+ * painterly, slightly uneven strokes.
+ */
+const PAINTERLY_FILTER_ID = "soundmap-painterly-warp";
+
+function PainterlyFilterDefs() {
+  return (
+    <svg aria-hidden focusable="false" width="0" height="0" className="absolute">
+      <defs>
+        <filter id={PAINTERLY_FILTER_ID}>
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.014 0.02"
+            numOctaves="2"
+            seed="7"
+            result="warp"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="warp"
+            scale="6"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
+/**
+ * Paper/canvas tooth — a tiled fractal-noise patch (fixed seed, stitched
+ * edges) tinted like aged parchment. Rendered with an overlay blend so the
+ * artwork reads as pigment sitting in the grain of the stock.
+ */
+const PAPER_TEXTURE_URL =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160">` +
+      `<filter id="t"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch"/>` +
+      `<feColorMatrix type="matrix" values="0 0 0 0 0.86 0 0 0 0 0.8 0 0 0 0 0.68 0 0 0 0.42 0"/></filter>` +
+      `<rect width="160" height="160" filter="url(#t)"/></svg>`,
+  );
 
 function SceneLight({ color }: { color: string }) {
   return (
@@ -40,23 +94,59 @@ function FloorShadow() {
   );
 }
 
-function ArtworkImg({
+/**
+ * The real cover re-rendered as an illustration: painterly warp + era color
+ * grading on the pixels, paper tooth over them, a palette-matched wash that
+ * pulls the source palette into the scene, and brush-faded edges so no hard
+ * photographic rectangle survives.
+ */
+function PaintedArtwork({
   song,
-  grading,
+  style,
   className,
 }: {
   song: Song;
-  grading: string;
+  style: EraStyle;
   className?: string;
 }) {
   return (
-    <img
-      src={song.artworkUrl ?? undefined}
-      alt={`${song.title} — ${song.artist}`}
-      loading="lazy"
-      className={className}
-      style={{ filter: grading }}
-    />
+    <span className={`relative block overflow-hidden ${className ?? ""}`}>
+      <img
+        src={song.artworkUrl ?? undefined}
+        alt={`${song.title} — ${song.artist}`}
+        loading="lazy"
+        className="h-full w-full object-cover"
+        style={{ filter: `url(#${PAINTERLY_FILTER_ID}) ${style.grading}` }}
+      />
+      {/* Paper/canvas tooth. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: `url("${PAPER_TEXTURE_URL}")`,
+          backgroundSize: "160px 160px",
+          mixBlendMode: "overlay",
+          opacity: 0.5,
+        }}
+      />
+      {/* Palette wash — the scene's accent tints the paint, light falls from above. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `linear-gradient(168deg, ${style.palette.accent}2e 0%, transparent 42%, rgba(8,6,10,0.5) 108%)`,
+          mixBlendMode: "multiply",
+        }}
+      />
+      {/* Brush-faded edges. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse at center, transparent 56%, rgba(8,6,10,0.6) 97%)",
+        }}
+      />
+    </span>
   );
 }
 
@@ -84,7 +174,7 @@ function VinylSleeve({ song, style }: { song: Song; style: EraStyle }) {
         className="absolute left-[8%] top-1/2 aspect-square w-[62%] -translate-y-1/2 -rotate-1 overflow-hidden rounded-[3px] border border-[#2a2015]"
         style={{ boxShadow: `0 6px 18px rgba(0,0,0,0.65), 0 0 10px ${style.palette.accent}33` }}
       >
-        <ArtworkImg song={song} grading={style.grading} className="h-full w-full object-cover" />
+        <PaintedArtwork song={song} style={style} className="h-full w-full" />
       </span>
       <FloorShadow />
     </div>
@@ -101,7 +191,7 @@ function CassetteDesk({ song, style }: { song: Song; style: EraStyle }) {
           boxShadow: `0 8px 20px rgba(0,0,0,0.6), 0 0 16px ${style.palette.accent}55, 0 0 34px ${style.palette.accent}22`,
         }}
       >
-        <ArtworkImg song={song} grading={style.grading} className="h-full w-full object-cover" />
+        <PaintedArtwork song={song} style={style} className="h-full w-full" />
         {/* Tape window with the two spools, along the bottom edge. */}
         <span
           aria-hidden
@@ -128,7 +218,7 @@ function CassetteDesk({ song, style }: { song: Song; style: EraStyle }) {
 function VintagePoster({ song, style }: { song: Song; style: EraStyle }) {
   return (
     <div className="absolute inset-[6%] overflow-hidden rounded-[2px]">
-      <ArtworkImg song={song} grading={style.grading} className="h-full w-full object-cover" />
+      <PaintedArtwork song={song} style={style} className="h-full w-full" />
       {/* Aged paper tint. */}
       <span
         aria-hidden
@@ -182,16 +272,16 @@ function FramedPortrait({ song, style }: { song: Song; style: EraStyle }) {
       <span
         className="relative aspect-square w-[74%] border-[6px] p-[6%]"
         style={{
-          borderColor: "#2b2119",
-          background: "#e6ddc8",
-          boxShadow: `0 10px 24px rgba(0,0,0,0.7), inset 0 0 0 1px ${style.palette.accent}44, 0 0 12px ${style.palette.accent}22`,
+          borderColor: "#241b12",
+          background: "#211a13",
+          boxShadow: `0 10px 24px rgba(0,0,0,0.7), inset 0 0 0 1px ${style.palette.accent}66, inset 0 0 22px rgba(0,0,0,0.55), 0 0 12px ${style.palette.accent}22`,
         }}
       >
         <span
           className="block h-full w-full overflow-hidden"
           style={{ boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5)" }}
         >
-          <ArtworkImg song={song} grading={style.grading} className="h-full w-full object-cover" />
+          <PaintedArtwork song={song} style={style} className="h-full w-full" />
         </span>
       </span>
       <FloorShadow />
@@ -217,6 +307,7 @@ export function OrganicArtwork({ song, style }: { song: Song; style: EraStyle })
         background: `linear-gradient(to bottom, ${style.palette.backdrop[0]}, ${style.palette.backdrop[1]})`,
       }}
     >
+      <PainterlyFilterDefs />
       <Scene song={song} style={style} />
       <SceneLight color={style.palette.light} />
     </div>

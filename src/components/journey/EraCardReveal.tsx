@@ -44,7 +44,7 @@ export function EraCardReveal({
         <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-foreground sm:text-3xl">
           {card.eraTitle}
         </h2>
-        <p className="text-sm text-muted-foreground">{card.ageRange}</p>
+        <p className="text-sm uppercase tracking-wider text-muted-foreground">{card.ageRange}</p>
       </div>
 
       <div className="w-full max-w-xs animate-in fade-in zoom-in-95 duration-500">

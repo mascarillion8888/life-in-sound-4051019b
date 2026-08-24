@@ -52,4 +52,25 @@ describe("OrganicArtwork", () => {
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(style.palette.backdrop[0].slice(i, i + 2), 16));
     expect(scene.style.background).toContain(`rgb(${r}, ${g}, ${b})`);
   });
+
+  it("re-renders the cover as an illustration — never a clean photograph", () => {
+    const s = song({ releaseYear: 1987 });
+    const { container } = render(<OrganicArtwork song={s} style={eraStyleFor(s, 2)} />);
+    const img = screen.getByRole("img") as HTMLImageElement;
+
+    // Painterly edge warp precedes the era color grading.
+    expect(img.style.filter).toContain("url(#soundmap-painterly-warp)");
+    expect(img.style.filter).toContain("sepia");
+
+    // The deterministic warp filter is registered in the scene's SVG defs.
+    const defs = container.querySelector(`svg defs filter#soundmap-painterly-warp`);
+    expect(defs).not.toBeNull();
+    expect(defs?.querySelector("feDisplacementMap")).not.toBeNull();
+
+    // Paper/canvas tooth + palette wash + brush-faded edges sit on the paint.
+    const overlays = container.querySelectorAll("img ~ span");
+    const styles = Array.from(overlays).map((el) => (el as HTMLElement).style);
+    expect(styles.some((st) => st.backgroundImage.includes("data:image/svg"))).toBe(true);
+    expect(styles.some((st) => st.mixBlendMode === "multiply")).toBe(true);
+  });
 });

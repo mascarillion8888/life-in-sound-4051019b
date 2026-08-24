@@ -32,12 +32,12 @@ export const DEFAULT_LIFE_CARD_STRINGS: LifeCardStrings = {
     "ACCEPTANCE",
   ],
   ageRanges: [
-    "Ages 5–9",
-    "Ages 9–12",
-    "Ages 13–17",
-    "Ages 18–22",
-    "Ages 18–28",
-    "Ages 23–30",
+    "Ages 5-9",
+    "Ages 9-12",
+    "Ages 13-17",
+    "Ages 18-22",
+    "Ages 18-28",
+    "Ages 23-30",
     "Ages 28+",
     "Now",
   ],
@@ -87,7 +87,7 @@ export type LifeCard = {
   songIndex: number;
   /** Uppercase era title, e.g. "FIRST SPARK". */
   eraTitle: string;
-  /** Age-range label, e.g. "Ages 5–9". */
+  /** Age-range label, e.g. "Ages 5-9". */
   ageRange: string;
   /** MTG-style type line. */
   typeLine: string;

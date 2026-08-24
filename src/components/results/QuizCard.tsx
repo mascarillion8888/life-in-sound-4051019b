@@ -104,7 +104,9 @@ export function QuizCard({
 
       {/* Type line — MTG "Legendary Life Era" with the tone gem. */}
       <div className="mx-2 mt-1.5 flex items-center justify-between border-b border-[#2a2418] px-1 pb-1">
-        <span className="font-serif text-[11px] italic text-[#c9b995]">{card.typeLine}</span>
+        <span className="font-serif text-[11px] uppercase tracking-wider text-[#c9b995]">
+          {card.typeLine}
+        </span>
         <span
           aria-hidden
           className="h-3 w-3 rounded-full border border-black/50"

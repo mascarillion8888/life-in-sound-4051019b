@@ -18,7 +18,7 @@ describe("buildLifeCards", () => {
   it("is English-first by default", () => {
     const cards = buildLifeCards();
     expect(cards[0].eraTitle).toBe("FIRST SPARK");
-    expect(cards[0].ageRange).toBe("Ages 5–9");
+    expect(cards[0].ageRange).toBe("Ages 5-9");
     expect(cards[0].typeLine).toBe("Legendary Life Era");
     expect(cards[0].narrative).toBe(DEFAULT_LIFE_CARD_STRINGS.narratives[0]);
   });

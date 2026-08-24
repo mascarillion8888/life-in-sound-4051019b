@@ -86,11 +86,11 @@ describe("PosterCanvas", () => {
     expect(screen.getAllByText("PURE ENERGY & JOY").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("IDENTITY & SYNTHESIS").length).toBeGreaterThanOrEqual(1);
     // These age ranges also appear as badges on the MTG life cards below.
-    expect(screen.getAllByText("Ages 9–12").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Ages 12–18").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Ages 18–24").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Ages 24–30").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Ages 30–35").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 9-12").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 12-18").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 18-24").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 24-30").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Ages 30-35").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Ages 35+")).toBeInTheDocument();
   });
 
