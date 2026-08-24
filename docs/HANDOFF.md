@@ -10,9 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      3b3a720 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
-           commit/push YAPILMADI)
+HEAD:      180ab4b — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (`3b3a720..180ab4b main -> main`; `git status` temiz).
 Testler:   298/298 geçti (25 dosya; 292'den +6: 1 i18n no-fallback testi,
            4 buildEntryInsightPrompt language testi [yeni dosya
            generateAnalysis.server.test.ts], 1 LifeFeedSection language
@@ -46,7 +45,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — i18n tamamlama + dinamik Gemini dili + repo prettier temizliği (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — i18n tamamlama + dinamik Gemini dili + repo prettier temizliği (TAM, 180ab4b, push'lu)
 
 Kullanıcı görevi üç parçalıydı; üçü de tamamlandı, gate'ler yeşil:
 
@@ -109,9 +108,8 @@ dokunulmadı (kullanıcı kuralı #2). Companion/memory sistemi geri getirilmedi
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (görev kuralı: onaysız commit/push yok). Onay gelirse:
-  `checkpoint: i18n tam çeviri + dinamik Gemini dili + prettier temizliği — HANDOFF.md güncellendi`.
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, 180ab4b = origin/main).
 - `feed/` bileşenlerini sözlüğe bağla (şu an Türkçe hard-coded).
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only;
   Gemini yoksa Life Feed anında satırı her dilde İngilizce görünür).
