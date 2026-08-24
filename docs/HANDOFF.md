@@ -10,9 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      23ec9ad (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
-           commit/push YAPILMADI).
+HEAD:      0d9259f — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (`23ec9ad..0d9259f main -> main`; `git status` temiz).
 Testler:   320/320 geçti (29 dosya; 319'dan +1 OrganicArtwork painterly)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
@@ -40,7 +39,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f, push'lu)
 
 Kullanıcı görevi: kapak fotoğraf karesi gibi yapışmayacak; gotik illüstratörün
 fırçasından çıkmış gibi görünecek (image_9 Sting-Fragile örneği = iyi,
@@ -178,9 +177,8 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (onaysız commit/push yok). Onay gelirse:
-  `feat: painterly style transfer for album covers + full English card face`
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, 0d9259f = origin/main).
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
