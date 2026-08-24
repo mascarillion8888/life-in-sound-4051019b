@@ -55,9 +55,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 function isKeepAliveRequest(request: Request): boolean {
   try {
     const url = new URL(request.url);
-    return (
-      url.pathname === "/api/keep-alive" || url.searchParams.get("action") === "keep-alive"
-    );
+    return url.pathname === "/api/keep-alive" || url.searchParams.get("action") === "keep-alive";
   } catch {
     return false;
   }

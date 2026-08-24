@@ -114,7 +114,9 @@ export function SongPicker({
                       <span className="block truncate text-sm font-medium text-foreground">
                         {s.title}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">{s.artist}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {s.artist}
+                      </span>
                     </span>
                     <CornerDownLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
@@ -149,7 +151,11 @@ export function SongPicker({
           variant="outline"
           disabled={!manual.title.trim()}
           onClick={() => {
-            onChange({ title: manual.title.trim(), artist: manual.artist.trim(), confirmed: false });
+            onChange({
+              title: manual.title.trim(),
+              artist: manual.artist.trim(),
+              confirmed: false,
+            });
             setManual({ title: "", artist: "" });
           }}
           className="mt-4 h-11 w-full rounded-xl border-border/60"

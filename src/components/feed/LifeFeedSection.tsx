@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 import type { Song } from "@/lib/song/types";
 import type { JourneyProgress } from "@/lib/journey-storage";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import type { Language } from "@/lib/i18n/languages";
 import {
   appendLifeFeedEntry,
   graduateToLifeFeed,
@@ -21,11 +23,12 @@ import { LifeFeedTimeline } from "./LifeFeedTimeline";
 export type EntryInsightFetcher = (input: {
   song: Song;
   note: string | null;
+  language: Language;
 }) => Promise<string | null>;
 
-const defaultInsightFetcher: EntryInsightFetcher = ({ song, note }) =>
+const defaultInsightFetcher: EntryInsightFetcher = ({ song, note, language }) =>
   generateEntryInsight({
-    data: { songTitle: song.title, artist: song.artist || undefined, note },
+    data: { songTitle: song.title, artist: song.artist || undefined, note, language },
   })
     .then((r) => r?.insight ?? null)
     .catch(() => null);
@@ -52,6 +55,7 @@ export function LifeFeedSection({
 }) {
   const [feed, setFeed] = useState<LifeFeedState | null>(null);
   const [pending, setPending] = useState(false);
+  const { language } = useLanguage();
   const feedRef = useRef<LifeFeedState | null>(null);
   feedRef.current = feed;
 
@@ -89,7 +93,7 @@ export function LifeFeedSection({
     mutate(next);
 
     const entryId = next.entries[next.entries.length - 1].id;
-    insightFetcher({ song, note })
+    insightFetcher({ song, note, language })
       .then((geminiInsight) => {
         if (!geminiInsight || !feedRef.current) return;
         mutate(updateLifeFeedEntry(feedRef.current, entryId, { insight: geminiInsight }));

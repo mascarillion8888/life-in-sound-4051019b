@@ -6,6 +6,7 @@ import { questions } from "@/lib/questions";
 import type { JourneyProgress } from "@/lib/journey-storage";
 import { loadLifeFeed } from "@/lib/life-feed";
 import { deterministicEntryInsight } from "@/lib/llm/poetic-analyzer";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import type { Song } from "@/lib/song/types";
 import { LifeFeedSection, type EntryInsightFetcher } from "./LifeFeedSection";
 
@@ -110,6 +111,24 @@ describe("LifeFeedSection", () => {
     const expected = deterministicEntryInsight({ songTitle: "Silent Song", note: null });
     await waitFor(() => expect(loadLifeFeed()?.entries).toHaveLength(1));
     expect(screen.getByText(expected)).toBeInTheDocument();
+  });
+
+  it("passes the active UI language to the insight fetcher", async () => {
+    window.localStorage.setItem("soundmap:language", "de");
+    const insightFetcher: EntryInsightFetcher = vi.fn().mockResolvedValue(null);
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <LifeFeedSection journey={completeProgress()} insightFetcher={insightFetcher} />
+      </LanguageProvider>,
+    );
+
+    await user.type(screen.getByLabelText("Şarkı ara"), "Nightcall");
+    await user.click(screen.getByRole("button", { name: /haritaya ekle/i }));
+
+    await waitFor(() =>
+      expect(insightFetcher).toHaveBeenCalledWith(expect.objectContaining({ language: "de" })),
+    );
   });
 
   it("delete updates the timeline and the persisted feed", async () => {

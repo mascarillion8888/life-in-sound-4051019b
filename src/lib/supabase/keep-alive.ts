@@ -22,7 +22,10 @@ export type KeepAliveResult = {
 
 export type KeepAliveOptions = {
   /** Injectable client factory (for tests). Defaults to the real anon client. */
-  clientImpl?: (url: string, anonKey: string) => {
+  clientImpl?: (
+    url: string,
+    anonKey: string,
+  ) => {
     from: (table: string) => {
       select: (
         columns: string,
@@ -62,9 +65,7 @@ export async function keepAliveLogic(options: KeepAliveOptions = {}): Promise<Ke
   const started = now();
   try {
     const client = make(url, anonKey);
-    const { error } = await client
-      .from("journeys")
-      .select("id", { count: "exact", head: true });
+    const { error } = await client.from("journeys").select("id", { count: "exact", head: true });
     const ms = Math.max(0, now() - started);
     if (error) {
       return { ok: false, reason: `query-failed: ${error.message}`, ms };

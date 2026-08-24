@@ -322,10 +322,10 @@ const es: Dictionary = {
     recognizedAria: "reconocida",
   },
   quizCard: {
-    intensityLabel: "Intensity",
-    playPreviewAria: "Play preview",
-    mutePreviewAria: "Mute preview",
-    previewUnavailableAria: "Preview unavailable",
+    intensityLabel: "Intensidad",
+    playPreviewAria: "Reproducir vista previa",
+    mutePreviewAria: "Silenciar vista previa",
+    previewUnavailableAria: "Vista previa no disponible",
   },
   results: {
     yourSoundmap: "Tu SoundMap",
@@ -398,7 +398,7 @@ const es: Dictionary = {
         "Profundidad",
       ],
       moreOnMap: "más en tu mapa vivo",
-      lifeCards: "LIFE CARDS",
+      lifeCards: "TARJETAS DE VIDA",
     },
   },
 };
@@ -425,10 +425,10 @@ const de: Dictionary = {
     recognizedAria: "erkannt",
   },
   quizCard: {
-    intensityLabel: "Intensity",
-    playPreviewAria: "Play preview",
-    mutePreviewAria: "Mute preview",
-    previewUnavailableAria: "Preview unavailable",
+    intensityLabel: "Intensität",
+    playPreviewAria: "Vorschau abspielen",
+    mutePreviewAria: "Vorschau stummschalten",
+    previewUnavailableAria: "Vorschau nicht verfügbar",
   },
   results: {
     yourSoundmap: "Deine SoundMap",
@@ -501,7 +501,7 @@ const de: Dictionary = {
         "Tiefe",
       ],
       moreOnMap: "mehr auf deiner lebendigen Karte",
-      lifeCards: "LIFE CARDS",
+      lifeCards: "LEBENSKARTEN",
     },
   },
 };
@@ -528,10 +528,10 @@ const fr: Dictionary = {
     recognizedAria: "reconnue",
   },
   quizCard: {
-    intensityLabel: "Intensity",
-    playPreviewAria: "Play preview",
-    mutePreviewAria: "Mute preview",
-    previewUnavailableAria: "Preview unavailable",
+    intensityLabel: "Intensité",
+    playPreviewAria: "Lire l'extrait",
+    mutePreviewAria: "Couper le son de l'extrait",
+    previewUnavailableAria: "Extrait indisponible",
   },
   results: {
     yourSoundmap: "Ta SoundMap",
@@ -605,7 +605,7 @@ const fr: Dictionary = {
         "Profondeur",
       ],
       moreOnMap: "de plus sur votre carte vivante",
-      lifeCards: "LIFE CARDS",
+      lifeCards: "CARTES DE VIE",
     },
   },
 };

@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  resetSpotifyTokenCache,
-  spotifySuggestSongsLogic,
-} from "./spotify.server";
+import { resetSpotifyTokenCache, spotifySuggestSongsLogic } from "./spotify.server";
 
 function jsonResponse(body: unknown, ok = true): Response {
   return new Response(JSON.stringify(body), {
@@ -60,9 +57,10 @@ describe("spotifySuggestSongsLogic", () => {
   it("maps a Spotify track into a provider-neutral Song", async () => {
     vi.stubEnv("SPOTIFY_CLIENT_ID", "id");
     vi.stubEnv("SPOTIFY_CLIENT_SECRET", "secret");
-    const fetchImpl = vi.fn().mockResolvedValueOnce(tokenOk()).mockResolvedValueOnce(
-      jsonResponse({ tracks: { items: [TRACK_FRAGILE] } }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(tokenOk())
+      .mockResolvedValueOnce(jsonResponse({ tracks: { items: [TRACK_FRAGILE] } }));
     const out = await spotifySuggestSongsLogic({ query: "Sting - Fragile" }, { fetchImpl });
     expect(out.results).toHaveLength(1);
     const song = out.results[0]!;
@@ -79,9 +77,10 @@ describe("spotifySuggestSongsLogic", () => {
   it("handles Turkish titles without inventing data", async () => {
     vi.stubEnv("SPOTIFY_CLIENT_ID", "id");
     vi.stubEnv("SPOTIFY_CLIENT_SECRET", "secret");
-    const fetchImpl = vi.fn().mockResolvedValueOnce(tokenOk()).mockResolvedValueOnce(
-      jsonResponse({ tracks: { items: [TRACK_TARKAN] } }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(tokenOk())
+      .mockResolvedValueOnce(jsonResponse({ tracks: { items: [TRACK_TARKAN] } }));
     const out = await spotifySuggestSongsLogic({ query: "tarkan dudu" }, { fetchImpl });
     expect(out.results).toHaveLength(1);
     expect(out.results[0]!.title).toBe("Dudu");
@@ -99,9 +98,10 @@ describe("spotifySuggestSongsLogic", () => {
   it("returns [] on a search failure (never throws)", async () => {
     vi.stubEnv("SPOTIFY_CLIENT_ID", "id");
     vi.stubEnv("SPOTIFY_CLIENT_SECRET", "secret");
-    const fetchImpl = vi.fn().mockResolvedValueOnce(tokenOk()).mockRejectedValueOnce(
-      new Error("timeout"),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(tokenOk())
+      .mockRejectedValueOnce(new Error("timeout"));
     const out = await spotifySuggestSongsLogic({ query: "opeth" }, { fetchImpl });
     expect(out.results).toEqual([]);
   });
@@ -109,9 +109,10 @@ describe("spotifySuggestSongsLogic", () => {
   it("returns [] for a malformed search payload", async () => {
     vi.stubEnv("SPOTIFY_CLIENT_ID", "id");
     vi.stubEnv("SPOTIFY_CLIENT_SECRET", "secret");
-    const fetchImpl = vi.fn().mockResolvedValueOnce(tokenOk()).mockResolvedValueOnce(
-      jsonResponse({ tracks: null }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(tokenOk())
+      .mockResolvedValueOnce(jsonResponse({ tracks: null }));
     const out = await spotifySuggestSongsLogic({ query: "coco jamboo" }, { fetchImpl });
     expect(out.results).toEqual([]);
   });
@@ -119,17 +120,20 @@ describe("spotifySuggestSongsLogic", () => {
   it("ignores tracks missing id/title/artist", async () => {
     vi.stubEnv("SPOTIFY_CLIENT_ID", "id");
     vi.stubEnv("SPOTIFY_CLIENT_SECRET", "secret");
-    const fetchImpl = vi.fn().mockResolvedValueOnce(tokenOk()).mockResolvedValueOnce(
-      jsonResponse({
-        tracks: {
-          items: [
-            { id: "ok", name: "Good", artists: [{ name: "Band" }] },
-            { id: "bad", name: "", artists: [{ name: "Band" }] },
-            { id: "bad2", name: "Song", artists: [] },
-          ],
-        },
-      }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(tokenOk())
+      .mockResolvedValueOnce(
+        jsonResponse({
+          tracks: {
+            items: [
+              { id: "ok", name: "Good", artists: [{ name: "Band" }] },
+              { id: "bad", name: "", artists: [{ name: "Band" }] },
+              { id: "bad2", name: "Song", artists: [] },
+            ],
+          },
+        }),
+      );
     const out = await spotifySuggestSongsLogic({ query: "good band" }, { fetchImpl });
     expect(out.results).toHaveLength(1);
     expect(out.results[0]!.providerId).toBe("ok");

@@ -24,7 +24,12 @@ export function Waveform() {
 
   return (
     <div className="rounded-[2rem] border border-border/50 bg-card/50 p-5 backdrop-blur-xl sm:p-8">
-      <svg viewBox={`0 0 ${w} ${h}`} className="h-56 w-full" role="img" aria-label="Duygusal yolculuk grafiği">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="h-56 w-full"
+        role="img"
+        aria-label="Duygusal yolculuk grafiği"
+      >
         <defs>
           <linearGradient id="sm-line" x1="0" x2="1">
             <stop offset="0%" stopColor="var(--violet)" />
@@ -35,13 +40,31 @@ export function Waveform() {
             <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={`${path} L ${pts[pts.length - 1].x} ${h - 20} L ${pts[0].x} ${h - 20} Z`} fill="url(#sm-fill)" />
+        <path
+          d={`${path} L ${pts[pts.length - 1].x} ${h - 20} L ${pts[0].x} ${h - 20} Z`}
+          fill="url(#sm-fill)"
+        />
         <path d={path} fill="none" stroke="url(#sm-line)" strokeWidth="3" strokeLinecap="round" />
         {pts.map((p) => (
-          <g key={p.era.id} onMouseEnter={() => setActive(p.era.id)} onMouseLeave={() => setActive(null)}>
-            <circle cx={p.x} cy={p.y} r={active === p.era.id ? 9 : 5} fill="var(--gold)" className="transition-all" />
+          <g
+            key={p.era.id}
+            onMouseEnter={() => setActive(p.era.id)}
+            onMouseLeave={() => setActive(null)}
+          >
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={active === p.era.id ? 9 : 5}
+              fill="var(--gold)"
+              className="transition-all"
+            />
             <circle cx={p.x} cy={p.y} r="18" fill="transparent" />
-            <text x={p.x} y={h - 4} textAnchor="middle" className="fill-current text-[10px] text-muted-foreground">
+            <text
+              x={p.x}
+              y={h - 4}
+              textAnchor="middle"
+              className="fill-current text-[10px] text-muted-foreground"
+            >
               {p.era.phase}
             </text>
           </g>

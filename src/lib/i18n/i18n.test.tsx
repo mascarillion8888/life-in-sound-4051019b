@@ -62,6 +62,17 @@ describe("i18n dictionaries", () => {
     }
   });
 
+  it("quiz card and life cards labels leave no English fallback gaps", () => {
+    for (const lang of SUPPORTED_LANGUAGES) {
+      if (lang === DEFAULT_LANGUAGE) continue;
+      const dict = dictionaries[lang];
+      for (const value of Object.values(dict.quizCard)) {
+        expect(Object.values(dictionaries.en.quizCard), `${lang} quizCard`).not.toContain(value);
+      }
+      expect(dict.poster.canvas.lifeCards).not.toBe(dictionaries.en.poster.canvas.lifeCards);
+    }
+  });
+
   it("every language has a native display name", () => {
     for (const lang of SUPPORTED_LANGUAGES) {
       expect(LANGUAGE_NAMES[lang]).toBeTruthy();

@@ -190,7 +190,10 @@ export function searchCatalogue(query: string, limit = 6): Suggestion[] {
   return songCatalogue
     .map((s) => ({
       s,
-      score: Math.max(fuzzyScore(q, `${s.title} ${s.artist}`), fuzzyScore(q, `${s.artist} ${s.title}`)),
+      score: Math.max(
+        fuzzyScore(q, `${s.title} ${s.artist}`),
+        fuzzyScore(q, `${s.artist} ${s.title}`),
+      ),
     }))
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score)

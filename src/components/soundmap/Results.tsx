@@ -21,7 +21,13 @@ function story(picks: Record<number, Pick>) {
   return `Hikâyen ${first} ile başlıyor: dünyanın hâlâ yumuşak olduğu, sesin bir sığınak sayıldığı yıllar. Sonra ${rebel} geliyor — çeliğe dönüşmenin ilk gürültüsü, kendini duyurmak için sesi yükseltmek zorunda kalan biri. ${dark} sende kırılmayı değil, kırılmayı taşımayı öğretiyor; karanlık burada bir düşman değil, bir oda. Ve ${last} ile kapanıyor: sorularını kaybetmeden onlarla yaşamayı seçen bir insanın soundtrack'i. Çelikten hüzne değil — çelikten kabullenmeye giden bir harita bu.`;
 }
 
-export function Results({ picks, onRestart }: { picks: Record<number, Pick>; onRestart: () => void }) {
+export function Results({
+  picks,
+  onRestart,
+}: {
+  picks: Record<number, Pick>;
+  onRestart: () => void;
+}) {
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-6 md:py-24">
       <motion.header
@@ -29,11 +35,15 @@ export function Results({ picks, onRestart }: { picks: Record<number, Pick>; onR
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-violet">Müzik Haritan</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-violet">
+          Müzik Haritan
+        </p>
         <h1 className="mt-4 text-3xl font-black uppercase tracking-tight text-gold-gradient sm:text-5xl md:text-6xl">
           Fra Stål Til Sorg
         </h1>
-        <p className="mt-3 text-sm uppercase tracking-[0.3em] text-muted-foreground">Müzik Haritası</p>
+        <p className="mt-3 text-sm uppercase tracking-[0.3em] text-muted-foreground">
+          Müzik Haritası
+        </p>
       </motion.header>
 
       <section className="mt-14">
@@ -57,7 +67,9 @@ export function Results({ picks, onRestart }: { picks: Record<number, Pick>; onR
                     <Disc3 className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{era.age}</p>
+                    <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                      {era.age}
+                    </p>
                     <p className="truncate text-sm font-semibold text-foreground">{era.phase}</p>
                   </div>
                 </div>
@@ -130,11 +142,7 @@ export function Results({ picks, onRestart }: { picks: Record<number, Pick>; onR
           <Download className="mr-2 h-5 w-5" />
           High-Res Poster İndir
         </Button>
-        <Button
-          variant="outline"
-          onClick={onRestart}
-          className="h-14 rounded-full px-10 text-base"
-        >
+        <Button variant="outline" onClick={onRestart} className="h-14 rounded-full px-10 text-base">
           <RotateCcw className="mr-2 h-5 w-5" />
           Tekrar Başla
         </Button>

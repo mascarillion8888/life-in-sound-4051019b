@@ -18,7 +18,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import type { PersonalityProfile } from "@/lib/ai/types";
-import type { Language } from "@/lib/i18n/languages";
+import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, type Language } from "@/lib/i18n/languages";
 import {
   buildPoeticAnalyzerPrompt,
   parsePoeticAnalysis,
@@ -44,6 +44,8 @@ export type GenerateEntryInsightInput = {
   songTitle: string;
   artist?: string;
   note?: string | null;
+  /** Active UI language — the insight sentence is written in this language. */
+  language?: Language;
 };
 
 export type GenerateEntryInsightOutput = {
@@ -53,6 +55,7 @@ export type GenerateEntryInsightOutput = {
 /** Grounded prompt for a single Life Feed entry's instant poetic insight. */
 export function buildEntryInsightPrompt(input: GenerateEntryInsightInput): string {
   const note = input.note?.trim();
+  const targetLanguage = LANGUAGE_NAMES[input.language ?? DEFAULT_LANGUAGE];
   return [
     "You are the poetic voice of Life in a Sound — a lifelong friend, not a report.",
     "",
@@ -62,7 +65,8 @@ export function buildEntryInsightPrompt(input: GenerateEntryInsightInput): strin
     "RULES:",
     "1. Write ONE sentence only — a warm, poetic insight a lifelong friend might say about this moment.",
     "2. Use only the supplied song and note. Do not invent facts about the user's real life; if you genuinely know the song's real theme, you may allude to it.",
-    "3. Plain prose only. No JSON, no quotes around the whole sentence, no preamble.",
+    `3. Write the sentence in ${targetLanguage}, naturally and idiomatically — only the song title and artist name stay in their original form.`,
+    "4. Plain prose only. No JSON, no quotes around the whole sentence, no preamble.",
   ].join("\n");
 }
 
@@ -175,10 +179,10 @@ export const generateEntryInsight = createServerFn({ method: "POST" })
     }
     try {
       const prompt = buildEntryInsightPrompt(data);
+      const targetLanguage = LANGUAGE_NAMES[data.language ?? DEFAULT_LANGUAGE];
       const raw = await callGeminiPoeticAnalyzer(prompt, {
         signal: AbortSignal.timeout(8000),
-        systemPrompt:
-          "You are a poetic music analyst writing as a lifelong friend. Answer with ONE plain-prose sentence — no JSON, no markdown, no preamble.",
+        systemPrompt: `You are a poetic music analyst writing as a lifelong friend. Answer with ONE plain-prose sentence in ${targetLanguage} — no JSON, no markdown, no preamble.`,
         jsonMode: false,
       });
       const insight = raw?.split("\n").find((line) => line.trim().length > 0) ?? null;
