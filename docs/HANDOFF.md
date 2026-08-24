@@ -10,9 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      ee9a66b (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
-           commit/push YAPILMADI)
+HEAD:      c46adf0 — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (`ee9a66b..c46adf0 main -> main`; `git status` temiz).
 Testler:   315/315 geçti (28 dosya; 298'den +17: 8 eraStyle, 2
            OrganicArtwork, 5 EraCardReveal, +1 QuizCard era-scene, +1
            mevcut testlerin İngilizce güncellemesi)
@@ -42,7 +41,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0, push'lu)
 
 Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
 uçtan uca doğrulandı:
@@ -113,9 +112,8 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (görev kuralı: onaysız commit/push yok). Onay gelirse:
-  `checkpoint: era-adaptive step-by-step card flow + organic artwork + full English — HANDOFF.md güncellendi`.
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, c46adf0 = origin/main).
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
