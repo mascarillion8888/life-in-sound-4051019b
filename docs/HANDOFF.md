@@ -10,9 +10,11 @@
 
 ```
 Aktif dal: main
-HEAD:      0d9259f — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (`23ec9ad..0d9259f main -> main`; `git status` temiz).
-Testler:   320/320 geçti (29 dosya; 319'dan +1 OrganicArtwork painterly)
+HEAD:      4cb9210 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
+           DEĞİŞİKLİKLERİ çalışma ağacında (önceki oturumun decoupling işi
+           + bu oturumun adaptive-scene işi birlikte; kullanıcı onayı
+           bekleniyor; commit/push YAPILMADI).
+Testler:   341/341 geçti (31 dosya; 334'ten +7 scene/prompt/collision testi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
@@ -39,7 +41,74 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f, push'lu)
+## 2. Son biten iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, COMMIT BEKLİYOR)
+
+Önceki oturumun decoupling işinin üzerine: tek-statik-gotik prompt yerine
+4 sahne ailesi + sinyal önceliği. Değişiklikler sadece
+`src/lib/art/cardArtwork.server.ts` + `useCardArtwork.ts` + testlerde.
+
+- **Sahne aileleri (spec birebir):** `reggae` (golden-hour Jamaican wood),
+  `gothic` (candlelit wood carvings), `synth` (80s cyan/magenta cassette),
+  `jazz` (brass club haze).
+- **Sinyal önceliği (`cardArtworkScene`):** 1) kullanıcı estetik tercihi
+  (`aesthetic` input, ileride profil/onboarding'den beslenebilir),
+  2) şarkı metadata'sındaki genre keyword'leri, 3) era — YALNIZ 1980-89
+  `synth` (kendi görsel kimliği var); diğer tüm era'lar sessiz şarkıyı
+  `gothic` tabana düşürür (kültür FABRİKE EDİLMEZ).
+- **Word-boundary keyword match (`keywordIn`):** substring çakışmaları
+  ölümcüldü — "dub" "Double Fantasy"yi, "black" "Kind of Blue"yu yiyordu;
+  regex sınırlarıyla düzeltildi + collision guard testi eklendi.
+- **Cache disiplini:** server memo key `trackKey::scene` — aynı parça farklı
+  estetikte yeniden üretilir (testli). Client hook artık `album` +
+  `releaseYear` da gönderiyor (primitive deps korundu).
+- **Test tuzağı öğrenildi:** `vi.fn().mockResolvedValue(response)` AYNI
+  Response objesini döndürür — body tek okunur, 2. çağrı "body used already"
+  ile düşer (sahte fallback + cache miss). Çözüm:
+  `mockImplementation(() => Promise.resolve(imagenOk()))`.
+- **Tarayıcı kanıtı:** Bob Marley "Three Little Birds" kartı placeholder
+  akışıyla çalışıyor (sandbox'ta key yok); preview toggle aktif.
+- 341/341, tsc 0, lint 0, build 0.
+
+## 2a. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, COMMIT BEKLİYOR — bu oturumla birlikte)
+
+Kullanıcı görevi: iTunes/Spotify SADECE metadata + 30s preview; kart yüzündeki
+görsel Gemini/Imagen ile ÜRETİLEN gotik yağlıboya sahne. Provider kapağı artık
+kart görseli DEĞİL.
+
+- **`src/lib/art/cardArtwork.server.ts` (YENİ):** `generateCardArtwork`
+  server fn — `GEMINI_API_KEY` (server-only) + opsiyonel `GEMINI_IMAGE_MODEL`.
+  Prompt spec birebir: "A dark gothic oil painting concept for {ARTIST} -
+  {SONG}. A young listener in a dimly lit vintage gothic room, with a framed
+  painted portrait of {ARTIST} seamlessly integrated into the wooden
+  aesthetic of the room, warm candlelight, detailed wood carvings,
+  atmospheric fine-art composition." Primary: Imagen `:predict` (1:1);
+  fallback: `gemini-2.5-flash-image:generateContent`. 25s hard timeout.
+  Başarı data-URL olarak döner; her hata `{ image: null }` → kapak ASLA
+  geri ikame edilmez. Process-level Map ile başarı memoize (hata cache'lenmez).
+- **`src/lib/art/useCardArtwork.ts` (YENİ):** 3 katmanlı cache — memory Map
+  (oturum) → localStorage `soundmap.card-art.v1` (LRU 12, quota-safe) →
+  server fn. Key: `provider:providerId`; manual şarkılarda
+  `manual:artist:title` (manual-N slug'ı çakışmasın diye). Status:
+  idle/loading/ready/unavailable. KRITIK: effect deps kimliksiz primitive'ler
+  (key/artist/title) — results.tsx her render'da yeni Song objesi üretir;
+  `[song]` deps OOM'a yol açıyordu (sonsuz effect döngüsü, öğrenildi).
+- **QuizCard:** OrganicArtwork (provider kapağı sahnesi) kart yüzünden
+  ÇIKARILDI; yerine: ready → üretilmiş tablo (soft inner vignette),
+  loading → nefes alan candle-glow gotik placeholder (`card-art-placeholder`,
+  aria-busy), unavailable → statik placeholder. Bileşen dosyası + testleri
+  duruyor (PNG export yolu drawHarmonizedArtwork kullanmaya devam ediyor).
+- **Audio kanıtı:** iTunes preview hâlâ çalıyor — toggle reveal'da autoplay
+  sonrası "playing" ikonu gösterdi (tarayıcıda doğrulandı).
+- **Tarayıcı kanıtı:** Sting "Fragile" kartı — placeholder (sandbox'ta
+  GEMINI_API_KEY yok; Vercel'de var → orada tablo üretilir). Kart yüzü
+  English: LEGENDARY LIFE ERA / AGES 5-9 / '20s rozeti.
+- **Testler:** server art (prompt spec, Imagen parse, Gemini fallback,
+  memoize, failure-not-cached, keyless→null), hook (key biçimi, persisted
+  instant-ready, generate-once, failure→unavailable), QuizCard cached-art.
+  334/334, tsc 0, lint 0, build 0.
+- **.env.example:** GEMINI_API_KEY + GEMINI_IMAGE_MODEL belgelendi.
+
+## 2b. Önceki iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f + 4cb9210, push'lu)
 
 Kullanıcı görevi: kapak fotoğraf karesi gibi yapışmayacak; gotik illüstratörün
 fırçasından çıkmış gibi görünecek (image_9 Sting-Fragile örneği = iyi,
@@ -74,7 +143,7 @@ image_8 MJ-Bad = kötü) + kart yüzü tam İngilizce.
 - **Testler:** OrganicArtwork.test +1 painterly assertion (warp url, defs,
   texture/wash overlay'leri). 320/320, tsc 0, lint 0, build 0.
 
-## 2a. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
+## 2c. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
 
 Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
 temiz yeniden başlangıç. Uygulama:
@@ -106,7 +175,7 @@ temiz yeniden başlangıç. Uygulama:
 persistence ürün özelliği; sadece açık başlangıç noktaları (landing CTA,
 Start Over, Start New Journey) sıfırlar.
 
-## 2b. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
+## 2d. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
 
 Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
 uçtan uca doğrulandı:
@@ -158,13 +227,13 @@ kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
 Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
 fabricate edilmez).
 
-## 2c. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
+## 2e. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
 
 - es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
 - `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
 - Repo-geneli prettier; lint exit 0. 298 test.
 
-## 2d. Önceki işler (commit'li ve push'lu)
+## 2f. Önceki işler (commit'li ve push'lu)
 
 - **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
   8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
@@ -177,8 +246,9 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, 0d9259f = origin/main).
+- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
+  (onaysız commit/push yok). Onay gelirse:
+  `feat: user & genre-adaptive AI artwork — decouple audio/visual, dynamic scene prompts`
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).

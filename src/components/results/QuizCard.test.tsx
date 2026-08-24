@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
+import { __clearCardArtworkMemoryCache } from "@/lib/art/useCardArtwork";
 import type { Song } from "@/lib/song/types";
 
 import { QuizCard } from "./QuizCard";
@@ -29,6 +30,11 @@ function song(overrides: Partial<Song> = {}): Song {
 const cards = buildLifeCards();
 
 describe("QuizCard", () => {
+  beforeEach(() => {
+    __clearCardArtworkMemoryCache();
+    window.localStorage.clear();
+  });
+
   it("renders the MTG frame: era title, age badge, type line, stats, narrative", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     expect(screen.getByText("FIRST SPARK")).toBeTruthy();
@@ -39,13 +45,24 @@ describe("QuizCard", () => {
     expect(screen.getByText(/vast and soft/)).toBeTruthy();
   });
 
-  it("shows the song credit line and harmonized artwork when a song exists", () => {
+  it("shows the credit line and a gothic placeholder while the painting generates", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     expect(screen.getByText(/Fragile — Sting/)).toBeTruthy();
-    const img = screen.getByRole("img") as HTMLImageElement;
-    expect(img.src).toContain("art.jpg");
-    // Harmonized, never raw-pasted: the sepia/contrast filter is applied.
-    expect(img.style.filter).toContain("sepia");
+    // Provider covers are never card imagery: no <img> until the generated
+    // painting arrives — the gothic placeholder breathes instead.
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByTestId("card-art-placeholder").dataset.generating).toBe("true");
+  });
+
+  it("renders the cached AI painting instantly when one exists for the track", async () => {
+    window.localStorage.setItem(
+      "soundmap.card-art.v1",
+      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
+    );
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const img = (await screen.findByRole("img")) as HTMLImageElement;
+    expect(img.src).toContain("data:image/png;base64,AA==");
+    expect(img.alt).toBe("Fragile — Sting");
   });
 
   it("adapts the artwork scene to the song's era and shows the era badge", () => {
