@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
-import { Dna, Film, Sparkles, Clock, Map, Maximize, Radio } from "lucide-react";
+import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Dna, Film, Sparkles, Clock, Map, Maximize, Radio, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { questions } from "@/lib/questions";
 import { loadJourney, type JourneyProgress } from "@/lib/journey-storage";
+import { resetJourneySession } from "@/lib/reset-session";
+import { useSession } from "@/lib/supabase/use-session";
 import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
 import type { Song } from "@/lib/song/types";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -294,6 +296,16 @@ function ResultsPage() {
   );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const session = useSession();
+
+  // Always-available clean restart: wipes the journey (local + remote), the
+  // Life Feed and every cached artifact, then lands on Question 1 of 8.
+  const startOver = () => {
+    const userId = session.status === "anonymous" && session.user ? session.user.id : null;
+    void resetJourneySession(userId);
+    void navigate({ to: "/journey", search: { fresh: undefined } });
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -508,10 +520,11 @@ function ResultsPage() {
         <AnimatedReveal>
           <div className="flex flex-col items-center gap-4 pb-8">
             <Button
-              asChild
+              onClick={startOver}
               className="h-14 rounded-full px-10 text-base font-semibold shadow-lg shadow-primary/20"
             >
-              <Link to="/journey">Start again</Link>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Start Over — New Journey
             </Button>
             <Link
               to="/"

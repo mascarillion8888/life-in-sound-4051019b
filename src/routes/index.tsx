@@ -107,6 +107,7 @@ function HeroSection() {
       </p>
       <Link
         to="/journey"
+        search={{ fresh: true }}
         className="mt-8 inline-flex w-full max-w-xs items-center justify-center rounded-full bg-primary px-8 py-4 text-base sm:mt-10 sm:w-auto sm:text-lg font-semibold text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-primary/30 active:scale-[0.98]"
       >
         Begin Your Journey

@@ -9,14 +9,11 @@ import { EraCardReveal } from "@/components/journey/EraCardReveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { questions } from "@/lib/questions";
-import { clearJourney, loadJourney, saveJourney } from "@/lib/journey-storage";
+import { loadJourney, saveJourney } from "@/lib/journey-storage";
+import { resetJourneySession } from "@/lib/reset-session";
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
-import {
-  clearRemoteJourney,
-  loadRemoteJourney,
-  saveRemoteJourney,
-} from "@/lib/supabase/journey-remote";
+import { loadRemoteJourney, saveRemoteJourney } from "@/lib/supabase/journey-remote";
 import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
 import { spotifySuggestSongs } from "@/lib/song/spotify.server";
 import type { Song } from "@/lib/song/types";
@@ -25,6 +22,12 @@ const VERIFICATION_DEBOUNCE_MS = 300;
 const SUGGESTION_DEBOUNCE_MS = 300;
 
 export const Route = createFileRoute("/journey")({
+  // `?fresh` marks a clean-restart entry (landing CTA, results "Start Over"):
+  // the restore effect wipes the previous session instead of resuming it.
+  validateSearch: (search: Record<string, unknown>) => ({
+    fresh:
+      search.fresh === true || search.fresh === "1" || search.fresh === "true" ? true : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Your Journey — SoundMap" },
@@ -95,17 +98,28 @@ function JourneyPage() {
   );
   const question = questions[current - 1];
   const isLast = current === total;
+  const { fresh } = Route.useSearch();
 
   const userId = session.status === "anonymous" && session.user ? session.user.id : null;
 
   // Restore progress once the session resolves. Uses the server copy when the
   // user is authenticated (reconciled with the local cache), otherwise the
-  // localStorage fallback.
+  // localStorage fallback. A `?fresh` entry skips the restore entirely: the
+  // previous session (journey + Life Feed + remote row) is wiped and the
+  // journey restarts at Question 1; the param is then dropped from the URL so
+  // a later F5 restores the new journey's progress normally.
   useEffect(() => {
     if (session.status === "loading") return;
 
     let active = true;
     (async () => {
+      if (fresh) {
+        await resetJourneySession(userId);
+        if (!active) return;
+        setRestored(true);
+        void navigate({ to: "/journey", search: { fresh: undefined }, replace: true });
+        return;
+      }
       const saved = userId ? await loadRemoteJourney(userId) : loadJourney();
       if (!active) return;
       if (saved) {
@@ -122,7 +136,7 @@ function JourneyPage() {
     return () => {
       active = false;
     };
-  }, [session.status, userId, total]);
+  }, [session.status, userId, total, fresh, navigate]);
 
   // Prefill the draft when navigating between questions so the text box shows
   // the existing answer (if any) and is empty for an unanswered question.
@@ -255,11 +269,10 @@ function JourneyPage() {
   };
 
   const startNewJourney = () => {
-    if (userId) {
-      void clearRemoteJourney(userId);
-    } else {
-      clearJourney();
-    }
+    // A fresh journey must never inherit a previous session's artifacts:
+    // clears the journey (local + remote) AND the Life Feed. The language
+    // preference and auth session deliberately survive.
+    void resetJourneySession(userId);
     setCompleted(false);
     setAnswers({});
     setSongs({});

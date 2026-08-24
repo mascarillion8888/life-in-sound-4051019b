@@ -10,11 +10,10 @@
 
 ```
 Aktif dal: main
-HEAD:      c46adf0 — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (`ee9a66b..c46adf0 main -> main`; `git status` temiz).
-Testler:   315/315 geçti (28 dosya; 298'den +17: 8 eraStyle, 2
-           OrganicArtwork, 5 EraCardReveal, +1 QuizCard era-scene, +1
-           mevcut testlerin İngilizce güncellemesi)
+HEAD:      64f0dc8 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
+           DEĞİŞİKLİKLERİ çalışma ağacında (kullanıcı onayı bekleniyor;
+           commit/push YAPILMADI)
+Testler:   319/319 geçti (29 dosya; 315'ten +4 reset-session)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
@@ -41,7 +40,39 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0, push'lu)
+## 2. Son biten iş — Auto-Reset / Clean Restart (TAM, COMMIT BEKLİYOR)
+
+Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
+temiz yeniden başlangıç. Uygulama:
+
+- **`src/lib/reset-session.ts` (YENİ):** `resetJourneySession(userId)` — tek
+  choke point. Siler: journey (localStorage `soundmap.journey.v1` + Supabase
+  satırı, `clearRemoteJourney` üzerinden) + Life Feed (`soundmap.life-feed.v1`).
+  KORUNUR: dil tercihi (`soundmap:language`) ve auth oturumu. AI sonuçları
+  (Life Story/insight) fingerprint'li in-memory — answers silinince cache de
+  anlamsızlaşır, ayrıca silinecek bir şey yok.
+- **Landing'den temiz giriş:** `/journey` route'una `validateSearch` ile
+  `?fresh` paramı eklendi. Landing hero CTA + FinalCTASection linkleri
+  `search={{ fresh: true }}` taşır. Journey restore effect'i `fresh` görünce
+  restore ETMEZ: önce reset, sonra Q1, sonra `replace` ile param URL'den
+  düşer (böylece F5 yeni journey'yi normal restore eder). Tarayıcıda
+  doğrulandı: `/journey?fresh=true` → temiz `/journey` Q1.
+- **Journey içi "Start New Journey":** artık `resetJourneySession` çağırıyor
+  (önceden Life Feed silinmiyordu — eski feed yeni journey'ye sızıyordu).
+  Reveal fazı dahil her aşamada görünür/aktif (savedProgress true iken).
+- **Results "Start Over — New Journey":** eski pasif "Start again" linki
+  yerine her zaman aktif primary buton — reset + `/journey`'ye navigate.
+  Boş storage'da results "No journey data available yet" gösterir
+  (tarayıcıda doğrulandı).
+- **Testler:** `reset-session.test.ts` (YENİ, 4 test): journey+feed silinir,
+  dil korunur, userId'li yol da local'i siler (Supabase yokken best-effort),
+  boş storage'da no-op.
+
+**Bilerek korundu:** F5/sayfa yenilemede journey restore davranışı —
+persistence ürün özelliği; sadece açık başlangıç noktaları (landing CTA,
+Start Over, Start New Journey) sıfırlar.
+
+## 2a. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
 
 Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
 uçtan uca doğrulandı:
@@ -93,13 +124,13 @@ kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
 Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
 fabricate edilmez).
 
-## 2a. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
+## 2b. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
 
 - es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
 - `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
 - Repo-geneli prettier; lint exit 0. 298 test.
 
-## 2b. Önceki işler (commit'li ve push'lu)
+## 2c. Önceki işler (commit'li ve push'lu)
 
 - **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
   8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
@@ -112,8 +143,9 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, c46adf0 = origin/main).
+- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
+  (onaysız commit/push yok). Onay gelirse:
+  `feat: auto-reset / clean restart on landing entry + always-on Start Over`
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
