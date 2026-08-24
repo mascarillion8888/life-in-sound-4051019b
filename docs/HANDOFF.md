@@ -11,11 +11,8 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-           origin/main = **088535f** (HEAD ile eşit; keep-alive işi
-           COMMIT'LENMEDİ — working tree'de 5 dosya bekliyor:
-           M scripts/postbuild-vercel-spa.mjs, M src/server.ts,
-           M vercel.json, ?? src/lib/supabase/keep-alive.ts,
-           ?? src/lib/supabase/keep-alive.test.ts)
+           PUSH TAMAM — **152da7f** artık origin/main (`088535f..152da7f`
+           push edildi, kullanıcı tokenı ile). Çalışma ağacı TEMİZ.
 Testler:   257/257 geçti (20 dosya; +5 keep-alive unit testi:
            ok / env-yok-skip / query-failure / throw / client-seçici)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
@@ -52,7 +49,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Supabase keep-alive cron endpoint (working tree'de, COMMIT BEKLİYOR)
+## 2. Son biten iş — Supabase keep-alive cron endpoint (TAM, 152da7f COMMIT'Lİ ve PUSH'Lİ)
 
 Vercel Cron ile günde 1 kez (`0 6 * * *`) minimal bir Supabase okuma sorgusu
 atıp free-tier pasiflik duraklamasını önler. **Kritik bulgu:** bu SPA
@@ -150,8 +147,6 @@ ayrıca eklenebilir).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit/push et** — kullanıcı onayı
-  bekleniyor (push için kullanıcı her seferinde taze token veriyor).
 - **iTunes Search API ile gerçek şarkı doğrulaması** — hâlâ açık; ayrı onay
   turu bekliyor. Kurallar: eski MusicBrainz dialog'u GERİ GELMEZ,
   serbest-metin birincil UX, LLM yok, sahte/mock şarkı yok,
