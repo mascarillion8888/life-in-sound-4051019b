@@ -11,8 +11,8 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-           MTG Life Cards işi bu oturumda commit'lendi; PUSH EDİLMEDİ
-           (kullanıcı onayı bekleniyor — `git status` ile doğrula).
+           MTG Life Cards işi commit'lendi ve PUSH TAMAM
+           (`d838566..e0b15dd main -> main`; `git status` temiz).
 Testler:   290/290 geçti (24 dosya; 257'den +33: lifeCards 8,
            artworkHarmonize 6, useAudioPreview 8, QuizCard 4,
            poeticPoster renderMap 4, searchSong preview 1,
@@ -122,8 +122,7 @@ serbest-metin UX'i, eski MusicBrainz dialog'u, görsel tema kataloğu,
 
 ## 3. Olası sonraki adımlar
 
-- **Bu işi push etme** — kullanıcı onayı bekleniyor; onay gelirse
-  `git push origin main`.
+- ~~Bu işi push etme~~ — PUSH TAMAM (kullanıcı isteğiyle, e0b15dd = origin/main).
 - **iTunes Search API ile gerçek şarkı doğrulaması** — hâlâ açık; ayrı
   onay turu bekliyor. Kurallar: eski MusicBrainz dialog'u GERİ GELMEZ,
   serbest-metin birincil UX, LLM yok, sahte/mock şarkı yok,
