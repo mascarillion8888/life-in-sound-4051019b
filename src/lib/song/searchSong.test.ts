@@ -7,6 +7,7 @@ import {
   buildSuggestTerm,
   catalogGhostCompletion,
   findConfidentMatch,
+  highResArtworkUrl,
   matchCatalogSong,
   parseSongQuery,
   rankSongsFuzzy,
@@ -78,7 +79,7 @@ describe("itunes mapping: trackToSong", () => {
       title: "Fragile",
       artist: "Sting",
       album: "...Nothing Like the Sun",
-      artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/100x100bb.jpg",
+      artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/600x600bb.jpg",
       releaseYear: 1987,
       previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
       isrc: null,
@@ -92,6 +93,24 @@ describe("itunes mapping: trackToSong", () => {
     );
     const { previewUrl: _omitted, ...noPreview } = TRACK_FRAGILE;
     expect(trackToSong(noPreview)?.previewUrl).toBeNull();
+  });
+
+  it("upgrades artworkUrl100 to its high-resolution CDN variant (no fake URL)", () => {
+    expect(
+      highResArtworkUrl("https://is1-ssl.mzstatic.com/image/thumb/Music/x/100x100bb.jpg"),
+    ).toBe("https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg");
+    // Already-hi-res or non-standard URLs pass through unchanged.
+    expect(
+      highResArtworkUrl("https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg"),
+    ).toBe("https://is1-ssl.mzstatic.com/image/thumb/Music/x/600x600bb.jpg");
+    expect(highResArtworkUrl("https://example.com/cover.png")).toBe(
+      "https://example.com/cover.png",
+    );
+  });
+
+  it("maps a non-standard artwork URL through unchanged (never rewritten blindly)", () => {
+    const song = trackToSong({ ...TRACK_FRAGILE, artworkUrl100: "https://example.com/cover.png" });
+    expect(song?.artworkUrl).toBe("https://example.com/cover.png");
   });
 
   it("leaves album/artwork null when the API does not supply them (no invented data)", () => {

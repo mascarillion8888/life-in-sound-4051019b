@@ -11,12 +11,10 @@
 ```
 Aktif dal: main
 HEAD:      (asla sabit yazılmaz — `git log -1 --oneline` ile doğrula)
-           MTG Life Cards işi commit'lendi ve PUSH TAMAM
-           (`d838566..e0b15dd main -> main`; `git status` temiz).
-Testler:   290/290 geçti (24 dosya; 257'den +33: lifeCards 8,
-           artworkHarmonize 6, useAudioPreview 8, QuizCard 4,
-           poeticPoster renderMap 4, searchSong preview 1,
-           PosterCanvas grid 1, iTunes fixture güncellemesi)
+           iTunes hi-res artwork işi bu oturumda commit'lendi;
+           PUSH DURUMU `git status` ile doğrulanmalı.
+Testler:   292/292 geçti (24 dosya; 290'dan +2: hi-res artwork
+           upgrade testi + non-standard URL passthrough testi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      bu işin dokunduğu dosyalarda 0 hata. UYARI: HEAD'de
@@ -41,7 +39,34 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — MTG-Style Dynamic Life Cards + Master Poster entegrasyonu + Audio Preview (TAM, bu oturumun commit'i)
+## 2. Son biten iş — iTunes hi-res artwork doğrulama iyileştirmesi (TAM, bu oturumun commit'i)
+
+Kullanıcı görevi "iTunes Search API şarkı doğrulaması (non-blocking UX)" idi;
+incelemede **altyapının zaten tam olduğu** doğrulandı, delta yalnızca hi-res
+artwork oldu:
+
+- **Zaten vardı (değişmedi):** `journey.tsx`'te 300 ms debounce'lu arka plan
+  doğrulama (`runVerification` → `searchSongs` server fn → iTunes), commit
+  asla beklemez (`withVerifiedMatch`), manuel girdi asla yeniden yazılmaz,
+  doğrulama başarısızsa kullanıcı metni aynen kalır (sahte veri yok).
+  `searchSong.server.ts` iTunes Search API'yi server-side sorgular
+  (tarayıcı doğrudan çağırmaz), `previewUrl` (30 sn) MTG işinde zaten
+  map'lenmişti. Testler fixture + enjekte `fetchImpl` ile çalışır —
+  canlı ağ yok (MSW gerekmiyor).
+- **Bu oturumun değişikliği:** `src/lib/song/itunes-mapping.ts` —
+  yeni `highResArtworkUrl(url)` export'u: iTunes `artworkUrl100`'daki
+  `100x100` path token'ını `600x600` yapar (Apple CDN'in gerçek hi-res
+  varyantı; token yoksa URL'ye dokunmaz). `trackToSong` artık bu
+  yükseltmeyi kullanıyor. Gerekçe: 100px kapak QuizCard/poster
+  boyutunda pikselleşiyordu.
+- **Testler (+2):** `searchSong.test.ts` — `highResArtworkUrl` upgrade /
+  already-hi-res passthrough / non-standard URL passthrough; `trackToSong`
+  beklenen artworkUrl artık `600x600bb.jpg`.
+- **Gate'ler:** tsc 0 hata, `npm test` 292/292, `npm run build` temiz,
+  scoped eslint 0 hata (pre-existing `spotify.server.test.ts` prettier
+  borcu hâlâ HEAD'de, dokunulmadı).
+
+## 2a. Önceki iş — MTG-Style Dynamic Life Cards + Master Poster entegrasyonu + Audio Preview (TAM, e0b15dd, push'lu)
 
 Kullanıcı onaylı kararlar: (1) `profile` opsiyonel kalır, yeni zorunlu
 input yok; (2) 6 portallı poster yapısı KORUNUR, 8 MTG kartı ayrı bir
@@ -109,7 +134,7 @@ serbest-metin UX'i, eski MusicBrainz dialog'u, görsel tema kataloğu,
 
 ---
 
-## 2a. Önceki işler (commit'li ve push'lu)
+## 2b. Önceki işler (commit'li ve push'lu)
 
 - **Supabase keep-alive cron** (152da7f, push'lu): Vercel Cron
   `0 6 * * *` → `/api/keep-alive`; `src/server.ts` entry intercept,

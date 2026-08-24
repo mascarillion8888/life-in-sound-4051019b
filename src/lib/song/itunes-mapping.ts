@@ -64,6 +64,18 @@ function asTrackId(value: unknown): string | null {
   if (s && /^\d+$/.test(s)) return s;
   return null;
 }
+/**
+ * Upgrade an iTunes `artworkUrl100` to its high-resolution variant. Apple's
+ * image CDN serves the same artwork at the requested pixel size — swapping the
+ * `100x100bb` path token for `600x600bb` is a documented size request, not a
+ * fabricated URL. URLs without the `100x100` token (already hi-res, or a
+ * non-standard shape) are returned unchanged; the poster/cards need the
+ * larger artwork because 100px pixelates at their render size.
+ */
+export function highResArtworkUrl(url: string): string {
+  return url.includes("100x100") ? url.replace("100x100", "600x600") : url;
+}
+
 /** Parse the 4-digit release year out of an ISO date (iTunes/Spotify both use YYYY-...). */
 function extractReleaseYear(value: unknown): number | null {
   const s = asString(value);
@@ -181,13 +193,15 @@ export function trackToSong(track: ITunesTrack): Song | null {
   const artist = asString(track.artistName);
   if (!providerId || !title || !artist) return null;
 
+  const artworkUrl100 = asString(track.artworkUrl100);
   return {
     provider: PROVIDER,
     providerId,
     title,
     artist,
     album: asString(track.collectionName),
-    artworkUrl: asString(track.artworkUrl100),
+    // High-resolution variant of the real CDN artwork — never a stock/fake URL.
+    artworkUrl: artworkUrl100 ? highResArtworkUrl(artworkUrl100) : null,
     releaseYear: extractReleaseYear(track.releaseDate),
     // 30s AAC preview straight from the API — null when iTunes has none.
     previewUrl: asString(track.previewUrl),
