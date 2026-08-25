@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   359/359 geçti (33 dosya; decade ladder + 3 yeni family testi yeni)
+Testler:   359/359 geçti (33 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Build:     `npm run build` = 0 hata (7 backdrop PNG bundle'da)
 Lint:      `npm run lint` = 0 HATA (exit 0). 9 react-refresh uyarısı
@@ -23,7 +23,30 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Dynamic Atmosphere Engine (genre/decade) (TAM)
+## 2. Son biten iş — Re-open: "Backdrop Path & Vector Claim" (KAPANDI, kod değişikliği yok)
+
+Kullanıcı re-open etti: "blue/purple vector boxes STILL render; path veya CSS
+override sorunu" iddiası. Adli kanal:
+
+1. **Served source curl:** `SceneRoom.tsx` runtime'da **2 span** (backdrop
+   `background-image` + `glow gradient`) — sıfır BookRow/Shelf/DeskLamp JSX.
+   `backgroundImage: url(${BACKDROPS[theme]})` import map'ten çözülür.
+2. **Network probe:** `?import` endpoint `export default
+   "/src/assets/room-backdrop-<theme>.png?t=…"` döner; raw endpoint HTTP 200
+   ile ~470 KB PNG döner. Vite asset resolution sorunsuz.
+3. **Test proof:** `[aria-hidden]` node sayısı <5 (nested furniture DOM vektörü
+   yok); `backgroundImage` `room-backdrop-<theme>.<hash>.png` içerir →
+   359/359 yeşil.
+
+**Sonuç:** blue/purple bloklar DOM vektörü değil — procedural renderer'ın
+çizdiği panel/shelf box'ları raster PNG'nin kendi içeriği. Kod değişikliği
+yok; claim'i "asset path broken veya DOM fallback" olarak kapat. Eğer hâlâ
+kalitesiz görünüyor, çözüm PNG'i **daha sarsıntılı/fotoğrafa yakın**
+üretmek (generator refactor'ı), kod restore değil.
+
+---
+
+## 2a. Önceki iş — Dynamic Atmosphere Engine (genre/decade) (TAM)
 
 Oda/backdrop backbone'u statik 4 temadan dinamik genre+decade matrisine
 genişletildi. `SceneRoom` ve AI painting brief'i aynı aileyi çözer.
