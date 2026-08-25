@@ -23,26 +23,31 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Re-open: "Backdrop Path & Vector Claim" (KAPANDI, kod değişikliği yok)
+## 2. Son biten iş — Generator Quality Pass: Painterly Backdrops (TAM)
 
-Kullanıcı re-open etti: "blue/purple vector boxes STILL render; path veya CSS
-override sorunu" iddiası. Adli kanal:
+Kullanıcı verdict'i: "vector look raster PNG'nin kendi içeriği; kod temiz,
+çözüm generator refactor'ı." Generator `scripts/generate-room-backdrop.mjs`
+**baştan yazıldı** — painterly pass:
 
-1. **Served source curl:** `SceneRoom.tsx` runtime'da **2 span** (backdrop
-   `background-image` + `glow gradient`) — sıfır BookRow/Shelf/DeskLamp JSX.
-   `backgroundImage: url(${BACKDROPS[theme]})` import map'ten çözülür.
-2. **Network probe:** `?import` endpoint `export default
-   "/src/assets/room-backdrop-<theme>.png?t=…"` döner; raw endpoint HTTP 200
-   ile ~470 KB PNG döner. Vite asset resolution sorunsuz.
-3. **Test proof:** `[aria-hidden]` node sayısı <5 (nested furniture DOM vektörü
-   yok); `backgroundImage` `room-backdrop-<theme>.<hash>.png` içerir →
-   359/359 yeşil.
+- **Crisp rect/trapezoid yok:** tüm geometri (kitap sırtları, raf çerçevesi,
+  masa kutuları) `softRect` coverage mask ile çizilir (kenarda 1/n içinde
+  1→0 ease; tilt + gap + hFrac randomizasyonu perpendicularity'yi kırar).
+- **Gaussian ışık:** lamba cone yerine gaussian warm pool; desk ön kenarı
+  `gauss()` catch-light; ambiyans spill + cool counterlight — hiçbirinde
+  sert kenar yok.
+- **Painterly edge-breaker:** düşük frekanslı fBm ile ±8% brightness
+  modülasyonu + final film grain (fBm ×9) — analog doku hissi.
+- **KRİTİK BUG bulundu:** `jitter()` helper'ı `.map(clamp)` ile [0,1]'e
+  kırpıyordu — tüm 0-255 renkler ~1'e inip siyah çıkıyordu (ilk painterly
+  render'ın rafı bu yüzden tamamen siyahtı; sadece gilded gold çizgiler
+  hayattaydı). `jitter` artık 0-255 domain'de clamp'ler.
+- Tüm 7 tema regenerate: ~450-510 KB → **~1.0-1.1 MB** (piksel başına
+  entropi arttı = organik doku).
+- **Tarayıcı kanıtı:** `/journey?fresh=1` + HUMBLE/Kendrick → hiphop odası
+  artık bulanık kenarlı, yumuşak mor kitap silüetleri + difüz lamba
+  yayılımı; hard vector box YOK. Screenshot doğrulandı.
 
-**Sonuç:** blue/purple bloklar DOM vektörü değil — procedural renderer'ın
-çizdiği panel/shelf box'ları raster PNG'nin kendi içeriği. Kod değişikliği
-yok; claim'i "asset path broken veya DOM fallback" olarak kapat. Eğer hâlâ
-kalitesiz görünüyor, çözüm PNG'i **daha sarsıntılı/fotoğrafa yakın**
-üretmek (generator refactor'ı), kod restore değil.
+`359/359, tsc 0, lint 0, build 0.`
 
 ---
 

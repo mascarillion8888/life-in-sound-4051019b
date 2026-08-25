@@ -1,8 +1,13 @@
 /**
  * generate-room-backdrop.mjs — build-time procedural renderer for the fixed
- * global library room. Produces one rich wood-carved library backdrop PNG per
- * scene theme (`src/assets/room-backdrop-<theme>.png`) so the live UI layers
- * a real textured image instead of flat CSS/DOM vector shapes.
+ * global library room. Produces one atmospheric backdrop PNG per scene theme
+ * (`src/assets/room-backdrop-<theme>.png`).
+ *
+ * Painterly version: no crisp rectangles or trapezoids. Everything on the
+ * wall is computed through blurred coverage masks (noise-warped organic
+ * rectangles for books, gaussian-lit lamp, smeared wood grain), followed by a
+ * painterly "edge-breaker" modulation and a film-grain frost so the scene
+ * reads like analog atmosphere rather than vector geometry.
  *
  * Pure math + pngjs — no external services, fully deterministic.
  *
@@ -35,20 +40,20 @@ function prng(seed) {
   };
 }
 
-/** Seeded value-noise sampler with fBm octaves. */
+/** Seeded value-noise sampler with fBm octaves (returns [0,1]). */
 function makeNoise(seed) {
   const rnd = prng(seed);
   const grid = new Float32Array(256 * 256);
   for (let i = 0; i < grid.length; i++) grid[i] = rnd();
   const at = (x, y) => grid[(((x | 0) & 255) * 256 + ((y | 0) & 255)) & 65535];
-  const smoothInterp = (v) => v * v * (3 - 2 * v) * v;
+  const sm = (v) => v * v * (3 - 2 * v);
   function noise2(x, y) {
     const xi = Math.floor(x);
     const yi = Math.floor(y);
     const xf = x - xi;
     const yf = y - yi;
-    const u = smoothInterp(xf);
-    const v = smoothInterp(yf);
+    const u = sm(xf);
+    const v = sm(yf);
     const c00 = at(xi, yi);
     const c10 = at(xi + 1, yi);
     const c01 = at(xi, yi + 1);
@@ -72,7 +77,8 @@ function makeNoise(seed) {
 }
 
 const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const pix = (buf, x, y) => ((y * WIDTH + x) * 4) | 0;
+/** Gaussian falloff exp(-d²/σ²) — soft light pool, never an edge. */
+const gauss = (d, sigma) => Math.exp(-(d * d) / (sigma * sigma));
 /** Alpha-composite `mix(base, add, coverage)` in place at pixel idx. */
 function blend(buf, idx, rgb, coverage, alpha = 1) {
   const w = clamp(coverage) * alpha;
@@ -86,61 +92,54 @@ function addLight(buf, idx, rgb, amount) {
   buf[idx + 1] = Math.min(255, buf[idx + 1] + rgb[1] * amount);
   buf[idx + 2] = Math.min(255, buf[idx + 2] + rgb[2] * amount);
 }
-
-/** Color jittered by a noise value; used to break flatness. */
+/** Color jittered by a noise value; used to break flatness without edges.
+ *  Values remain in 0-255 domain (clamped per component). */
 function jitter(rgb, noiseVal, amplitude) {
   const f = 1 + (noiseVal - 0.5) * 2 * amplitude;
-  return [
-    clamp((rgb[0] * f) / 255) * 255,
-    clamp((rgb[1] * f) / 255) * 255,
-    clamp((rgb[2] * f) / 255) * 255,
-  ];
+  return rgb.map((v) => Math.min(255, Math.max(0, v * f)));
 }
 
-/* --------------------------- scene geometry --------------------------- */
+/* --------------------------- organic geometry -------------------------- */
 
-const SHELF = {
-  // The shelf case occupies the top band of the wall.
-  x0: 0.07,
-  x1: 0.93,
-  y0: 0.045,
-  y1: 0.5,
-  rows: 2,
-  rowGap: 0.035, // fraction of case height
-  booksPerRow: 13,
-};
-const DESK = { y0: 0.74 }; // desk surface occupies the bottom band
-const LAMP = { x: 0.12, shadeY0: 0.4, shadeY1: 0.54, stemY1: DESK.y0, radius: 0.022 };
-const BOXES = [
-  { x0: 0.84, x1: 0.885, yTop: 0.685 }, // larger
-  { x0: 0.8, x1: 0.836, yTop: 0.7 }, // smaller
-];
+/** Soft rect: coverage eases from 1 to 0 over 1/n of each side. Painterly. */
+function softRect(px, py, x0, x1, y0, y1, n = 14) {
+  const w = x1 - x0;
+  const h = y1 - y0;
+  if (w <= 0 || h <= 0) return 0;
+  const u = Math.min((px - x0) * n / w, (x1 - px) * n / w);
+  const v = Math.min((py - y0) * n / h, (y1 - py) * n / h);
+  return clamp(Math.min(u, v));
+}
 
 function renderTheme(palette, seed) {
   const noise = makeNoise(seed * 7919 + 13);
   const buf = new Uint8Array(WIDTH * HEIGHT * 4);
-  // Precompute book columns per row (same distribution every row).
-  const shelfH = SHELF.y1 - SHELF.y0;
-  const rowH = shelfH / SHELF.rows;
-  const bookRnd = prng(seed * 131 + 7);
+  // Geometry: shelf band, desk band, lamp spot, organic book columns.
+  const SHELF = { x0: 0.07, x1: 0.93, y0: 0.045, y1: 0.5, rows: 2, booksPerRow: 13 };
+  const DESK = { y0: 0.74 };
+  const LAMP = { x: 0.12, midY: 0.47, stemY0: 0.54 };
+  const BOXES = [
+    { x0: 0.84, x1: 0.885, yTop: 0.685 },
+    { x0: 0.8, x1: 0.836, yTop: 0.7 },
+  ];
+  const caseH = SHELF.y1 - SHELF.y0;
+  const rowH = caseH / SHELF.rows;
+  const caseW = SHELF.x1 - SHELF.x0;
+  const colW = caseW / SHELF.booksPerRow;
   const columns = [];
   {
-    const caseW = SHELF.x1 - SHELF.x0;
-    const colW = caseW / SHELF.booksPerRow;
+    const rnd = prng(seed * 131 + 7);
     for (let i = 0; i < SHELF.booksPerRow; i++) {
-      const hFrac = 0.58 + bookRnd() * 0.32;
-      const colorIdx = (i * 3 + seed) % palette.books.length;
-      const gilded = bookRnd() < 0.34;
-      const hubBands = 1 + Math.floor(bookRnd() * 2);
-      const tone = 0.78 + bookRnd() * 0.5; // per-volume readability variation
+      const gapped = rnd() < 0.16;
       columns.push({
         x0: SHELF.x0 + i * colW,
-        x1: SHELF.x0 + (i + 0.97) * colW,
-        hFrac,
-        colorIdx,
-        gilded,
-        hubBands,
-        tone,
+        x1: SHELF.x0 + (i + (gapped ? 0.86 : 0.99)) * colW,
+        hFrac: 0.55 + rnd() * 0.36,
+        colorIdx: (i * 3 + seed) % palette.books.length,
+        gilded: rnd() < 0.3,
+        tilt: rnd() < 0.22 ? (rnd() - 0.5) * 0.02 : 0,
+        tone: 0.76 + rnd() * 0.5,
+        edgeSeed: rnd() * 4,
       });
     }
   }
@@ -157,149 +156,153 @@ function renderTheme(palette, seed) {
     const py = y / HEIGHT;
     for (let x = 0; x < WIDTH; x++) {
       const px = x / WIDTH;
-      const idx = pix(buf, x, y);
+      const idx = (y * WIDTH + x) * 4;
 
-      /* 1) Wall base: vertical gradient + grainy radiance noise. */
-      const gBase = py;
-      const grainFine = noise.fbm(px * 120, py * 120, 3);
+      /* 1) Wall: vertical gradient + fine film grain. */
+      const grain0 = noise.fbm(px * 140, py * 140, 3);
       let rgb = [
-        wall0[0] * (1 - gBase) + wall1[0] * gBase,
-        wall0[1] * (1 - gBase) + wall1[1] * gBase,
-        wall0[2] * (1 - gBase) + wall1[2] * gBase,
+        wall0[0] * (1 - py) + wall1[0] * py,
+        wall0[1] * (1 - py) + wall1[1] * py,
+        wall0[2] * (1 - py) + wall1[2] * py,
       ];
-      rgb = jitter(rgb, grainFine, 0.08);
+      rgb = jitter(rgb, grain0, 0.09);
       for (let c = 0; c < 3; c++) buf[idx + c] = rgb[c];
       buf[idx + 3] = 255;
 
-      /* 2) Shelf case — carved wood paneling, books, frame. */
+      /* 2) Shelf zone — painterly case + organic book brush. */
       if (px > SHELF.x0 && px < SHELF.x1 && py > SHELF.y0 && py < SHELF.y1) {
-        // Paneled wood back with vertical plank seams + wood-grain rings.
-        const seamPhase = px * 30 + noise.fbm(px * 3, py * 3, 2);
-        const seam = Math.abs(Math.sin(seamPhase));
-        const plankLight = 0.28 + 0.72 * (seam > 0.06 ? 1 : 0);
-        const grain = noise.fbm(px * 14 + Math.sin(py * 40) * 0.3, py * 4, 4);
-        let woodCol = jitter(wood, grain, 0.42);
-        for (let c = 0; c < 3; c++) woodCol[c] = (woodCol[c] / 255) * plankLight * 255;
-
-        // Books within each row band.
-        const rowIdx = Math.floor((py - SHELF.y0) / rowH);
+        // Column cross once so we iterate only the books under the pixel.
+        const rowIdx = Math.min(SHELF.rows - 1, Math.floor((py - SHELF.y0) / rowH));
         const rowTop = SHELF.y0 + rowIdx * rowH;
         const rowY = py - rowTop;
-        let color = woodCol;
-        for (const col of columns) {
-          if (px >= col.x0 && px < col.x1) {
-            const bookTop = rowH * 0.92 * (1 - col.hFrac);
-            const plankLine = rowH * 0.92;
-            if (rowY > bookTop && rowY < plankLine) {
-              // Spine: base book color, richer grain on the cloth/leather face.
-              let spine = jitter(books[col.colorIdx], noise.fbm(px * 90, py * 9, 2), 0.16);
-              // Light falls from the left; crown light from above.
-              const u = (px - col.x0) / (col.x1 - col.x0);
-              const relY = (rowY - bookTop) / (plankLine - bookTop);
-              const crown = clamp(1 - relY * 4);
-              let factor = (0.66 + 0.24 * crown) * col.tone;
-              // Side rims: light catches the left edge, darkness pools on the right.
-              if (u < 0.05) factor += 0.18;
-              else if (u > 0.93) factor -= 0.3;
-              else if (u < 0.11) factor -= 0.08;
-              // Hub bands (raised rings) darken slightly with edge highlights.
-              for (let b = 0; b < col.hubBands; b++) {
-                const bandY = 0.26 + b * 0.24;
-                if (Math.abs(relY - bandY) < 0.016) factor -= 0.2;
-                else if (Math.abs(relY - bandY) < 0.03) factor += 0.09;
-              }
-              // Gilded title line near the crown of taller books.
-              if (col.gilded && Math.abs(relY - 0.15) < 0.012) {
-                spine = [210 + (col.colorIdx % 3) * 10, 158, 66];
-              }
-              color = [
-                clamp((spine[0] * factor) / 255) * 255,
-                clamp((spine[1] * factor) / 255) * 255,
-                clamp((spine[2] * factor) / 255) * 255,
-              ];
-            } else if (rowY >= plankLine) {
-              // Shelf plank beneath the books — lit lip + board grain.
-              const plank = jitter(wood, noise.fbm(py * 60, px * 4, 2), 0.22);
-              const lip = rowY - plankLine < rowH * 0.022 ? 1.7 : 1.12;
-              color = [
-                Math.min(255, plank[0] * lip),
-                Math.min(255, plank[1] * lip * 0.95),
-                Math.min(255, plank[2] * lip * 0.88),
-              ];
+
+        let shelfColor;
+        {
+          // Wood back: warped rings, no seam lines — each fBm returns [0..1].
+          const warpA = noise.fbm(px * 8, py * 30, 3);
+          const warpB = noise.fbm(px * 30, py * 8, 3);
+          let color = jitter(wood, warpA * 0.65 + warpB * 0.35, 0.45);
+          // Books placed through blurred coverage masks.
+          for (const col of columns) {
+            if (px < col.x0 || px >= col.x1) continue;
+            // Tilted brush rectangle breaks perfect perpendicularity.
+            let tX0 = col.x0;
+            let tX1 = col.x1;
+            if (col.tilt !== 0) {
+              if (col.tilt > 0) tX1 = col.x1 - col.tilt;
+              else tX0 = col.x0 - col.tilt;
             }
-            break;
+            const rowFrac = 0.9;
+            const bookTop = rowH * rowFrac * (1 - col.hFrac);
+            const plank = rowH * rowFrac;
+            const cov = softRect(px, rowY, tX0, tX1, bookTop, plank, 26);
+            if (cov > 0) {
+              let spine = jitter(
+                books[col.colorIdx],
+                noise.fbm(px * 70 + col.edgeSeed * 3, py * 12, 3),
+                0.18,
+              );
+              // Diffused light from upper-left; crown falls off gently.
+              const u = clamp((px - tX0) / Math.max(1e-4, tX1 - tX0));
+              const relY = clamp((rowY - bookTop) / Math.max(1e-4, plank - bookTop));
+              const crown = Math.pow(1 - relY, 2.3);
+              let factor = clamp((0.86 + 0.18 * crown) * col.tone, 0, 1.4);
+              // Soft rim: left lifts, right sinks — both blurred.
+              factor += clamp((0.1 - u) * 3) * 0.18 - clamp(u - 0.86) * 2 * 0.22;
+              // Streaky "gilded hub ring" without hard boundary.
+              if (col.gilded) {
+                const ringPhase = (Math.sin(relY * 24 + col.edgeSeed * 6) + 1) / 2;
+                if (Math.abs(relY - 0.17) < 0.03 && ringPhase > 0.6)
+                  spine = [215, 162, 70];
+              }
+              spine = [
+                clamp(spine[0] * factor / 255) * 255,
+                clamp(spine[1] * factor / 255) * 255,
+                clamp(spine[2] * factor / 255) * 255,
+              ];
+              color = [
+                color[0] * (1 - cov) + spine[0] * cov,
+                color[1] * (1 - cov) + spine[1] * cov,
+                color[2] * (1 - cov) + spine[2] * cov,
+              ];
+              break;
+            }
           }
+          shelfColor = color;
         }
-        blend(buf, idx, color, 1);
-        // Deep frame border with bevel light top-left.
-        const margin = Math.min(SHELF.y1 - SHELF.y0, SHELF.x1 - SHELF.x0) * 0.008;
-        const inFrameX =
-          (px > SHELF.x0 && px < SHELF.x0 + margin) || (px < SHELF.x1 && px > SHELF.x1 - margin);
-        const inFrameY =
-          (py > SHELF.y0 && py < SHELF.y0 + margin) || (py < SHELF.y1 && py > SHELF.y1 - margin);
-        if (inFrameX || inFrameY) {
-          const lit = py < SHELF.y0 + margin || px < SHELF.x0 + margin;
-          const frameMul = lit ? 2.2 : 0.62;
+        // Soft case frame (warped brush, not crisp) — blended ONCE at the end
+        // so the pixel is never left unweighted.
+        const frameCov = softRect(px, py, SHELF.x0, SHELF.x1, SHELF.y0, SHELF.y1, 30);
+        if (frameCov < 1) {
+          // "Upper-left" = nearer-top or nearer-left half of the frame —
+          // catches lamp spill from the top-left lampshade.
+          const midX = (SHELF.x0 + SHELF.x1) * 0.5;
+          const midY = (SHELF.y0 + SHELF.y1) * 0.5;
+          const upperLeft = px < midX || py < midY;
+          const lift = upperLeft
+            ? clamp((SHELF.y0 - py) * 40) + clamp((SHELF.x0 - px) * 40)
+            : clamp((SHELF.y1 - py) * 40) - clamp((SHELF.x1 - px) * 40);
+          const frameMul = upperLeft ? 1.55 + lift * 0.5 : 0.72 + lift * 0.5;
           const frameCol = [
             Math.min(255, wood[0] * frameMul),
             Math.min(255, wood[1] * frameMul * 0.94),
             Math.min(255, wood[2] * frameMul * 0.88),
           ];
-          blend(buf, idx, frameCol, 0.95);
+          const w = clamp(1 - frameCov) * 0.8;
+          shelfColor = [
+            shelfColor[0] * (1 - w) + frameCol[0] * w,
+            shelfColor[1] * (1 - w) + frameCol[1] * w,
+            shelfColor[2] * (1 - w) + frameCol[2] * w,
+          ];
         }
+        blend(buf, idx, shelfColor, 1);
       }
 
-      /* 3) Desk band with horizontal wood grain + front edge highlight. */
+      /* 3) Desk — smeared horizontal grain, soft edge catch-light. */
       if (py >= DESK.y0) {
         const d = (py - DESK.y0) / (1 - DESK.y0);
-        // Stretched noise along x → long grain lines.
-        const grain = noise.fbm(px * 5, py * 110, 4);
+        const gWarp = noise.fbm(px * 6, py * 130, 4);
         let base = [
           desk0[0] * (1 - d) + desk1[0] * d,
           desk0[1] * (1 - d) + desk1[1] * d,
           desk0[2] * (1 - d) + desk1[2] * d,
         ];
-        const lift = 1 - d * 0.55;
+        const lift = 1 - d * 0.5;
         base = [
-          Math.min(255, grain * 1.6 * base[0] * lift + 18),
-          Math.min(255, grain * 1.6 * base[1] * lift + 14),
-          Math.min(255, grain * 1.6 * base[2] * lift + 12),
+          Math.min(255, base[0] * (gWarp * 1.4 + 0.18) * lift + 16),
+          Math.min(255, base[1] * (gWarp * 1.4 + 0.14) * lift + 13),
+          Math.min(255, base[2] * (gWarp * 1.35 + 0.12) * lift + 11),
         ];
-        // Front edge catch-light.
-        if (py - DESK.y0 < 0.004)
-          base = [
-            Math.min(255, base[0] * 1.9),
-            Math.min(255, base[1] * 1.7),
-            Math.min(255, base[2] * 1.5),
-          ];
+        const front = gauss(py - DESK.y0, 0.008) * 0.85;
+        base = [
+          Math.min(255, base[0] * (1 + front)),
+          Math.min(255, base[1] * (1 + front * 0.9)),
+          Math.min(255, base[2] * (1 + front * 0.8)),
+        ];
         blend(buf, idx, base, 1);
       }
 
-      /* 4) Lamp — warm emissive glow, shade, stem, base. */
+      /* 4) Lamp — gaussian glow, organic shade silhouette. */
       const lampX = LAMP.x;
-      const shadeTop = LAMP.shadeY0;
-      const shadeBottom = LAMP.shadeY1;
-      const dx = px - lampX;
-      const dyShade = py - (shadeTop + shadeBottom) / 2;
-      const glowDis = Math.sqrt(dx * dx * 3.2 + dyShade * dyShade * 1.6);
-      // Cone of light from the shade.
-      addLight(buf, idx, glow, clamp(0.22 - glowDis) * 1.9);
-      // Stem (dark rod).
-      if (Math.abs(px - lampX) < 0.0018 && py > shadeBottom && py < LAMP.stemY1) {
-        blend(buf, idx, [12, 10, 8], 0.85);
-      }
-      // Base ellipse.
-      const baseDx = (px - lampX) / LAMP.radius;
-      const baseDy = (py - (DESK.y0 - 0.007)) / 0.007;
-      if (py >= shadeBottom && baseDx * baseDx + baseDy * baseDy < 1)
-        blend(buf, idx, [16, 13, 10], 0.85);
-      // Shade trapezoid — emissive cloth.
-      if (py > shadeTop && py < shadeBottom) {
-        const t = (py - shadeTop) / (shadeBottom - shadeTop);
-        const halfW = 0.028 + t * 0.03; // widens toward the bottom
-        if (Math.abs(px - lampX) < halfW) {
-          const texr = noise.fbm(px * 200, py * 120, 2);
-          const shine = clamp(1 - Math.abs(px - lampX) / halfW) * 0.5 + 0.55 + texr * 0.1;
+      const dxShade = px - lampX;
+      const shadeT = (py - (LAMP.midY - 0.069)) / 0.138;
+      const dyShade = py - LAMP.midY;
+      addLight(
+        buf,
+        idx,
+        glow,
+        gauss(Math.sqrt(dxShade * dxShade * 2.4 + dyShade * dyShade), 0.22) * 0.34,
+      );
+      const stemCov = gauss(clamp(dxShade, -0.003, 0.003), 0.0025);
+      if (py > LAMP.stemY0 && py < DESK.y0 && stemCov > 0.04)
+        blend(buf, idx, [14, 11, 8], clamp(stemCov) * 0.9);
+      if (shadeT > 0 && shadeT < 1) {
+        const halfW = 0.03 * (1 - Math.abs(shadeT - 0.5) * 2 * 0.4);
+        const dxn = dxShade / Math.max(halfW, 0.0001);
+        const shadeCov = clamp(1 - dxn * dxn);
+        if (shadeCov > 0) {
+          const tex = noise.fbm(px * 180, py * 110, 2) - 0.5;
+          const shine = clamp(1 - Math.abs(dxn)) * 0.55 + 0.5 + tex * 0.14;
           blend(
             buf,
             idx,
@@ -308,51 +311,58 @@ function renderTheme(palette, seed) {
               Math.min(255, glow[1] * shine),
               Math.min(255, glow[2] * shine),
             ],
-            1,
+            clamp(shadeCov) * 0.95,
           );
         }
       }
 
-      /* 5) Boxes on the desk — carved, beveled artifacts. */
+      /* 5) Desk boxes — blur-masked contents, soft rim catch-light. */
       for (const box of BOXES) {
-        if (px > box.x0 && px < box.x1 && py > box.yTop && py < DESK.y0) {
-          const plank = noise.fbm(px * 160, py * 60, 2);
+        const cov = softRect(px, py, box.x0, box.x1, box.yTop, DESK.y0, 18);
+        if (cov > 0) {
+          const dirt = noise.fbm(px * 140, py * 56, 2) - 0.5;
           let rect = jitter(
             [
               artifact[0] * 0.55 + wood[0] * 0.45,
               artifact[1] * 0.55 + wood[1] * 0.45,
               artifact[2] * 0.55 + wood[2] * 0.45,
             ],
-            plank,
-            0.2,
+            0.5 + dirt,
+            0.19,
           );
-          // Beveled rim.
-          const nearX = px - box.x0 < 0.0022 || box.x1 - px < 0.0022;
-          const nearY = py - box.yTop < 0.005 || DESK.y0 - py < 0.003;
-          if (nearX || nearY) rect = [artifact[0] * 1.2, artifact[1] * 1.15, artifact[2] * 1.1];
+          const rimSoft = clamp(1 - cov) * 2.2;
+          const nearTop = py - box.yTop < 0.01;
+          const nearXr = px - box.x0 < 0.003 || box.x1 - px < 0.003;
+          if (rimSoft > 0.1 && (nearTop || nearXr))
+            rect = [artifact[0] * 1.35, artifact[1] * 1.25, artifact[2] * 1.18];
           blend(
             buf,
             idx,
             [Math.min(255, rect[0]), Math.min(255, rect[1]), Math.min(255, rect[2])],
-            1,
+            clamp(cov),
           );
         }
       }
 
-      /* 6) Room ambient: lamp spills warm light across shelves + desk. */
-      const lampDist = Math.sqrt((px - lampX) * (px - lampX) + (py - 0.47) * (py - 0.47));
-      addLight(buf, idx, glow, clamp(0.36 - lampDist * 0.5) * 0.55);
-      // Subtle cool counter-light from the far right.
-      addLight(buf, idx, [90, 100, 140], clamp(px - 0.55) * 0.16 * (1 - py * 0.4));
+      /* 6) Ambient + painterly edge-breaker (warped gradient shading). */
+      const edgePull = noise.fbm(px * 4.5, py * 4.5, 3) - 0.5; // ±0.5
+      const lampD = Math.sqrt((px - lampX) * (px - lampX) + (py - 0.47) * (py - 0.47));
+      addLight(buf, idx, glow, clamp(0.34 - lampD * 0.5) * 0.52);
+      addLight(buf, idx, [88, 96, 138], clamp(px - 0.58) * 0.15 * clamp(1 - py * 0.45));
+      const edgeMul = 1 + edgePull * 0.16; // ±8% painterly modulation
 
-      /* 7) Vignette — corner falloff locks the eye to the desk. */
+      /* 7) Vignette + final film grain. */
       const vx = px - 0.5;
       const vy = py - 0.45;
       const vign = clamp(vx * vx * 2.2 + vy * vy * 1.8);
-      const vigMul = 1 - vign * 0.62;
+      const vigMul = (1 - vign * 0.6) * edgeMul;
       buf[idx] = buf[idx] * vigMul;
       buf[idx + 1] = buf[idx + 1] * vigMul;
       buf[idx + 2] = buf[idx + 2] * vigMul;
+      const grainAdd = (noise.fbm(px * 260, py * 260, 2) - 0.5) * 9;
+      buf[idx] = clamp((buf[idx] + grainAdd) / 255) * 255;
+      buf[idx + 1] = clamp((buf[idx + 1] + grainAdd) / 255) * 255;
+      buf[idx + 2] = clamp((buf[idx + 2] + grainAdd) / 255) * 255;
     }
   }
   const png = new PNG({ width: WIDTH, height: HEIGHT, colorType: 2 });
