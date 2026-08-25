@@ -49,9 +49,17 @@ image → HF Inference** (`src/lib/art/hfImage.server.ts`, yeni).
   URL + auth header + stil suffix, model override, 503/JSON/network/empty
   hataları) + cardArtwork entegrasyonu (HF-only ve Gemini-fail→HF-fallthrough)
   → **369/369**, tsc 0, lint 0, build 0.
-- **`.env`:** placeholder ile oluşturuldu (`hf_PASTE_YOUR_NEW_TOKEN_HERE`) —
-  gitignore'da, git status'te görünmez. Gerçek anahtar kullanıcı tarafından
-  lokalde girilecek. `.env.example` dokümantasyonu güncellendi.
+- **`.env`:** placeholder ile oluşturuldu; kullanıcı gerçek token'ı lokalde
+  girdi. Gitignore'da, git status'te görünmez. `.env.example` güncellendi.
+- **CANLI DOĞRULAMA + KRİTİK DÜZELTME:** ilk canlı denemede HF router
+  `410 Gone` döndü — `stabilityai/stable-diffusion-xl-base-1.0` (ve FLUX.1-
+  schnell) hf-inference kataloğundan **Temmuz 2026'da kaldırılmış**. HF Hub
+  API'siyle canlı katalog tarandı; `hf-inference` altında text-to-image için
+  tek kalan model: **`stabilityai/stable-diffusion-3-medium-diffusers`**.
+  Default model buna çevrildi (provider-suffix `:fal-ai` syntax'ı router'da
+  çalışmıyor; doğrudan katalog modeli gerekiyor). Tarayıcıda canlı kanıt:
+  Iron Maiden "The Number of the Beast" → kart yüzünde HF üretimi mum ışıklı
+  gothic çocuk odası painting'i (albüm kapağı değil), screenshot doğrulandı.
 
 `369/369, tsc 0, lint 0, build 0.`
 

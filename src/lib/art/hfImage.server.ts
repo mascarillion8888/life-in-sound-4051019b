@@ -20,8 +20,12 @@
 
 const HF_ROUTER = "https://router.huggingface.co/hf-inference/models";
 
-/** Default text-to-image model; override with HF_IMAGE_MODEL (server-only). */
-const DEFAULT_MODEL = "stabilityai/stable-diffusion-xl-base-1.0";
+/**
+ * Default text-to-image model; override with HF_IMAGE_MODEL (server-only).
+ * Must be in the live hf-inference catalog — SDXL base and FLUX schnell were
+ * deprecated (HTTP 410); SD3-medium-diffusers is the served successor.
+ */
+const DEFAULT_MODEL = "stabilityai/stable-diffusion-3-medium-diffusers";
 
 /**
  * Style anchor appended to every HF prompt — keeps the output in the

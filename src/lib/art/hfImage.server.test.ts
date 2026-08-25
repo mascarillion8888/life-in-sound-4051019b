@@ -36,7 +36,7 @@ describe("generateHfImage", () => {
 
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe(
-      "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0",
+      "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-3-medium-diffusers",
     );
     const headers = init.headers as Record<string, string>;
     expect(headers.authorization).toBe("Bearer hf-test-key");
