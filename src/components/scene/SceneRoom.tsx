@@ -63,13 +63,14 @@ export const SCENE_THEMES: Record<SceneThemeId, SceneTheme> = {
   },
 };
 
-/** One row of book spines — deterministic arrangement from the palette. */
+/** One row of book spines — deterministic, richly shaded volumes. */
 function BookRow({ theme, seed }: { theme: SceneTheme; seed: number }) {
   const books = Array.from({ length: 14 }, (_, i) => {
     const color = theme.books[(i * 3 + seed) % theme.books.length];
     const h = 62 + ((i * 7 + seed * 13) % 26);
     const lean = (i * 5 + seed) % 11 === 0;
-    return { color, h, lean, i };
+    const gilded = (i * 3 + seed) % 4 === 0;
+    return { color, h, lean, gilded, i };
   });
   return (
     <span aria-hidden className="flex h-full items-end gap-[3%] px-[6%]">
@@ -79,12 +80,20 @@ function BookRow({ theme, seed }: { theme: SceneTheme; seed: number }) {
           className="block w-[4.5%] rounded-[1px]"
           style={{
             height: `${b.h}%`,
-            background: `linear-gradient(to bottom, ${b.color}, #0c0906)`,
+            background: `linear-gradient(to bottom, ${b.color}, #0c0906 90%)`,
             transform: b.lean ? "rotate(-4deg)" : undefined,
             transformOrigin: "bottom center",
-            boxShadow: "inset 1px 0 0 rgba(255,235,190,0.08)",
+            boxShadow: "inset 1px 0 0 rgba(255,235,190,0.12), inset -1px 0 0 rgba(0,0,0,0.4)",
           }}
-        />
+        >
+          {b.gilded ? (
+            <span
+              aria-hidden
+              className="mx-[15%] mt-[18%] block h-[2px] rounded-full"
+              style={{ background: "linear-gradient(to right, #c9a24a, #7a5e28)" }}
+            />
+          ) : null}
+        </span>
       ))}
     </span>
   );
@@ -92,7 +101,19 @@ function BookRow({ theme, seed }: { theme: SceneTheme; seed: number }) {
 
 function Shelf({ theme, seed }: { theme: SceneTheme; seed: number }) {
   return (
-    <span aria-hidden className="relative block h-full" style={{ background: theme.wood }}>
+    <span
+      aria-hidden
+      className="relative block h-full rounded-[2px]"
+      style={{ background: theme.wood, boxShadow: "inset 0 0 26px rgba(0,0,0,0.55)" }}
+    >
+      {/* Carved pattern band across the shelf face — wood relief, not a line. */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-[6%] h-[8%] opacity-40"
+        style={{
+          background: `repeating-linear-gradient(90deg, transparent 0 2.2rem, ${theme.glow}44 2.2rem 2.6rem)`,
+        }}
+      />
       <BookRow theme={theme} seed={seed} />
       {/* Shelf plank shadow. */}
       <span
