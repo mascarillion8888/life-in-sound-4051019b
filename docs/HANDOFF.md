@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   355/355 geçti (33 dosya; onError-artwork + backdrop-image testleri yeni)
+Testler:   356/356 geçti (33 dosya; wood-frame design contract testi yeni)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
@@ -24,101 +24,93 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Rendered Room Backdrop + Artwork Hard-Guard (TAM)
+## 2. Son biten iş — Gothic Wooden Frame Card (TAM)
 
-Kullanıcı root-cause override'ı: canlı UI hâlâ flat 2D DOM/CSS vektörlü oda
-(cyan lamba şekli, vektör kitap blokları) render ediyor; kart artwork'ü ise
-boş kutu / bare-icon MusicNote alanına düşüyordu. İki düzeltme:
+Kullanıcı tarafından referans `GothicEraCard` tasarımı teslim edildi;
+`QuizCard` o tasarım dili + düzeltmelere (wooden gallery frame) taşındı:
 
-### Oda: build-time render edilmiş gerçek görsel (DOM vektörü YOK)
+### Tasarım dili (referanstan entegre edildi)
 
-- **`src/components/scene/scenePalettes.ts` (YENİ):** tema paletleri
-  React'siz modül; 4 tema (gothic/reggae/synth/jazz) — hem component hem
-  generator okur.
-- **`scripts/generate-room-backdrop.mjs` (YENİ):** `pngjs` + deterministik
-  value-noise/fBm ile 1600×900 raster oda render'ı: panelli raf arkası,
-  hub-banded/altın başlıklı kitap sırtları (tone/gutter/edge ışığı),
-  oyma çerçeve, fener gölgesi lamba + yayılım, güneş ışığı köprüsü, masada
-  bevelighted kutular, yatay ahşap masa damarları, vignette. Her tema için
-  `src/assets/room-backdrop-<theme>.png` üretir. Çalıştırma:
-  `npm run gen:room` (Node `--experimental-strip-types` ile `.ts` içerden
-  import).
-- **`src/components/scene/SceneRoom.tsx` (REWRITE):** runtime'da hiçbir
-  DOM vektör mobilyası YOK. Katmanlar: tema `wall` gradient fallback +
-  `data-testid="scene-backdrop-<theme>"` dış span'e `background-image:
-  url(backdropPng)` (cover, center) + tema `glow` ambient wash (screen
-  blend). Çocuk zone korunuyor.
-- **Test güncellemesi:** her tema backdrop URL'sini taşıyor; DOM vektör
-  sayısı ≤4 div'li hiç değil; gradient fallback hâlâ tema paletinden.
+- **Çok boyutlu ahşap çerçeve:** `border-4 border-[#8b7355]` oyma kenar,
+  `bg-[#1c1815]/95`, `font-serif`, katmansal gölge (derinlik + amber
+  parlaması + iç çukur) — "treasured framed photograph" hissi.
+- **Responsive:** sabit `w-[380px]` yerine `w-full max-w-md` (parent
+  grid/EraCardReveal içinde sorunsuz yayılır).
+- **Lucide ikonları (emoji YOK):** kategori şeridinde `Shield`, metadata
+  footer'ında `Music`; audio toggle `Volume2/VolumeX` — referans
+  komponentteki 🛡️/🎵 glyph'leri kaldırıldı.
+- **Dinamik prop'lar:** sequence (`58/100` gibi `copy.sequence`), score
+  (`copy.score/10`), era rozeti, yaş rozeti — hiçbiri hardcoded değil.
+  (Referanstaki `contract-110` geçersiz sınıfı düzeltildi; bizim filtre
+  pipeline'ı zaten `era.grading` CSS string'ini kullanıyor.)
+- **Aspect**: artwork penceresi referanstaki `aspect-[4/3]` oranını taşıyor.
 
-### Kart artwork: asla broken/empty img, asla bare Music ikonu
+### Audio (30s iTunes preview)
 
-- **`QuizCard.tsx`:** cover URL her durumda (painterly graded) render
-  eder; `onError` → `erroredCover` state'ine düşürülür ve **CardArtSkeleton**
-  (stylized gothic frame) immatizesi geçer. Song null ise de skeleton.
-  AI painting (ready) `fade-in` üst katmanı yapısı korunuyor.
-- **CardArtSkeleton:** bare `<Music>` icon (MusicNote) KALDIRILDI; yerine
-  breathing candle-glow + portre çerçevesi + oyma köşe işaretleri + gilded
-  resting line (deterministik). Başlık/alt text/attachment — bare-icon
-  kutusu hiçbir durumda yok.
-- **Test yeni:** `fireEvent.error(img)` → skeleton takip eder; seasons
-  korunuyor.
+`useAudioPreview` singleton hook'u zaten bağlıydı: `EraCardReveal`
+`autoPlayPreview` ile mount anında fade-in dener; audio toggle artwork
+penceresinde `Volume2/VolumeX` ile. Entegrasyon değişmedi, davranış aynı.
 
-### Tur (browser kanıtı)
+### Test ve kanıt
 
-`npm run dev` 12000 → `/journey?fresh=1` → Q1 "Jammin Bob Marley" commit →
-EraCardReveal: reggae oda (ikinci/lambalı sıcak raft texture) ANINDA kapak
-paint filter'li + '70s rozet + "DISCOVERY &..." + 8/10 INNOCENCE. Q2
-Nicky Romero EDC '21 → gothic oda + kapak AYNINDA (yeni commit'lenen
-kapak URL'si). Q3 MJ "Bad" → synth oda (indigo-cyan poci, magenta kutular)
-+ kapak (resolving ghost text) — bare kutucuk/bare ikon yok, kitap raf
-texture gerçek.
+- Yeni test: wood-frame contract (font-serif, max-w-md, `#8b7355` border,
+  Shield svg motif) → **356/356**.
+- Tarayıcı kanıtı (STATE.md kural 10): dev server 12000 →
+  `/journey?fresh=1` → "Fragile Sting" commit → Era 4 reveal:
+  serif başlık, `58/100` sequence + `'80s` + `AGES 18-22` rozetleri,
+  Sting kapak painterly graded olarak ANINDA, `Shield` ikonu sertifitede,
+  `Music` ikonlu footer — synth wood backdrop üzerinde.
 
-`355/355, tsc 0, lint 0 (9 pre-existing uyarı), build 0.`
+`356/356, tsc 0, lint 0 (9 pre-existing uyarı), build 0.`
 
 ---
 
-## 2a. Önceki iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, eski)
+## 2a. Önceki iş — Rendered Room Backdrop + Artwork Hard-Guard (TAM)
 
-- Hybrid fallback GERİ (kullanıcı kararı): painterly-graded kapak ANINDA,
-  AI cross-fade, kapaksız şarkılarda skeleton. Oda derinlik pass'i:
-  multi-stop gradient sırtlar + hub bandları + raf arkası panel derzleri.
-  354/354.
+Procedural PNG backdrop (`gen:room`), SceneRoom DOM vektörü YOK,
+cover `onError` → skeleton, bare Music ikonu kaldırıldı.
 
-## 2b. Önceki iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, eski)
+## 2b. Önceki iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, eski)
 
-- Raw cover fallback KALDIRILDI (STRICT): QuizCard provider fotoğrafı
-  göstermiyordu. Sonraki oturumda kullanıcı direktifiyle hybrid restore.
+Punterly-graded kapak ANINDA + AI cross-fade + coverless skeleton.
 
-## 2c. Önceki iş — Global Card Design + Hybrid Fallback + Dynamic Copy
+## 2c. Önceki iş — STRICT NO-PHOTO FIX (TAM, eski)
 
-SceneRoom + client scene mirror + dynamicCardText + çok boyutlu prompt +
-hybrid fallback + sans-serif unification.
+Raw cover fallback kaldırılmıştı; sonraki kararla hybrid restore.
 
-## 2d. Önceki iş — User & Genre-Adaptive Dynamic AI Artwork
+## 2d. Önceki iş — Global Card Design + Dynamic Copy (TAM, eski)
 
-4 sahne ailesi + sinyal önceliği + word-boundary keyword + cache disiplini.
+SceneRoom client mirror + dynamicCardText + hybrid fallback.
 
-## 2e. Önceki iş — Organic Art Style Transfer (Sting Kuralı)
+## 2e. Önceki iş — User/Genre-Adaptive AI Artwork (TAM, eski)
 
-feTurbulence warp + paper tooth + palette-accent multiply wash.
+4 sahne ailesi + sinyal önceliği + cache disiplini.
+
+## 2f. Önceki iş — Organic Art Style Transfer (TAM, eski)
+
+feTurbulence warp + paper tooth + palette-accent wash.
 
 ---
 
 ## 3. Sıradaki iş adımları
 
-1. `npm run gen:room` (backdrop'ları yeniden üret) — tema paleti değişirse.
-2. Dokunmatik deneyim: AI painting layer resolution (GEM
-   keyless sandbox'ta skeleton kalır; Vercel'de prod.
-3. `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
-4. HANDOFF tam rewrite + commit `checkpoint: ... — HANDOFF.md güncellendi`.
+1. Tema paletleri değişirse: `npm run gen:room` (backdrop'lar yeniden üretilir).
+2. `GEMINI_API_KEY` sağlanınca AI painting katmanı fade-in ile üstte; keyless
+   ortamlarda skeleton/painterly kapak kalır.
+3. Grand Finale yönü: PosterCanvas kartlarını cosmic poster grid'e "unlock+
+   merge" geçişiyle bağlamak — Tasarım onayı gerekli (bir sonraki oturumda
+   kullanıcıyla konuş).
+4. `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
+5. HANDOFF tam rewrite + commit `checkpoint: ... — HANDOFF.md güncellendi`.
 
 ---
 
 ## 4. Olası tuzaklar
 
-- **SceneRoom runtime'da hiçbir DOM/CSS vektör nesne vermez;** o
-  testleri `[aria-hidden]` sayısını <5'e düşürür.
-- Kapaksız (manual) şarkılar skeleton alır; bu BİLİNÇLİ (Sting Rule).
-- `pngjs` yalnız generator için (devDependency); unspecific Node'lar seans
-  `--experimental-strip-types` gerekir (gen:room `.ts` import ediyor).
+- QuizCard artık serif font + 4/3 artwork penceresi; PosterCanvas grid
+  (`grid-cols-2 lg:grid-cols-4`) kartları daraltır — kart kendinden
+  `max-w-md` ama parent daraltır; beklenen davranış.
+- Song null ise sequence gösterilmez (age badge kalır) — bilinçli.
+- SceneRoom runtime'da DOM vektör YOK; backdrop PNG render'ı.
+- `pngjs` yalnız generator (devDependency); `gen:room` Node
+  `--experimental-strip-types` gerektirir.

@@ -118,6 +118,17 @@ describe("QuizCard", () => {
     expect(screen.queryByText(/Fragile/)).toBeNull();
   });
 
+  it("carries the wooden gallery frame: serif typeface, carved border, lucide motifs", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const article = screen.getByTestId("quiz-card-1");
+    // Ornate wooden frame — responsive (no fixed pixel width), serif, carved border.
+    expect(article.className).toContain("font-serif");
+    expect(article.className).toContain("max-w-md");
+    expect(article.style.borderColor).toBe("rgb(139, 115, 85)"); // #8b7355
+    // Shield motif in the category banner (lucide, never an emoji glyph).
+    expect(screen.getByText("Legendary Life Era").nextSibling?.nodeName).toBe("svg");
+  });
+
   it("enables the preview toggle only when the song carries a real preview URL", () => {
     const { rerender } = render(<QuizCard card={cards[0]} song={song()} />);
     const toggle = screen.getByRole("button", { name: /play preview/i });
