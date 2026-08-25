@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { sceneThemeFor } from "@/lib/art/sceneTheme";
+import { eraThemeFor, sceneThemeFor } from "@/lib/art/sceneTheme";
 import type { Song } from "@/lib/song/types";
 
 import { SCENE_THEMES, SceneRoom } from "./SceneRoom";
@@ -64,14 +64,35 @@ describe("sceneThemeFor — DOM-side mirror of the server scene vocabulary", () 
     ).toBe("jazz");
   });
 
-  it("falls back to the era only for the 80s, gothic otherwise", () => {
+  it("reads soul, grunge and hiphop rooms from genre keywords", () => {
+    expect(
+      sceneThemeFor(song({ title: "Lose Yourself", artist: "Eminem", releaseYear: 2002 })),
+    ).toBe("hiphop");
+    expect(
+      sceneThemeFor(song({ title: "Come As You Are", artist: "Nirvana", releaseYear: 1991 })),
+    ).toBe("grunge");
+    expect(
+      sceneThemeFor(song({ title: "Respect", artist: "Aretha Franklin", releaseYear: 1967 })),
+    ).toBe("soul");
+  });
+
+  it("falls back to the decade ladder — every era bucket has its own room", () => {
     expect(sceneThemeFor(song({ title: "x", artist: "y", album: null, releaseYear: 1985 }))).toBe(
       "synth",
     );
     expect(sceneThemeFor(song({ title: "x", artist: "y", album: null, releaseYear: 2001 }))).toBe(
-      "gothic",
+      "hiphop",
     );
     expect(sceneThemeFor(null)).toBe("gothic");
+  });
+
+  it("eraThemeFor maps every decade to its atmospheric time capsule", () => {
+    expect(eraThemeFor(1959)).toBe("jazz");
+    expect(eraThemeFor(1972)).toBe("soul");
+    expect(eraThemeFor(1984)).toBe("synth");
+    expect(eraThemeFor(1994)).toBe("grunge");
+    expect(eraThemeFor(2003)).toBe("hiphop");
+    expect(eraThemeFor(null)).toBe("gothic");
   });
 
   it("does not let keyword collisions fabricate a culture", () => {

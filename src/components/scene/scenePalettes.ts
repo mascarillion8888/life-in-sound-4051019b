@@ -3,7 +3,7 @@
  * React-free so both the component layer (`SceneRoom`) and the build-time
  * backdrop generator (`scripts/generate-room-backdrop.mjs`) can import it.
  */
-export type SceneThemeId = "gothic" | "reggae" | "synth" | "jazz";
+export type SceneThemeId = "gothic" | "reggae" | "synth" | "jazz" | "soul" | "grunge" | "hiphop";
 
 export type ScenePalette = {
   /** Back wall wash (behind the shelves). */
@@ -52,6 +52,30 @@ export const SCENE_PALETTES: Record<SceneThemeId, ScenePalette> = {
     desk: ["#2e241a", "#140e08"],
     glow: "#d4b06a",
     artifact: "#a8863e",
+  },
+  soul: {
+    wall: ["#1c1206", "#0a0602"],
+    wood: "#3a2810",
+    books: ["#6b4a1e", "#7a5a26", "#543c16", "#8a6a30", "#5f4a20"],
+    desk: ["#3e2c12", "#1a1006"],
+    glow: "#ffab52",
+    artifact: "#c2342e",
+  },
+  grunge: {
+    wall: ["#10130f", "#05070a"],
+    wood: "#232a24",
+    books: ["#2f3b33", "#3a4a3c", "#26312b", "#44533f", "#2c3630"],
+    desk: ["#272d28", "#10130f"],
+    glow: "#94a3b8",
+    artifact: "#556b5d",
+  },
+  hiphop: {
+    wall: ["#150d1c", "#070409"],
+    wood: "#241431",
+    books: ["#3a1e4c", "#46265a", "#2c1838", "#54306a", "#3e2646"],
+    desk: ["#2a1a38", "#120a1a"],
+    glow: "#a78bfa",
+    artifact: "#d4af37",
   },
 };
 

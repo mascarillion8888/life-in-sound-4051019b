@@ -97,28 +97,68 @@ const SCENE_SPECS: SceneSpec[] = [
       `carvings, featuring a framed painted portrait of ${a} seamlessly integrated into the scene.`,
   },
   {
-    id: "synth",
+    id: "hiphop",
     keywords: [
-      "synth",
-      "electro",
-      "techno",
-      "house",
-      "pop",
-      "dance",
-      "disco",
-      "funk",
-      "kraftwerk",
-      "depeche",
-      "wave",
-      "neon",
+      "rap",
+      "hiphop",
+      "hip hop",
+      "boombap",
+      "gangsta",
+      "trap",
+      "eminem",
+      "tupac",
+      "biggie",
+      "kendrick",
+      "drake",
+      "nas",
+      "jay z",
+      "wu tang",
+      "outkast",
     ],
     prompt: (a) =>
-      `Retro 80s neon-lit studio aesthetic, moody cyan and magenta ambient lighting, stylized ` +
-      `fine-art portrait of ${a} on a cassette sleeve/wall frame.`,
+      `Late-night studio glow, gold-framed portrait of ${a} on a plum wall, ` +
+      `cinematic contemporary fine-art oil painting concept.`,
+  },
+  {
+    id: "grunge",
+    keywords: [
+      "grunge",
+      "nirvana",
+      "soundgarden",
+      "shoegaze",
+      "britpop",
+      "mudhoney",
+      "pumpkins",
+      "radiohead",
+      "oasis",
+      "alternative",
+    ],
+    prompt: (a) =>
+      `Moody 90s rehearsal basement, faded gig posters on the wall, dim slate ` +
+      `light, hand-painted portrait of ${a} on a worn canvas sleeve.`,
+  },
+  {
+    id: "soul",
+    keywords: [
+      "soul",
+      "funk",
+      "motown",
+      "stax",
+      "rnb",
+      "rhythm and blues",
+      "aretha",
+      "supremes",
+      "temptations",
+      "otis",
+      "wonder",
+    ],
+    prompt: (a) =>
+      `Warm vinyl listening room, amber lamp light and velvet textures, fine-art ` +
+      `oil portrait of ${a} beside a turntable, golden soul-era memorial glow.`,
   },
   {
     id: "jazz",
-    keywords: ["jazz", "blues", "soul", "swing", "bebop", "motown"],
+    keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner"],
     prompt: (a) =>
       `Dimly lit vintage jazz club atmosphere, warm brass accents, smoky haze, fine-art canvas ` +
       `portrait of ${a} on an antique desk.`,
@@ -129,6 +169,27 @@ const SCENE_SPECS: SceneSpec[] = [
     prompt: (a) =>
       `Warm golden-hour sunlight, vintage Jamaican wood aesthetic, tropical/reggae fine-art oil ` +
       `painting concept featuring a framed portrait of ${a} on a rustic wooden shelf, relaxed atmosphere.`,
+  },
+  {
+    id: "synth",
+    keywords: [
+      "synth",
+      "electro",
+      "techno",
+      "house",
+      "pop",
+      "dance",
+      "disco",
+      "kraftwerk",
+      "depeche",
+      "wave",
+      "neon",
+      "edm",
+      "eurodance",
+    ],
+    prompt: (a) =>
+      `Retro 80s neon-lit studio aesthetic, moody cyan and magenta ambient lighting, stylized ` +
+      `fine-art portrait of ${a} on a cassette sleeve/wall frame.`,
   },
 ];
 
@@ -163,8 +224,9 @@ const ERA_EMOTIONS = [
  * Resolve the scene family for one card, strongest signal first:
  *   1. the listener's preferred aesthetic (explicit user preference),
  *   2. genre keywords in the song's own metadata (artist/title/album),
- *   3. the era as the tiebreaker — only the 1980s carry a strong visual
- *      identity of their own (neon synth); every other era defaults to the
+ *   3. the decade ladder as the tiebreaker — every era now carries its
+ *      own visual identity ('70s soul vinyl, '90s grunge basement,
+ *      contemporary hiphop studio); only a null year falls back to the
  *      gothic fine-art base rather than fabricating a culture the song
  *      never declared.
  */
@@ -181,8 +243,12 @@ export function cardArtworkScene(
   for (const spec of SCENE_SPECS) {
     if (spec.keywords.some((k) => keywordIn(haystack, k))) return spec.id;
   }
-  if (releaseYear !== null && releaseYear >= 1980 && releaseYear <= 1989) return "synth";
-  return "gothic";
+  if (releaseYear === null) return "gothic";
+  if (releaseYear <= 1969) return "jazz";
+  if (releaseYear <= 1979) return "soul";
+  if (releaseYear <= 1989) return "synth";
+  if (releaseYear <= 1999) return "grunge";
+  return "hiphop";
 }
 
 /** Word-ish boundary match — "dub" must not eat "Double Fantasy". */

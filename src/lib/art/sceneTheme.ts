@@ -3,10 +3,21 @@
  * the AI painting brief (`cardArtwork.server.ts`). Kept as a tiny pure
  * mirror so DOM layers (room theme, card accents) resolve synchronously
  * without importing the server module into the client bundle.
+ *
+ * Dynamic atmosphere matrix: genre families resolve to a room family
+ * (soul / grunge / hiphop / synth / jazz / reggae / gothic) and the
+ * decade ladder breaks ties when no genre signal exists — a '70s
+ * childhood becomes a soul-vinyl time capsule, a '90s adolescence a
+ * grunge room, a contemporary era a plum-gold studio glow.
  */
 import type { Song } from "@/lib/song/types";
 import type { SceneThemeId } from "@/components/scene/SceneRoom";
 
+/**
+ * Genre keyword families, checked in order — the first matching family
+ * wins. Soul precedes jazz because "soul" is its own room identity now;
+ * funk moved out of the synth family (70s warm, not neon).
+ */
 const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
   {
     id: "gothic",
@@ -33,6 +44,62 @@ const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
     ],
   },
   {
+    id: "hiphop",
+    keywords: [
+      "rap",
+      "hiphop",
+      "hip hop",
+      "boombap",
+      "gangsta",
+      "trap",
+      "eminem",
+      "tupac",
+      "biggie",
+      "kendrick",
+      "drake",
+      "nas",
+      "jay z",
+      "wu tang",
+      "outkast",
+    ],
+  },
+  {
+    id: "grunge",
+    keywords: [
+      "grunge",
+      "nirvana",
+      "soundgarden",
+      "shoegaze",
+      "britpop",
+      "mudhoney",
+      "pumpkins",
+      "radiohead",
+      "oasis",
+      "alternative",
+    ],
+  },
+  {
+    id: "soul",
+    keywords: [
+      "soul",
+      "funk",
+      "motown",
+      "stax",
+      "rnb",
+      "rhythm and blues",
+      "aretha",
+      "supremes",
+      "temptations",
+      "otis",
+      "wonder",
+    ],
+  },
+  { id: "jazz", keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner"] },
+  {
+    id: "reggae",
+    keywords: ["reggae", "dub", "ska", "dancehall", "marley", "rastafari", "tosh"],
+  },
+  {
     id: "synth",
     keywords: [
       "synth",
@@ -42,17 +109,13 @@ const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
       "pop",
       "dance",
       "disco",
-      "funk",
       "kraftwerk",
       "depeche",
       "wave",
       "neon",
+      "edm",
+      "eurodance",
     ],
-  },
-  { id: "jazz", keywords: ["jazz", "blues", "soul", "swing", "bebop", "motown"] },
-  {
-    id: "reggae",
-    keywords: ["reggae", "dub", "ska", "dancehall", "marley", "rastafari", "tosh"],
   },
 ];
 
@@ -63,9 +126,29 @@ function keywordIn(haystack: string, keyword: string): boolean {
 }
 
 /**
- * Resolve the room theme for a song: genre keywords first, then the era
- * (only the 80s have their own visual identity); gothic is the default.
- * Mirrors `cardArtworkScene` (no user-preference channel on the client).
+ * Decade ladder — the tiebreaker when no genre signal exists. Every
+ * bucket now carries its own visual identity (previously only the 80s
+ * did); null year keeps the gothic fine-art base rather than fabricating
+ * a culture the song never declared.
+ */
+export function eraThemeFor(releaseYear: number | null): SceneThemeId {
+  if (releaseYear === null) return "gothic";
+  if (releaseYear <= 1969) return "jazz";
+  if (releaseYear <= 1979) return "soul";
+  if (releaseYear <= 1989) return "synth";
+  if (releaseYear <= 1999) return "grunge";
+  return "hiphop";
+}
+
+function releaseYearOf(song: Song | null | undefined): number | null {
+  const year = song?.releaseYear;
+  return typeof year === "number" && Number.isFinite(year) ? year : null;
+}
+
+/**
+ * Resolve the room theme for a song: genre keywords first (strongest
+ * atmospheric signal), then the decade ladder; gothic is the null-default.
+ * Mirrors `cardArtworkScene` on the server (minus the preference channel).
  */
 export function sceneThemeFor(song: Song | null | undefined): SceneThemeId {
   const haystack = song ? `${song.title} ${song.artist} ${song.album ?? ""}`.toLowerCase() : "";
@@ -74,10 +157,5 @@ export function sceneThemeFor(song: Song | null | undefined): SceneThemeId {
       if (keywords.some((k) => keywordIn(haystack, k))) return id;
     }
   }
-  const year =
-    song && typeof song.releaseYear === "number" && Number.isFinite(song.releaseYear)
-      ? song.releaseYear
-      : null;
-  if (year !== null && year >= 1980 && year <= 1989) return "synth";
-  return "gothic";
+  return eraThemeFor(releaseYearOf(song));
 }

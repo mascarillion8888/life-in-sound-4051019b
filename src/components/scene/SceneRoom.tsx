@@ -13,8 +13,11 @@
 import type { ReactNode } from "react";
 
 import backdropGothic from "@/assets/room-backdrop-gothic.png";
+import backdropGrunge from "@/assets/room-backdrop-grunge.png";
+import backdropHiphop from "@/assets/room-backdrop-hiphop.png";
 import backdropJazz from "@/assets/room-backdrop-jazz.png";
 import backdropReggae from "@/assets/room-backdrop-reggae.png";
+import backdropSoul from "@/assets/room-backdrop-soul.png";
 import backdropSynth from "@/assets/room-backdrop-synth.png";
 
 import { SCENE_PALETTES, type ScenePalette, type SceneThemeId } from "./scenePalettes";
@@ -30,6 +33,9 @@ const BACKDROPS: Record<SceneThemeId, string> = {
   reggae: backdropReggae,
   synth: backdropSynth,
   jazz: backdropJazz,
+  soul: backdropSoul,
+  grunge: backdropGrunge,
+  hiphop: backdropHiphop,
 };
 
 /**

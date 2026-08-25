@@ -42,12 +42,21 @@ describe("cardArtworkScene — user preference, then genre, then era", () => {
     expect(cardArtworkScene({}, "Double Fantasy — John Lennon", 1980)).toBe("synth");
   });
 
-  it("falls back to the era only where the era has its own visual identity", () => {
+  it("reads soul, grunge and hiphop rooms from genre keywords", () => {
+    expect(cardArtworkScene({}, "Inner City Blues — Marvin Gaye soul", 1971)).toBe("soul");
+    expect(cardArtworkScene({}, "Smells Like Teen Spirit — Nirvana grunge", 1991)).toBe("grunge");
+    expect(cardArtworkScene({}, "Lose Yourself — Eminem rap", 2002)).toBe("hiphop");
+  });
+
+  it("falls back to the decade ladder — every era has its own visual identity", () => {
     expect(cardArtworkScene({}, "untitled demo", 1984)).toBe("synth");
-    // A silent song from the 70s or 2000s must not invent a culture —
-    // it defaults to the gothic fine-art base.
-    expect(cardArtworkScene({}, "untitled demo", 1972)).toBe("gothic");
-    expect(cardArtworkScene({}, "untitled demo", 2003)).toBe("gothic");
+    // Every era bucket maps to its own atmospheric time capsule (70s soul
+    // vinyl, 90s grunge basement, contemporary hiphop studio); a song
+    // without a year never fabricates a culture.
+    expect(cardArtworkScene({}, "untitled demo", 1959)).toBe("jazz");
+    expect(cardArtworkScene({}, "untitled demo", 1972)).toBe("soul");
+    expect(cardArtworkScene({}, "untitled demo", 1994)).toBe("grunge");
+    expect(cardArtworkScene({}, "untitled demo", 2003)).toBe("hiphop");
     expect(cardArtworkScene({}, "untitled demo", null)).toBe("gothic");
   });
 });
