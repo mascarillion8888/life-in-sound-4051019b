@@ -10,10 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      3ae1b20 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (hybrid fallback restore + oda
-           derinlik pass'i; kullanıcı onayı bekleniyor; commit/push
-           YAPILMADI).
+HEAD:      51e3e36 — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (`3ae1b20..51e3e36 main -> main`; `git status` temiz).
 Testler:   354/354 geçti (33 dosya; hybrid fallback testleri geri eklendi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
@@ -41,7 +39,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, 51e3e36, push'lu)
 
 Kullanıcı root-cause override'ı: strict skeleton politikası blank-box
 üretiyordu (key'siz/gecikmeli ortamda), oda hâlâ flat okunuyordu.
@@ -325,9 +323,8 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (onaysız commit/push yok). Onay gelirse:
-  `fix: restore hybrid painterly fallback + deepen library room realism`
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, 51e3e36 = origin/main).
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
