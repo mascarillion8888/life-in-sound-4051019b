@@ -108,6 +108,33 @@ describe("PosterCanvas", () => {
     expect(screen.getAllByText("Legendary Life Era")).toHaveLength(8);
   });
 
+  it("Grand Finale — cosmic backdrop harmonizes all era themes + cards unframe into grid", () => {
+    const analysis = makeAnalysis();
+    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+
+    // Cosmic gallery wall — one blended layer per distinct scene family.
+    const backdrop = screen.getByTestId("cosmic-backdrop");
+    const layers = [...backdrop.querySelectorAll(":scope > div")];
+    expect(layers.length).toBeGreaterThanOrEqual(2);
+    // Metal journey lives mostly in the gothic room.
+    expect(layers.map((l) => (l as HTMLElement).style.backgroundImage).join(" ")).toContain(
+      "room-backdrop-gothic",
+    );
+    // Layers blend additively into a single cosmic wall.
+    expect((layers[0] as HTMLElement).style.mixBlendMode).toBe("screen");
+
+    // Unframing — every life card wrapped in a motion container, still in
+    // the exact 4×2 grid matrix with its wooden-frame flash overlay.
+    for (let i = 1; i <= 8; i++) {
+      const card = screen.getByTestId(`quiz-card-${i}`);
+      const wrapper = card.parentElement;
+      expect(wrapper).not.toBeNull();
+      // The card itself keeps its MTG frame chrome; the wrapper carries the
+      // dissolving wooden-border flash (aria-hidden).
+      expect(wrapper!.querySelector("[aria-hidden]")).not.toBeNull();
+    }
+  });
+
   it("makes every album art clickable — a Spotify search deep link", () => {
     const analysis = makeAnalysis();
     render(<PosterCanvas analysis={analysis} songs={SONGS} />);

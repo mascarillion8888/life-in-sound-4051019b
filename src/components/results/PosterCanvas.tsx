@@ -1,6 +1,15 @@
+import { motion } from "framer-motion";
 import { Disc3, Download, Sparkles } from "lucide-react";
 
+import backdropGothic from "@/assets/room-backdrop-gothic.png";
+import backdropGrunge from "@/assets/room-backdrop-grunge.png";
+import backdropHiphop from "@/assets/room-backdrop-hiphop.png";
+import backdropJazz from "@/assets/room-backdrop-jazz.png";
+import backdropReggae from "@/assets/room-backdrop-reggae.png";
+import backdropSoul from "@/assets/room-backdrop-soul.png";
+import backdropSynth from "@/assets/room-backdrop-synth.png";
 import { Button } from "@/components/ui/button";
+import { sceneThemeFor } from "@/lib/art/sceneTheme";
 import type { PoeticAnalysis, VisualSpec } from "@/lib/llm/poetic-analyzer";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -90,6 +99,59 @@ function buildWaveformPath(points: { x: number; y: number }[]): string {
   return d;
 }
 
+/* ------------------------- Grand Finale helpers ------------------------ */
+
+const THEME_BACKDROPS = {
+  gothic: backdropGothic,
+  reggae: backdropReggae,
+  synth: backdropSynth,
+  jazz: backdropJazz,
+  soul: backdropSoul,
+  grunge: backdropGrunge,
+  hiphop: backdropHiphop,
+} as const;
+
+/**
+ * Cosmic gallery wall — every scene family the journey touched contributes
+ * its painterly room backdrop as a faint blended layer, so the finale poster
+ * carries the light spills of all explored eras at once.
+ */
+function CosmicBackdrop({ songs, accent }: { songs: Song[]; accent: string }) {
+  const urls = [...new Set(songs.map((s) => THEME_BACKDROPS[sceneThemeFor(s)]))];
+  return (
+    <div aria-hidden data-testid="cosmic-backdrop" className="pointer-events-none absolute inset-0">
+      {urls.map((url, i) => (
+        <motion.div
+          key={url}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${url})`, mixBlendMode: "screen" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.26 - Math.min(i, 4) * 0.03 }}
+          transition={{ delay: 0.5 + i * 0.18, duration: 1.4, ease: "easeOut" }}
+        />
+      ))}
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at 50% 35%, ${accent}2e, transparent 62%)`,
+          mixBlendMode: "screen",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 1.8 }}
+      />
+    </div>
+  );
+}
+
+/** Grand Finale entrance — cards lift from center, then settle into the
+ *  matrix with a stagger; the wooden frame flash fades as they "unframe". */
+const grandCard = (i: number) => ({
+  initial: { opacity: 0, y: 90, scale: 1.07 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  transition: { delay: 0.18 + i * 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+});
+
 export function PosterCanvas({
   analysis,
   songs,
@@ -157,7 +219,7 @@ export function PosterCanvas({
       aria-label={t.poster.ariaLabel}
       data-frame={extras.frame}
       data-texture={extras.texture}
-      className={`overflow-hidden border backdrop-blur-xl ${frameClass}`}
+      className={`relative overflow-hidden border backdrop-blur-xl ${frameClass}`}
       style={{
         borderColor: `${palette.primary}55`,
         background: `radial-gradient(ellipse at top, ${palette.primary}26, transparent 55%), radial-gradient(ellipse at bottom, ${palette.accent}1f, transparent 60%), ${palette.background}`,
@@ -165,6 +227,8 @@ export function PosterCanvas({
         ...frameShadow,
       }}
     >
+      {/* Grand Finale — cosmic gallery wall harmonizing every era's room. */}
+      <CosmicBackdrop songs={songs} accent={palette.accent} />
       {/* Top Header: personalized title + signature motto + phase roadmap */}
       <header className="px-6 pt-10 text-center sm:px-12">
         <p
@@ -317,8 +381,10 @@ export function PosterCanvas({
       </div>
 
       {/* Life Cards: 8 MTG-style era frames (4×2) with harmonized artwork.
-          The first card attempts a 30s preview autoplay; the singleton hook
-          guarantees only one card ever sounds at a time. */}
+          Grand Finale entrance — the cards lift from center and settle into
+          the poster matrix as their wooden frames flash-fade away. The first
+          card attempts a 30s preview autoplay; the singleton hook guarantees
+          only one card ever sounds at a time. */}
       <div className="mt-10 px-6 sm:px-12">
         <h3
           className="text-xs font-semibold uppercase tracking-[0.25em]"
@@ -327,13 +393,23 @@ export function PosterCanvas({
           {t.poster.canvas.lifeCards}
         </h3>
         <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {lifeCards.map((card) => (
-            <QuizCard
-              key={card.songIndex}
-              card={card}
-              song={songs[card.songIndex - 1] ?? null}
-              autoPlayPreview={card.index === 0}
-            />
+          {lifeCards.map((card, i) => (
+            <motion.div key={card.songIndex} className="relative" {...grandCard(i)}>
+              {/* Unframing flash — the heavy wooden border dissolves outward. */}
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -inset-1.5 z-10 rounded-[1.6rem] border-4"
+                style={{ borderColor: `${palette.accent}cc` }}
+                initial={{ opacity: 0.9, scale: 1.06 }}
+                animate={{ opacity: 0, scale: 1.02 }}
+                transition={{ delay: 0.5 + i * 0.1, duration: 0.9, ease: "easeOut" }}
+              />
+              <QuizCard
+                card={card}
+                song={songs[card.songIndex - 1] ?? null}
+                autoPlayPreview={card.index === 0}
+              />
+            </motion.div>
           ))}
         </div>
       </div>

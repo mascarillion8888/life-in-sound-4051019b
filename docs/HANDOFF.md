@@ -23,7 +23,38 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Generator Quality Pass: Painterly Backdrops (TAM)
+## 2. Son biten iş — Grand Finale: Cosmic Poster Grid (TAM)
+
+Son era tamamlanınca açılan `/results` posteri artık tek parça bir "Life in
+Sound" kişisel arşiv posteri olarak sahneleniyor:
+
+- **Unframing Animation:** 8 life card `motion.div` wrapper'ında merkezden
+  yükselir (`y:90→0, scale:1.07→1`, 0.18s + i×0.1s stagger, ease-out expo);
+  her kartın üstünde accent renkli "wooden frame flash" overlay 0.9s içinde
+  `opacity 0.9→0, scale 1.06→1.02` ile çözülür — ağır ahşap çerçevenin
+  poster matrisine dönüşme hissi.
+- **Cosmic Poster Merge:** 4×2 grid korunur; kartlar poster bütününün
+  hücreleri olarak yerleşir (Framer Motion, transform-only → 60fps).
+- **Atmospheric Backdrop Harmonization:** yeni `CosmicBackdrop` —
+  yolculuğun dokunduğu her scene family'nin painterly room backdrop'u
+  `mix-blend-mode: screen` ile sıralı fade-in (0.5s + i×0.18s) katmanı
+  olarak poster yüzeyinin arkasına serilir + accent radial bloom.
+  Böylece metal yolculuğu gothic duvarı, reggae+soul+hiphop karışımı
+  çok katmanlı kozmik galeri duvarı görür.
+- **İnteraktif poster:** QuizCard preview oynatma + Spotify deep-link
+  davranışı dokunulmadan korundu.
+- **Test:** yeni finale kontrat testi (cosmic-backdrop katmanları,
+  blend mode, 8 kart wrapper + frame-flash) → **360/360**, tsc 0, lint 0,
+  build 0.
+- **Tarayıcı kanıtı:** `/results` canlı — poster başlığında gothic ışık
+  sızıntıları görünür; LIFE CARDS grid'inde 8 kart (Jamming / Sweet Dreams /
+  Bad / HUMBLE. …) matrise oturmuş halde screenshot doğrulandı.
+
+`360/360, tsc 0, lint 0, build 0.`
+
+---
+
+## 2b. Önceki iş — Generator Quality Pass: Painterly Backdrops (TAM)
 
 Kullanıcı verdict'i: "vector look raster PNG'nin kendi içeriği; kod temiz,
 çözüm generator refactor'ı." Generator `scripts/generate-room-backdrop.mjs`
