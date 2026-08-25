@@ -23,7 +23,41 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Grand Finale: Cosmic Poster Grid (TAM)
+## 2. Son biten iş — Hugging Face Inference Artwork Tier (TAM)
+
+Era Card artwork zincirine üçüncü provider eklendi: **Imagen → Gemini native
+image → HF Inference** (`src/lib/art/hfImage.server.ts`, yeni).
+
+- **Server-only pattern:** `HUGGINGFACE_API_KEY` (asla `VITE_` değil),
+  `HF_IMAGE_MODEL` override (default SDXL base 1.0), HF router
+  `router.huggingface.co/hf-inference/models/…`. `orchestra.ts` /
+  `cardArtwork.server.ts` ile aynı kontrat: asla throw yok, her hata `null` →
+  UI gothic placeholder'a düşer.
+- **Stil sabiti:** her HF prompt'una "dark gothic woodcut fine-art engraving,
+  candlelit chiaroscuro, etched ink texture" suffix'i eklenir — ürünün
+  görsel dili provider'dan bağımsız kalır.
+- **Response disiplini:** router başarıda binary image döner; JSON cevaplar
+  (200 olsa bile) content-type kontrolüyle reddedilir; 503 "model loading"
+  retryable `null`; boş byte → `null`.
+- **Key bağımsızlığı:** sadece `HUGGINGFACE_API_KEY` ile kart resmi üretilir
+  (Gemini tier'ları key yoksa atlanır — eski `if (!apiKey) return null`
+  erken çıkışı HF yolunu kapatıyordu, kaldırıldı).
+- **Not:** ürün tasarımı gereği kart yüzleri asla provider albüm kapağını
+  göstermez; HF akışı da aynı scene prompt'uyla text-to-image painting üretir
+  (cover img2img değil).
+- **Testler:** `hfImage.server.test.ts` (7 test: no-key sessizliği, router
+  URL + auth header + stil suffix, model override, 503/JSON/network/empty
+  hataları) + cardArtwork entegrasyonu (HF-only ve Gemini-fail→HF-fallthrough)
+  → **369/369**, tsc 0, lint 0, build 0.
+- **`.env`:** placeholder ile oluşturuldu (`hf_PASTE_YOUR_NEW_TOKEN_HERE`) —
+  gitignore'da, git status'te görünmez. Gerçek anahtar kullanıcı tarafından
+  lokalde girilecek. `.env.example` dokümantasyonu güncellendi.
+
+`369/369, tsc 0, lint 0, build 0.`
+
+---
+
+## 2c. Önceki iş — Grand Finale: Cosmic Poster Grid (TAM)
 
 Son era tamamlanınca açılan `/results` posteri artık tek parça bir "Life in
 Sound" kişisel arşiv posteri olarak sahneleniyor:

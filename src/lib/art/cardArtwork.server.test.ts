@@ -114,6 +114,8 @@ describe("generateCardArtworkCore", () => {
   beforeEach(() => {
     __clearCardArtworkServerCache();
     delete process.env.GEMINI_API_KEY;
+    delete process.env.HUGGINGFACE_API_KEY;
+    delete process.env.HF_IMAGE_MODEL;
   });
 
   it("returns null without an API key — no call, no fabrication", async () => {
@@ -124,6 +126,46 @@ describe("generateCardArtworkCore", () => {
     );
     expect(image).toBeNull();
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("serves via HF Inference alone when only HUGGINGFACE_API_KEY is set", async () => {
+    process.env.HUGGINGFACE_API_KEY = "hf-test-key";
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([1, 2, 3]).buffer as ArrayBuffer, {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      }),
+    );
+    const image = await generateCardArtworkCore(
+      { trackKey: "itunes:hf-1", artist: "Eminem", title: "Lose Yourself" },
+      { fetchImpl: fetchImpl as unknown as typeof fetch },
+    );
+    expect(image).toMatch(/^data:image\/png;base64,/);
+    // Exactly one provider call: Gemini tiers are skipped without their key.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url] = fetchImpl.mock.calls[0] as unknown as [string];
+    expect(url).toContain("router.huggingface.co");
+  });
+
+  it("falls through to HF Inference when both Gemini tiers fail", async () => {
+    process.env.GEMINI_API_KEY = "test-key";
+    process.env.HUGGINGFACE_API_KEY = "hf-test-key";
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("err", { status: 500 }))
+      .mockResolvedValueOnce(new Response("err", { status: 500 }))
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([9, 9]).buffer as ArrayBuffer, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
+      );
+    const image = await generateCardArtworkCore(
+      { trackKey: "itunes:hf-2", artist: "Nirvana", title: "Lithium" },
+      { fetchImpl: fetchImpl as unknown as typeof fetch },
+    );
+    expect(image).toMatch(/^data:image\/png;base64,/);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
   it("generates via Imagen and returns a data URL", async () => {
