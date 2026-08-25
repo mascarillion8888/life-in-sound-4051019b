@@ -63,36 +63,62 @@ export const SCENE_THEMES: Record<SceneThemeId, SceneTheme> = {
   },
 };
 
-/** One row of book spines — deterministic, richly shaded volumes. */
+/** One row of book spines — deterministic, richly shaded volumes with
+ * multi-tone aging, banding and warm top-light, so they read as worn
+ * leather/cloth bindings rather than flat vector blocks. */
 function BookRow({ theme, seed }: { theme: SceneTheme; seed: number }) {
   const books = Array.from({ length: 14 }, (_, i) => {
     const color = theme.books[(i * 3 + seed) % theme.books.length];
     const h = 62 + ((i * 7 + seed * 13) % 26);
     const lean = (i * 5 + seed) % 11 === 0;
     const gilded = (i * 3 + seed) % 4 === 0;
-    return { color, h, lean, gilded, i };
+    const banded = (i * 7 + seed) % 3 === 0;
+    return { color, h, lean, gilded, banded, i };
   });
   return (
     <span aria-hidden className="flex h-full items-end gap-[3%] px-[6%]">
       {books.map((b) => (
         <span
           key={b.i}
-          className="block w-[4.5%] rounded-[1px]"
+          className="relative block w-[4.5%] overflow-hidden rounded-[1px]"
           style={{
             height: `${b.h}%`,
-            background: `linear-gradient(to bottom, ${b.color}, #0c0906 90%)`,
+            // Multi-stop gradient: lit crown, body, aged foot — a real binding.
+            background: `linear-gradient(to bottom, ${b.color} 0%, ${b.color} 12%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.72) 100%), ${b.color}`,
             transform: b.lean ? "rotate(-4deg)" : undefined,
             transformOrigin: "bottom center",
-            boxShadow: "inset 1px 0 0 rgba(255,235,190,0.12), inset -1px 0 0 rgba(0,0,0,0.4)",
+            boxShadow:
+              "inset 1px 0 0 rgba(255,235,190,0.14), inset -1px 0 0 rgba(0,0,0,0.5), inset 0 6px 8px rgba(255,220,160,0.06)",
           }}
         >
+          {/* Raised hub bands across the spine. */}
+          {b.banded ? (
+            <>
+              <span
+                aria-hidden
+                className="absolute inset-x-0 top-[30%] h-[4%] bg-black/35"
+                style={{ boxShadow: "0 1px 0 rgba(255,235,190,0.08)" }}
+              />
+              <span
+                aria-hidden
+                className="absolute inset-x-0 top-[58%] h-[4%] bg-black/35"
+                style={{ boxShadow: "0 1px 0 rgba(255,235,190,0.08)" }}
+              />
+            </>
+          ) : null}
           {b.gilded ? (
             <span
               aria-hidden
-              className="mx-[15%] mt-[18%] block h-[2px] rounded-full"
+              className="absolute inset-x-[15%] top-[18%] h-[2px] rounded-full"
               style={{ background: "linear-gradient(to right, #c9a24a, #7a5e28)" }}
             />
           ) : null}
+          {/* Soft top-light catching the crown. */}
+          <span
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-[14%]"
+            style={{ background: "linear-gradient(to bottom, rgba(255,225,170,0.1), transparent)" }}
+          />
         </span>
       ))}
     </span>
@@ -103,23 +129,35 @@ function Shelf({ theme, seed }: { theme: SceneTheme; seed: number }) {
   return (
     <span
       aria-hidden
-      className="relative block h-full rounded-[2px]"
-      style={{ background: theme.wood, boxShadow: "inset 0 0 26px rgba(0,0,0,0.55)" }}
+      className="relative block h-full overflow-hidden rounded-[2px]"
+      style={{
+        background: theme.wood,
+        boxShadow:
+          "inset 0 0 34px rgba(0,0,0,0.66), inset 0 2px 3px rgba(255,220,160,0.05), 0 8px 18px rgba(0,0,0,0.45)",
+      }}
     >
-      {/* Carved pattern band across the shelf face — wood relief, not a line. */}
+      {/* Paneled back — vertical board seams behind the books. */}
       <span
         aria-hidden
-        className="absolute inset-x-0 top-[6%] h-[8%] opacity-40"
+        className="absolute inset-0 opacity-50"
         style={{
-          background: `repeating-linear-gradient(90deg, transparent 0 2.2rem, ${theme.glow}44 2.2rem 2.6rem)`,
+          background: `repeating-linear-gradient(90deg, transparent 0 3.4rem, rgba(0,0,0,0.5) 3.4rem calc(3.4rem + 1px))`,
+        }}
+      />
+      {/* Wood-grain wash over the shelf face. */}
+      <span
+        aria-hidden
+        className="absolute inset-0 opacity-25 mix-blend-overlay"
+        style={{
+          background: `repeating-linear-gradient(102deg, transparent 0 7px, rgba(255,225,170,0.12) 7px 8px, transparent 8px 19px)`,
         }}
       />
       <BookRow theme={theme} seed={seed} />
-      {/* Shelf plank shadow. */}
+      {/* Under-shelf shadow — the plank above blocks the light. */}
       <span
         aria-hidden
-        className="absolute inset-x-0 bottom-0 h-[10%]"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)" }}
+        className="absolute inset-x-0 bottom-0 h-[14%]"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
       />
     </span>
   );

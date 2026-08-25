@@ -10,9 +10,11 @@
 
 ```
 Aktif dal: main
-HEAD:      3c258a6 — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (`3136b06..3c258a6 main -> main`; `git status` temiz).
-Testler:   353/353 geçti (33 dosya; 354'ten -1: fallback testleri strict kurala göre birleştirildi)
+HEAD:      3ae1b20 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
+           DEĞİŞİKLİKLERİ çalışma ağacında (hybrid fallback restore + oda
+           derinlik pass'i; kullanıcı onayı bekleniyor; commit/push
+           YAPILMADI).
+Testler:   354/354 geçti (33 dosya; hybrid fallback testleri geri eklendi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
@@ -39,7 +41,27 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, 3c258a6, push'lu)
+## 2. Son biten iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, COMMIT BEKLİYOR)
+
+Kullanıcı root-cause override'ı: strict skeleton politikası blank-box
+üretiyordu (key'siz/gecikmeli ortamda), oda hâlâ flat okunuyordu.
+
+- **Hybrid fallback GERİ (kullanıcı kararı):** QuizCard katmanları —
+  painterly-graded iTunes kapağı ANINDA (styled, asla ham değil; era
+  grading = sepia/contrast), AI tablo hazır olunca üstte cross-fade, AI
+  fail olursa kapak kalıcı. Skeleton SADECE kapaksız (manual) şarkılarda.
+  Strict no-photo politikası (3c258a6) kullanıcı direktifiyle iptal edildi.
+- **Oda derinlik pass'i:** kitap sırtları artık multi-stop gradient
+  (aydınlık taç, gövde, eskimiş taban) + raised hub bandları + taç ışığı;
+  raf arkası dikey panel derzleri + wood-grain overlay wash; daha derin
+  shelf gölgeleri. Flat vektör okuması azaldı (DOM/CSS tavanı — tam
+  fotogerçekçilik ancak üretilmiş arka plan görseliyle olur).
+- **Testler:** hybrid set geri (instant-fallback, crossfade, failure-keeps-
+  cover, coverless-skeleton). 354/354, tsc 0, lint 0, build 0.
+- **Tarayıcı kanıtı:** MJ "Bad" — kapak ANINDA painterly ile görünür,
+  synth odada banded/gilded spines.
+
+## 2a. Önceki iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, 3c258a6 + 3ae1b20, push'lu)
 
 Kullanıcı geri bildirimi (image_7b8fb9): canlıda ham MJ iTunes fotoğrafı
 görünüyordu + oda "2D vector" okunuyordu. İki düzeltme:
@@ -59,7 +81,7 @@ görünüyordu + oda "2D vector" okunuyordu. İki düzeltme:
 - **Tarayıcı kanıtı:** MJ "Bad" — synth odada skeleton (fotoğraf YOK),
   gilded spines görünür.
 
-## 2a. Önceki iş — Global Card Design (Sting Rule II) + Hybrid Fallback + Dynamic Copy (TAM, eb9fc02 + 3136b06, push'lu)
+## 2b. Önceki iş — Global Card Design (Sting Rule II) + Hybrid Fallback + Dynamic Copy (TAM, eb9fc02 + 3136b06, push'lu)
 
 Dört görev katmanı tek oturumda:
 
@@ -98,7 +120,7 @@ Dört görev katmanı tek oturumda:
   preview toggle canlı.
 - 354/354, tsc 0, lint 0, build 0.
 
-## 2b. Önceki iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, 28d7a9b, push'lu)
+## 2c. Önceki iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, 28d7a9b, push'lu)
 
 Önceki oturumun decoupling işinin üzerine: tek-statik-gotik prompt yerine
 4 sahne ailesi + sinyal önceliği. Değişiklikler sadece
@@ -126,7 +148,7 @@ Dört görev katmanı tek oturumda:
   akışıyla çalışıyor (sandbox'ta key yok); preview toggle aktif.
 - 341/341, tsc 0, lint 0, build 0.
 
-## 2c. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, 28d7a9b ile birlikte push'lu)
+## 2d. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, 28d7a9b ile birlikte push'lu)
 
 Kullanıcı görevi: iTunes/Spotify SADECE metadata + 30s preview; kart yüzündeki
 görsel Gemini/Imagen ile ÜRETİLEN gotik yağlıboya sahne. Provider kapağı artık
@@ -165,7 +187,7 @@ kart görseli DEĞİL.
   334/334, tsc 0, lint 0, build 0.
 - **.env.example:** GEMINI_API_KEY + GEMINI_IMAGE_MODEL belgelendi.
 
-## 2d. Önceki iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f + 4cb9210, push'lu)
+## 2e. Önceki iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f + 4cb9210, push'lu)
 
 Kullanıcı görevi: kapak fotoğraf karesi gibi yapışmayacak; gotik illüstratörün
 fırçasından çıkmış gibi görünecek (image_9 Sting-Fragile örneği = iyi,
@@ -200,7 +222,7 @@ image_8 MJ-Bad = kötü) + kart yüzü tam İngilizce.
 - **Testler:** OrganicArtwork.test +1 painterly assertion (warp url, defs,
   texture/wash overlay'leri). 320/320, tsc 0, lint 0, build 0.
 
-## 2e. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
+## 2f. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
 
 Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
 temiz yeniden başlangıç. Uygulama:
@@ -232,7 +254,7 @@ temiz yeniden başlangıç. Uygulama:
 persistence ürün özelliği; sadece açık başlangıç noktaları (landing CTA,
 Start Over, Start New Journey) sıfırlar.
 
-## 2f. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
+## 2g. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
 
 Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
 uçtan uca doğrulandı:
@@ -284,13 +306,13 @@ kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
 Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
 fabricate edilmez).
 
-## 2g. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
+## 2h. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
 
 - es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
 - `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
 - Repo-geneli prettier; lint exit 0. 298 test.
 
-## 2h. Önceki işler (commit'li ve push'lu)
+## 2i. Önceki işler (commit'li ve push'lu)
 
 - **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
   8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
@@ -303,8 +325,9 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, 3c258a6 = origin/main).
+- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
+  (onaysız commit/push yok). Onay gelirse:
+  `fix: restore hybrid painterly fallback + deepen library room realism`
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).

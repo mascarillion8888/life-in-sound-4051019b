@@ -49,32 +49,42 @@ describe("QuizCard", () => {
     expect(screen.getByText(/carried by Fragile by Sting/)).toBeTruthy();
   });
 
-  it("STRICT: never renders a raw provider cover — skeleton while the painting forms", () => {
+  it("never shows a blank box — the painterly-filtered cover is the instant fallback", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     expect(screen.getByText(/Fragile — Sting/)).toBeTruthy();
-    // No <img> based on the provider cover; the stylized gothic art-skeleton
-    // breathes instead until the painting arrives.
-    expect(screen.queryByRole("img")).toBeNull();
-    expect(screen.getByTestId("card-art-skeleton").dataset.generating).toBe("true");
+    // The provider cover is visible IMMEDIATELY through the painterly
+    // grading (styled, not raw) — no empty icon box, ever.
+    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
+    expect(fallback.src).toContain("art.jpg");
+    expect(fallback.style.filter).toContain("sepia");
+    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
   });
 
-  it("renders the AI painting with an accessible alt once ready", () => {
+  it("cross-fades the AI painting over the fallback cover when one is ready", () => {
     window.localStorage.setItem(
       "soundmap.card-art.v1",
       JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
     );
     render(<QuizCard card={cards[0]} song={song()} />);
-    const ai = screen.getByRole("img") as HTMLImageElement;
+    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
+    expect(fallback.src).toContain("art.jpg");
+    const ai = screen.getByTestId("card-art-ai") as HTMLImageElement;
     expect(ai.src).toContain("data:image/png;base64,AA==");
-    expect(ai.alt).toBe("Fragile — Sting");
     expect(ai.className).toContain("fade-in");
-    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
   });
 
-  it("keeps the stylized skeleton when AI generation fails (still no raw cover)", () => {
-    // No cache, no key — generation resolves unavailable.
+  it("keeps the styled cover as the primary visual when AI generation fails", () => {
+    // No cache, no key — generation resolves unavailable; the cover stays.
     render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.queryByRole("img")).toBeNull();
+    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
+    expect(fallback.src).toContain("art.jpg");
+    expect(screen.queryByTestId("card-art-ai")).toBeNull();
+  });
+
+  it("shows the stylized skeleton only for coverless songs while generating", () => {
+    render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
+    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    expect(screen.getByTestId("card-art-skeleton").dataset.generating).toBe("true");
   });
 
   it("adapts the artwork scene to the song's era and shows the era badge", () => {
