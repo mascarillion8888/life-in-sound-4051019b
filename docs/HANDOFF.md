@@ -10,10 +10,8 @@
 
 ```
 Aktif dal: main
-HEAD:      3136b06 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
-           DEĞİŞİKLİKLERİ çalışma ağacında (strict no-photo fix + oda
-           zenginleştirme; kullanıcı onayı bekleniyor; commit/push
-           YAPILMADI).
+HEAD:      3c258a6 — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (`3136b06..3c258a6 main -> main`; `git status` temiz).
 Testler:   353/353 geçti (33 dosya; 354'ten -1: fallback testleri strict kurala göre birleştirildi)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
@@ -41,7 +39,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, COMMIT BEKLİYOR)
+## 2. Son biten iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, 3c258a6, push'lu)
 
 Kullanıcı geri bildirimi (image_7b8fb9): canlıda ham MJ iTunes fotoğrafı
 görünüyordu + oda "2D vector" okunuyordu. İki düzeltme:
@@ -305,9 +303,8 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
-  (onaysız commit/push yok). Onay gelirse:
-  `fix: enforce strict no-photo rule on card faces + enrich scene room detail`
+- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
+  onayıyla, 3c258a6 = origin/main).
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
