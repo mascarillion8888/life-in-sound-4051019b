@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
@@ -85,6 +85,15 @@ describe("QuizCard", () => {
     render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
     expect(screen.queryByTestId("card-art-fallback")).toBeNull();
     expect(screen.getByTestId("card-art-skeleton").dataset.generating).toBe("true");
+  });
+
+  it("stands in the stylized frame when the cover URL fails to load — never a broken img", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
+    fireEvent.error(fallback);
+    // The empty <img> is torn out; the stylized gothic frame takes its place.
+    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    expect(screen.getByTestId("card-art-skeleton")).toBeTruthy();
   });
 
   it("adapts the artwork scene to the song's era and shows the era badge", () => {

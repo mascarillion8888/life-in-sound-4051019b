@@ -10,377 +10,115 @@
 
 ```
 Aktif dal: main
-HEAD:      51e3e36 — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (`3ae1b20..51e3e36 main -> main`; `git status` temiz).
-Testler:   354/354 geçti (33 dosya; hybrid fallback testleri geri eklendi)
-tsc:       temiz (`npx tsc --noEmit` = 0 hata)
+HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
+Testler:   355/355 geçti (33 dosya; onError-artwork + backdrop-image testleri yeni)
+tsc:       temiz (`npm run typecheck` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
            (ui/* shadcn + PosterCanvas.tsx + LanguageContext.tsx)
            pre-existing, kabul edilebilir.
-i18n:      5 dil korunuyor (en/tr/es/de/fr sözlükleri, key-parity testleri
-           yeşil). ANCAK yeni Era Card akışı + Master Poster kart kopyası
-           TASARIM GEREĞİ English-only: kullanıcının "Full English
-           Experience" görevi. Journey soruları/placeholder'lar hâlâ
-           sözlükten gelir (varsayılan en); kart başlıkları, narrative'ler,
-           poster kartları her zaman İngilizce render edilir.
-Era flow:  Adım-adım kart akışı CANLI: şarkı commit → Era Card reveal
-           (organik artwork + 30s preview autoplay + İngilizce narrative)
-           → "Next Era / Continue" (audio fade-out + ilerleme) → 8. kartta
-           "See Your Master Poster" → /results. Tarayıcıda uçtan uca
-           doğrulandı (Painkiller 1990 → vintage-poster mount, '90s rozeti,
-           crimson metal accent, Q2'ye temiz geçiş).
-Gemini:    `GEMINI_API_KEY` server-only; prose aktif dilde (önceki oturum).
-Spotify:   `SPOTIFY_CLIENT_ID`/`SPOTIFY_CLIENT_SECRET` server-only (NO VITE_);
-           dropdown Spotify primary → iTunes fallback → serbest-metin
 ```
 
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, 51e3e36, push'lu)
+## 2. Son biten iş — Rendered Room Backdrop + Artwork Hard-Guard (TAM)
 
-Kullanıcı root-cause override'ı: strict skeleton politikası blank-box
-üretiyordu (key'siz/gecikmeli ortamda), oda hâlâ flat okunuyordu.
+Kullanıcı root-cause override'ı: canlı UI hâlâ flat 2D DOM/CSS vektörlü oda
+(cyan lamba şekli, vektör kitap blokları) render ediyor; kart artwork'ü ise
+boş kutu / bare-icon MusicNote alanına düşüyordu. İki düzeltme:
 
-- **Hybrid fallback GERİ (kullanıcı kararı):** QuizCard katmanları —
-  painterly-graded iTunes kapağı ANINDA (styled, asla ham değil; era
-  grading = sepia/contrast), AI tablo hazır olunca üstte cross-fade, AI
-  fail olursa kapak kalıcı. Skeleton SADECE kapaksız (manual) şarkılarda.
-  Strict no-photo politikası (3c258a6) kullanıcı direktifiyle iptal edildi.
-- **Oda derinlik pass'i:** kitap sırtları artık multi-stop gradient
-  (aydınlık taç, gövde, eskimiş taban) + raised hub bandları + taç ışığı;
-  raf arkası dikey panel derzleri + wood-grain overlay wash; daha derin
-  shelf gölgeleri. Flat vektör okuması azaldı (DOM/CSS tavanı — tam
-  fotogerçekçilik ancak üretilmiş arka plan görseliyle olur).
-- **Testler:** hybrid set geri (instant-fallback, crossfade, failure-keeps-
-  cover, coverless-skeleton). 354/354, tsc 0, lint 0, build 0.
-- **Tarayıcı kanıtı:** MJ "Bad" — kapak ANINDA painterly ile görünür,
-  synth odada banded/gilded spines.
+### Oda: build-time render edilmiş gerçek görsel (DOM vektörü YOK)
 
-## 2a. Önceki iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, 3c258a6 + 3ae1b20, push'lu)
+- **`src/components/scene/scenePalettes.ts` (YENİ):** tema paletleri
+  React'siz modül; 4 tema (gothic/reggae/synth/jazz) — hem component hem
+  generator okur.
+- **`scripts/generate-room-backdrop.mjs` (YENİ):** `pngjs` + deterministik
+  value-noise/fBm ile 1600×900 raster oda render'ı: panelli raf arkası,
+  hub-banded/altın başlıklı kitap sırtları (tone/gutter/edge ışığı),
+  oyma çerçeve, fener gölgesi lamba + yayılım, güneş ışığı köprüsü, masada
+  bevelighted kutular, yatay ahşap masa damarları, vignette. Her tema için
+  `src/assets/room-backdrop-<theme>.png` üretir. Çalıştırma:
+  `npm run gen:room` (Node `--experimental-strip-types` ile `.ts` içerden
+  import).
+- **`src/components/scene/SceneRoom.tsx` (REWRITE):** runtime'da hiçbir
+  DOM vektör mobilyası YOK. Katmanlar: tema `wall` gradient fallback +
+  `data-testid="scene-backdrop-<theme>"` dış span'e `background-image:
+  url(backdropPng)` (cover, center) + tema `glow` ambient wash (screen
+  blend). Çocuk zone korunuyor.
+- **Test güncellemesi:** her tema backdrop URL'sini taşıyor; DOM vektör
+  sayısı ≤4 div'li hiç değil; gradient fallback hâlâ tema paletinden.
 
-Kullanıcı geri bildirimi (image_7b8fb9): canlıda ham MJ iTunes fotoğrafı
-görünüyordu + oda "2D vector" okunuyordu. İki düzeltme:
+### Kart artwork: asla broken/empty img, asla bare Music ikonu
 
-- **Raw cover fallback KALDIRILDI (STRICT):** QuizCard artık provider
-  fotoğrafını ASLA göstermiyor. Katmanlar: painting hazırsa AI tablo
-  (erişilebilir alt + fade-in), değilse **CardArtSkeleton** — nefes alan
-  candle-glow + boş portre çerçevesi + oymalı köşe işaretleri (bare-icon
-  placeholder yerine). AI fail olsa bile skeleton kalır — fotoğraf ikamesi
-  yok. Hybrid fallback (kapak-anında) KULLANICI KARARIYLA iptal edildi.
-- **Oda zenginleştirme:** kitap sırtlarına gilded band + çift yönlü gölge;
-  raf yüzüne carved relief band + derin inset gölge; desk edge glow.
-  (Tam fotogerçekçilik DOM/CSS ile sınırlı — ileride tema başına üretilmiş
-  arka plan görseli düşünülebilir.)
-- **Testler:** strict-kural seti (no-img-during-loading, ai-alt-when-ready,
-  skeleton-on-failure). 353/353, tsc 0, lint 0, build 0.
-- **Tarayıcı kanıtı:** MJ "Bad" — synth odada skeleton (fotoğraf YOK),
-  gilded spines görünür.
+- **`QuizCard.tsx`:** cover URL her durumda (painterly graded) render
+  eder; `onError` → `erroredCover` state'ine düşürülür ve **CardArtSkeleton**
+  (stylized gothic frame) immatizesi geçer. Song null ise de skeleton.
+  AI painting (ready) `fade-in` üst katmanı yapısı korunuyor.
+- **CardArtSkeleton:** bare `<Music>` icon (MusicNote) KALDIRILDI; yerine
+  breathing candle-glow + portre çerçevesi + oyma köşe işaretleri + gilded
+  resting line (deterministik). Başlık/alt text/attachment — bare-icon
+  kutusu hiçbir durumda yok.
+- **Test yeni:** `fireEvent.error(img)` → skeleton takip eder; seasons
+  korunuyor.
 
-## 2b. Önceki iş — Global Card Design (Sting Rule II) + Hybrid Fallback + Dynamic Copy (TAM, eb9fc02 + 3136b06, push'lu)
+### Tur (browser kanıtı)
 
-Dört görev katmanı tek oturumda:
+`npm run dev` 12000 → `/journey?fresh=1` → Q1 "Jammin Bob Marley" commit →
+EraCardReveal: reggae oda (ikinci/lambalı sıcak raft texture) ANINDA kapak
+paint filter'li + '70s rozet + "DISCOVERY &..." + 8/10 INNOCENCE. Q2
+Nicky Romero EDC '21 → gothic oda + kapak AYNINDA (yeni commit'lenen
+kapak URL'si). Q3 MJ "Bad" → synth oda (indigo-cyan poci, magenta kutular)
++ kapak (resolving ghost text) — bare kutucuk/bare ikon yok, kitap raf
+texture gerçek.
 
-- **Global oda (`src/components/scene/SceneRoom.tsx` YENİ):** sabit kütüphane
-  sahnesi — oyma ahşap raf (2 sıra deterministik kitap sırtı), ön planda
-  masa, antik lamba (ışık konisi + abajur), masada kutular. Mobilya sabit,
-  aydınlatma/palet müziğe göre değişir (gothic/reggae/synth/jazz temaları).
-  EraCardReveal artık odayı mount ediyor: kart masanın üstünde duruyor.
-- **Client scene mirror (`src/lib/art/sceneTheme.ts` YENİ):** server
-  `cardArtworkScene` ile aynı keyword sözlüğü — DOM senkron tema çözer
-  (bundle'a server kodu girmeden).
-- **Dinamik kart kopyası (`src/lib/art/dynamicCardText.ts` YENİ):** her
-  string track kimliğinden türetilir (FNV hash) — başlık `ERA_NOUN &
-  COMPANION` ("DISCOVERY & ENCHANTMENT"), body era narrative + track
-  metadata cümlesi, `N/100` koleksiyon numarası, `score/10 EMOTION` kalkanı.
-  Deterministik; QuizCard'da statik metin kalmadı.
-- **Çok boyutlu prompt:** sunucu brief'i artık şablonlu — "A high-end
-  fine-art concept illustration representing the song '{SONG}' by {ARTIST}.
-  Environment: {childhood bedroom | teenage den | college dorm studio |
-  mature study} conveying {era emotion}. Artistic Style: {scene}. 
-  Integration: framed painted portrait ... matching the room's lighting and
-  texture." (`cardIndex` hook'tan server'a akıyor).
-- **HYBRID FALLBACK (blank-box fix):** QuizCard katmanları — altta
-  painterly-graded iTunes kapağı ANINDA (`card-art-fallback`), AI tablo
-  hazır olunca üstte 1s cross-fade (`card-art-ai`, tw-animate fade-in);
-  AI başarısızsa kapak kalıcı görsel. Bare-icon placeholder sadece kapaksız
-  (manual) şarkılarda. TESTLER: fallback-instant, crossfade, failure-keeps-
-  cover, coverless-placeholder.
-- **Sans-serif unification:** `font-serif` TAMAMEN kaldırıldı (QuizCard 3,
-  EraCardReveal 1) — tüm UI Inter; Google Fonts import'tan Cinzel/Playfair
-  çıkarıldı (styles.css). poeticPoster.ts canvas FONT map'i kasıtlı
-  dokunulmadı (canvas export'un display-font çeşitliliği görsel özellik).
-- **Tarayıcı kanıtı:** Bob Marley "Jammin'" → reggae oda (altın raflar,
-  sıcak lamba), MJ "Bad" → synth oda (indigo raflar, CYAN lamba, magenta
-  kutular) — ikisinde de kapak anında, dinamik başlık/numara/kalkan/body,
-  preview toggle canlı.
-- 354/354, tsc 0, lint 0, build 0.
-
-## 2c. Önceki iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, 28d7a9b, push'lu)
-
-Önceki oturumun decoupling işinin üzerine: tek-statik-gotik prompt yerine
-4 sahne ailesi + sinyal önceliği. Değişiklikler sadece
-`src/lib/art/cardArtwork.server.ts` + `useCardArtwork.ts` + testlerde.
-
-- **Sahne aileleri (spec birebir):** `reggae` (golden-hour Jamaican wood),
-  `gothic` (candlelit wood carvings), `synth` (80s cyan/magenta cassette),
-  `jazz` (brass club haze).
-- **Sinyal önceliği (`cardArtworkScene`):** 1) kullanıcı estetik tercihi
-  (`aesthetic` input, ileride profil/onboarding'den beslenebilir),
-  2) şarkı metadata'sındaki genre keyword'leri, 3) era — YALNIZ 1980-89
-  `synth` (kendi görsel kimliği var); diğer tüm era'lar sessiz şarkıyı
-  `gothic` tabana düşürür (kültür FABRİKE EDİLMEZ).
-- **Word-boundary keyword match (`keywordIn`):** substring çakışmaları
-  ölümcüldü — "dub" "Double Fantasy"yi, "black" "Kind of Blue"yu yiyordu;
-  regex sınırlarıyla düzeltildi + collision guard testi eklendi.
-- **Cache disiplini:** server memo key `trackKey::scene` — aynı parça farklı
-  estetikte yeniden üretilir (testli). Client hook artık `album` +
-  `releaseYear` da gönderiyor (primitive deps korundu).
-- **Test tuzağı öğrenildi:** `vi.fn().mockResolvedValue(response)` AYNI
-  Response objesini döndürür — body tek okunur, 2. çağrı "body used already"
-  ile düşer (sahte fallback + cache miss). Çözüm:
-  `mockImplementation(() => Promise.resolve(imagenOk()))`.
-- **Tarayıcı kanıtı:** Bob Marley "Three Little Birds" kartı placeholder
-  akışıyla çalışıyor (sandbox'ta key yok); preview toggle aktif.
-- 341/341, tsc 0, lint 0, build 0.
-
-## 2d. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, 28d7a9b ile birlikte push'lu)
-
-Kullanıcı görevi: iTunes/Spotify SADECE metadata + 30s preview; kart yüzündeki
-görsel Gemini/Imagen ile ÜRETİLEN gotik yağlıboya sahne. Provider kapağı artık
-kart görseli DEĞİL.
-
-- **`src/lib/art/cardArtwork.server.ts` (YENİ):** `generateCardArtwork`
-  server fn — `GEMINI_API_KEY` (server-only) + opsiyonel `GEMINI_IMAGE_MODEL`.
-  Prompt spec birebir: "A dark gothic oil painting concept for {ARTIST} -
-  {SONG}. A young listener in a dimly lit vintage gothic room, with a framed
-  painted portrait of {ARTIST} seamlessly integrated into the wooden
-  aesthetic of the room, warm candlelight, detailed wood carvings,
-  atmospheric fine-art composition." Primary: Imagen `:predict` (1:1);
-  fallback: `gemini-2.5-flash-image:generateContent`. 25s hard timeout.
-  Başarı data-URL olarak döner; her hata `{ image: null }` → kapak ASLA
-  geri ikame edilmez. Process-level Map ile başarı memoize (hata cache'lenmez).
-- **`src/lib/art/useCardArtwork.ts` (YENİ):** 3 katmanlı cache — memory Map
-  (oturum) → localStorage `soundmap.card-art.v1` (LRU 12, quota-safe) →
-  server fn. Key: `provider:providerId`; manual şarkılarda
-  `manual:artist:title` (manual-N slug'ı çakışmasın diye). Status:
-  idle/loading/ready/unavailable. KRITIK: effect deps kimliksiz primitive'ler
-  (key/artist/title) — results.tsx her render'da yeni Song objesi üretir;
-  `[song]` deps OOM'a yol açıyordu (sonsuz effect döngüsü, öğrenildi).
-- **QuizCard:** OrganicArtwork (provider kapağı sahnesi) kart yüzünden
-  ÇIKARILDI; yerine: ready → üretilmiş tablo (soft inner vignette),
-  loading → nefes alan candle-glow gotik placeholder (`card-art-placeholder`,
-  aria-busy), unavailable → statik placeholder. Bileşen dosyası + testleri
-  duruyor (PNG export yolu drawHarmonizedArtwork kullanmaya devam ediyor).
-- **Audio kanıtı:** iTunes preview hâlâ çalıyor — toggle reveal'da autoplay
-  sonrası "playing" ikonu gösterdi (tarayıcıda doğrulandı).
-- **Tarayıcı kanıtı:** Sting "Fragile" kartı — placeholder (sandbox'ta
-  GEMINI_API_KEY yok; Vercel'de var → orada tablo üretilir). Kart yüzü
-  English: LEGENDARY LIFE ERA / AGES 5-9 / '20s rozeti.
-- **Testler:** server art (prompt spec, Imagen parse, Gemini fallback,
-  memoize, failure-not-cached, keyless→null), hook (key biçimi, persisted
-  instant-ready, generate-once, failure→unavailable), QuizCard cached-art.
-  334/334, tsc 0, lint 0, build 0.
-- **.env.example:** GEMINI_API_KEY + GEMINI_IMAGE_MODEL belgelendi.
-
-## 2e. Önceki iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f + 4cb9210, push'lu)
-
-Kullanıcı görevi: kapak fotoğraf karesi gibi yapışmayacak; gotik illüstratörün
-fırçasından çıkmış gibi görünecek (image_9 Sting-Fragile örneği = iyi,
-image_8 MJ-Bad = kötü) + kart yüzü tam İngilizce.
-
-- **`OrganicArtwork.tsx` — `PaintedArtwork` (style transfer katmanı):**
-  1) deterministik SVG `feTurbulence`+`feDisplacementMap` warp
-     (`#soundmap-painterly-warp`, seed=7 — rastgelelik yok) fotoğrafın düz
-     kenarlarını elle çizilmiş fırça darbesine çevirir;
-  2) tiled fractal-noise "paper tooth" (data-URI SVG, overlay blend) — boya
-     dokulu kağıda oturur;
-  3) palette-accent multiply wash — kaynak renkler sahnenin ışığına çekilir;
-  4) brush-faded edge vignette — sert fotoğraf dikdörtgeni kalmaz.
-  4 mount da PaintedArtwork kullanıyor. FramedPortrait matı koyulaştı
-  (#e6ddc8 krem → #211a13 koyu mat + accent pinline + iç gölge) — Sting
-  örneğindeki "dark matted frame" birebir.
-- **eraStyle grading güçlendi** (daha illüstratif): sepia/contrast arttı,
-  saturate düştü, hafif warm hue-rotate; testler sadece `sepia` içerdiğini
-  assert ediyor — yeşil.
-- **English kart yüzü:** type line artık UPPERCASE non-italic
-  ("LEGENDARY LIFE ERA"); yaş rozetleri ASCII tire + uppercase
-  ("AGES 5-9" — QuizCard rozeti + EraCardReveal alt yazısı); en-dash
-  "–" → "-" tüm İngilizce yaş aralıklarında (lifeCards, dictionaries
-  phaseAgeRanges, poetic-analyzer fallback + ilgili testler).
-- **Dinamik adaptasyon korunuyor:** mount/palette/accent hâlâ
-  `eraStyleFor`'dan (onyıl + genre keyword + kart pozisyonu); painterly
-  katman tümünü tek gotik-fantastik estetikte birleştiriyor.
-- **Tarayıcı kanıtı:** MJ "Bad" (1987 → cassette-desk, '80s neon) ve Adele
-  "Rolling in the Deep" (2011 → dark matted framed portrait, '10s) reveal
-  ekranlarında doğrulandı — ikisinde de kapak "yeniden çizilmiş" görünümde,
-  tüm metinler İngilizce/uppercase.
-- **Testler:** OrganicArtwork.test +1 painterly assertion (warp url, defs,
-  texture/wash overlay'leri). 320/320, tsc 0, lint 0, build 0.
-
-## 2f. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
-
-Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
-temiz yeniden başlangıç. Uygulama:
-
-- **`src/lib/reset-session.ts` (YENİ):** `resetJourneySession(userId)` — tek
-  choke point. Siler: journey (localStorage `soundmap.journey.v1` + Supabase
-  satırı, `clearRemoteJourney` üzerinden) + Life Feed (`soundmap.life-feed.v1`).
-  KORUNUR: dil tercihi (`soundmap:language`) ve auth oturumu. AI sonuçları
-  (Life Story/insight) fingerprint'li in-memory — answers silinince cache de
-  anlamsızlaşır, ayrıca silinecek bir şey yok.
-- **Landing'den temiz giriş:** `/journey` route'una `validateSearch` ile
-  `?fresh` paramı eklendi. Landing hero CTA + FinalCTASection linkleri
-  `search={{ fresh: true }}` taşır. Journey restore effect'i `fresh` görünce
-  restore ETMEZ: önce reset, sonra Q1, sonra `replace` ile param URL'den
-  düşer (böylece F5 yeni journey'yi normal restore eder). Tarayıcıda
-  doğrulandı: `/journey?fresh=true` → temiz `/journey` Q1.
-- **Journey içi "Start New Journey":** artık `resetJourneySession` çağırıyor
-  (önceden Life Feed silinmiyordu — eski feed yeni journey'ye sızıyordu).
-  Reveal fazı dahil her aşamada görünür/aktif (savedProgress true iken).
-- **Results "Start Over — New Journey":** eski pasif "Start again" linki
-  yerine her zaman aktif primary buton — reset + `/journey`'ye navigate.
-  Boş storage'da results "No journey data available yet" gösterir
-  (tarayıcıda doğrulandı).
-- **Testler:** `reset-session.test.ts` (YENİ, 4 test): journey+feed silinir,
-  dil korunur, userId'li yol da local'i siler (Supabase yokken best-effort),
-  boş storage'da no-op.
-
-**Bilerek korundu:** F5/sayfa yenilemede journey restore davranışı —
-persistence ürün özelliği; sadece açık başlangıç noktaları (landing CTA,
-Start Over, Start New Journey) sıfırlar.
-
-## 2g. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
-
-Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
-uçtan uca doğrulandı:
-
-1. **Full English:** feed bileşenlerindeki hard-coded Türkçe string'ler
-   İngilizce'ye çevrildi (LifeFeedInput: "Which song is speaking for you
-   today?", "Search songs", "Add to the Map", "Remove selection";
-   LifeFeedTimeline: "Edit note"/"Save"/"Cancel"). Feed testleri güncellendi.
-   Master Poster'ın life-card kopyası (`buildLifeCards({ locale: "en" })` +
-   export'ta `lifeCardStringsFor("en")`) ve yeni reveal akışı English-only.
-   i18n altyapısı/sözlükleri korundu — parity testleri hâlâ yeşil.
-2. **Organik artwork (`src/components/results/OrganicArtwork.tsx` — YENİ):**
-   Kapak artık düz kare thumbnail DEĞİL; sahneye gömülü: `vinyl-sleeve`
-   (kılıftan çıkan oluklu plak + etiket), `cassette-desk` (J-card + makara
-   penceresi + neon underglow), `vintage-poster` (katlanma çizgileri + raptiye
-   + eskitilmiş kağıt tint), `framed-portrait` (paspartulu galeri çerçevesi +
-   picture light). Hepsinde ortam ışığı: backdrop gradient "oda", screen-blend
-   ışık yıkaması, era color grading — kapak sahnenin ışığıyla aydınlanıyor.
-3. **Dinamik era/genre adaptasyonu (`src/lib/soundmap/eraStyle.ts` — YENİ,
-   saf/deterministik):** `eraStyleFor(song, cardIndex)` → releaseYear
-   onyılı mount+palette'i belirler (≤1979 vinyl/amber, 80s cassette/neon,
-   90s poster/grunge, 2000+ portrait/galeri); genre keyword'leri
-   (title/artist/album) accent'i override eder (metal crimson #b3122e, jazz
-   brass, synth cyan, pop pink, folk moss, classical ivory); releaseYear
-   yoksa kartın journey pozisyonu kullanıcının o dönemdeki yaşını temsilen
-   mount seçer (çocukluk→vinyl, gençlik→cassette, 20'ler→poster, sonrası→
-   portrait). `eraLabel` rozeti ("'90s") QuizCard başlığında. SANATÇI
-   KÖKENİ/KÜLTÜR UYDURULMAZ — provider verisi yok; kodda belgelendi.
-4. **Adım-adım akış (`src/components/journey/EraCardReveal.tsx` — YENİ +
-   `src/routes/journey.tsx`):** onChoose / onSelectSuggestion / Next-with-
-   draft → `setReveal(question.id)`; reveal fazında EraCardReveal render
-   edilir ("Era N of 8" + QuizCard autoPlayPreview + "Next Era / Continue";
-   8.'de "See Your Master Poster" → setCompleted + navigate /results).
-   Continue reveal'ı unmount eder → audio singleton fade-out (mevcut
-   useAudioPreview cleanup). startNewJourney reveal'ı da sıfırlar.
-   Persistence davranışı değişmedi.
-5. **Master Poster:** PosterCanvas grid'i QuizCard kullandığı için 8 kart
-   otomatik olarak era-adaptive organik sahnelerle render ediliyor (her kart
-   kendi şarkısının onyılına/genre'sine göre farklı sahne).
-6. **Gate'ler:** tsc 0 hata, 315/315 (28 dosya), lint exit 0 (9 pre-existing
-   uyarı), build exit 0. Tarayıcı smoke test: journey akışı canlıda
-   doğrulandı.
-
-**Bilerek kapsam dışı:** PNG canvas export (`poeticPoster.ts`) hâlâ eski
-`drawHarmonizedArtwork` kare-crop tarzını kullanıyor — organik sahneler
-DOM-only (canvas'a port etmek büyük iş, görev DOM kartlarını kapsıyordu).
-`soundmap/` legacy bileşenleri (Wizard/Results/SongPicker/Waveform)
-kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
-Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
-fabricate edilmez).
-
-## 2h. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
-
-- es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
-- `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
-- Repo-geneli prettier; lint exit 0. 298 test.
-
-## 2i. Önceki işler (commit'li ve push'lu)
-
-- **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
-  8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
-  renderMap iki geçişli dinamik yükseklik.
-- **Supabase keep-alive cron** (152da7f): Vercel Cron → `/api/keep-alive`.
-- **Gotik Müzik Haritası** (088535f'e kadar): 6 fazlı chapter yapısı,
-  Hayat Ağacı, kemer portallar, Spotify deep link, dinamik tema motoru.
+`355/355, tsc 0, lint 0 (9 pre-existing uyarı), build 0.`
 
 ---
 
-## 3. Olası sonraki adımlar
+## 2a. Önceki iş — Hybrid Fallback Restore + Oda Derinlik Pass (TAM, eski)
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, 51e3e36 = origin/main).
-- Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
-  mount başına çizim) — büyük iş, ayrı görev.
-- `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).
-- 9 react-refresh uyarısını temizleme (ui/* export ayrıştırma) — düşük
-  öncelik.
+- Hybrid fallback GERİ (kullanıcı kararı): painterly-graded kapak ANINDA,
+  AI cross-fade, kapaksız şarkılarda skeleton. Oda derinlik pass'i:
+  multi-stop gradient sırtlar + hub bandları + raf arkası panel derzleri.
+  354/354.
 
----
+## 2b. Önceki iş — STRICT NO-PHOTO FIX + Oda Zenginleştirme (TAM, eski)
 
-## 4. Karar ağacı
+- Raw cover fallback KALDIRILDI (STRICT): QuizCard provider fotoğrafı
+  göstermiyordu. Sonraki oturumda kullanıcı direktifiyle hybrid restore.
 
-**🅐 Kullanıcı yeni görev verir →** Yap, bitince BU dosyayı TAMAMEN
-yeniden yaz, onaylıysa `checkpoint: ... — HANDOFF.md güncellendi` ile
-commit et (onay yoksa değişiklikleri çalışma ağacında bırak ve bildir).
+## 2c. Önceki iş — Global Card Design + Hybrid Fallback + Dynamic Copy
 
-**🅑 Kart sahnesine dokunurken →** Stil kararları her zaman `eraStyleFor`
-üzerinden (saf, deterministik); DOM sahneleri `OrganicArtwork.tsx`'te.
-Yeni mount eklersen `SCENE_BY_MOUNT` + `eraStyle.test.ts` güncelle.
+SceneRoom + client scene mirror + dynamicCardText + çok boyutlu prompt +
+hybrid fallback + sans-serif unification.
 
-**🅒 Testler kızarsa →** `npm test`; jsdom hex renkleri rgb()'ye
-normalize eder — stil assertion'larında rgb karşılığını kullan. Senkron
-rAF mock'larında saati +1000ms ileri sar (yoksa fade recursion'ı stack
-taşırır).
+## 2d. Önceki iş — User & Genre-Adaptive Dynamic AI Artwork
 
-**🅓 Canvas export'a dokunurken →** Rastgelelik her zaman `seededRandom`
-üzerinden; asla `Math.random()` kullanma. `return y + 300` (duality dibi)
-kontratını bozma.
+4 sahne ailesi + sinyal önceliği + word-boundary keyword + cache disiplini.
 
-**🅔 i18n'e yeni string eklerken →** `en`'e ekle → diğer 4 dile kopyala →
-key-parity testi otomatik yakalar. Era Card akışı English-only kalır
-(tasarım kararı); sözlüğe bağlama.
+## 2e. Önceki iş — Organic Art Style Transfer (Sting Kuralı)
+
+feTurbulence warp + paper tooth + palette-accent multiply wash.
 
 ---
 
-## 5. Dikkat — bu oturumda öğrenilen
+## 3. Sıradaki iş adımları
 
-- **jsdom stil normalize eder:** `style.background` hex'i `rgb(r, g, b)`
-  olarak döndürür — backdrop assertion'ları rgb'ye çevrilerek yapılmalı.
-- **Senkron rAF mock tuzak:** `cb(performance.now())` fade ramp'ini sonsuz
-  recursion'a sokar (saat ilerlemez, t<1 kalır, stack taşar). Mevcut
-  useAudioPreview.test.tsx kalıbı: `cb(performance.now() + 1000)`.
-- **Era başlığı iki yerde render edilir** (reveal heading + kart title
-  bar) — testlerde `getAllByText`.
-- **Reveal'da audio stop = unmount:** onContinue mock'u unmount etmez;
-  testte açıkça `unmount()` çağırıp pause assertion'ı yapılır.
-- Vitest sayacı: 298 → 315 (28 dosya).
+1. `npm run gen:room` (backdrop'ları yeniden üret) — tema paleti değişirse.
+2. Dokunmatik deneyim: AI painting layer resolution (GEM
+   keyless sandbox'ta skeleton kalır; Vercel'de prod.
+3. `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
+4. HANDOFF tam rewrite + commit `checkpoint: ... — HANDOFF.md güncellendi`.
 
 ---
 
-## 6. Bu oturumda KESİNLİKLE yapılmaması gerekenler
+## 4. Olası tuzaklar
 
-- Companion/memory/pattern/event/chapter sistemini geri getirme (STATE.md 🚨).
-- Life Story prompt'larına / `GROUNDING_RULES`'a / `buildLifeStoryPrompt`'a
-  DOKUNMA (kullanıcı kuralı #2).
-- Kullanıcı onayı olmadan push etme; main'de history rewrite YOK
-  (Lovable senkronu); dal birleştirme.
-- `vite.config.ts`'te DEV-ONLY allowedHosts'u commit'leme.
-- Vercel'e `VITE_`-prefixed secret env girme.
-- Sahte/mock şarkı, sahte artwork, sahte preview URL'si ÜRETME — gerçek
-  dış veri tek otorite. Sanatçı kökeni/kültürü UYDURMA (provider verisi yok).
+- **SceneRoom runtime'da hiçbir DOM/CSS vektör nesne vermez;** o
+  testleri `[aria-hidden]` sayısını <5'e düşürür.
+- Kapaksız (manual) şarkılar skeleton alır; bu BİLİNÇLİ (Sting Rule).
+- `pngjs` yalnız generator için (devDependency); unspecific Node'lar seans
+  `--experimental-strip-types` gerekir (gen:room `.ts` import ediyor).

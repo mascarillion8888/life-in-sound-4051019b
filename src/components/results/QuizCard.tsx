@@ -11,7 +11,8 @@
  * over it when ready; a coverless song gets the stylized gothic skeleton.
  * The provider still only supplies metadata + the 30s preview stream.
  */
-import { Music, Volume2, VolumeX } from "lucide-react";
+import { useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
@@ -22,9 +23,9 @@ import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
 import type { Song } from "@/lib/song/types";
 
 /**
- * Stylized gothic art-skeleton frame — the ONLY fallback while a painting
- * generates (raw provider covers were permanently removed from card faces).
- * A breathing empty frame with candle-glow — never an un-stylized photo.
+ * Stylized gothic art-frame — the ONLY fallback while a painting generates.
+ * A breathing ornate empty frame with candle-glow: never a raw photo and —
+ * per the Sting rule — never a bare icon box either.
  */
 function CardArtSkeleton({ generating }: { generating: boolean }) {
   return (
@@ -32,7 +33,7 @@ function CardArtSkeleton({ generating }: { generating: boolean }) {
       data-testid="card-art-skeleton"
       data-generating={generating ? "true" : "false"}
       aria-busy={generating}
-      className="relative flex h-full w-full items-center justify-center overflow-hidden"
+      className="relative block h-full w-full overflow-hidden"
       style={{ background: "linear-gradient(to bottom, #17110b 0%, #0b0906 60%, #080604 100%)" }}
     >
       {/* Breathing candle-glow. */}
@@ -41,14 +42,14 @@ function CardArtSkeleton({ generating }: { generating: boolean }) {
         className={`absolute inset-0 ${generating ? "animate-pulse" : ""}`}
         style={{
           background:
-            "radial-gradient(ellipse at 50% 30%, rgba(216,166,90,0.18) 0%, transparent 62%)",
+            "radial-gradient(ellipse at 50% 30%, rgba(216,166,90,0.2) 0%, transparent 62%)",
         }}
       />
       {/* Empty portrait frame silhouette. */}
       <span
         aria-hidden
         className="absolute inset-[14%] rounded-[2px] border-2 border-[#3a2f1e]/80"
-        style={{ boxShadow: "inset 0 0 30px rgba(0,0,0,0.75), 0 0 14px rgba(216,166,90,0.1)" }}
+        style={{ boxShadow: "inset 0 0 30px rgba(0,0,0,0.75), 0 0 14px rgba(216,166,90,0.12)" }}
       />
       {/* Ornamental corner marks — carved, not vector. */}
       {(["top", "bottom"] as const).flatMap((v) =>
@@ -56,7 +57,7 @@ function CardArtSkeleton({ generating }: { generating: boolean }) {
           <span
             key={`${v}-${h}`}
             aria-hidden
-            className={`absolute ${v === "top" ? "top-[14%]" : "bottom-[14%]"} ${h === "left" ? "left-[14%]" : "right-[14%]"} h-4 w-4 border-[#4a3a22]/80`}
+            className="absolute h-4 w-4 border-[#4a3a22]/80"
             style={{
               [v]: "14%",
               [h]: "14%",
@@ -68,7 +69,14 @@ function CardArtSkeleton({ generating }: { generating: boolean }) {
           />
         )),
       )}
-      <Music className="relative h-9 w-9 text-[#4a3d28]" aria-hidden />
+      {/* Gilded resting line — a portrait awaiting its painting. */}
+      <span
+        aria-hidden
+        className="absolute inset-x-[24%] top-1/2 h-[2px] rounded-full"
+        style={{
+          background: "linear-gradient(to right, transparent, rgba(216,166,90,0.4), transparent)",
+        }}
+      />
     </span>
   );
 }
@@ -102,6 +110,11 @@ export function QuizCard({
   const gem = LIFE_CARD_TONE_COLORS[card.tone];
   const era = eraStyleFor(song, card.index);
   const art = useCardArtwork(song, { cardIndex: card.index });
+  // The fallback cover must never render as a broken/empty <img>: if the
+  // provider URL fails to decode/load, the stylized skeleton takes over.
+  const [erroredCover, setErroredCover] = useState<string | null>(null);
+  const coverUrl = song?.artworkUrl ?? null;
+  const coverUsable = coverUrl !== null && coverUrl !== erroredCover;
   // Dynamic copy — every string on the card is derived from the track's
   // identity + the era's emotion (deterministic; never static filler).
   const copy = song
@@ -157,26 +170,25 @@ export function QuizCard({
 
       {/* Artwork window — hybrid: the painterly-treated provider cover shows
           INSTANTLY (styled, never raw); the generated painting cross-fades
-          over it when ready. The artwork area is never an empty icon box. */}
+          over it when ready. If the cover URL ever fails to load, the
+          stylized gothic frame stands in — the artwork area is never an
+          empty box, never a bare icon. */}
       <div className="relative m-2 mb-0 aspect-square overflow-hidden rounded-lg border border-[#2a2418] bg-[#0b0a08]">
-        {song?.artworkUrl ? (
+        {song && coverUsable ? (
           <>
             <img
               data-testid="card-art-fallback"
-              src={song.artworkUrl}
+              src={coverUrl as string}
               alt={`${song.title} — ${song.artist}`}
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover"
               style={{ filter: era.grading }}
+              onError={() => setErroredCover(coverUrl)}
             />
             <InnerVignette />
           </>
-        ) : song ? (
-          <CardArtSkeleton generating={art.status === "loading"} />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-[#3a342a]">
-            <Music className="h-10 w-10" aria-hidden />
-          </span>
+          <CardArtSkeleton generating={song ? art.status === "loading" : false} />
         )}
         {song && art.status === "ready" && art.imageUrl ? (
           <>
