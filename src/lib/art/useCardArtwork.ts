@@ -81,7 +81,10 @@ export function __clearCardArtworkMemoryCache(): void {
   MEMORY_CACHE.clear();
 }
 
-export function useCardArtwork(song: Song | null): {
+export function useCardArtwork(
+  song: Song | null,
+  context: { cardIndex?: number } = {},
+): {
   imageUrl: string | null;
   status: CardArtworkStatus;
 } {
@@ -92,6 +95,7 @@ export function useCardArtwork(song: Song | null): {
   const title = song?.title ?? "";
   const album = song?.album ?? null;
   const releaseYear = song?.releaseYear ?? null;
+  const cardIndex = context.cardIndex;
 
   const [state, setState] = useState<{
     key: string;
@@ -127,7 +131,7 @@ export function useCardArtwork(song: Song | null): {
       // the adaptive scene prompt (reggae wood / gothic candlelight / 80s
       // neon / jazz club) instead of one static aesthetic.
       void generateCardArtwork({
-        data: { trackKey: key, artist, title, album, releaseYear },
+        data: { trackKey: key, artist, title, album, releaseYear, cardIndex },
       })
         .then((out) => {
           if (!active) return;
@@ -147,7 +151,7 @@ export function useCardArtwork(song: Song | null): {
     return () => {
       active = false;
     };
-  }, [key, artist, title, album, releaseYear]);
+  }, [key, artist, title, album, releaseYear, cardIndex]);
 
   // A song change renders the placeholder synchronously — never a stale
   // painting from the previous track while the new one generates.

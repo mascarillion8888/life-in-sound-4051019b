@@ -39,8 +39,10 @@ describe("EraCardReveal", () => {
   it("shows the era position, the card, and the English narrative on its face", () => {
     render(<EraCardReveal card={cards[2]} song={song()} isLast={false} onContinue={() => {}} />);
     expect(screen.getByText("Era 3 of 8")).toBeInTheDocument();
-    // Era title appears in the reveal heading and on the card's title bar.
-    expect(screen.getAllByText("REBELLION").length).toBeGreaterThanOrEqual(2);
+    // The reveal heading keeps the era name; the card face shows the
+    // dynamic per-track title instead.
+    expect(screen.getAllByText("REBELLION").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/REBELLION & [A-Z]+/)).toBeInTheDocument();
     // The dynamic English narrative lives on the card face.
     expect(screen.getByText(/volume ran higher than feeling/)).toBeInTheDocument();
     expect(screen.getByText(/Painkiller — Judas Priest/)).toBeInTheDocument();

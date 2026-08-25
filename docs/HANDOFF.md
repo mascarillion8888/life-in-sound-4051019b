@@ -10,9 +10,11 @@
 
 ```
 Aktif dal: main
-HEAD:      28d7a9b — decoupling + adaptive-scene işi COMMIT'LENDİ ve PUSH
-           TAMAM (`4cb9210..28d7a9b main -> main`; `git status` temiz).
-Testler:   341/341 geçti (31 dosya; 334'ten +7 scene/prompt/collision testi)
+HEAD:      cb51dc0 (origin/main ile senkron) + BU OTURUMUN COMMIT'SİZ
+           DEĞİŞİKLİKLERİ çalışma ağacında (global oda + dinamik kart kopyası
+           + hybrid fallback + sans-serif; kullanıcı onayı bekleniyor;
+           commit/push YAPILMADI).
+Testler:   354/354 geçti (33 dosya; 341'den +13: SceneRoom, sceneTheme, dynamicCardText)
 tsc:       temiz (`npx tsc --noEmit` = 0 hata)
 Build:     `npm run build` = 0 hata (Nitro + postbuild-vercel-spa OK)
 Lint:      `npm run lint` = 0 HATA (exit 0). Kalan 9 react-refresh uyarısı
@@ -39,7 +41,46 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, 28d7a9b, push'lu)
+## 2. Son biten iş — Global Card Design (Sting Rule II) + Hybrid Fallback + Dynamic Copy (TAM, COMMIT BEKLİYOR)
+
+Dört görev katmanı tek oturumda:
+
+- **Global oda (`src/components/scene/SceneRoom.tsx` YENİ):** sabit kütüphane
+  sahnesi — oyma ahşap raf (2 sıra deterministik kitap sırtı), ön planda
+  masa, antik lamba (ışık konisi + abajur), masada kutular. Mobilya sabit,
+  aydınlatma/palet müziğe göre değişir (gothic/reggae/synth/jazz temaları).
+  EraCardReveal artık odayı mount ediyor: kart masanın üstünde duruyor.
+- **Client scene mirror (`src/lib/art/sceneTheme.ts` YENİ):** server
+  `cardArtworkScene` ile aynı keyword sözlüğü — DOM senkron tema çözer
+  (bundle'a server kodu girmeden).
+- **Dinamik kart kopyası (`src/lib/art/dynamicCardText.ts` YENİ):** her
+  string track kimliğinden türetilir (FNV hash) — başlık `ERA_NOUN &
+  COMPANION` ("DISCOVERY & ENCHANTMENT"), body era narrative + track
+  metadata cümlesi, `N/100` koleksiyon numarası, `score/10 EMOTION` kalkanı.
+  Deterministik; QuizCard'da statik metin kalmadı.
+- **Çok boyutlu prompt:** sunucu brief'i artık şablonlu — "A high-end
+  fine-art concept illustration representing the song '{SONG}' by {ARTIST}.
+  Environment: {childhood bedroom | teenage den | college dorm studio |
+  mature study} conveying {era emotion}. Artistic Style: {scene}. 
+  Integration: framed painted portrait ... matching the room's lighting and
+  texture." (`cardIndex` hook'tan server'a akıyor).
+- **HYBRID FALLBACK (blank-box fix):** QuizCard katmanları — altta
+  painterly-graded iTunes kapağı ANINDA (`card-art-fallback`), AI tablo
+  hazır olunca üstte 1s cross-fade (`card-art-ai`, tw-animate fade-in);
+  AI başarısızsa kapak kalıcı görsel. Bare-icon placeholder sadece kapaksız
+  (manual) şarkılarda. TESTLER: fallback-instant, crossfade, failure-keeps-
+  cover, coverless-placeholder.
+- **Sans-serif unification:** `font-serif` TAMAMEN kaldırıldı (QuizCard 3,
+  EraCardReveal 1) — tüm UI Inter; Google Fonts import'tan Cinzel/Playfair
+  çıkarıldı (styles.css). poeticPoster.ts canvas FONT map'i kasıtlı
+  dokunulmadı (canvas export'un display-font çeşitliliği görsel özellik).
+- **Tarayıcı kanıtı:** Bob Marley "Jammin'" → reggae oda (altın raflar,
+  sıcak lamba), MJ "Bad" → synth oda (indigo raflar, CYAN lamba, magenta
+  kutular) — ikisinde de kapak anında, dinamik başlık/numara/kalkan/body,
+  preview toggle canlı.
+- 354/354, tsc 0, lint 0, build 0.
+
+## 2a. Önceki iş — User & Genre-Adaptive Dynamic AI Artwork (TAM, 28d7a9b, push'lu)
 
 Önceki oturumun decoupling işinin üzerine: tek-statik-gotik prompt yerine
 4 sahne ailesi + sinyal önceliği. Değişiklikler sadece
@@ -67,7 +108,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
   akışıyla çalışıyor (sandbox'ta key yok); preview toggle aktif.
 - 341/341, tsc 0, lint 0, build 0.
 
-## 2a. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, 28d7a9b ile birlikte push'lu)
+## 2b. Önceki iş — Audio/Visual Decoupling + Gemini Fine-Art Card Artwork (TAM, 28d7a9b ile birlikte push'lu)
 
 Kullanıcı görevi: iTunes/Spotify SADECE metadata + 30s preview; kart yüzündeki
 görsel Gemini/Imagen ile ÜRETİLEN gotik yağlıboya sahne. Provider kapağı artık
@@ -106,7 +147,7 @@ kart görseli DEĞİL.
   334/334, tsc 0, lint 0, build 0.
 - **.env.example:** GEMINI_API_KEY + GEMINI_IMAGE_MODEL belgelendi.
 
-## 2b. Önceki iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f + 4cb9210, push'lu)
+## 2c. Önceki iş — Organic Art Style Transfer (Sting Kuralı) + Full English Kart Yüzü (TAM, 0d9259f + 4cb9210, push'lu)
 
 Kullanıcı görevi: kapak fotoğraf karesi gibi yapışmayacak; gotik illüstratörün
 fırçasından çıkmış gibi görünecek (image_9 Sting-Fragile örneği = iyi,
@@ -141,7 +182,7 @@ image_8 MJ-Bad = kötü) + kart yüzü tam İngilizce.
 - **Testler:** OrganicArtwork.test +1 painterly assertion (warp url, defs,
   texture/wash overlay'leri). 320/320, tsc 0, lint 0, build 0.
 
-## 2c. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
+## 2d. Önceki iş — Auto-Reset / Clean Restart (TAM, ebbeb5f + 23ec9ad, push'lu)
 
 Kullanıcı görevi: her aşamada açık bir "Start Over" + landing'den dönüşte
 temiz yeniden başlangıç. Uygulama:
@@ -173,7 +214,7 @@ temiz yeniden başlangıç. Uygulama:
 persistence ürün özelliği; sadece açık başlangıç noktaları (landing CTA,
 Start Over, Start New Journey) sıfırlar.
 
-## 2d. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
+## 2e. Önceki iş — Era-Adaptive Step-by-Step Card Flow + Organic Artwork + Full English (TAM, c46adf0 + 64f0dc8, push'lu)
 
 Kullanıcı görevi 6 maddeliydi; tamamı uygulandı, gate'ler yeşil, tarayıcıda
 uçtan uca doğrulandı:
@@ -225,13 +266,13 @@ kullanılmıyor, dokunulmadı. `deterministicEntryInsight` en-only kalıyor.
 Kültür adaptasyonu yalnızca era+genre sinyalleriyle (sanatçı kökeni
 fabricate edilmez).
 
-## 2e. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
+## 2f. Önceki iş — i18n tam çeviri + dinamik Gemini dili + prettier (TAM, 180ab4b, push'lu)
 
 - es/de/fr quizCard + lifeCards gerçek çeviri; no-fallback testi.
 - `buildEntryInsightPrompt` language parametresi; LifeFeed insight aktif dilde.
 - Repo-geneli prettier; lint exit 0. 298 test.
 
-## 2f. Önceki işler (commit'li ve push'lu)
+## 2g. Önceki işler (commit'li ve push'lu)
 
 - **iTunes hi-res artwork + MTG Life Cards** (2b3c8db): 600x600 artwork,
   8 era kartı 4×2 grid, harmonize shader, singleton useAudioPreview,
@@ -244,8 +285,9 @@ fabricate edilmez).
 
 ## 3. Olası sonraki adımlar
 
-- ~~Bu oturumun değişikliklerini commit'leme~~ — PUSH TAMAM (kullanıcı
-  onayıyla, 28d7a9b = origin/main).
+- **Bu oturumun değişikliklerini commit'leme** — kullanıcı onayı bekleniyor
+  (onaysız commit/push yok). Onay gelirse:
+  `feat: global library scene + dynamic card copy + hybrid artwork fallback + sans-serif UI`
 - Organik sahneleri PNG canvas export'a port etme (poeticPoster.ts'de
   mount başına çizim) — büyük iş, ayrı görev.
 - `deterministicEntryInsight` şablonlarını çokdilleştir (şu an en-only).

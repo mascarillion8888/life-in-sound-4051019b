@@ -101,9 +101,10 @@ describe("PosterCanvas", () => {
     expect(screen.getByText("LIFE CARDS")).toBeInTheDocument();
     const cards = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => screen.getByTestId(`quiz-card-${i + 1}`));
     expect(cards).toHaveLength(8);
-    // Each card carries its era frame: title, type line, stats, narrative.
-    expect(screen.getByText("FIRST SPARK")).toBeInTheDocument();
-    expect(screen.getAllByText("ACCEPTANCE").length).toBeGreaterThanOrEqual(1);
+    // Each card carries its era frame: dynamic per-track title, type line,
+    // score shield, narrative — no static placeholder copy.
+    expect(screen.getAllByText(/DISCOVERY & [A-Z]+/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/ACCEPTANCE & [A-Z]+/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Legendary Life Era")).toHaveLength(8);
   });
 

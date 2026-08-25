@@ -133,6 +133,33 @@ const SCENE_SPECS: SceneSpec[] = [
 ];
 
 /**
+ * The listener's environment mirrors their age at that life era — journey
+ * position stands in for the life stage when the song's own year is unknown.
+ */
+const LIFE_STAGE_ROOMS = [
+  "a childhood bedroom",
+  "a childhood bedroom",
+  "a teenage den",
+  "a teenage den",
+  "a college dorm studio",
+  "a college dorm studio",
+  "a mature personal study",
+  "a mature personal study",
+] as const;
+
+/** Era emotion carried into the scene's mood. */
+const ERA_EMOTIONS = [
+  "innocence",
+  "first identity",
+  "rebellion",
+  "inquiry",
+  "strength",
+  "darkness",
+  "longing",
+  "acceptance",
+] as const;
+
+/**
  * Resolve the scene family for one card, strongest signal first:
  *   1. the listener's preferred aesthetic (explicit user preference),
  *   2. genre keywords in the song's own metadata (artist/title/album),
@@ -165,15 +192,21 @@ function keywordIn(haystack: string, keyword: string): boolean {
 }
 
 /**
- * Build the context-adaptive fine-art brief. The artist exists as a painted
- * portrait inside a scene matched to the listener's aesthetic, the song's
- * genre and its era — never a static one-style-fits-all backdrop. Exported
- * for tests; the identity of the chosen scene feeds the cache key.
+ * Build the multi-dimensional fine-art brief. Four dimensions travel
+ * together: the scene's lighting/medium (genre-aesthetic), the listener's
+ * life-stage environment (journey position), the era's emotion, and the
+ * artist's portrait integrated organically into the room's texture.
+ * Exported for tests; the identity of the chosen scene feeds the cache key.
  */
 export function buildCardArtworkPrompt(
   artist: string,
   title: string,
-  context: { genreText?: string; releaseYear?: number | null; aesthetic?: string | null } = {},
+  context: {
+    genreText?: string;
+    releaseYear?: number | null;
+    aesthetic?: string | null;
+    cardIndex?: number;
+  } = {},
 ): { prompt: string; scene: string } {
   const subject = artist || title;
   const scene = cardArtworkScene(
@@ -182,7 +215,16 @@ export function buildCardArtworkPrompt(
     context.releaseYear ?? null,
   );
   const spec = SCENE_SPECS.find((s) => s.id === scene) ?? SCENE_SPECS[0];
-  return { prompt: spec.prompt(subject), scene: spec.id };
+  const cardIndex = context.cardIndex ?? 0;
+  const room = LIFE_STAGE_ROOMS[cardIndex % LIFE_STAGE_ROOMS.length];
+  const emotion = ERA_EMOTIONS[cardIndex % ERA_EMOTIONS.length];
+  const prompt =
+    `A high-end fine-art concept illustration representing the song '${title}' by ${subject}. ` +
+    `Environment: A personalized room setting — ${room} — conveying a strong sense of ${emotion}. ` +
+    `Artistic Style: ${spec.prompt(subject)} ` +
+    `Integration: A framed painted portrait of ${subject} seamlessly integrated into the room's ` +
+    `decor as an organic artwork element, perfectly matching the room's lighting and texture.`;
+  return { prompt, scene: spec.id };
 }
 
 function getGeminiServerKey(): string | null {
@@ -265,6 +307,7 @@ export async function generateCardArtworkCore(
     genreText: `${input.title} ${input.artist} ${input.album ?? ""}`,
     releaseYear: input.releaseYear ?? null,
     aesthetic: input.aesthetic,
+    cardIndex: input.cardIndex,
   });
   // The scene is part of the cache identity — the same track re-imagined in
   // a different aesthetic must generate a new painting, never reuse the old.
