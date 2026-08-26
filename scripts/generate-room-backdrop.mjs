@@ -106,8 +106,8 @@ function softRect(px, py, x0, x1, y0, y1, n = 14) {
   const w = x1 - x0;
   const h = y1 - y0;
   if (w <= 0 || h <= 0) return 0;
-  const u = Math.min((px - x0) * n / w, (x1 - px) * n / w);
-  const v = Math.min((py - y0) * n / h, (y1 - py) * n / h);
+  const u = Math.min(((px - x0) * n) / w, ((x1 - px) * n) / w);
+  const v = Math.min(((py - y0) * n) / h, ((y1 - py) * n) / h);
   return clamp(Math.min(u, v));
 }
 
@@ -212,13 +212,12 @@ function renderTheme(palette, seed) {
               // Streaky "gilded hub ring" without hard boundary.
               if (col.gilded) {
                 const ringPhase = (Math.sin(relY * 24 + col.edgeSeed * 6) + 1) / 2;
-                if (Math.abs(relY - 0.17) < 0.03 && ringPhase > 0.6)
-                  spine = [215, 162, 70];
+                if (Math.abs(relY - 0.17) < 0.03 && ringPhase > 0.6) spine = [215, 162, 70];
               }
               spine = [
-                clamp(spine[0] * factor / 255) * 255,
-                clamp(spine[1] * factor / 255) * 255,
-                clamp(spine[2] * factor / 255) * 255,
+                clamp((spine[0] * factor) / 255) * 255,
+                clamp((spine[1] * factor) / 255) * 255,
+                clamp((spine[2] * factor) / 255) * 255,
               ];
               color = [
                 color[0] * (1 - cov) + spine[0] * cov,

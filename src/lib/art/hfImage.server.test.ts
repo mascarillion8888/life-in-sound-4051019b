@@ -57,9 +57,11 @@ describe("generateHfImage", () => {
 
   it("returns null on non-OK status (including 503 model-loading)", async () => {
     process.env.HUGGINGFACE_API_KEY = "hf-test-key";
-    const fetchImpl = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: "Model is loading" }), { status: 503 }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ error: "Model is loading" }), { status: 503 }),
+      );
     const image = await generateHfImage("x", { fetchImpl: fetchImpl as unknown as typeof fetch });
     expect(image).toBeNull();
   });

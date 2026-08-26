@@ -12,217 +12,162 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   359/359 geçti (33 dosya)
+Testler:   369/369 geçti (34 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
-Build:     `npm run build` = 0 hata (7 backdrop PNG bundle'da)
-Lint:      `npm run lint` = 0 HATA (exit 0). 9 react-refresh uyarısı
-           pre-existing (ui/* shadcn + PosterCanvas + LanguageContext).
+Lint:      0 HATA, 9 react-refresh uyarısı pre-existing (ui/* shadcn +
+           PosterCanvas + LanguageContext)
+Build:     `npm run build` = 0 hata (Nitro .output)
+card-studio: kendi içinde `npm install` + `npm run build` TEMİZ (Next.js 14,
+           prisma generate dahil; .env yok, runtime denemesi yapılmadı)
 ```
 
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Hugging Face Inference Artwork Tier (TAM)
+## 2. Son biten iş — card-studio zip entegrasyonu BAŞLANGICI (izole çıkarım)
 
-Era Card artwork zincirine üçüncü provider eklendi: **Imagen → Gemini native
-image → HF Inference** (`src/lib/art/hfImage.server.ts`, yeni).
+Kullanıcı `/workspace/lifeinsound-app (1).zip` yükledi ve "entegrasyon
+adımlarını başlat" dedi. Zip **bağımsız bir Next.js 14 uygulaması** çıktı:
+"LifeInSound Kart Üretici" — Google OAuth (NextAuth) ile giriş, Gemini
+2.5 flash image ile sunucu-taraflı kart görseli üretimi, Prisma + Vercel
+Postgres'te kart kaydı, Vercel Blob'da görsel saklama, kullanıcı başı
+20/gün kota, kişisel kart galerisi.
 
-- **Server-only pattern:** `HUGGINGFACE_API_KEY` (asla `VITE_` değil),
-  `HF_IMAGE_MODEL` override (default SDXL base 1.0), HF router
-  `router.huggingface.co/hf-inference/models/…`. `orchestra.ts` /
-  `cardArtwork.server.ts` ile aynı kontrat: asla throw yok, her hata `null` →
-  UI gothic placeholder'a düşer.
-- **Stil sabiti:** her HF prompt'una "dark gothic woodcut fine-art engraving,
-  candlelit chiaroscuro, etched ink texture" suffix'i eklenir — ürünün
-  görsel dili provider'dan bağımsız kalır.
-- **Response disiplini:** router başarıda binary image döner; JSON cevaplar
-  (200 olsa bile) content-type kontrolüyle reddedilir; 503 "model loading"
-  retryable `null`; boş byte → `null`.
-- **Key bağımsızlığı:** sadece `HUGGINGFACE_API_KEY` ile kart resmi üretilir
-  (Gemini tier'ları key yoksa atlanır — eski `if (!apiKey) return null`
-  erken çıkışı HF yolunu kapatıyordu, kaldırıldı).
-- **Not:** ürün tasarımı gereği kart yüzleri asla provider albüm kapağını
-  göstermez; HF akışı da aynı scene prompt'uyla text-to-image painting üretir
-  (cover img2img değil).
-- **Testler:** `hfImage.server.test.ts` (7 test: no-key sessizliği, router
-  URL + auth header + stil suffix, model override, 503/JSON/network/empty
-  hataları) + cardArtwork entegrasyonu (HF-only ve Gemini-fail→HF-fallthrough)
-  → **369/369**, tsc 0, lint 0, build 0.
-- **`.env`:** placeholder ile oluşturuldu; kullanıcı gerçek token'ı lokalde
-  girdi. Gitignore'da, git status'te görünmez. `.env.example` güncellendi.
-- **CANLI DOĞRULAMA + KRİTİK DÜZELTME:** ilk canlı denemede HF router
-  `410 Gone` döndü — `stabilityai/stable-diffusion-xl-base-1.0` (ve FLUX.1-
-  schnell) hf-inference kataloğundan **Temmuz 2026'da kaldırılmış**. HF Hub
-  API'siyle canlı katalog tarandı; `hf-inference` altında text-to-image için
-  tek kalan model: **`stabilityai/stable-diffusion-3-medium-diffusers`**.
-  Default model buna çevrildi (provider-suffix `:fal-ai` syntax'ı router'da
-  çalışmıyor; doğrudan katalog modeli gerekiyor). Tarayıcıda canlı kanıt:
-  Iron Maiden "The Number of the Beast" → kart yüzünde HF üretimi mum ışıklı
-  gothic çocuk odası painting'i (albüm kapağı değil), screenshot doğrulandı.
+### NEDEN izole çıkarım (port değil)
 
-`369/369, tsc 0, lint 0, build 0.`
+Zip'in stack'i ana ürünle **doğrudan çelişiyor** ve STATE.md "onay olmadan
+büyük karar yok" dediği için port kararı kullanıcıya bırakıldı:
+
+| card-studio (zip)              | Ana ürün (SoundMap)                    |
+| ------------------------------ | -------------------------------------- |
+| Next.js 14 app router          | TanStack Start + Vite (`src/routes/`)  |
+| NextAuth + Google OAuth        | Supabase Auth (anon, RLS)              |
+| Prisma + Vercel Postgres       | Supabase Postgres + SQL migration'lar  |
+| Vercel Blob                    | (üründe blob storage yok)              |
+| Gemini 2.5 flash image direct  | Imagen → Gemini native → HF zinciri    |
+| Vercel deploy                  | Node + Nitro + Docker (STATE.md)       |
+
+### Yapılanlar (bu oturum)
+
+1. Zip `/tmp`'e çıkarılıp incelendi, sonra repo kökünde **`card-studio/`**
+   dizinine taşındı — ana ürün koduna (`src/`) hiç dokunulmadı.
+2. `eslint.config.js` ignore listesine `card-studio` eklendi (yabancı stil
+   kurallı ayrı codebase; ana repo lint'ini kirletmesin).
+3. **Pre-existing prettier drift düzeltildi:** lockfile prettier 3.9.6
+   pin'liyor; fresh `npm install` sonrası `scripts/generate-room-backdrop.mjs`
+   ve `src/lib/art/hfImage.server.test.ts`'de 9 prettier hatası çıkıyordu
+   (önceki "lint 0" iddiası daha eski prettier sürümüyle yapılmıştı).
+   `eslint --fix` ile format-only düzeltildi — davranış değişikliği yok.
+4. Ana repo doğrulaması: **369/369 test, tsc 0, lint 0 hata, build 0.**
+5. card-studio kendi başına doğrulandı: `npm install` (prisma generate dahil)
+   + `npm run build` temiz; route'lar derleniyor (`/`, `/api/auth/[...nextauth]`,
+   `/api/cards`, `/api/generate`). Runtime denemesi YAPILMADI — Google OAuth
+   + DATABASE_URL + BLOB token + GEMINI_API_KEY gerekiyor (`.env.example`'da
+   listeli).
+6. card-studio'nun kendi `.gitignore`'u nested olarak `node_modules/` ve
+   `.next/`'i hariç tutuyor — repoya sadece kaynak + `package-lock.json`
+   girdi.
+
+`369/369, tsc 0, lint 0, build 0 + card-studio standalone build 0.`
 
 ---
+
+## 2b. Önceki iş — Hugging Face Inference Artwork Tier (TAM)
+
+Era Card artwork zincirine üçüncü provider: **Imagen → Gemini native image →
+HF Inference** (`src/lib/art/hfImage.server.ts`). Server-only
+`HUGGINGFACE_API_KEY`, asla throw yok (her hata `null` → gothic placeholder),
+stil sabiti suffix'i, binary/JSON content-type disiplini, 503 retryable.
+**Kritik canlı düzeltme:** SDXL/FLUX hf-inference kataloğundan kaldırılmış
+(410 Gone); default model **`stabilityai/stable-diffusion-3-medium-diffusers`**
+— katalogda text-to-image için kalan tek model. Tarayıcıda canlı doğrulandı
+(Iron Maiden → HF üretimi gothic painting). 369/369.
 
 ## 2c. Önceki iş — Grand Finale: Cosmic Poster Grid (TAM)
 
-Son era tamamlanınca açılan `/results` posteri artık tek parça bir "Life in
-Sound" kişisel arşiv posteri olarak sahneleniyor:
+`/results` posteri: 8 kart unframing animasyonuyla 4×2 cosmic grid'e
+oturur, `CosmicBackdrop` scene-family painterly katmanları screen blend ile
+arkada sıralı fade-in. 360/360, tarayıcı kanıtlı.
 
-- **Unframing Animation:** 8 life card `motion.div` wrapper'ında merkezden
-  yükselir (`y:90→0, scale:1.07→1`, 0.18s + i×0.1s stagger, ease-out expo);
-  her kartın üstünde accent renkli "wooden frame flash" overlay 0.9s içinde
-  `opacity 0.9→0, scale 1.06→1.02` ile çözülür — ağır ahşap çerçevenin
-  poster matrisine dönüşme hissi.
-- **Cosmic Poster Merge:** 4×2 grid korunur; kartlar poster bütününün
-  hücreleri olarak yerleşir (Framer Motion, transform-only → 60fps).
-- **Atmospheric Backdrop Harmonization:** yeni `CosmicBackdrop` —
-  yolculuğun dokunduğu her scene family'nin painterly room backdrop'u
-  `mix-blend-mode: screen` ile sıralı fade-in (0.5s + i×0.18s) katmanı
-  olarak poster yüzeyinin arkasına serilir + accent radial bloom.
-  Böylece metal yolculuğu gothic duvarı, reggae+soul+hiphop karışımı
-  çok katmanlı kozmik galeri duvarı görür.
-- **İnteraktif poster:** QuizCard preview oynatma + Spotify deep-link
-  davranışı dokunulmadan korundu.
-- **Test:** yeni finale kontrat testi (cosmic-backdrop katmanları,
-  blend mode, 8 kart wrapper + frame-flash) → **360/360**, tsc 0, lint 0,
-  build 0.
-- **Tarayıcı kanıtı:** `/results` canlı — poster başlığında gothic ışık
-  sızıntıları görünür; LIFE CARDS grid'inde 8 kart (Jamming / Sweet Dreams /
-  Bad / HUMBLE. …) matrise oturmuş halde screenshot doğrulandı.
+## 2d. Önceki iş — Painterly Backdrops + Dynamic Atmosphere (TAM)
 
-`360/360, tsc 0, lint 0, build 0.`
-
----
-
-## 2b. Önceki iş — Generator Quality Pass: Painterly Backdrops (TAM)
-
-Kullanıcı verdict'i: "vector look raster PNG'nin kendi içeriği; kod temiz,
-çözüm generator refactor'ı." Generator `scripts/generate-room-backdrop.mjs`
-**baştan yazıldı** — painterly pass:
-
-- **Crisp rect/trapezoid yok:** tüm geometri (kitap sırtları, raf çerçevesi,
-  masa kutuları) `softRect` coverage mask ile çizilir (kenarda 1/n içinde
-  1→0 ease; tilt + gap + hFrac randomizasyonu perpendicularity'yi kırar).
-- **Gaussian ışık:** lamba cone yerine gaussian warm pool; desk ön kenarı
-  `gauss()` catch-light; ambiyans spill + cool counterlight — hiçbirinde
-  sert kenar yok.
-- **Painterly edge-breaker:** düşük frekanslı fBm ile ±8% brightness
-  modülasyonu + final film grain (fBm ×9) — analog doku hissi.
-- **KRİTİK BUG bulundu:** `jitter()` helper'ı `.map(clamp)` ile [0,1]'e
-  kırpıyordu — tüm 0-255 renkler ~1'e inip siyah çıkıyordu (ilk painterly
-  render'ın rafı bu yüzden tamamen siyahtı; sadece gilded gold çizgiler
-  hayattaydı). `jitter` artık 0-255 domain'de clamp'ler.
-- Tüm 7 tema regenerate: ~450-510 KB → **~1.0-1.1 MB** (piksel başına
-  entropi arttı = organik doku).
-- **Tarayıcı kanıtı:** `/journey?fresh=1` + HUMBLE/Kendrick → hiphop odası
-  artık bulanık kenarlı, yumuşak mor kitap silüetleri + difüz lamba
-  yayılımı; hard vector box YOK. Screenshot doğrulandı.
-
-`359/359, tsc 0, lint 0, build 0.`
-
----
-
-## 2a. Önceki iş — Dynamic Atmosphere Engine (genre/decade) (TAM)
-
-Oda/backdrop backbone'u statik 4 temadan dinamik genre+decade matrisine
-genişletildi. `SceneRoom` ve AI painting brief'i aynı aileyi çözer.
-
-### Yeni aileler (4 → 7)
-
-- **`scenePalettes.ts`:** `soul` (bal/amber soul-vinyl), `grunge` (slate/zeytin
-  90s basement), `hiphop` (plum/violet + gold studio) eklendi; büyük/küçük
-  palet anahtarları SceneThemeId union'ına taşındı. Generator
-  (`npm run gen:room`) paletleri auto-iterate ettiği için 7 backdrop PNG
-  tek komutla üretildi (`src/assets/room-backdrop-*.png`, ~450–510 KB).
-- **`sceneThemeFor` (client, `src/lib/art/sceneTheme.ts`):** genre keyword
-  aileleri yeniden sıralandı (soul ailesi ayrıldı — `soul/funk/motown/rnb/…`
-  artık jazz'dan önce gelir; `funk` synth'ten soul'a alındı), `grunge` +
-  `hiphop` aileleri eklendi. Genre yoktiebreak'ında **decade ladder**:
-  ≤1969→jazz, ≤1979→soul, ≤1989→synth, ≤1999→grunge, 2000+→hiphop,
-  null→gothic (`eraThemeFor` export). Eski "sadece 80s → synth" kısıtı
-  kaldırıldı.
-- **`cardArtwork.server.ts` (server mirror):** `SCENE_SPECS` aynı id'leri ve
-  prompt'ları taşıyor (her aileye yeni prompt; cache discriminator olarak
-  scene id aynı kalıyor). `cardArtworkScene` decade ladder'ı sunucu tarafında
-  da aynı şekilde döndürür.
-- **`SceneRoom.tsx`:** `BACKDROPS` 7 kayıt; runtime DOM vektörü yok,
-  her tema kendi raster PNG'sini cover'lar.
-- **Kart rozeti:** `eraStyleFor` zaten decade badge (`'70s/…/'10s`) + genre
-  accent override'ı sağlıyor — bu özellik dokunmadan doğal entegre.
-
-### Test ve kanıt
-
-- Yeni/güncellenmiş testler: server (`cardArtworkScene` 3 yeni family +
-  decade ladder), client mirror (`sceneThemeFor` family keyword + ladder,
-  `eraThemeFor` saf decade tablosu), SceneRoom loop artık 7 temayı da
-  traverse eder → **359/359**.
-- Tarayıcı kanıtı (STATE.md kural 10), dev server 12000, `/journey?fresh=1`:
-  1. **Smells Like Teen Spirit / Nirvana** → grunge oda (slate-zeytin raf),
-     `'90s` rozeti, kapak ANINDA.
-  2. **Respect / Aretha Franklin** → soul oda (amber bal raf + amber lamba
-     yayılımı), `'60s` rozeti.
-  3. **HUMBLE / Kendrick Lamar** → hiphop oda (plum/violet raf + gold
-     artifact), `'10s` rozeti.
-
-`359/359, tsc 0, lint 0, build 0.`
-
----
-
-## 2a. Önceki iş — Gothic Wooden Frame Card (TAM)
-
-Referans GothicEraCard tasarımı QuizCard'a taşındı: responsive `w-full max-w-md`,
-lucide Shield/Music/Volume ikonları (emoji yok), dinamik sequence/score,
-serif ahşap çerçeve. 356/356.
-
-## 2b. Önceki iş — Rendered Room Backdrop + Artwork Hard-Guard (TAM)
-
-Procedural PNG backdrop backbone, SceneRoom DOM vektörü YOK, cover
-`onError` → skeleton.
-
-## 2c. Önceki iş — Hybrid Fallback Restore (TAM, eski)
-
-Punterly-graded kapak ANINDA + AI cross-fade + coverless skeleton.
-
-## 2d. Önceki iş — STRICT NO-PHOTO FIX (TAM, eski)
-
-Raw cover fallback kaldırılmıştı; hybrid restore ile geri alındı.
-
-## 2e. Önceki iş — Global Card Design + Dynamic Copy (TAM, eski)
-
-SceneRoom client mirror + dynamicCardText + hybrid fallback.
-
-## 2f. Önceki iş — User/Genre-Adaptive AI Artwork (TAM, eski)
-
-Sahne ailesi sinyal önceliği + cache disiplini.
+Generator painterly rewrite (softRect, gaussian ışık, fBm grain; `jitter`
+0-255 clamp bugfix'i) + 7 scene family (soul/grunge/hiphop eklendi, decade
+ladder). 7 backdrop PNG ~1.0-1.1 MB. 359/359, tarayıcı kanıtlı.
 
 ---
 
 ## 3. Sıradaki iş adımları
 
-1. Tema paleti değişirse: `npm run gen:room` (backdrop'lar yeniden üretilir).
-2. `GEMINI_API_KEY` varsa AI painting katmanı yeni scene prompt'larından
-   beslenir (cache eski scene id ile çoklu saat sayılabilir; anahtar scope
-   `trackKey::scene`).
-3. Grand Finale yönü (kartların cosmic poster grid'e unlock-merged geçişi)
-   hâlâ tasarım onayı bekliyor.
+1. **KULLANICI KARARI BEKLENİYOR:** card-studio yönü (§4'teki A/B/C).
+2. Karar B (port) çıkarsa sıradaki çalıştırılabilir adım — port planı:
+   - NextAuth → Supabase Auth (Faz 5 ile birlikte, anon → email migration)
+   - Prisma `Card` modeli → `supabase/migrations/0003_cards.sql` (RLS:
+     `auth.uid() = user_id`, service-role yok)
+   - Vercel Blob → Supabase Storage bucket (`cards/`)
+   - `/api/generate` → TanStack server route; görsel üretimini mevcut
+     `cardArtwork.server.ts` zincirine (Imagen → Gemini → HF) bağla,
+     Gemini-direct çağrıyı ayrı tutma
+   - Günlük kota → DB count + RLS (DAILY_LIMIT=20 referans)
+   - Kart galerisi UI → `src/routes/` altında yeni route (Next.js `app/`
+     pattern'i ASLA kopyalanmaz)
+3. Karar A çıkarsa: card-studio olduğu gibi kalır; çalıştırmak istenirse
+   `.env.example`'daki 6 değişken gerekir (Google Cloud OAuth + Vercel
+   Postgres + Blob + Gemini key).
 4. `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
 5. HANDOFF tam rewrite + commit `checkpoint: ... — HANDOFF.md güncellendi`.
 
 ---
 
-## 4. Olası tuzaklar
+## 4. Olası sonuçlar (card-studio kararı)
 
-- Genre keyword sırası önem: soul ailesi (`soul/funk/motown`) jazz'dan önce;
-  otherwise "soul" hiç yakalanmazdı (jazz eski `soul` keyword'u yutardı).
-  `funk` synth'ten soul'a alındı — 70s funk artık neon değil bal ışık.
-- Client `SCENE_KEYWORDS` ve server `SCENE_SPECS` manuel mirror; değişiklik
-  iki tarafa da uygulanmalı (testler bu yüzden iki tarafta ladder assert'ü
-  taşıyor).
-- Decade ladder null year → gothic (kültür uydurmamak); yıl varsa her bucket
-  kendi kimliği.
-- `pngjs` yalnız generator (devDependency); `gen:room`
-  `--experimental-strip-types` ile `.ts` import eder (Node 22 gerektirir).
-- Dev server bu oturumda 12000 portunda çalıştı; kapatılması gerekmiyorsa
-  dursun (UI doğrulaması için yeniden başlat).
+- **A) İzole iç araç:** card-studio repo içinde bağımsız kart-tasarım
+  stüdyosu olarak kalır; ana ürün etkilenmez. En düşük risk, sıfır port
+  maliyeti. (Şu anki durum bu.)
+- **B) Ana ürüne port:** kart kalıcılığı + kullanıcı galerisi + kota
+  özellikleri Supabase/Nitro stack'ine taşınır (Faz 4/5 kapsamıyla
+  örtüşür); card-studio referans implementasyon olarak kullanılıp sonra
+  arşivlenir/silinir. Orta maliyet, ürün yol haritasıyla uyumlu.
+- **C) Ayrı yaşam:** card-studio ana repodan çıkarılıp ayrı repo/deploy
+  (Vercel) olarak yaşar. Ana repo temiz kalır ama iki ürün bakımı gerekir.
+
+---
+
+## 5. Bu oturumda öğrenilen kritik bilgi
+
+- **Prettier sürüm drift'i gerçek:** lockfile 3.9.6 pin'li; eski HANDOFF'ların
+  "lint 0" iddiaları daha eski prettier'la yapılmış. Fresh clone'da 9
+  pre-existing prettier hatası çıkıyordu — `--fix` ile kalıcı düzeltildi,
+  artık her ortamda lint 0.
+- card-studio'nun `npm run build`'i env değişkenleri OLMADAN da derleniyor
+  (NextAuth/Gemini key'ler runtime'da okunuyor, build-time'da değil).
+- Zip'teki `.gitignore` nested çalışıyor; `card-studio/node_modules` ve
+  `.next` git'e girmiyor — ayrıca ana `.gitignore`'a eklemeye gerek yok.
+- `app/api/generate/route.js`'teki Gemini çağrısı `gemini-2.5-flash-image`
+  modelini kullanıyor ve referans görsel (img2img) destekliyor — ana ürünün
+  scene-prompt zincirinden farklı bir yaklaşım (port kararında değerlendir).
+
+---
+
+## 6. Yapılmaması gerekenler
+
+- card-studio'dan `app/`, `layout.jsx`, NextAuth, Prisma pattern'lerini
+  `src/` içine KOPYALAMA — repo kuralı: file-based routing `src/routes/`,
+  Next.js pattern'i yasak.
+- Vercel Blob/Postgres bağımlılığını ana ürüne TAŞIMA — deployment hedefi
+  Node + Nitro + Docker; storage gerekirse Supabase Storage.
+- Ana repoya Prisma ekleme — veri erişimi Supabase SQL migration + RLS ile.
+- card-studio'yu kullanıcı kararı (§4) olmadan silme veya ana ürüne bağlama.
+- Kaldırılmış companion v1 sistemini geri getirme (arşiv:
+  `legacy/companion-v1-2026-08-15`).
+
+---
+
+## 7. Devir kaydı (son 5 commit)
+
+```
+git log --oneline -5 çıktısına bak — metne değil, git'e güven.
+Son satır bu oturumun checkpoint'i olmalı:
+checkpoint: card-studio zip entegrasyonu başlangıcı — HANDOFF.md güncellendi
+```
