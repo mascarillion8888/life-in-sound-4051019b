@@ -12,10 +12,10 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   432/432 geçti (40 dosya)
+Testler:   430/430 geçti (41 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
-Lint:      0 HATA, 9 react-refresh uyarısı pre-existing (ui/* shadcn +
-           PosterCanvas + LanguageContext)
+Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
+           LanguageContext)
 Build:     `npm run build` = 0 hata (Nitro .output)
 ```
 
@@ -23,7 +23,40 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Dynamic Master Poster Theme (TAM)
+## 2. Son biten iş — Editorial Master Poster + Modal Export (TAM)
+
+- **Sabit 2:3 editorial infographic** (`MasterPosterSheet.tsx`) — layout
+  artık strict: Header (kural çizgisi + başlık + 6 yaş rozeti) → Orta 3
+  kolon (Early Spark sol, Master Frame orta, Peak Identity sağ) → Alt 3
+  kolon (Emotional Waveform SVG + 1-11 numaralı Tracklist + Circular Seal).
+  Orta çerçevede 4 gotik geçiş portali (en erken 4 chapter'ın yaşları).
+  `aspect-ratio: 2/3` ile kilitli — sadece palet/ambiyans kayıyor, kompozisyon
+  asla değişmiyor.
+- **Journey sonu modalı** (`MasterPosterModal.tsx`) — 8. kart reveal'ından
+  sonra tam ekran açılır, kapanınca `/results`'a gider. İçinde aynı
+  `MasterPosterSheet` — render/export asla ayrışmaz.
+- **PNG export** — `html-to-image` (`toPng`, `pixelRatio: 2`) → 2048×3072.
+  Hem /results'taki Download butonu hem modal'daki buton aynı sheet
+  elementini yakalar (`data-testid='master-poster-sheet'`).
+- **posterTheme matris ince ayarı** — Jazz: midnight blue (#0a1122),
+  Folk: taba/kahverengi (#14100a) — brief'in fiziksel renklerine hizalandı.
+- **Paylaşılan içerik** (`masterPosterContent.ts`) — pure builder:
+  numberedTitles, earlyEraTracks (ch i+ii), peakIdentityTracks (ch v),
+  masterSong (emotional curve zirvesi), portals, wavePoints. İki renderer
+  da buradan beslenir.
+- **Test**: 430/430, tsc 0, lint 0e/7w, build 0. MasterPosterCanvas
+  testleri yeni strict layout'a göre yeniden yazıldı (4 test: header/badges/
+  portals/bottom, waveform SVG, metal→bronze/stormy, synth→neon-magenta/
+  retro-grid). masterPosterContent.test.ts 6 test.
+- **Tarayıcı kanıtı**: metal journey seed'lenip /results açıldı — poster
+  stormy ambiyans + bronze çerçeve + 6 yaş rozeti + portal strip + waveform
+  + tracklist + mühür ile render edildi; Download PNG butonu aktif.
+
+`430/430, tsc 0, lint 0, build 0.`
+
+---
+
+## 2a. Önceki iş — Dynamic Master Poster Theme (TAM)
 
 - **Yeni modül `src/lib/soundmap/posterTheme.ts`:** saf, deterministik
   resolver — tür/era/duygu → somut poster teması. Metal/Doom → gothic
@@ -59,7 +92,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2a. Önceki iş — Strict AI-Artwork Rule (raw cover YASAK) (TAM)
+## 2b. Önceki iş — Strict AI-Artwork Rule (raw cover YASAK) (TAM)
 
 - **Diyagnoz:** QuizCard, AI painting hazır olana/başarısız olana kadar
   `song.artworkUrl`'i (sadece CSS grading'li ham provider fotoğrafı) art
@@ -96,7 +129,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2b. Önceki iş — Card Gallery & Social Share Poster (TAM)
+## 2c. Önceki iş — Card Gallery & Social Share Poster (TAM)
 
 ### Card Gallery (`/profile/cards`)
 

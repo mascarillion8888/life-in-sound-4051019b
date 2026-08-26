@@ -71,9 +71,9 @@ const METAL_CAST: Record<PosterMetal, { color: string; highlight: string }> = {
 
 const ATMOSPHERE_BG: Record<PosterAtmosphere, string> = {
   "gothic-thunder": "#0b0b10",
-  "smoke-candlelight": "#0e0d0b",
+  "smoke-candlelight": "#0a1122",
   "retro-grid-neon": "#12081f",
-  "distressed-parchment": "#121008",
+  "distressed-parchment": "#14100a",
 };
 
 /* -------------------------------------------------------------------------- */

@@ -7,7 +7,10 @@ import { ProgressBar } from "@/components/journey/ProgressBar";
 import { QuestionCard } from "@/components/journey/QuestionCard";
 import { EraCardReveal } from "@/components/journey/EraCardReveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { MasterPosterModal } from "@/components/results/MasterPosterModal";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { questions } from "@/lib/questions";
 import { loadJourney, saveJourney } from "@/lib/journey-storage";
 import { resetJourneySession } from "@/lib/reset-session";
@@ -78,6 +81,9 @@ function JourneyPage() {
   const [draft, setDraft] = useState("");
   const [restored, setRestored] = useState(false);
   const [completed, setCompleted] = useState(false);
+  // Poster modal — opens after the eighth era card is revealed; closing it
+  // routes to /results.
+  const [posterOpen, setPosterOpen] = useState(false);
   // Step-by-step era flow: after a song is committed for the current
   // question, the era card is revealed (artwork + autoplay preview) before
   // advancing. Holds the revealed question id, null during the prompt phase.
@@ -328,9 +334,10 @@ function JourneyPage() {
                   // can reload them on a direct visit / F5 (history state is
                   // lost on refresh). The user can still wipe progress via
                   // "Start New Journey". We only stop further auto-save by
-                  // marking the local component as completed.
+                  // marking the local component as completed. The Master
+                  // Poster modal opens here; closing it routes to /results.
                   setCompleted(true);
-                  navigate({ to: "/results", state: { answers } as never });
+                  setPosterOpen(true);
                 } else {
                   setCurrent((c) => Math.min(total, c + 1));
                 }
@@ -442,6 +449,55 @@ function JourneyPage() {
           </button>
         ) : null}
       </main>
+
+      {posterOpen ? (
+        <MasterPosterModal
+          analysis={deterministicPoeticAnalysis(
+            analyzeUserJourney(answers) ?? {
+              archetype: "the dreamer",
+              title: "Untitled Journey",
+              description: "",
+              emotionalProfile: [],
+              traits: [],
+              musicProfile: "",
+              recommendedGenres: [],
+              confidence: 0,
+              scores: {
+                introspection: 0.5,
+                nostalgia: 0.5,
+                energy: 0.5,
+                melancholy: 0.5,
+                hope: 0.5,
+                rebellion: 0.5,
+                connection: 0.5,
+              },
+              emotions: { dominantEmotion: "nostalgia", secondaryEmotions: [], intensity: 0.5 },
+              music: {
+                primaryGenres: [],
+                secondaryGenres: [],
+                mood: "melancholic",
+                listeningStyle: "slow",
+              },
+              poeticSummary: "",
+              poster: {
+                headline: "",
+                subheadline: "",
+                archetype: "the dreamer",
+                paletteLabel: "",
+                keywords: [],
+              },
+            },
+            Object.values(answers),
+          )}
+          songs={Object.values(songs)}
+          feedEntries={[]}
+          onClose={() => {
+            setPosterOpen(false);
+            navigate({ to: "/results", state: { answers } as never });
+          }}
+          locale={(t.poster.downloadPoster.includes("İndir") ? "tr" : "en") as "tr" | "en"}
+        />
+      ) : null}
     </div>
   );
 }
