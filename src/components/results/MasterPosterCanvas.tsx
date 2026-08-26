@@ -15,13 +15,14 @@ import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { buildLifeCards, lifeCardStringsFor } from "@/lib/soundmap/lifeCards";
 import { exportPoeticPoster } from "@/lib/soundmap/poeticPoster";
+import { resolvePosterTheme, type PosterTheme } from "@/lib/soundmap/posterTheme";
 import { spotifySearchUrl } from "@/lib/song/listen";
 import type { Song } from "@/lib/song/types";
 
 import { QuizCard } from "./QuizCard";
 
 /**
- * PosterCanvas — the exportable Dynamic Music Map.
+ * MasterPosterCanvas — the exportable Dynamic Music Map (Master Template).
  *
  * Every visual decision (background gradient, borders, text, typography
  * direction) is driven by the analysis' dynamic visual spec, so a Metal/Gothic
@@ -144,6 +145,82 @@ function CosmicBackdrop({ songs, accent }: { songs: Song[]; accent: string }) {
   );
 }
 
+/**
+ * Ambient sky behind the Master Template — resolved from the life arc's
+ * emotional weather. Stormy: turbulent cloud banks and a distant lightning
+ * bloom. Starry: a calm starfield with a soft nebula wash. Star positions
+ * are deterministic (fixed seed) so re-renders never shimmer.
+ */
+function BackgroundSceneLayer({ theme }: { theme: PosterTheme }) {
+  const stars = [
+    [8, 12, 1.6],
+    [22, 30, 1.1],
+    [35, 8, 1.9],
+    [47, 22, 1.2],
+    [58, 10, 1.5],
+    [66, 28, 1.0],
+    [74, 14, 1.8],
+    [85, 24, 1.3],
+    [92, 9, 1.6],
+    [15, 40, 1.1],
+    [30, 46, 1.4],
+    [52, 42, 1.0],
+    [70, 44, 1.5],
+    [88, 38, 1.2],
+  ] as const;
+  return (
+    <div
+      aria-hidden
+      data-testid="poster-background-scene"
+      data-scene={theme.backgroundScene}
+      className="pointer-events-none absolute inset-0"
+    >
+      {theme.backgroundScene === "stormy" ? (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse 90% 45% at 20% 0%, ${theme.metalColor}14, transparent 60%), radial-gradient(ellipse 80% 40% at 85% 5%, rgba(60,66,80,0.35), transparent 65%)`,
+            }}
+          />
+          {/* Distant lightning bloom, high in the sky. */}
+          <div
+            className="absolute inset-x-0 top-0 h-1/3"
+            style={{
+              background: `radial-gradient(ellipse 30% 55% at 68% 0%, ${theme.metalHighlight}22, transparent 70%)`,
+              mixBlendMode: "screen",
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${theme.metalColor}10, transparent 65%)`,
+            }}
+          />
+          {stars.map(([x, y, r]) => (
+            <span
+              key={`${x}-${y}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${x}%`,
+                top: `${y}%`,
+                width: r * 2,
+                height: r * 2,
+                background: theme.metalHighlight,
+                opacity: 0.55,
+                boxShadow: `0 0 ${r * 4}px ${theme.metalHighlight}88`,
+              }}
+            />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Grand Finale entrance — cards lift from center, then settle into the
  *  matrix with a stagger; the wooden frame flash fades as they "unframe". */
 const grandCard = (i: number) => ({
@@ -152,7 +229,7 @@ const grandCard = (i: number) => ({
   transition: { delay: 0.18 + i * 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
 });
 
-export function PosterCanvas({
+export function MasterPosterCanvas({
   analysis,
   songs,
   feedEntries = [],
@@ -193,6 +270,22 @@ export function PosterCanvas({
   ];
   const maxIntensity = Math.max(...curve.map((p) => p.intensity), 0.01);
 
+  // Master theme — genre/era decide the metal cast & atmosphere; the mean
+  // intensity of the life arc decides the sky (stormy vs starry). Fully
+  // deterministic; the grid layout below never changes, only its palette.
+  const theme = resolvePosterTheme({
+    // The analyzer's theme id ("metal-gothic", "synthwave-80s", …) is the
+    // strongest family signal — it was resolved from real genre data by the
+    // dynamic theme engine. Raw song text adds finer hints on top.
+    genres: [
+      analysis.visual.themeId,
+      ...songs.map((s) => `${s.title} ${s.artist} ${s.album ?? ""}`),
+    ],
+    releaseYears: songs.map((s) => s.releaseYear ?? null),
+    emotionalIntensity: curve.reduce((sum, p) => sum + p.intensity, 0) / Math.max(curve.length, 1),
+    mood: [...aura, ...analysis.chapters.map((c) => c.mood)],
+  });
+
   // SVG waveform points (0..100 viewBox).
   const wavePoints = curve.map((p, i) => ({
     x: (i / Math.max(curve.length - 1, 1)) * 100,
@@ -219,21 +312,26 @@ export function PosterCanvas({
       aria-label={t.poster.ariaLabel}
       data-frame={extras.frame}
       data-texture={extras.texture}
+      data-metal={theme.metal}
+      data-atmosphere={theme.atmosphere}
+      data-scene={theme.backgroundScene}
       className={`relative overflow-hidden border backdrop-blur-xl ${frameClass}`}
       style={{
-        borderColor: `${palette.primary}55`,
-        background: `radial-gradient(ellipse at top, ${palette.primary}26, transparent 55%), radial-gradient(ellipse at bottom, ${palette.accent}1f, transparent 60%), ${palette.background}`,
+        borderColor: `${theme.metalColor}66`,
+        background: `radial-gradient(ellipse at top, ${theme.metalColor}1f, transparent 55%), radial-gradient(ellipse at bottom, ${palette.accent}1f, transparent 60%), ${theme.primaryBg}`,
         color: palette.text,
         ...frameShadow,
       }}
     >
+      {/* Emotional weather — stormy vs starry sky behind the template. */}
+      <BackgroundSceneLayer theme={theme} />
       {/* Grand Finale — cosmic gallery wall harmonizing every era's room. */}
       <CosmicBackdrop songs={songs} accent={palette.accent} />
       {/* Top Header: personalized title + signature motto + phase roadmap */}
       <header className="px-6 pt-10 text-center sm:px-12">
         <p
           className="text-xs font-semibold uppercase tracking-[0.35em]"
-          style={{ color: palette.accent }}
+          style={{ color: theme.metalHighlight }}
         >
           {t.poster.yourMusicMap}
           {analysis.source === "gemini" ? " · Gemini" : ""}
@@ -434,8 +532,9 @@ export function PosterCanvas({
           >
             <defs>
               <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={extras.waveGradient[0]} stopOpacity="0.95" />
-                <stop offset="100%" stopColor={extras.waveGradient[1]} stopOpacity="0.7" />
+                {/* The emotional graph is cast in the journey's metal. */}
+                <stop offset="0%" stopColor={theme.metalColor} stopOpacity="0.95" />
+                <stop offset="100%" stopColor={theme.metalHighlight} stopOpacity="0.7" />
               </linearGradient>
             </defs>
             {/* Glow line */}

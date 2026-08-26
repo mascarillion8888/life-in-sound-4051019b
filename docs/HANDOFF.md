@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   412/412 geçti (39 dosya)
+Testler:   432/432 geçti (40 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 9 react-refresh uyarısı pre-existing (ui/* shadcn +
            PosterCanvas + LanguageContext)
@@ -23,7 +23,43 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Strict AI-Artwork Rule (raw cover YASAK) (TAM)
+## 2. Son biten iş — Dynamic Master Poster Theme (TAM)
+
+- **Yeni modül `src/lib/soundmap/posterTheme.ts`:** saf, deterministik
+  resolver — tür/era/duygu → somut poster teması. Metal/Doom → gothic
+  castle & thunder + **Bronze**; Jazz/Classical → smoke & candlelight +
+  **Amber Brass**; 80s Pop/Synth (keyword VEYA release year'ların ≥50%'si
+  1978-1992) → retro grid & neon glow + **Neon Magenta**; Rock/Folk →
+  distressed parchment & woodcut + **Copper**; sinyal yoksa → **Gold**
+  gothic default. Background scene: ortalama emotional intensity ≥0.5 veya
+  fiery/angry mood → **stormy**; düşük/peaceful/happy → **starry**.
+  18 test (substring guard: "Metallica" ≠ "metal" tag — gold kalır).
+- **`PosterCanvas.tsx` → `MasterPosterCanvas.tsx`** (rename, export dahil)
+  tema bağlandı — **layout dokunulmadı** (aynı 2:3 master grid: header
+  timeline, side panels, center portals, emotional graph): section
+  borderColor → `theme.metalColor`, background wash → `theme.primaryBg`,
+  waveform SVG gradient stops → metalColor→metalHighlight (eski
+  `extras.waveGradient` kullanımı posterde kalktı), header eyebrow →
+  metalHighlight, yeni `<BackgroundSceneLayer>` (stormy: turbulent cloud +
+  lightning bloom / starry: sabit-seed yıldız alanı + nebula wash).
+  `data-metal` / `data-atmosphere` / `data-scene` attribute'ları testlerde
+  kilitli. `results.tsx` importu güncellendi.
+- **Sinyal kaynağı:** `genres` dizisinin ilk elemanı
+  `analysis.visual.themeId` ("metal-gothic", "synthwave-80s"…) — dynamicThemes
+  motorunun gerçek genre verisiyle çözdüğü aile; üzerine ham şarkı metni.
+  ThemeId'ler de keyword tablosuna oturur ("synthwave-80s" → retro-grid-neon).
+- **Test:** posterTheme.test.ts (22) + MasterPosterCanvas.test.tsx (12:
+  metal fixture → bronze/stormy; synthpop fixture → neon-magenta/retro grid,
+  layout invariant). Toplam 432/432, tsc 0, lint 0e/9w, build 0.
+- **Tarayıcı kanıtı (kural 10), dev 12000:** localStorage'a 8 metal şarkı
+  seed'lenip /results açıldı — poster stormy ambiyans + koyu gothic zemin +
+  arch frame ile render edildi, layout bozulmadı; screenshot alındı.
+
+`432/432, tsc 0, lint 0, build 0.`
+
+---
+
+## 2a. Önceki iş — Strict AI-Artwork Rule (raw cover YASAK) (TAM)
 
 - **Diyagnoz:** QuizCard, AI painting hazır olana/başarısız olana kadar
   `song.artworkUrl`'i (sadece CSS grading'li ham provider fotoğrafı) art
@@ -60,7 +96,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2a. Önceki iş — Card Gallery & Social Share Poster (TAM)
+## 2b. Önceki iş — Card Gallery & Social Share Poster (TAM)
 
 ### Card Gallery (`/profile/cards`)
 
@@ -119,7 +155,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2c. Önceki iş — Option B: Multidimensional Dynamic Card Engine (TAM)
+## 2d. Önceki iş — Option B: Multidimensional Dynamic Card Engine (TAM)
 
 card-studio portu: `0003_cards.sql` (cards + RLS + card-artworks bucket),
 `cardBlueprint.ts` (birthYear+encounterAge→era, genre→oda/ışık, 3-cümle
@@ -127,7 +163,7 @@ blueprint), `generateCard.server.ts` (lore summarizer + deterministic
 fallback, painting promptOverride, persist caller-token RLS + 20/gün kota),
 `useCardLore` + QuizCard lore/shimmer. card-studio/ kaldırıldı. 393/393'tü.
 
-## 2d. Önceki işler (TAM)
+## 2e. Önceki işler (TAM)
 
 HF artwork tier (SD3-medium) · Cosmic Poster Grid · Painterly Backdrops.
 Detaylar git history'de — bu dosya günlük değildir.
@@ -143,14 +179,21 @@ Detaylar git history'de — bu dosya günlük değildir.
    testi: ikinci bir anon tarayıcıyla başkasının kartı görünmemeli.
 3. Gallery'ye giriş linki: `/profile/cards` henüz hiçbir sayfadan linkli
    değil — nav/sonuç sayfasına bağlantı kararı kullanıcıda.
-4. Faz 4 tasarım onayı açık (`docs/TECH/DATABASE_PLAN.md` DRAFT).
-5. `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
-6. HANDOFF tam rewrite + commit `checkpoint: ... — HANDOFF.md güncellendi`.
+4. posterTheme genişletme adayları: `exportPoeticPoster` (poeticPoster.ts
+   canvas export) hâlâ VisualSpec paletini kullanıyor — posterTheme'i export
+   yoluna da bağlama kararı açık; PosterLightbox statik preview jpg'i de
+   theme'e kaydırılabilir.
+5. Faz 4 tasarım onayı açık (`docs/TECH/DATABASE_PLAN.md` DRAFT).
+6. `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`.
+7. HANDOFF tam rewrite + commit `checkpoint: ... — HANDOFF.md güncellendi`.
 
 ---
 
 ## 4. Olası tuzaklar
 
+- **Poster component adı:** artık `MasterPosterCanvas` (eski `PosterCanvas`
+  rename edildi) — yeni referanslar/importlar bu adı kullanmalı; test dosyası
+  da `MasterPosterCanvas.test.tsx`.
 - **Kart art penceresi = skeleton XOR painting:** QuizCard'a raw cover
   fallback'ı GERİ EKLEME — kullanıcı kuralı: provider fotoğrafı hiçbir
   koşulda kart görseli değil. Yeni bir fallback düşünüyorsan skeleton'ın

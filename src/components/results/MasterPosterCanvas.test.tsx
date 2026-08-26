@@ -5,7 +5,7 @@ import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { feedEntryIntensity, type LifeFeedEntry } from "@/lib/life-feed";
 import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import type { Song } from "@/lib/song/types";
-import { PosterCanvas } from "./PosterCanvas";
+import { MasterPosterCanvas } from "./MasterPosterCanvas";
 
 const SONG_TITLES = [
   "Judas Priest - Painkiller",
@@ -38,10 +38,10 @@ function makeAnalysis() {
   return deterministicPoeticAnalysis(profile, SONG_TITLES);
 }
 
-describe("PosterCanvas", () => {
+describe("MasterPosterCanvas", () => {
   it("renders manifesto, chapters, insights, duality and export action", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     // Manifesto.
     expect(screen.getByText(`“${analysis.manifesto}”`)).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("PosterCanvas", () => {
 
   it("renders the age phase roadmap with 6 phases", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     expect(screen.getByText(/life phase roadmap/i)).toBeInTheDocument();
     expect(screen.getAllByText("DISCOVERY & WONDER").length).toBeGreaterThanOrEqual(1);
@@ -96,7 +96,7 @@ describe("PosterCanvas", () => {
 
   it("renders the 8 MTG-style life cards in a 4×2 grid section", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     expect(screen.getByText("LIFE CARDS")).toBeInTheDocument();
     const cards = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => screen.getByTestId(`quiz-card-${i + 1}`));
@@ -110,7 +110,7 @@ describe("PosterCanvas", () => {
 
   it("Grand Finale — cosmic backdrop harmonizes all era themes + cards unframe into grid", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     // Cosmic gallery wall — one blended layer per distinct scene family.
     const backdrop = screen.getByTestId("cosmic-backdrop");
@@ -137,7 +137,7 @@ describe("PosterCanvas", () => {
 
   it("makes every album art clickable — a Spotify search deep link", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     const links = screen.getAllByRole("link", { name: /listen to .+ on spotify/i });
     // At least one link per song (chapter strip + playlist rows).
@@ -156,23 +156,79 @@ describe("PosterCanvas", () => {
 
   it("renders SVG waveform instead of bar chart", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     const svg = document.querySelector("svg[aria-label='Emotional intensity waveform']");
     expect(svg).toBeInTheDocument();
     expect(svg?.querySelector("path")).toBeInTheDocument();
 
-    // Dynamic gradient follows the theme engine's waveGradient stops.
+    // The emotional graph is cast in the journey's metal (posterTheme).
     const stops = svg?.querySelectorAll("linearGradient stop");
     expect(stops?.length).toBeGreaterThanOrEqual(2);
-    expect(analysis.visual.waveGradient).toBeTruthy();
-    expect(stops?.[0].getAttribute("stop-color")).toBe(analysis.visual.waveGradient![0]);
-    expect(stops?.[1].getAttribute("stop-color")).toBe(analysis.visual.waveGradient![1]);
+    expect(stops?.[0].getAttribute("stop-color")).toBe("#a97142"); // bronze
+    expect(stops?.[1].getAttribute("stop-color")).toBe("#d09a68"); // bronze highlight
+  });
+
+  it("binds the master theme: metal cast, atmosphere and sky shift with genre & emotion", () => {
+    const analysis = makeAnalysis();
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
+
+    // The fixture is an all-metal journey → bronze frame, gothic thunder,
+    // stormy sky (high-intensity arc).
+    const section = screen.getByLabelText("Dynamic Music Map poster");
+    expect(section.getAttribute("data-metal")).toBe("bronze");
+    expect(section.getAttribute("data-atmosphere")).toBe("gothic-thunder");
+    expect(section.getAttribute("data-scene")).toBe("stormy");
+    const style = section.getAttribute("style") ?? "";
+    expect(style).toContain("rgb(11, 11, 16)"); // gothic primaryBg
+    expect(style).toContain("rgba(169, 113, 66"); // bronze border
+
+    const sky = screen.getByTestId("poster-background-scene");
+    expect(sky.getAttribute("data-scene")).toBe("stormy");
+  });
+
+  it("a synthpop journey recasts the template in neon magenta with a retro grid atmosphere", () => {
+    const synthTitles = [
+      "A-ha - Take On Me synthpop",
+      "Depeche Mode - Enjoy the Silence synth",
+      "Pet Shop Boys - West End Girls synthpop",
+      "Eurythmics - Sweet Dreams synthpop",
+      "Duran Duran - Rio new wave",
+      "Gary Numan - Cars synth",
+      "Soft Cell - Tainted Love synthpop",
+      "OMD - Enola Gay synthpop",
+    ];
+    const answers: Record<number, string> = {};
+    synthTitles.forEach((s, i) => {
+      answers[i + 1] = s;
+    });
+    const profile = analyzeUserJourney(answers);
+    if (!profile) throw new Error("fixture profile must exist");
+    const synthAnalysis = deterministicPoeticAnalysis(profile, synthTitles);
+    const synthSongs: Song[] = synthTitles.map((title, i) => ({
+      provider: "manual" as const,
+      providerId: `synth-${i}`,
+      title,
+      artist: title.split(" - ")[0] ?? "",
+      album: null,
+      artworkUrl: null,
+      isrc: null,
+    }));
+    render(<MasterPosterCanvas analysis={synthAnalysis} songs={synthSongs} />);
+
+    const section = screen.getByLabelText("Dynamic Music Map poster");
+    expect(section.getAttribute("data-metal")).toBe("neon-magenta");
+    expect(section.getAttribute("data-atmosphere")).toBe("retro-grid-neon");
+    expect(section.getAttribute("style") ?? "").toContain("rgb(18, 8, 31)"); // retro bg
+    // The grid layout is untouched — the emotional graph still renders.
+    expect(
+      document.querySelector("svg[aria-label='Emotional intensity waveform']"),
+    ).toBeInTheDocument();
   });
 
   it("renders poetic footer quotes", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     expect(screen.getByText(/first i tried to understand/i)).toBeInTheDocument();
     expect(
@@ -182,7 +238,7 @@ describe("PosterCanvas", () => {
 
   it("applies the dynamic theme palette to the poster surface", () => {
     const analysis = makeAnalysis();
-    render(<PosterCanvas analysis={analysis} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} />);
 
     const section = screen.getByLabelText("Dynamic Music Map poster");
     expect(analysis.visual.themeId).toBe("metal-gothic");
@@ -232,7 +288,7 @@ describe("PosterCanvas", () => {
       },
     ];
 
-    render(<PosterCanvas analysis={analysis} songs={SONGS} feedEntries={feedEntries} />);
+    render(<MasterPosterCanvas analysis={analysis} songs={SONGS} feedEntries={feedEntries} />);
 
     // Playlist section lists the new entries.
     expect(screen.getByText(/the map keeps growing/i)).toBeInTheDocument();
@@ -245,7 +301,7 @@ describe("PosterCanvas", () => {
   });
 
   it("without feed entries there is no playlist section", () => {
-    render(<PosterCanvas analysis={makeAnalysis()} songs={SONGS} />);
+    render(<MasterPosterCanvas analysis={makeAnalysis()} songs={SONGS} />);
     expect(screen.queryByText(/the map keeps growing/i)).not.toBeInTheDocument();
   });
 });

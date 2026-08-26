@@ -13,7 +13,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
-import { PosterCanvas } from "@/components/results/PosterCanvas";
+import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
 import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
@@ -209,7 +209,7 @@ function DynamicMusicMap({
     <section>
       <SectionHeading icon={Map} eyebrow={t.results.mapEyebrow} title={t.results.mapTitle} />
       <div className="mt-8">
-        <PosterCanvas analysis={analysis} songs={songs} feedEntries={feedEntries} />
+        <MasterPosterCanvas analysis={analysis} songs={songs} feedEntries={feedEntries} />
       </div>
     </section>
   );
