@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   439/439 geçti (42 dosya)
+Testler:   440/440 geçti (42 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -23,7 +23,28 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Referans Gotik Woodcut Kart Şablonu (TAM)
+## 2. Son biten iş — QuizCard Çift Altın Çerçeve (TAM, kural 10 dahil)
+
+- **QuizCard.tsx'e katman 0 eklendi — dış çift altın çerçeve:** dış `border-2`
+  `#c9a961` (eski `border-4 #8b7355` kaldırıldı), içte 7px inset `#8a6d3b`
+  hairline (`data-testid="card-frame-inset"`, rounded-[10px], z-30,
+  pointer-events-none) ve 4 köşede 20×20 L-braket (`FrameCorner`,
+  `data-testid="card-frame-corner-{top|bottom}-{left|right}"`, 2px `#c9a961`,
+  içe bakan iki kenar 0px). İçerik/veri katmanları (header, pencere, banner,
+  parchment, rozet, credit) birebir aynı.
+- **Test:** `borderColor` assertion'ı `#c9a961`'e güncellendi + yeni test
+  "wraps the whole card in a double gold frame with four corner brackets"
+  (inset hairline + 4 braketin kenar-görünürlük matrisi). **440/440 (42
+  dosya), tsc 0, lint 0e/7w.**
+- **Kural 10 görsel doğrulama (TAM):** Vite dev (port 12000) + localStorage
+  seed'i (`soundmap.journey.v1`: 7 metal cevabı, current=8) → `/journey`'de
+  8. soruya "Dio Holy Diver" yazılıp canlı öneri tıklandı → EraCardReveal'de
+  QuizCard çift çerçeveyle ekran görüntülendi: dış altın çizgi + inset
+  hairline + 4 köşe L-braket görünür; header `NOW | ACCEPTANCE & EMB… |
+  35/100`, iTunes cover siyah pencerede, banner/parchment/sekizgen rozet/
+  credit yerinde.
+
+## 2-önceki. Referans Gotik Woodcut Kart Şablonu (TAM)
 
 - **QuizCard.tsx referans şablona kilitlendi** (6 katman): (1) **Engraved
   header plaque** — aged gold/bronze gradient, tek satır `AGE | DİNAMİK
@@ -51,9 +72,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
   yıllı imza, mount attribute, songsuz fallback, çerçeve/lucide, preview
   toggle). EraCardReveal.test imza regex'i `Artist — Title`'a güncellendi.
   **439/439 (42 dosya), tsc 0, lint 0e/7w.**
-- **Tarayıcı kanıtı:** dev server + metal journey seed'i ile görsel
-  doğrulama bir SONRAKİ oturumda tamamlanacak (kullanıcı Next.js bağlamına
-  geçti) — açık iş olarak §3'e eklendi.
+- **Tarayıcı kanıtı:** §2'deki çerçeve işiyle birlikte tamamlandı (kural 10).
 
 `439/439, tsc 0, lint 0.`
 
@@ -118,12 +137,9 @@ history'de — bu dosya günlük değildir.
 
 ## 3. Sıradaki iş adımları
 
-0. **QuizCard görsel doğrulama (kural 10, açık):** dev 12000'de seed'li
-   journey ile yeni woodcut şablonun (header/window/parchment/octagon)
-   ekran görüntüsü alınacak.
-0b. **Yeni bağlam:** kullanıcı `lifeinsound-app` adlı Next.js (App Router)
-   projesini yükledi (/workspace/lifeinsound-app). Kural: mevcut kart
-   tasarımı/layout AYNEN korunur; sadece spesifik talepler uygulanır.
+0. **Bağlam notu:** `lifeinsound-app` Next.js prototipi kullanıcı kararıyla
+   tamamen silindi (klasör + zip'ler + dev server; GitHub'a hiç
+   push'lanmamıştı). Tek odak bu repo.
 1. **KULLANICI AKSİYONU (hâlâ açık):** `0003_cards.sql`'i Supabase'e
    uygula — uygulanmadan gallery hep empty state gösterir, persist skip'ler.
 2. Key'li ortamda uçtan uca zincir: kart üret → `cards` satırı + storage
@@ -142,4 +158,4 @@ history'de — bu dosya günlük değildir.
 
 - Çalışma ağacı temiz; tüm iş origin/main'de.
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (439/439).
+  `npm test` (440/440).

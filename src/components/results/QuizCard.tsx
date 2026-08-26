@@ -2,6 +2,9 @@
  * QuizCard — Gothic woodcut collector card for one life era.
  *
  * Renders a LifeCard locked to the reference woodcut template:
+ *   0. Outer frame      — double gold frame wrapping the whole card:
+ *      2px #c9a961 border, an inset #8a6d3b hairline and four 20×20
+ *      L-shaped corner brackets (#c9a961).
  *   1. Top header bar   — aged gold/bronze engraved plaque:
  *      AGE | TITLE | ERA NAME + the collector sequence (e.g. "37/100").
  *   2. Main window      — black inner frame with corner scrollwork ovals;
@@ -129,6 +132,26 @@ function CornerScroll({ v, h }: { v: "top" | "bottom"; h: "left" | "right" }) {
   );
 }
 
+/** 20×20 L-shaped gold bracket clamping one corner of the outer frame. */
+function FrameCorner({ v, h }: { v: "top" | "bottom"; h: "left" | "right" }) {
+  return (
+    <span
+      aria-hidden
+      data-testid={`card-frame-corner-${v}-${h}`}
+      className="pointer-events-none absolute z-30 h-5 w-5 border-2 border-[#c9a961]"
+      style={{
+        [v]: 4,
+        [h]: 4,
+        // The two edges facing inward stay invisible — only the outer L shows.
+        borderTopWidth: v === "top" ? 2 : 0,
+        borderBottomWidth: v === "bottom" ? 2 : 0,
+        borderLeftWidth: h === "left" ? 2 : 0,
+        borderRightWidth: h === "right" ? 2 : 0,
+      }}
+    />
+  );
+}
+
 /** Ornamental divider — two hairlines flanking a carved diamond. */
 function OrnamentalDivider() {
   return (
@@ -190,14 +213,28 @@ export function QuizCard({
       data-testid={`quiz-card-${card.songIndex}`}
       data-tone={card.tone}
       data-mount={era.mount}
-      className="relative w-full max-w-md overflow-hidden rounded-2xl border-4 bg-[#1c1815]/95 p-3 font-serif text-[#d4c3a3] shadow-2xl"
+      className="relative w-full max-w-md overflow-hidden rounded-2xl border-2 bg-[#1c1815]/95 p-3 font-serif text-[#d4c3a3] shadow-2xl"
       style={{
-        borderColor: "#8b7355",
+        borderColor: "#c9a961",
         // Layered depth — amber glow + inner recess = multi-dimensional frame.
         boxShadow:
           "0 18px 44px rgba(0,0,0,0.65), 0 0 28px rgba(216,166,90,0.12), inset 0 0 22px rgba(8,6,4,0.7)",
       }}
     >
+      {/* 0 · Double gold frame — inset darker-gold hairline hugging the outer
+             2px border, plus four L-shaped corner brackets. Purely decorative:
+             no content or data changes. */}
+      <span
+        aria-hidden
+        data-testid="card-frame-inset"
+        className="pointer-events-none absolute z-30 rounded-[10px] border border-[#8a6d3b]"
+        style={{ inset: 7 }}
+      />
+      <FrameCorner v="top" h="left" />
+      <FrameCorner v="top" h="right" />
+      <FrameCorner v="bottom" h="left" />
+      <FrameCorner v="bottom" h="right" />
+
       {/* 1 · Top header bar — aged gold/bronze engraved plaque. */}
       <header
         data-testid="card-header"

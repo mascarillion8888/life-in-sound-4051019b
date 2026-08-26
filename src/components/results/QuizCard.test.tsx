@@ -129,10 +129,35 @@ describe("QuizCard", () => {
     // Ornate wooden frame — responsive (no fixed pixel width), serif, carved border.
     expect(article.className).toContain("font-serif");
     expect(article.className).toContain("max-w-md");
-    expect(article.style.borderColor).toBe("rgb(139, 115, 85)"); // #8b7355
+    expect(article.style.borderColor).toBe("rgb(201, 169, 97)"); // #c9a961
     // Shield emblem in the middle banner (lucide, never an emoji glyph).
     const banner = screen.getByTestId("card-banner");
     expect(banner.querySelector("svg")).toBeTruthy();
+  });
+
+  it("wraps the whole card in a double gold frame with four corner brackets", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const article = screen.getByTestId("quiz-card-1");
+    // Outer 2px gold border on the article itself.
+    expect(article.className).toContain("border-2");
+    expect(article.style.borderColor).toBe("rgb(201, 169, 97)"); // #c9a961
+    // Inset darker-gold hairline (#8a6d3b) hugging the outer border.
+    const inset = screen.getByTestId("card-frame-inset");
+    expect(inset.className).toContain("border-[#8a6d3b]");
+    // Four 20×20 L-shaped brackets — one per corner, decorative only.
+    for (const v of ["top", "bottom"]) {
+      for (const h of ["left", "right"]) {
+        const corner = screen.getByTestId(`card-frame-corner-${v}-${h}`);
+        expect(corner.className).toContain("h-5");
+        expect(corner.className).toContain("w-5");
+        expect(corner.className).toContain("border-[#c9a961]");
+        // The two edges facing inward stay invisible — only the outer L shows.
+        expect(corner.style.borderTopWidth).toBe(v === "top" ? "2px" : "0px");
+        expect(corner.style.borderBottomWidth).toBe(v === "bottom" ? "2px" : "0px");
+        expect(corner.style.borderLeftWidth).toBe(h === "left" ? "2px" : "0px");
+        expect(corner.style.borderRightWidth).toBe(h === "right" ? "2px" : "0px");
+      }
+    }
   });
 
   it("enables the preview toggle only when the song carries a real preview URL", () => {
