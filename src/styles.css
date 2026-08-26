@@ -170,3 +170,14 @@
   }
 }
 
+/* Era Card shimmer — the sweep that travels across the art frame while the
+   AI painting generates (QuizCard CardArtSkeleton). */
+@keyframes card-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+

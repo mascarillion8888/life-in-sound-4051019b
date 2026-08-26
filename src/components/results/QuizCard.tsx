@@ -15,6 +15,7 @@ import { useState } from "react";
 import { Music, Shield, Volume2, VolumeX } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
+import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
@@ -77,6 +78,19 @@ function CardArtSkeleton({ generating }: { generating: boolean }) {
           background: "linear-gradient(to right, transparent, rgba(216,166,90,0.4), transparent)",
         }}
       />
+      {/* Shimmer sweep — travels across the frame while generation runs. */}
+      {generating ? (
+        <span
+          data-testid="card-art-shimmer"
+          aria-hidden
+          className="absolute inset-0 animate-[card-shimmer_1.8s_ease-in-out_infinite]"
+          style={{
+            background:
+              "linear-gradient(105deg, transparent 30%, rgba(216,166,90,0.14) 48%, rgba(236,226,200,0.2) 52%, transparent 70%)",
+            backgroundSize: "220% 100%",
+          }}
+        />
+      ) : null}
     </span>
   );
 }
@@ -110,6 +124,14 @@ export function QuizCard({
   const gem = LIFE_CARD_TONE_COLORS[card.tone];
   const era = eraStyleFor(song, card.index);
   const art = useCardArtwork(song, { cardIndex: card.index });
+  // Poetic lore (LLM or deterministic server-side) — replaces the static
+  // narrative when ready; the card also persists server-side on this call.
+  // The genre signal is the track's own metadata text (title/artist/album),
+  // matching the scene resolver's keyword matching.
+  const lore = useCardLore(song, {
+    cardIndex: card.index,
+    genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
+  });
   // The fallback cover must never render as a broken/empty <img>: if the
   // provider URL fails to decode/load, the stylized skeleton takes over.
   const [erroredCover, setErroredCover] = useState<string | null>(null);
@@ -257,7 +279,7 @@ export function QuizCard({
           </div>
         )}
         <p className="text-[11px] italic leading-relaxed text-[#b8a890]">
-          {copy?.body ?? card.narrative}
+          {lore ?? copy?.body ?? card.narrative}
         </p>
         {song ? (
           <p className="mt-auto flex items-center gap-1.5 truncate border-t border-[#5c4a3e] pt-2 text-[10px] font-medium text-[#8f8168]">

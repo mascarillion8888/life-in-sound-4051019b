@@ -49,6 +49,12 @@ export type CardArtworkInput = {
    * "gothic", …) — the strongest scene signal when supplied.
    */
   aesthetic?: string | null;
+  /**
+   * Fully synthesized prompt from the multidimensional blueprint
+   * (`cardBlueprint.ts`). When present it replaces the internally built
+   * brief; the scene is still resolved for cache identity.
+   */
+  promptOverride?: string | null;
 };
 
 export type CardArtworkOutput = {
@@ -375,12 +381,16 @@ export async function generateCardArtworkCore(
   input: CardArtworkInput,
   options: GenerateCardArtworkOptions = {},
 ): Promise<string | null> {
-  const { prompt, scene } = buildCardArtworkPrompt(input.artist, input.title, {
+  const built = buildCardArtworkPrompt(input.artist, input.title, {
     genreText: `${input.title} ${input.artist} ${input.album ?? ""}`,
     releaseYear: input.releaseYear ?? null,
     aesthetic: input.aesthetic,
     cardIndex: input.cardIndex,
   });
+  // A blueprint-supplied brief wins over the internally built one; the
+  // resolved scene still feeds the cache identity below.
+  const prompt = input.promptOverride?.trim() || built.prompt;
+  const scene = built.scene;
   // The scene is part of the cache identity — the same track re-imagined in
   // a different aesthetic must generate a new painting, never reuse the old.
   const cacheKey = `${input.trackKey}::${scene}`;
@@ -438,6 +448,8 @@ export const generateCardArtwork = createServerFn({ method: "POST" })
         : undefined,
     album: typeof input.album === "string" ? input.album.slice(0, 200) : null,
     aesthetic: typeof input.aesthetic === "string" ? input.aesthetic.slice(0, 100) : null,
+    promptOverride:
+      typeof input.promptOverride === "string" ? input.promptOverride.slice(0, 2000) : null,
   }))
   .handler(async ({ data }): Promise<CardArtworkOutput> => {
     if (!data.trackKey || !data.title) return { image: null };
