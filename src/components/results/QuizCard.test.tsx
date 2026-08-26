@@ -49,51 +49,49 @@ describe("QuizCard", () => {
     expect(screen.getByText(/carried by Fragile by Sting/)).toBeTruthy();
   });
 
-  it("never shows a blank box — the painterly-filtered cover is the instant fallback", () => {
+  it("never renders the raw provider cover — the gothic skeleton is the only fallback", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     expect(screen.getByText(/Fragile — Sting/)).toBeTruthy();
-    // The provider cover is visible IMMEDIATELY through the painterly
-    // grading (styled, not raw) — no empty icon box, ever.
-    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
-    expect(fallback.src).toContain("art.jpg");
-    expect(fallback.style.filter).toContain("sepia");
-    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
+    // The raw album photo is NEVER card imagery, under any circumstances:
+    // the woodcut skeleton (shimmering while generation runs) is all the
+    // art window shows until the AI painting exists.
+    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    expect(screen.queryByTestId("card-art-ai")).toBeNull();
+    const skeleton = screen.getByTestId("card-art-skeleton");
+    expect(skeleton.dataset.generating).toBe("true");
+    // No <img> in the card points at the provider cover URL (ideally none
+    // exists at all until the painting is ready).
+    for (const img of screen.queryAllByRole("img", { hidden: true })) {
+      expect((img as HTMLImageElement).src).not.toContain("art.jpg");
+    }
   });
 
-  it("cross-fades the AI painting over the fallback cover when one is ready", () => {
+  it("cross-fades the AI painting over the skeleton when one is ready", () => {
     window.localStorage.setItem(
       "soundmap.card-art.v1",
       JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
     );
     render(<QuizCard card={cards[0]} song={song()} />);
-    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
-    expect(fallback.src).toContain("art.jpg");
+    // Still no raw cover — the painting is the only image in the window.
+    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
     const ai = screen.getByTestId("card-art-ai") as HTMLImageElement;
     expect(ai.src).toContain("data:image/png;base64,AA==");
     expect(ai.className).toContain("fade-in");
   });
 
-  it("keeps the styled cover as the primary visual when AI generation fails", () => {
-    // No cache, no key — generation resolves unavailable; the cover stays.
+  it("keeps the static gothic skeleton when AI generation fails or no key exists", () => {
+    // No cache, no key — generation resolves unavailable; the skeleton
+    // stays, never the raw cover.
     render(<QuizCard card={cards[0]} song={song()} />);
-    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
-    expect(fallback.src).toContain("art.jpg");
+    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
+    expect(screen.getByTestId("card-art-skeleton")).toBeTruthy();
   });
 
-  it("shows the stylized skeleton only for coverless songs while generating", () => {
+  it("shows the same skeleton contract for coverless songs", () => {
     render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
     expect(screen.queryByTestId("card-art-fallback")).toBeNull();
     expect(screen.getByTestId("card-art-skeleton").dataset.generating).toBe("true");
-  });
-
-  it("stands in the stylized frame when the cover URL fails to load — never a broken img", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    const fallback = screen.getByTestId("card-art-fallback") as HTMLImageElement;
-    fireEvent.error(fallback);
-    // The empty <img> is torn out; the stylized gothic frame takes its place.
-    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
-    expect(screen.getByTestId("card-art-skeleton")).toBeTruthy();
   });
 
   it("adapts the artwork scene to the song's era and shows the era badge", () => {

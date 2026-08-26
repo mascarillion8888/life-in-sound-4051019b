@@ -132,11 +132,12 @@ export function QuizCard({
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
-  // The fallback cover must never render as a broken/empty <img>: if the
-  // provider URL fails to decode/load, the stylized skeleton takes over.
-  const [erroredCover, setErroredCover] = useState<string | null>(null);
-  const coverUrl = song?.artworkUrl ?? null;
-  const coverUsable = coverUrl !== null && coverUrl !== erroredCover;
+  // STRICT RULE: the provider's raw album cover is NEVER card imagery —
+  // not even as a transient fallback. The art window shows exactly two
+  // things: the gothic woodcut skeleton (shimmering while the AI painting
+  // generates, static when it fails or no API key exists) and the finished
+  // AI painting cross-fading over it. `song.artworkUrl` is deliberately
+  // unread here.
   // Dynamic copy — every string on the card is derived from the track's
   // identity + the era's emotion (deterministic; never static filler).
   const copy = song
@@ -189,25 +190,11 @@ export function QuizCard({
         </span>
       </header>
 
-      {/* Artwork window — ornate wooden inner frame; painterly cover shows
-          INSTANTLY, AI painting cross-fades over it, skeleton for coverless. */}
+      {/* Artwork window — ornate wooden inner frame. Only the AI painting
+          or the gothic woodcut skeleton ever renders here; the raw provider
+          cover is never substituted in, under any circumstances. */}
       <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded border-2 border-[#6e5a47] bg-[#0b0a08] shadow-inner">
-        {song && coverUsable ? (
-          <>
-            <img
-              data-testid="card-art-fallback"
-              src={coverUrl as string}
-              alt={`${song.title} — ${song.artist}`}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ filter: era.grading }}
-              onError={() => setErroredCover(coverUrl)}
-            />
-            <InnerVignette />
-          </>
-        ) : (
-          <CardArtSkeleton generating={song ? art.status === "loading" : false} />
-        )}
+        <CardArtSkeleton generating={song ? art.status === "loading" : false} />
         {song && art.status === "ready" && art.imageUrl ? (
           <>
             <img

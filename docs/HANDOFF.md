@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   413/413 geçti (39 dosya)
+Testler:   412/412 geçti (39 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 9 react-refresh uyarısı pre-existing (ui/* shadcn +
            PosterCanvas + LanguageContext)
@@ -23,7 +23,44 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Card Gallery & Social Share Poster (TAM)
+## 2. Son biten iş — Strict AI-Artwork Rule (raw cover YASAK) (TAM)
+
+- **Diyagnoz:** QuizCard, AI painting hazır olana/başarısız olana kadar
+  `song.artworkUrl`'i (sadece CSS grading'li ham provider fotoğrafı) art
+  penceresinde gösteriyordu — useCardArtwork'un "unavailable → gothic
+  placeholder, cover asla geri konmaz" kontratıyla çelişen tek ihlaldi.
+- **Değişiklik (QuizCard.tsx):** raw-cover render dalı + `erroredCover`
+  state'i tamamen kaldırıldı. Art penceresi artık tam olarak İKİ şey
+  gösterir: (1) gothic woodcut skeleton — generation sürerken shimmer'lı,
+  başarısızlıkta/key yokluğunda statik; (2) hazır AI painting, üzerine
+  cross-fade. `song.artworkUrl` art penceresinde bilinçli olarak okunmuyor.
+- **Kapsam notu:** artworkUrl'in kart penceresi DIŞI kullanımları
+  (QuestionCard seçim chip'i, LifeFeed, PosterCanvas music map,
+  OrganicArtwork painterly mount) ayrı, bilinçli tasarım kararları —
+  dokunulmadı.
+- **API key zinciri (değişiklik GEREKMEDİ, doğrulandı):**
+  `cardArtwork.server.ts` `process.env.GEMINI_API_KEY` → Imagen `:predict`
+  → Gemini native image; `hfImage.server.ts` kendi
+  `process.env.HUGGINGFACE_API_KEY`'ini okur (3. tier). Key'ler
+  VITE_-prefixed DEĞİL → server-only, istemciye sızmaz. İkisi de yoksa
+  zincir null döner → skeleton. Mevcut testler ("returns null without an
+  API key", "exactly one provider call without Gemini key", her iki
+  key'le zincir) bu davranışı zaten kilitliyor; `.env.example` iki key'i
+  de belgeliyor.
+- **Test:** QuizCard fallback testleri yeni kontrata yeniden yazıldı
+  (raw cover asla render edilmez; skeleton her fallback durumunda;
+  painting tek img; `fireEvent.error` cover testi kaldırıldı — cover
+  render edilmiyor). 412/412, tsc 0, lint 0, build 0.
+- **Tarayıcı kanıtı (kural 10), dev 12000, key'siz ortam:** Fragile/Sting
+  kartında ham albüm fotoğrafı YOK; gothic skeleton (boş portre çerçevesi,
+  mum ışığı, köşe oymaları) canlı görüldü, screenshot alındı. DOM'da
+  art penceresinde hiç <img> yok (state çıktısı: yalnız skeleton span'ları).
+
+`412/412, tsc 0, lint 0, build 0.`
+
+---
+
+## 2a. Önceki iş — Card Gallery & Social Share Poster (TAM)
 
 ### Card Gallery (`/profile/cards`)
 
@@ -82,7 +119,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2b. Önceki iş — Option B: Multidimensional Dynamic Card Engine (TAM)
+## 2c. Önceki iş — Option B: Multidimensional Dynamic Card Engine (TAM)
 
 card-studio portu: `0003_cards.sql` (cards + RLS + card-artworks bucket),
 `cardBlueprint.ts` (birthYear+encounterAge→era, genre→oda/ışık, 3-cümle
@@ -90,7 +127,7 @@ blueprint), `generateCard.server.ts` (lore summarizer + deterministic
 fallback, painting promptOverride, persist caller-token RLS + 20/gün kota),
 `useCardLore` + QuizCard lore/shimmer. card-studio/ kaldırıldı. 393/393'tü.
 
-## 2c. Önceki işler (TAM)
+## 2d. Önceki işler (TAM)
 
 HF artwork tier (SD3-medium) · Cosmic Poster Grid · Painterly Backdrops.
 Detaylar git history'de — bu dosya günlük değildir.
@@ -114,6 +151,10 @@ Detaylar git history'de — bu dosya günlük değildir.
 
 ## 4. Olası tuzaklar
 
+- **Kart art penceresi = skeleton XOR painting:** QuizCard'a raw cover
+  fallback'ı GERİ EKLEME — kullanıcı kuralı: provider fotoğrafı hiçbir
+  koşulda kart görseli değil. Yeni bir fallback düşünüyorsan skeleton'ın
+  bir varyantı olmalı.
 - **Portal içi canvas:** Radix Dialog/Sheet içinde canvas render ederken
   `useRef`+effect yarışına GİRME — callback ref + state desenini kullan
   (SharePosterDialog'daki gibi). Aksi hâlde canvas sessizce boş kalır.
@@ -163,5 +204,5 @@ Detaylar git history'de — bu dosya günlük değildir.
 ```
 git log --oneline -5 çıktısına bak — metne değil, git'e güven.
 Son satır bu oturumun checkpoint'i olmalı:
-checkpoint: card gallery + social share poster — HANDOFF.md güncellendi
+checkpoint: strict AI-artwork rule — raw album cover fallback kaldirildi — HANDOFF.md güncellendi
 ```
