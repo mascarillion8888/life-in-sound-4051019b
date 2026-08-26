@@ -45,7 +45,7 @@ describe("EraCardReveal", () => {
     expect(screen.getByText(/REBELLION & [A-Z]+/)).toBeInTheDocument();
     // The dynamic English narrative lives on the card face.
     expect(screen.getByText(/volume ran higher than feeling/)).toBeInTheDocument();
-    expect(screen.getByText(/Painkiller — Judas Priest/)).toBeInTheDocument();
+    expect(screen.getByText(/Judas Priest — Painkiller/)).toBeInTheDocument();
   });
 
   it("labels the advance action 'Next Era / Continue' until the last card", () => {

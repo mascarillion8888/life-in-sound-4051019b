@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   438/438 geçti (42 dosya)
+Testler:   439/439 geçti (42 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -23,54 +23,39 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — posterTheme Her Yerde: Export + Lightbox (TAM)
+## 2. Son biten iş — Referans Gotik Woodcut Kart Şablonu (TAM)
 
-Bir önceki "sıradaki iş" listesinin 4. maddesi kapandı: posterTheme artık
-üç renderer'da da tek kaynak (sheet / lightbox / yüksek çözünürlüklü PNG).
+- **QuizCard.tsx referans şablona kilitlendi** (6 katman): (1) **Engraved
+  header plaque** — aged gold/bronze gradient, tek satır `AGE | DİNAMİK
+  BAŞLIK | ERA ADI` + sağda oval sekans rozeti (`n/100`,
+  `data-testid="card-header"` / `"card-sequence"`). (2) **Ana pencere** —
+  siyah iç çerçeve (`#060504`, derin inset gölge) + 4 köşede scrollwork
+  oval; içine **iTunes cover artık doğrudan gömülüyor**
+  (`data-testid="card-art-cover"`, painterly grading: sepia/contrast/
+  brightness), AI painting hazır olunca üzerine cross-fade, coversız şarkı
+  gothic woodcut skeleton'a düşer. (3) **Orta banner** — `Legendary Life
+  Era — ERA ADI` + sağda Shield amblemi (`data-testid="card-banner"`).
+  (4) **Lore & footer kutusu** — distressed parchment zemin (#e9dcbd→
+  #cbb684), italic serif lore, ornamental divider (iki çizgi + karo),
+  `♪ Artist — Title (Year)` imza satırı (`data-testid="card-lore-box"`).
+  (5) **Sekizgen skor rozeti** — clip-path octagon, bronze gradient, lore
+  kutusunun sağ altına taşan `n/10 ETİKET` (`data-testid="card-score-
+  badge"`). (6) **Footer credit** — ortalı `TM & © 2026 LifeInSound |
+  Illus. R. Swanland` (`data-testid="card-credit"`).
+- **Artwork kontratı güncellendi:** iTunes cover anında görünür (styled),
+  AI painting üstüne cross-fade — skeleton sadece coversız şarkılarda.
+  (Önceki "raw cover asla" kuralının kullanıcı onaylı revizyonu: cover
+  artık grading'li olarak pencerede.)
+- **Test:** QuizCard.test.tsx yeni kontrata yeniden yazıldı (10 test:
+  şablon katmanları, cover embed, AI cross-fade, cover yokken skeleton,
+  yıllı imza, mount attribute, songsuz fallback, çerçeve/lucide, preview
+  toggle). EraCardReveal.test imza regex'i `Artist — Title`'a güncellendi.
+  **439/439 (42 dosya), tsc 0, lint 0e/7w.**
+- **Tarayıcı kanıtı:** dev server + metal journey seed'i ile görsel
+  doğrulama bir SONRAKİ oturumda tamamlanacak (kullanıcı Next.js bağlamına
+  geçti) — açık iş olarak §3'e eklendi.
 
-- **`themeFromAnalysis(analysis, songs)`** (`posterTheme.ts` sonuna bridge):
-  PoeticAnalysis + journey Song listesinden `resolvePosterTheme` girdisini
-  kurar. Genre sinyali: `visual.themeId` (en güçlü) + chapter title'ları +
-  şarkı başlık/sanatçı metni. Mood sinyali: manifesto + chapter mood'ları +
-  song insight'ları + coreDuality alanları. Duygu şiddeti: emotionalCurve
-  ortalaması. Era: `Song.releaseYear`. `null` analysis → Gold default
-  (null-safe). **Aynı analiz her yerde aynı temayı üretir** — üç consumer
-  bu bridge'den geçer, palet sürüklenemez.
-- **`exportPoeticPoster` (poeticPoster.ts) temaya bağlandı:** `renderMap`
-  tema çözümünü TEK kez yapar (ölçüm + final geçiş aynı tema), `drawMap`
-  imzasına `theme: PosterTheme` eklendi. Yeni exported pure helper
-  **`themedPalette(palette, theme)`** — üç yüzey rolünü yeniden döker
-  (background → `primaryBg`, primary → `metalColor`, accent →
-  `metalHighlight`), `text` dahil diğer roller dokunulmaz. Extras
-  override'ları: `texture` = atmosphere→TEXTURE_BY_ATMOSPHERE
-  (gothic→nebula, candlelight→smoke, neon→grid, parchment→paper),
-  `auraGlow` = metalHighlight, `waveGradient` = [metalColor,
-  metalHighlight] — DOM sheet'in BackgroundSceneLayer/waveform gradientiyle
-  birebir uyum.
-- **`PosterLightbox` temalı çerçeve:** yeni `theme?: PosterTheme` prop'u
-  (yoksa Gold default). Çerçeve div'i (`data-testid="lightbox-frame"`):
-  border → metalColor, zemin → `primaryBg`→siyah gradient, glow →
-  metalColor %25. Kapatma butonu da temalı (border metalColor, zemin
-  primaryBg, X ikonu metalHighlight). İçerik jpg'i hâlâ statik preview —
-  bilinçli; sadece çerçeve temaya kayıyor.
-- **`results.tsx` wiring:** ResultsPage'de `posterTheme = useMemo` ile
-  `themeFromAnalysis(deterministicPoeticAnalysis(profile, titles), songs)`
-  — DynamicMusicMap'in fallback'iyle aynı kaynak, lightbox çerçevesi
-  sheet'le aynı paleti boyar. Profil yoksa `undefined` → Gold.
-- **Test:** posterTheme.test.ts +themeFromAnalysis bloğu (3 test: metal
-  pipeline fixture → Bronze #a97142/#d09a68; keyword-siz + 80'ler release
-  yılları → era fallback Neon Magenta #ff2fb3; null → Gold), export
-  tarafında `themedPalette` bloğu (2 test), **yeni
-  `PosterLightbox.test.tsx`** (3 test: Bronze frame, Neon Magenta frame,
-  Gold fallback). **438/438 (42 dosya), tsc 0, lint 0e/7w, build 0.**
-- **Tarayıcı kanıtı (kural 10), dev 12000:** geçici `public/__seed.html`
-  ile 8 metal şarkılı journey localStorage'a yazılıp /results açıldı —
-  Master Poster sheet Bronze/gothic-thunder; Cinematic Poster bölümünden
-  Maximize ile açılan **lightbox çerçevesi Bronze (#a97142) border + koyu
-  gradient zemin + temalı kapat butonu** canlı doğrulandı, screenshot
-  alındı. Seed dosyası commit'ten önce silindi (git status temiz).
-
-`438/438, tsc 0, lint 0, build 0.`
+`439/439, tsc 0, lint 0.`
 
 ---
 
@@ -88,7 +73,15 @@ Bir önceki "sıradaki iş" listesinin 4. maddesi kapandı: posterTheme artık
   renderer da buradan beslenir.
 - Commit `07dcfb7`, origin/main'e push'landı (Lovable sync). 430/430'tü.
 
-## 2b. Önceki iş — Dynamic Master Poster Theme motoru (TAM)
+## 2b. Önceki iş — posterTheme Her Yerde: Export + Lightbox (TAM)
+
+`themeFromAnalysis(analysis, songs)` bridge'i (posterTheme.ts) → PoeticAnalysis
++ şarkılardan PosterTheme; `exportPoeticPoster` canvas export'u `themedPalette`
+ile (background→primaryBg, primary→metalColor, accent→metalHighlight; texture/
+aura/waveform temadan); PosterLightbox `theme` prop'u ile temalı çerçeve.
+Commit `14f113c`. 438/438'di.
+
+## 2c. Önceki iş — Dynamic Master Poster Theme motoru (TAM)
 
 `src/lib/soundmap/posterTheme.ts` saf, deterministik resolver: Metal/Doom →
 gothic-thunder + Bronze; Jazz/Classical → smoke-candlelight + Amber Brass;
@@ -101,13 +94,13 @@ kilitli). Substring guard: "Metallica" ≠ "metal" tag — ama artık
 themeFromAnalysis `visual.themeId`'yi de beslediğinden pipeline'ın
 metal-gothic id'si Bronze'a yine ulaşır.
 
-## 2c. Önceki iş — Strict AI-Artwork Rule (raw cover YASAK) (TAM)
+## 2d. Önceki iş — Strict AI-Artwork Rule (TAM, revize edildi — bkz. §2)
 
 QuizCard art penceresi artık tam olarak iki şey gösterir: gothic woodcut
 skeleton (generation sürerken shimmer'lı) veya hazır AI painting cross-
 fade'i. `song.artworkUrl` art penceresinde bilinçli okunmuyor.
 
-## 2d. Önceki iş — Card Gallery & Social Share Poster (TAM)
+## 2e. Önceki iş — Card Gallery & Social Share Poster (TAM)
 
 `/profile/cards` gothic grid + sort/scene filtreleri (galleryModel),
 `cards-remote.ts` (RLS-safe okuma, signed URL), `sharePoster.ts`
@@ -115,7 +108,7 @@ fade'i. `song.artworkUrl` art penceresinde bilinçli okunmuyor.
 portal canvas'ı için callback-ref deseni: portal içi canvas'ta tekrar
 kullan.
 
-## 2e. Önceki işler (TAM)
+## 2f. Önceki işler (TAM)
 
 Option B kart motoru (cardBlueprint + generateCard.server + useCardLore) ·
 HF artwork tier · Cosmic Poster Grid · Painterly Backdrops. Detaylar git
@@ -125,6 +118,12 @@ history'de — bu dosya günlük değildir.
 
 ## 3. Sıradaki iş adımları
 
+0. **QuizCard görsel doğrulama (kural 10, açık):** dev 12000'de seed'li
+   journey ile yeni woodcut şablonun (header/window/parchment/octagon)
+   ekran görüntüsü alınacak.
+0b. **Yeni bağlam:** kullanıcı `lifeinsound-app` adlı Next.js (App Router)
+   projesini yükledi (/workspace/lifeinsound-app). Kural: mevcut kart
+   tasarımı/layout AYNEN korunur; sadece spesifik talepler uygulanır.
 1. **KULLANICI AKSİYONU (hâlâ açık):** `0003_cards.sql`'i Supabase'e
    uygula — uygulanmadan gallery hep empty state gösterir, persist skip'ler.
 2. Key'li ortamda uçtan uca zincir: kart üret → `cards` satırı + storage
@@ -143,4 +142,4 @@ history'de — bu dosya günlük değildir.
 
 - Çalışma ağacı temiz; tüm iş origin/main'de.
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (438/438).
+  `npm test` (439/439).

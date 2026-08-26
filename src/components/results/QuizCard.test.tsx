@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
@@ -35,85 +35,92 @@ describe("QuizCard", () => {
     window.localStorage.clear();
   });
 
-  it("renders the MTG frame: dynamic title, age badge, type line, score shield", () => {
+  it("locks the reference template: engraved header, banner, parchment lore, octagon badge, credit", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
-    // Dynamic per-track title (deterministic companion), not static filler.
-    expect(screen.getByText(/DISCOVERY & [A-Z]+/)).toBeTruthy();
-    expect(screen.getByText("Ages 5-9")).toBeTruthy();
-    expect(screen.getByText("Legendary Life Era")).toBeTruthy();
-    // Score shield computed from the track identity.
-    expect(screen.getByText(/\/10 INNOCENCE/)).toBeTruthy();
-    expect(screen.getByText(/Intensity 35/)).toBeTruthy();
-    // Body weaves the era narrative with the track's metadata.
-    expect(screen.getByText(/vast and soft/)).toBeTruthy();
-    expect(screen.getByText(/carried by Fragile by Sting/)).toBeTruthy();
+    // 1 · Engraved header: AGE | dynamic TITLE | ERA NAME + sequence.
+    const header = screen.getByTestId("card-header");
+    expect(header.textContent).toContain("Ages 5-9");
+    expect(header.textContent).toMatch(/DISCOVERY & [A-Z]+/);
+    expect(header.textContent).toContain("FIRST SPARK");
+    expect(screen.getByTestId("card-sequence").textContent).toMatch(/^\d+\/100$/);
+    // 3 · Middle banner: type line + era name + emblem.
+    expect(screen.getByTestId("card-banner").textContent).toContain(
+      "Legendary Life Era — FIRST SPARK",
+    );
+    // 4 · Parchment lore box: narrative + ornamental signature.
+    const loreBox = screen.getByTestId("card-lore-box");
+    expect(loreBox.textContent).toMatch(/vast and soft/);
+    expect(loreBox.textContent).toMatch(/carried by Fragile by Sting/);
+    // 5 · Octagonal score badge.
+    const badge = screen.getByTestId("card-score-badge");
+    expect(badge.textContent).toMatch(/\/10/);
+    expect(badge.textContent).toMatch(/INNOCENCE/);
+    expect(badge.style.clipPath).toContain("polygon");
+    // 6 · Footer credit.
+    expect(screen.getByTestId("card-credit").textContent).toBe(
+      "TM & © 2026 LifeInSound | Illus. R. Swanland",
+    );
   });
 
-  it("never renders the raw provider cover — the gothic skeleton is the only fallback", () => {
+  it("embeds the iTunes cover inside the black window — no skeleton when a cover exists", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.getByText(/Fragile — Sting/)).toBeTruthy();
-    // The raw album photo is NEVER card imagery, under any circumstances:
-    // the woodcut skeleton (shimmering while generation runs) is all the
-    // art window shows until the AI painting exists.
-    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    const cover = screen.getByTestId("card-art-cover") as HTMLImageElement;
+    expect(cover.src).toContain("art.jpg");
+    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
-    const skeleton = screen.getByTestId("card-art-skeleton");
-    expect(skeleton.dataset.generating).toBe("true");
-    // No <img> in the card points at the provider cover URL (ideally none
-    // exists at all until the painting is ready).
-    for (const img of screen.queryAllByRole("img", { hidden: true })) {
-      expect((img as HTMLImageElement).src).not.toContain("art.jpg");
-    }
   });
 
-  it("cross-fades the AI painting over the skeleton when one is ready", () => {
+  it("cross-fades the AI painting over the cover when one is ready", () => {
     window.localStorage.setItem(
       "soundmap.card-art.v1",
       JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
     );
     render(<QuizCard card={cards[0]} song={song()} />);
-    // Still no raw cover — the painting is the only image in the window.
-    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    // The cover stays underneath; the painting fades in on top.
+    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
     const ai = screen.getByTestId("card-art-ai") as HTMLImageElement;
     expect(ai.src).toContain("data:image/png;base64,AA==");
     expect(ai.className).toContain("fade-in");
   });
 
-  it("keeps the static gothic skeleton when AI generation fails or no key exists", () => {
-    // No cache, no key — generation resolves unavailable; the skeleton
-    // stays, never the raw cover.
+  it("keeps the cover when AI generation fails or no key exists", () => {
+    // No cache, no key — generation resolves unavailable; the iTunes cover
+    // remains the window's imagery.
     render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
-    expect(screen.getByTestId("card-art-skeleton")).toBeTruthy();
   });
 
-  it("shows the same skeleton contract for coverless songs", () => {
+  it("falls back to the gothic woodcut skeleton only for coverless songs", () => {
     render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
-    expect(screen.queryByTestId("card-art-fallback")).toBeNull();
+    expect(screen.queryByTestId("card-art-cover")).toBeNull();
     expect(screen.getByTestId("card-art-skeleton").dataset.generating).toBe("true");
   });
 
-  it("adapts the artwork scene to the song's era and shows the era badge", () => {
+  it("signs the parchment footer with artist — title (year)", () => {
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    expect(screen.getByText(/Sting — Fragile \(1987\)/)).toBeTruthy();
+  });
+
+  it("adapts the artwork scene to the song's era via the mount attribute", () => {
     const { rerender } = render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
     expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("cassette-desk");
-    expect(screen.getByText("'80s")).toBeTruthy();
 
     rerender(<QuizCard card={cards[0]} song={song({ releaseYear: 1974 })} />);
     expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("vinyl-sleeve");
-    expect(screen.getByText("'70s")).toBeTruthy();
 
-    // No release year → mount falls back to the card's journey position,
-    // and no era badge is shown.
+    // No release year → mount falls back to the card's journey position.
     rerender(<QuizCard card={cards[0]} song={song()} />);
     expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("vinyl-sleeve");
-    expect(screen.queryByText("'80s")).toBeNull();
   });
 
   it("renders an empty dark frame — no fabricated artwork — when the song is missing", () => {
     render(<QuizCard card={cards[1]} song={null} />);
     expect(screen.queryByRole("img")).toBeNull();
     expect(screen.queryByText(/Fragile/)).toBeNull();
+    // Fallbacks stay deterministic: era tag in header, narrative in the box.
+    expect(screen.getByTestId("card-header").textContent).toContain("FIRST IDENTITY");
+    expect(screen.getByTestId("card-lore-box").textContent).toMatch(/threshold/);
   });
 
   it("carries the wooden gallery frame: serif typeface, carved border, lucide motifs", () => {
@@ -123,8 +130,9 @@ describe("QuizCard", () => {
     expect(article.className).toContain("font-serif");
     expect(article.className).toContain("max-w-md");
     expect(article.style.borderColor).toBe("rgb(139, 115, 85)"); // #8b7355
-    // Shield motif in the category banner (lucide, never an emoji glyph).
-    expect(screen.getByText("Legendary Life Era").nextSibling?.nodeName).toBe("svg");
+    // Shield emblem in the middle banner (lucide, never an emoji glyph).
+    const banner = screen.getByTestId("card-banner");
+    expect(banner.querySelector("svg")).toBeTruthy();
   });
 
   it("enables the preview toggle only when the song carries a real preview URL", () => {
