@@ -12,8 +12,10 @@ import {
   nodeColors,
   renderMap,
   seededRandom,
+  themedPalette,
 } from "./poeticPoster";
 import { TR_LIFE_CARD_STRINGS } from "./lifeCards";
+import { resolvePosterTheme } from "./posterTheme";
 
 describe("seededRandom", () => {
   it("is deterministic for the same seed", () => {
@@ -275,5 +277,36 @@ describe("DEFAULT_POSTER_LABELS", () => {
     expect(DEFAULT_POSTER_LABELS.lifePlaylist).toBe("MY LIFE PLAYLIST");
     expect(DEFAULT_POSTER_LABELS.treeBranches).toEqual(["MIND", "POWER", "DARKNESS", "ACCEPTANCE"]);
     expect(DEFAULT_POSTER_LABELS.journeyNodes).toHaveLength(8);
+  });
+});
+
+describe("themedPalette", () => {
+  const base = {
+    primary: "#d4af37",
+    accent: "#f5f0d0",
+    text: "#f5f0d0",
+    background: "#0b0b10",
+  };
+
+  it("re-casts the three surface roles with the poster theme", () => {
+    const themed = themedPalette(base, {
+      metal: "bronze",
+      metalColor: "#a97142",
+      metalHighlight: "#d09a68",
+      primaryBg: "#0b0b10",
+      atmosphere: "gothic-thunder",
+      backgroundScene: "stormy",
+    });
+    expect(themed.background).toBe("#0b0b10");
+    expect(themed.primary).toBe("#a97142");
+    expect(themed.accent).toBe("#d09a68");
+  });
+
+  it("only re-casts the three theme roles (text passes through untouched)", () => {
+    const themed = themedPalette(base, resolvePosterTheme({ genres: ["synthwave"] }));
+    expect(themed.text).toBe(base.text);
+    expect(themed.primary).toBe("#ff2fb3");
+    expect(themed.accent).toBe("#7df9ff");
+    expect(themed.background).toBe("#12081f");
   });
 });

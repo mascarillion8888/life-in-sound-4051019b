@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveAtmosphere, resolveBackgroundScene, resolvePosterTheme } from "./posterTheme";
+import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+
+import {
+  resolveAtmosphere,
+  resolveBackgroundScene,
+  resolvePosterTheme,
+  themeFromAnalysis,
+} from "./posterTheme";
 
 describe("resolveAtmosphere", () => {
   it("maps Metal/Doom to the gothic castle & thunder atmosphere", () => {
@@ -114,5 +122,75 @@ describe("resolvePosterTheme", () => {
   it("is deterministic — same input, same theme object", () => {
     const input = { genres: ["blues"], releaseYears: [1962], emotionalIntensity: 0.4 };
     expect(resolvePosterTheme(input)).toEqual(resolvePosterTheme(input));
+  });
+});
+
+describe("themeFromAnalysis", () => {
+  // Real pipeline fixture: answers → profile → deterministic analysis.
+  const METAL = [
+    "Judas Priest - Painkiller",
+    "Metallica - Fade to Black",
+    "Black Sabbath - Iron Man",
+    "Iron Maiden - The Trooper",
+    "Dio - Rainbow in the Dark",
+    "Slayer - Raining Blood",
+    "Queensrÿche - Silent Lucidity",
+    "Motörhead - Ace of Spades",
+  ];
+
+  function fixture(titles: string[]) {
+    const answers: Record<number, string> = {};
+    titles.forEach((t, i) => {
+      answers[i + 1] = t;
+    });
+    const profile = analyzeUserJourney(answers);
+    if (!profile) throw new Error("fixture profile must exist");
+    const analysis = deterministicPoeticAnalysis(profile, titles);
+    const songs = titles.map((title, i) => ({
+      provider: "manual" as const,
+      providerId: `t-${i}`,
+      title,
+      artist: title.split(" - ")[0] ?? "",
+      album: null,
+      artworkUrl: null,
+      isrc: null,
+      releaseYear: null,
+    }));
+    return { analysis, songs };
+  }
+
+  it("resolves the exact theme every consumer shares (Bronze for a Metal journey)", () => {
+    const { analysis, songs } = fixture(METAL);
+    const theme = themeFromAnalysis(analysis, songs);
+    expect(theme.metal).toBe("bronze");
+    expect(theme.atmosphere).toBe("gothic-thunder");
+    expect(theme.metalColor).toBe("#a97142");
+    expect(theme.metalHighlight).toBe("#d09a68");
+  });
+
+  it("era-fallbacks to Neon Magenta when genre text is keyword-free but years live in the 80s", () => {
+    const { analysis, songs } = fixture(METAL);
+    // Strip every genre-carrying field so the era signal alone decides.
+    analysis.visual.themeId = "ambient-default";
+    analysis.chapters = analysis.chapters.map((c) => ({ ...c, title: "PHASE" }));
+    const neon = themeFromAnalysis(
+      analysis,
+      songs.map((s, i) => ({
+        ...s,
+        title: "Instrumental Reflection",
+        artist: "",
+        releaseYear: 1980 + i,
+      })),
+    );
+    expect(neon.atmosphere).toBe("retro-grid-neon");
+    expect(neon.metal).toBe("neon-magenta");
+    expect(neon.metalColor).toBe("#ff2fb3");
+  });
+
+  it("null analysis falls back to the Gold default, null-safe", () => {
+    const theme = themeFromAnalysis(null, []);
+    expect(theme.metal).toBe("gold");
+    expect(theme.atmosphere).toBe("gothic-thunder");
+    expect(theme.backgroundScene).toBe("starry");
   });
 });

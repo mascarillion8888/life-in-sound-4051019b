@@ -21,6 +21,7 @@ import { generateStory } from "@/lib/llm/generateStory.server";
 import { deterministicLifeStory } from "@/lib/llm/prompts";
 import { deterministicPoeticAnalysis, type PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
+import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
 import posterPreview from "@/assets/poster-preview.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -295,6 +296,21 @@ function ResultsPage() {
       },
   );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+  // Same deterministic fallback DynamicMusicMap uses — the lightbox frame and
+  // the sheet paint the same palette.
+  const posterTheme = useMemo(
+    () =>
+      profile
+        ? themeFromAnalysis(
+            deterministicPoeticAnalysis(
+              profile,
+              songs.map((s) => s.title),
+            ),
+            songs,
+          )
+        : undefined,
+    [profile, songs],
+  );
   const { t } = useLanguage();
   const navigate = useNavigate();
   const session = useSession();
@@ -513,7 +529,7 @@ function ResultsPage() {
         {/* Fullscreen Poster Overlay (lazy-loaded on demand) */}
         {posterOpen && (
           <Suspense fallback={null}>
-            <PosterLightbox onClose={() => setPosterOpen(false)} />
+            <PosterLightbox theme={posterTheme} onClose={() => setPosterOpen(false)} />
           </Suspense>
         )}
 

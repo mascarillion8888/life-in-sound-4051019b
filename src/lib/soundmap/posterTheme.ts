@@ -21,6 +21,9 @@
  * Pure and deterministic — same input, same theme, no LLM call.
  */
 
+import type { PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
+import type { Song } from "@/lib/song/types";
+
 /* -------------------------------------------------------------------------- */
 /* Public types                                                                */
 /* -------------------------------------------------------------------------- */
@@ -166,4 +169,49 @@ export function resolvePosterTheme(input: PosterThemeInput = {}): PosterTheme {
     atmosphere,
     backgroundScene: resolveBackgroundScene(input.emotionalIntensity, input.mood),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Analysis bridge                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Derives the poster theme straight from a PoeticAnalysis + journey songs —
+ * every consumer (`MasterPosterSheet`, `PosterLightbox`, the high-res canvas
+ * export) resolves through this bridge, so the palette cannot drift between
+ * renderers. Genres come from chapter titles and the song/artist text, mood
+ * from the manifesto, chapter moods, insights and duality, and the era signal
+ * from Song.releaseYear. `null` analysis falls back to the Gold default.
+ */
+export function themeFromAnalysis(
+  analysis: PoeticAnalysis | null | undefined,
+  songs: (Song | undefined)[] = [],
+): PosterTheme {
+  if (!analysis) return resolvePosterTheme({});
+  const genres = [
+    // The theme engine's own vocabulary ("metal-gothic", "synthwave-80s"…)
+    // is the strongest genre signal, chapter titles the secondary one.
+    analysis.visual.themeId,
+    ...analysis.chapters.map((c) => c.title),
+    ...songs.map((s) => (s ? `${s.title} ${s.artist}` : "")),
+  ];
+  const mood = [
+    analysis.manifesto,
+    ...analysis.chapters.map((c) => c.mood),
+    ...analysis.songInsights.map((i) => i.insight),
+    analysis.coreDuality.axis,
+    analysis.coreDuality.left,
+    analysis.coreDuality.right,
+    analysis.coreDuality.resolution,
+  ];
+  const curve = analysis.emotionalCurve.map((p) => p.intensity);
+  const emotionalIntensity = curve.length
+    ? curve.reduce((a, b) => a + b, 0) / curve.length
+    : undefined;
+  return resolvePosterTheme({
+    genres,
+    mood,
+    emotionalIntensity,
+    releaseYears: songs.map((s) => s?.releaseYear ?? null),
+  });
 }

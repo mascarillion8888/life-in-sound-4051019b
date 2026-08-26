@@ -25,6 +25,11 @@ import {
   type LifeCard,
   type LifeCardStrings,
 } from "@/lib/soundmap/lifeCards";
+import {
+  themeFromAnalysis,
+  type PosterAtmosphere,
+  type PosterTheme,
+} from "@/lib/soundmap/posterTheme";
 
 const W = 2400;
 const H = 3600;
@@ -50,6 +55,32 @@ function posterExtras(visual: VisualSpec): PosterExtras {
       visual.waveGradient ?? ([visual.palette.accent, visual.palette.primary] as [string, string]),
     texture: visual.texture ?? fallback?.texture ?? "nebula",
     auraGlow: visual.auraGlow ?? fallback?.auraGlow ?? visual.palette.accent,
+  };
+}
+
+/**
+ * Texture picked by the poster-theme atmosphere so the canvas grain matches
+ * the DOM sheet's BackgroundSceneLayer exactly.
+ */
+const TEXTURE_BY_ATMOSPHERE: Record<PosterAtmosphere, string> = {
+  "gothic-thunder": "nebula",
+  "smoke-candlelight": "smoke",
+  "retro-grid-neon": "grid",
+  "distressed-parchment": "paper",
+};
+
+/** Fills the three metal & surface roles of a VisualSpec palette with the
+ * poster theme (background wash, structural strokes, highlights) — the rest
+ * of the palette (text etc.) passes through untouched. */
+export function themedPalette(
+  palette: VisualSpec["palette"],
+  theme: PosterTheme,
+): VisualSpec["palette"] {
+  return {
+    ...palette,
+    background: theme.primaryBg,
+    primary: theme.metalColor,
+    accent: theme.metalHighlight,
   };
 }
 
@@ -735,9 +766,20 @@ export function renderMap(
   canvas.height = PROVISIONAL_H;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const contentBottom = drawMap(ctx, PROVISIONAL_H, analysis, songs, feedEntries, labels, artwork);
+  // One resolve per export — measure + final passes share the same theme.
+  const theme = themeFromAnalysis(analysis, songs);
+  const contentBottom = drawMap(
+    ctx,
+    PROVISIONAL_H,
+    analysis,
+    songs,
+    feedEntries,
+    labels,
+    artwork,
+    theme,
+  );
   canvas.height = Math.max(H, Math.ceil(contentBottom) + FOOTER_RESERVE);
-  drawMap(ctx, canvas.height, analysis, songs, feedEntries, labels, artwork);
+  drawMap(ctx, canvas.height, analysis, songs, feedEntries, labels, artwork, theme);
 }
 
 /** Draws the whole map; returns the y where the last panel ends. The canvas
@@ -751,9 +793,16 @@ function drawMap(
   feedEntries: LifeFeedEntry[],
   labels: PosterLabels,
   artwork: (HTMLImageElement | null)[],
+  theme: PosterTheme,
 ): number {
-  const { palette } = analysis.visual;
+  // The poster theme re-casts the three surface roles (background wash,
+  // structural strokes, highlights) so the export palette cannot drift from
+  // the DOM sheet / lightbox rendering the same journey.
+  const palette = themedPalette(analysis.visual.palette, theme);
   const extras = posterExtras(analysis.visual);
+  extras.texture = TEXTURE_BY_ATMOSPHERE[theme.atmosphere];
+  extras.auraGlow = theme.metalHighlight;
+  extras.waveGradient = [theme.metalColor, theme.metalHighlight];
   const display = displayFont(analysis.visual);
   const auraColor = extras.auraGlow;
   const songAt = (i: number): Song | undefined => songs[i - 1];
