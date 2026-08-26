@@ -9,7 +9,10 @@
  *   2. Genre: the listener's genre preference steers room details, lighting
  *      and ambient objects (gothic folk candlelight vs. hiphop studio glow).
  *   3. Subject: a fixed visual blueprint — the child silhouette absorbed in
- *      music + the artist's framed fine-art portrait on the desk.
+ *      music, gazing at a TYPOGRAPHIC vinyl sleeve (abstract glyphs only —
+ *      never a photographic face or portrait, no painted artist likeness
+ *      anywhere). Card titles live in the HTML layer; the painting renders
+ *      the scene only, never card text.
  *
  * Pure and deterministic — no I/O, no randomness. The same encounter always
  * synthesizes the same brief, so the prompt is safe to use as a cache
@@ -175,9 +178,16 @@ export function buildMultidimensionalPrompt(encounter: CardEncounter): string {
     : `A silhouette of a child sitting in ${room} wearing over-ear headphones, ` +
       `deeply absorbed in music.`;
 
+  // Typographic sleeve replaces the artist portrait: abstract glyphs and
+  // geometry only — no photographic face, no painted likeness, no real
+  // lettering. Card titles live in the HTML layer, never inside the painting.
   const framing =
-    `On the desk, a small framed fine-art portrait of ${artist} is subtly lit by ${lighting}, ` +
-    `rendered in a dark gothic woodcut chiaroscuro style.`;
+    `The child holds and gazes at a vinyl album sleeve: pure abstract typographic design — ` +
+    `stylized unreadable glyphs and geometric shapes (light rays, circles, angular forms) on a ` +
+    `flat muted background, ${artist === "the artist" ? "" : `evoking ${artist}'s aesthetic, `}` +
+    `subtly lit by ${lighting}. Absolutely no photographic face, portrait or human figure on the ` +
+    `sleeve, and no painted artist portrait anywhere in the scene. Render only the scene — never ` +
+    `draw card titles, headings or any readable text into the image.`;
 
   const eraDetail = eraLabel
     ? `nostalgic ${eraLabel} atmospheric room elements (${objects})`

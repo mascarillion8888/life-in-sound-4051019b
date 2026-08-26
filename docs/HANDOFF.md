@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   440/440 geçti (42 dosya)
+Testler:   442/442 geçti (42 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -23,7 +23,36 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — QuizCard Çift Altın Çerçeve (TAM, kural 10 dahil)
+## 2. Son biten iş — Kart Artwork Prompt Kontratı: Tipografik Plak Kapağı (TAM)
+
+- **NEDEN:** AI painting'lerde iki sorun vardı: (1) prompt "framed painted
+  portrait of {artist}" istediği için model gerçek/tanınabilir sanatçı
+  yüzleri çiziyordu; (2) model kart başlığını ("9 YAŞ", "İLK KIVILCIM" gibi)
+  görselin İÇİNE çizmeye çalışıyordu — oysa bu metinler zaten QuizCard'ın
+  HTML header katmanında.
+- **NASIL:** İki prompt yolu da (`cardBlueprint.ts` `framing` cümlesi +
+  `cardArtwork.server.ts` 7 sahne spec'i + `Integration` satırı) tek
+  kontrata kilitlendi: çocuk silüeti artık **tipografik plak kapağına**
+  bakıyor — "pure abstract typographic design — stylized unreadable glyphs
+  and geometric shapes (light rays, circles, angular forms) on a flat muted
+  background, evoking {artist}'s aesthetic". Negatif kurallar prompt'a
+  açıkça yazıldı: "Absolutely no photographic face, portrait or human
+  figure on the sleeve, and no painted artist portrait anywhere in the
+  scene. Render only the scene — never draw card titles, headings or any
+  readable text into the image." Her sahne spec'i kendi dönem estetiğinde
+  tipografik kapağa çevrildi (brass-age glyphs, neon J-card, sun-ray
+  glyphs…). Reddedilen alternatif: sadece Integration satırını değiştirip
+  spec'leri bırakmak — spec'ler de portre istiyordu, yarım kalırdı.
+- **Test:** iki dosyada da yeni negatif-kural kontrat testleri
+  (`not.toContain("framed painted portrait")`, `toContain("no photographic
+  face…")`, `toContain("never draw card titles")`) + mevcut assertion'lar
+  yeni cümlelere güncellendi. **442/442 (42 dosya), tsc 0, lint 0e/7w.**
+- **Not:** Prompt değiştiği için cache kimliği de değişti — mevcut AI
+  painting'ler ilk reveal'da yeniden üretilecek (deterministik, beklenen).
+  Vercel'de `GEMINI_API_KEY` mevcut; bu ortamda görsel üretimi yapılamadı
+  (key yok) — prompt metni kod yolundan birebir doğrulandı.
+
+## 2-önceki. QuizCard Çift Altın Çerçeve (TAM, kural 10 dahil)
 
 - **QuizCard.tsx'e katman 0 eklendi — dış çift altın çerçeve:** dış `border-2`
   `#c9a961` (eski `border-4 #8b7355` kaldırıldı), içte 7px inset `#8a6d3b`
@@ -44,7 +73,7 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
   35/100`, iTunes cover siyah pencerede, banner/parchment/sekizgen rozet/
   credit yerinde.
 
-## 2-önceki. Referans Gotik Woodcut Kart Şablonu (TAM)
+## 2-önceki-2. Referans Gotik Woodcut Kart Şablonu (TAM)
 
 - **QuizCard.tsx referans şablona kilitlendi** (6 katman): (1) **Engraved
   header plaque** — aged gold/bronze gradient, tek satır `AGE | DİNAMİK
@@ -158,4 +187,4 @@ history'de — bu dosya günlük değildir.
 
 - Çalışma ağacı temiz; tüm iş origin/main'de.
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (440/440).
+  `npm test` (442/442).

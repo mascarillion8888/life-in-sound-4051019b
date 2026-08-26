@@ -106,7 +106,8 @@ const SCENE_SPECS: SceneSpec[] = [
     ],
     prompt: (a) =>
       `Atmospheric dark gothic oil painting concept, candlelit vintage room with detailed wood ` +
-      `carvings, featuring a framed painted portrait of ${a} seamlessly integrated into the scene.`,
+      `carvings, the child gazing at a typographic vinyl sleeve echoing ${a} — abstract glyphs ` +
+      `and geometry only, seamlessly integrated into the scene.`,
   },
   {
     id: "hiphop",
@@ -128,8 +129,8 @@ const SCENE_SPECS: SceneSpec[] = [
       "outkast",
     ],
     prompt: (a) =>
-      `Late-night studio glow, gold-framed portrait of ${a} on a plum wall, ` +
-      `cinematic contemporary fine-art oil painting concept.`,
+      `Late-night studio glow, a typographic album sleeve echoing ${a} on a plum wall, abstract ` +
+      `glyph design in a gold frame, cinematic contemporary fine-art oil painting concept.`,
   },
   {
     id: "grunge",
@@ -147,7 +148,8 @@ const SCENE_SPECS: SceneSpec[] = [
     ],
     prompt: (a) =>
       `Moody 90s rehearsal basement, faded gig posters on the wall, dim slate ` +
-      `light, hand-painted portrait of ${a} on a worn canvas sleeve.`,
+      `light, an abstract typographic gig flyer for ${a} — shapes and glyphs only, no faces — ` +
+      `tacked beside a worn canvas sleeve.`,
   },
   {
     id: "soul",
@@ -165,22 +167,24 @@ const SCENE_SPECS: SceneSpec[] = [
       "wonder",
     ],
     prompt: (a) =>
-      `Warm vinyl listening room, amber lamp light and velvet textures, fine-art ` +
-      `oil portrait of ${a} beside a turntable, golden soul-era memorial glow.`,
+      `Warm vinyl listening room, amber lamp light and velvet textures, a typographic album ` +
+      `sleeve for ${a} — abstract gold-on-plum glyph design — beside a turntable, golden ` +
+      `soul-era memorial glow.`,
   },
   {
     id: "jazz",
     keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner"],
     prompt: (a) =>
-      `Dimly lit vintage jazz club atmosphere, warm brass accents, smoky haze, fine-art canvas ` +
-      `portrait of ${a} on an antique desk.`,
+      `Dimly lit vintage jazz club atmosphere, warm brass accents, smoky haze, a typographic ` +
+      `vinyl sleeve for ${a} — abstract brass-age glyphs and circles — resting on an antique desk.`,
   },
   {
     id: "reggae",
     keywords: ["reggae", "dub", "ska", "dancehall", "marley", "rastafari", "tosh"],
     prompt: (a) =>
       `Warm golden-hour sunlight, vintage Jamaican wood aesthetic, tropical/reggae fine-art oil ` +
-      `painting concept featuring a framed portrait of ${a} on a rustic wooden shelf, relaxed atmosphere.`,
+      `painting concept featuring a typographic album sleeve for ${a} — abstract sun-ray glyphs — ` +
+      `on a rustic wooden shelf, relaxed atmosphere.`,
   },
   {
     id: "synth",
@@ -201,7 +205,7 @@ const SCENE_SPECS: SceneSpec[] = [
     ],
     prompt: (a) =>
       `Retro 80s neon-lit studio aesthetic, moody cyan and magenta ambient lighting, stylized ` +
-      `fine-art portrait of ${a} on a cassette sleeve/wall frame.`,
+      `typographic cassette J-card for ${a} — abstract neon glyphs and grid shapes only.`,
   },
 ];
 
@@ -272,9 +276,12 @@ function keywordIn(haystack: string, keyword: string): boolean {
 /**
  * Build the multi-dimensional fine-art brief. Four dimensions travel
  * together: the scene's lighting/medium (genre-aesthetic), the listener's
- * life-stage environment (journey position), the era's emotion, and the
- * artist's portrait integrated organically into the room's texture.
- * Exported for tests; the identity of the chosen scene feeds the cache key.
+ * life-stage environment (journey position), the era's emotion, and a
+ * TYPOGRAPHIC vinyl sleeve (abstract glyphs/geometry only — never a
+ * photographic face or painted portrait) integrated organically into the
+ * room's texture. Card titles live in the HTML layer; the painting renders
+ * the scene only, never card text. Exported for tests; the identity of the
+ * chosen scene feeds the cache key.
  */
 export function buildCardArtworkPrompt(
   artist: string,
@@ -300,8 +307,13 @@ export function buildCardArtworkPrompt(
     `A high-end fine-art concept illustration representing the song '${title}' by ${subject}. ` +
     `Environment: A personalized room setting — ${room} — conveying a strong sense of ${emotion}. ` +
     `Artistic Style: ${spec.prompt(subject)} ` +
-    `Integration: A framed painted portrait of ${subject} seamlessly integrated into the room's ` +
-    `decor as an organic artwork element, perfectly matching the room's lighting and texture.`;
+    `Integration: The child holds and gazes at a vinyl album sleeve with a pure abstract ` +
+    `typographic design — stylized unreadable glyphs and geometric shapes (light rays, circles, ` +
+    `angular forms) on a flat muted background, seamlessly integrated into the room's decor, ` +
+    `perfectly matching the room's lighting and texture. Absolutely no photographic face, ` +
+    `portrait or human figure on the sleeve, and no painted artist portrait anywhere in the ` +
+    `scene. Render only the scene — never draw card titles, headings or any readable text into ` +
+    `the image.`;
   return { prompt, scene: spec.id };
 }
 

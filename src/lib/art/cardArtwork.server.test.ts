@@ -69,7 +69,7 @@ describe("buildCardArtworkPrompt", () => {
     expect(scene).toBe("reggae");
     expect(prompt).toContain("Warm golden-hour sunlight");
     expect(prompt).toContain("vintage Jamaican wood aesthetic");
-    expect(prompt).toContain("framed portrait of Bob Marley");
+    expect(prompt).toContain("typographic album sleeve for Bob Marley");
     expect(prompt).toContain("relaxed atmosphere");
   });
 
@@ -81,7 +81,7 @@ describe("buildCardArtworkPrompt", () => {
     expect(scene).toBe("gothic");
     expect(prompt).toContain("Atmospheric dark gothic oil painting concept");
     expect(prompt).toContain("candlelit vintage room with detailed wood carvings");
-    expect(prompt).toContain("framed painted portrait of Sting");
+    expect(prompt).toContain("typographic vinyl sleeve echoing Sting");
   });
 
   it("builds the 80s synth scene for synth/pop material", () => {
@@ -91,7 +91,7 @@ describe("buildCardArtworkPrompt", () => {
     expect(scene).toBe("synth");
     expect(prompt).toContain("Retro 80s neon-lit studio aesthetic");
     expect(prompt).toContain("cyan and magenta ambient lighting");
-    expect(prompt).toContain("portrait of A-ha");
+    expect(prompt).toContain("typographic cassette J-card for A-ha");
   });
 
   it("builds the jazz club scene for jazz/blues material", () => {
@@ -101,12 +101,22 @@ describe("buildCardArtworkPrompt", () => {
     expect(scene).toBe("jazz");
     expect(prompt).toContain("Dimly lit vintage jazz club atmosphere");
     expect(prompt).toContain("warm brass accents");
-    expect(prompt).toContain("portrait of Miles Davis");
+    expect(prompt).toContain("typographic vinyl sleeve for Miles Davis");
   });
 
   it("falls back to the title alone when the artist is unknown", () => {
     const { prompt } = buildCardArtworkPrompt("", "Unknown Tune", { genreText: "gothic metal" });
-    expect(prompt).toContain("portrait of Unknown Tune");
+    expect(prompt).toContain("typographic vinyl sleeve echoing Unknown Tune");
+  });
+
+  it("never asks for a painted portrait or card text inside the painting", () => {
+    const { prompt } = buildCardArtworkPrompt("Sting", "Fragile", { genreText: "gothic metal" });
+    expect(prompt).not.toContain("framed painted portrait");
+    expect(prompt).not.toContain("portrait of Sting");
+    expect(prompt).toContain("pure abstract typographic design");
+    expect(prompt).toContain("no photographic face, portrait or human figure");
+    expect(prompt).toContain("no painted artist portrait anywhere in the scene");
+    expect(prompt).toContain("never draw card titles");
   });
 });
 
@@ -180,7 +190,7 @@ describe("generateCardArtworkCore", () => {
     expect(url).toContain(":predict");
     const init = (fetchImpl.mock.calls[0] as unknown[])[1] as { body: string };
     const body = JSON.parse(init.body) as { instances: { prompt: string }[] };
-    expect(body.instances[0].prompt).toContain("portrait of Sting");
+    expect(body.instances[0].prompt).toContain("typographic vinyl sleeve echoing Sting");
   });
 
   it("scopes the memoization by scene — a new aesthetic regenerates the track", async () => {

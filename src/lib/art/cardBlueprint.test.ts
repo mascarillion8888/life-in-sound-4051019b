@@ -73,9 +73,9 @@ describe("buildMultidimensionalPrompt", () => {
       "A silhouette of a child (aged 9) sitting in a wood-panelled bedroom with carved dark furniture wearing over-ear headphones, deeply absorbed in music.",
     );
     expect(prompt).toContain(
-      "a small framed fine-art portrait of Sting is subtly lit by a single warm desk lamp and candlelight",
+      "The child holds and gazes at a vinyl album sleeve: pure abstract typographic design",
     );
-    expect(prompt).toContain("dark gothic woodcut chiaroscuro");
+    expect(prompt).toContain("evoking Sting's aesthetic");
     expect(prompt).toContain(
       "Dark gothic woodcut engraving style, candlelit chiaroscuro, etched ink textures",
     );
@@ -111,9 +111,10 @@ describe("buildMultidimensionalPrompt", () => {
     expect(prompt).toContain("A silhouette of a child sitting in a dimly lit bedroom");
   });
 
-  it("falls back to 'the artist' when the artist name is blank", () => {
+  it("omits the artist echo when the artist name is blank", () => {
     const prompt = buildMultidimensionalPrompt({ artist: "  ", songTitle: "b" });
-    expect(prompt).toContain("framed fine-art portrait of the artist");
+    expect(prompt).toContain("pure abstract typographic design");
+    expect(prompt).not.toContain("evoking");
   });
 
   it("weaves the user memory into the atmosphere when supplied", () => {
@@ -135,6 +136,18 @@ describe("buildMultidimensionalPrompt", () => {
       releaseYear: 1991,
     };
     expect(buildMultidimensionalPrompt(encounter)).toBe(buildMultidimensionalPrompt(encounter));
+  });
+
+  it("never asks for a painted portrait or card text inside the painting", () => {
+    const prompt = buildMultidimensionalPrompt({
+      artist: "Sting",
+      songTitle: "Fragile",
+      genre: "Gothic Folk",
+    });
+    expect(prompt).not.toContain("framed fine-art portrait");
+    expect(prompt).toContain("no photographic face, portrait or human figure");
+    expect(prompt).toContain("no painted artist portrait anywhere in the scene");
+    expect(prompt).toContain("never draw card titles");
   });
 });
 
