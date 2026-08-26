@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as ResultsRouteImport } from './routes/results'
+import { Route as ProfileCardsRouteImport } from './routes/profile/cards'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const ResultsRoute = ResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileCardsRoute = ProfileCardsRouteImport.update({
+  id: '/profile/cards',
+  path: '/profile/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/journey': typeof JourneyRoute
   '/results': typeof ResultsRoute
+  '/profile/cards': typeof ProfileCardsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/journey': typeof JourneyRoute
   '/results': typeof ResultsRoute
+  '/profile/cards': typeof ProfileCardsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/journey': typeof JourneyRoute
   '/results': typeof ResultsRoute
+  '/profile/cards': typeof ProfileCardsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/journey' | '/results'
+  fullPaths: '/' | '/journey' | '/results' | '/profile/cards'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/journey' | '/results'
-  id: '__root__' | '/' | '/journey' | '/results'
+  to: '/' | '/journey' | '/results' | '/profile/cards'
+  id: '__root__' | '/' | '/journey' | '/results' | '/profile/cards'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JourneyRoute: typeof JourneyRoute
   ResultsRoute: typeof ResultsRoute
+  ProfileCardsRoute: typeof ProfileCardsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/cards': {
+      id: '/profile/cards'
+      path: '/profile/cards'
+      fullPath: '/profile/cards'
+      preLoaderRoute: typeof ProfileCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JourneyRoute: JourneyRoute,
   ResultsRoute: ResultsRoute,
+  ProfileCardsRoute: ProfileCardsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
