@@ -44,9 +44,13 @@ export function SharePosterDialog({
     if (!open || !card || !canvasEl) return;
     let active = true;
     setRendering(true);
-    void renderSharePoster(card, canvasEl).finally(() => {
-      if (active) setRendering(false);
-    });
+    void renderSharePoster(card, canvasEl)
+      // A render failure (e.g. a rejecting image load) must hide the loading
+      // overlay and stay silent, not surface an uncaught promise rejection.
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setRendering(false);
+      });
     return () => {
       active = false;
     };
@@ -74,7 +78,10 @@ export function SharePosterDialog({
         </DialogHeader>
         <div className="relative mx-auto w-full overflow-hidden rounded-md border border-[#5c4a3e]/60">
           {rendering ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0b0908]/70">
+            <div
+              data-testid="share-poster-rendering"
+              className="absolute inset-0 z-10 flex items-center justify-center bg-[#0b0908]/70"
+            >
               <Loader2 className="h-6 w-6 animate-spin text-[#d8a65a]" aria-hidden />
             </div>
           ) : null}

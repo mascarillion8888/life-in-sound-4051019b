@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ (push kullanıcı onayı bekliyor/bitti
            — `git log -1` ile doğrula; git'e güven, metne değil).
-Testler:   524/524 geçti (56 dosya)
+Testler:   542/542 geçti (58 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -118,6 +118,54 @@ gothic woodcut'ının stale görsel cache'inden servis edilmesi:
   signed-URL token korunumu, bare URL, placeholder path) +
   `CardGallery.test.tsx` (cache-bust src + loader gizlenme; onError→fallback).
 - **Doğrulama:** 524/524 (56 dosya), tsc 0, lint 0e/8w, build 0 hata — aşağıda 4.
+
+## 2-E. Poster savunması + RLS negatif + canlı smoke (3 adımlık paket, TAM)
+
+**Adım 1 — Poster Export & Web Share görsel/UI savunması:**
+- **`SharePosterDialog.tsx`** — preview render effect'i artık `.catch(() => undefined)`
+  ekliyor: canvas render'ı reddederse (ör. görsel yüklenirken hata) yükleme
+  overlay'i yine de gizlenir ve uncaught promise rejection yüzeye çıkmaz.
+  Yükleme overlay'ine `data-testid="share-poster-rendering"` eklendi.
+- **`sharePoster.ts`** — `renderSharePoster`'da görsel yükleme
+  `try { image = await loadImage(url) } catch { image = null }` ile sarıldı:
+  reddeden bir görsel yükleyici artık tüm render'ı reject'i etmez, placeholder
+  boyamaya düşer (mevcut default loader'ın null-on-error sözleşmesiyle tutarlı).
+- **Testler:** `SharePosterDialog.test.tsx` +2 (rendering overlay gösterilir→render
+  çözülünce gizlenir + buton enable; render reject'inde overlay gizlenir ve buton
+  kullanılır kalır), `sharePoster.test.ts` +2 (jsdom'da stub 2D context ile
+  gerçek render kodu yürütülür: görsel null döndüğünde canvas resolve eder +
+  loader throw etse de canvas resolve eder). Poster grubu: 28 test geçer.
+
+**Adım 2 — Supabase RLS negatif güvenlik testleri:**
+- **`src/lib/supabase/rls-security.test.ts`** (+8). Canlı Postgres yok/CI'da
+  olmadığı için client katmanının *negatif* sözleşmesini sabitler (migrations
+  0001/0003'ün anlamı):
+  - RLS-reddedilen `select` → boş liste döner (başkasının satırı sızmaz, throw
+    olmaz); unauthenticated (anası null) → boş liste; kendi user'ının satırları
+    yalnızca anon client altında okunur.
+  - Her işlemde `eq("user_id", <caller>)` eşlik eder; spoof edilmiş yabancı bir
+    user_id hiçbir sorgu/filtre aralığında yer alamaz; upsert payload `user_id`
+    = caller'dır (spoof değil); delete caller'sına scope'lanır.
+  - RLS/offline reddinde bile yerel (localStorage) fallback korunur, save asla
+    throw etmez.
+
+**Adım 3 — Canlı API / env kontrolü (repo-local, env-gated smoke):**
+- **`src/lib/integration/liveSmoke.ts`** — üç dış sağlayıcı için tek, env-gated
+  probe: `VITE_SUPABASE_URL/ANON_KEY`, `GROQ_API_KEY`, `VITE_HF_TOKEN|HF_TOKEN`.
+  Kredi YOKSA→`{status:"skipped"}` (asla ağa çıkmaz, asla sahte başarı üretmez);
+  Kredi VARSA→gerçek, authenticated HTTPS ping (HF `/whoami-v2`, GROQ
+  `/models`, Supabase REST kökü) ve healthy/unhealthy eşlemesi. Rapor detayı
+  hiçbir secret'ı yankılamaz. `allProbesPresent()` toplu kontrol.
+- **`liveSmoke.test.ts`** (+6): credentialsiz ortamda hepsi `skipped` + fetch
+  hiç çağrılmaz; tek kredi inject edilince yalnızca o probe ağı kullanır;
+  401→`failed` (asla success); Supabase probe'tu URL+anon+client üçlüsü olmadan
+  skippeler; detay string'i token içermez.
+- **Bu sandbox'ta bulgu:** ağ erişilebilir (HF & GROQ 401 = reachable,
+  unauth) ama `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GROQ_API_KEY`,
+  `VITE_HF_TOKEN`, `HF_TOKEN` **hepsi unset** — bu yüzden tüm live probe
+  `skipped`. Yani kredi/URL olmadan tarayıcıda uçtan uca canlı doğrulama
+  yapılamıyor; env sağlanınca `runLiveSmoke` bunu ölçecek şekilde hazır.
+- **Doğrulama:** 542/542 (58 dosya), tsc 0, lint 0e/8w — aşağıda 4.
 
 ## 2. Son biten iş — Gothic Art Generator UI: loading + fallback + boundary (TAM)
 
@@ -344,10 +392,11 @@ history'de — bu dosya günlük değildir.
      gothic skeleton, hata olursa doom fallback.
    - Uçtan uca zincir: kart üret → `cards` satırı + storage object →
      invalidation → `/profile/cards`'da görünür → Paylaş → PNG/Web Share.
-     Kalan açıklar: RLS negatif testi (ikinci anon tarayıcıyla başkasının
-     kartı görünmemeli) + token'lı ortamda HF görselinin persistence ile
-     bağlanması (gerçek Supabase/GROQ/key olmadan tarayıcıda uçtan uca
-     doğrulama yapılamıyor — env gerekli).
+     Doğrulandı: RLS negatif testi artık `rls-security.test.ts`'te (adım 2-E)
+     — başkasının kartı görünmemeli sözleşmesi client katmanında sabitlendi.
+     Kalan açık: token'lı ortamda HF görselinin persistence ile bağlanması —
+     gerçek Supabase/GROQ/key olmadan tarayıcıda uçtan uca doğrulama
+     yapılamıyor; env sağlanınca `liveSmoke` (adım 2-E) bunu ölçer.
 3. Gallery'ye giriş linki: `/profile/cards` henüz hiçbir sayfadan linkli
    değil — nav/sonuç sayfasına bağlantı kararı kullanıcıda.
 4. PosterLightbox içeriği: şu an statik `poster-preview.jpg`; ileride
@@ -365,6 +414,11 @@ history'de — bu dosya günlük değildir.
 - Çalışma ağacı temiz; tüm iş bu checkpoint'te COMMIT'LENDİ. Push kullanıcı
   onayı bekliyor (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (524/524, 56 dosya) + `npm run typecheck` (0 hata) +
+  `npm test` (542/542, 58 dosya) + `npm run typecheck` (0 hata) +
   `npm run lint` (0 e / 8 w pre-existing).
+- Canlı ortam notu: bu oturumda `VITE_SUPABASE_URL/ANON_KEY`, `GROQ_API_KEY`,
+  `VITE_HF_TOKEN`/`HF_TOKEN` ortamda yoktu → `runLiveSmoke` 3 probe'u da
+  `skipped` raporladı (ağ erişilebilir: HF & GROQ 401). Kullanıcı gerçek
+  Supabase/GROQ/HF kredilerini `.env` + shell env olarak sağlarsa canlı
+  uçtan uca doğrulama yapılabilir.
 

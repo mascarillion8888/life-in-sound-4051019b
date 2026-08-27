@@ -1,8 +1,51 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CardRow } from "@/lib/supabase/cards-remote";
 
-import { discoveryScore, eraCaption, POSTER_H, POSTER_W, wrapText } from "./sharePoster";
+import {
+  discoveryScore,
+  eraCaption,
+  POSTER_H,
+  POSTER_W,
+  renderSharePoster,
+  wrapText,
+} from "./sharePoster";
+
+/** Return a minimal 2D context stub so renderSharePoster proceeds past the
+ *  `if (!ctx) return canvas` guard in jsdom (which has no real canvas 2D). */
+function stub2dContext(over = {}) {
+  const gradient = { addColorStop: vi.fn() };
+  const context = {
+    createRadialGradient: vi.fn(() => gradient),
+    createLinearGradient: vi.fn(() => gradient),
+    measureText: vi.fn((s: string) => ({ width: s.length * 40 })),
+    addColorStop: vi.fn(),
+    fillRect: vi.fn(),
+    fillText: vi.fn(),
+    strokeRect: vi.fn(),
+    stroke: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    clip: vi.fn(),
+    drawImage: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    arc: vi.fn(),
+    arcTo: vi.fn(),
+    closePath: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    ellipse: vi.fn(),
+    set fillStyle(_v: string | CanvasGradient) {},
+    set strokeStyle(_v: string | CanvasGradient) {},
+    set lineWidth(_v: number) {},
+    set textAlign(_v: string) {},
+    set font(_v: string) {},
+    ...over,
+  };
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as never);
+  return context;
+}
 
 function card(overrides: Partial<CardRow> = {}): CardRow {
   return {
@@ -28,6 +71,43 @@ describe("poster format", () => {
   it("targets the Instagram Story format 1080x1920", () => {
     expect(POSTER_W).toBe(1080);
     expect(POSTER_H).toBe(1920);
+  });
+});
+
+describe("renderSharePoster", () => {
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
+
+  beforeEach(() => {
+    stub2dContext();
+    // jsdom has no document.fonts; make the readiness check resolve so the
+    // render proceeds instead of hanging.
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    });
+  });
+
+  afterEach(() => {
+    HTMLCanvasElement.prototype.getContext = originalGetContext;
+    vi.restoreAllMocks();
+  });
+
+  it("resolves the canvas and falls back to the placeholder when the image load fails", async () => {
+    const canvas = document.createElement("canvas");
+    const artCard = card({ imageUrl: "https://cdn.example/u/a.png" });
+    // Image loader resolves null → renderer draws the placeholder painting and
+    // still resolves the canvas.
+    const failingLoad = vi.fn().mockResolvedValue(null);
+    const result = await renderSharePoster(artCard, canvas, failingLoad);
+    expect(result).toBe(canvas);
+    expect(failingLoad).toHaveBeenCalledWith("https://cdn.example/u/a.png");
+  });
+
+  it("never rejects when the configured image loader throws", async () => {
+    const canvas = document.createElement("canvas");
+    const artCard = card({ imageUrl: "https://cdn.example/u/a.png" });
+    const throwingLoad = vi.fn().mockRejectedValue(new Error("network down"));
+    await expect(renderSharePoster(artCard, canvas, throwingLoad)).resolves.toBe(canvas);
   });
 });
 

@@ -189,7 +189,16 @@ export async function renderSharePoster(
   ctx.lineWidth = 3;
   roundRectPath(ctx, margin - 14, artY - 14, contentW + 28, artH + 28, 30);
   ctx.stroke();
-  const image = card.imageUrl ? await loadImage(card.imageUrl) : null;
+  // A rejecting image loader must degrade to the placeholder painting, not
+  // reject the whole render.
+  let image: HTMLImageElement | null = null;
+  if (card.imageUrl) {
+    try {
+      image = await loadImage(card.imageUrl);
+    } catch {
+      image = null;
+    }
+  }
   ctx.save();
   roundRectPath(ctx, margin, artY, contentW, artH, 18);
   ctx.clip();
