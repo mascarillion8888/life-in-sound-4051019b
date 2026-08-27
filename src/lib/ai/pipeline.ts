@@ -5,6 +5,13 @@ import { answeredCount, rankedDimensions, scorePersonality } from "./personality
 import { writePoeticSummary } from "./poeticSummary";
 import { buildPosterModel } from "./posterModel";
 import type { JourneyAnswers, PersonalityProfile } from "./types";
+import type { Song } from "@/lib/song/types";
+import type { LifeContext } from "@/types/musicDna";
+import type { GroundedLifeStory } from "@/types/lifeStory";
+import type { EmotionalTimeline } from "@/types/emotionalTimeline";
+import { generateMusicDNA } from "@/engine/musicDnaEngine";
+import { generateGroundedLifeStory } from "@/engine/lifeStoryEngine";
+import { generateEmotionalTimeline } from "@/engine/emotionalTimelineEngine";
 
 const ARCHETYPE_BY_DIMENSION: Record<
   string,
@@ -103,4 +110,54 @@ export function analyzeUserJourney(
     poeticSummary,
     poster,
   };
+}
+
+/**
+ * Master-gap stage names for the 8-question journey. Mirrors the default
+ * EN eraTitles in lifeCards.ts — the grounded engines only need a stable
+ * stage label per LifeContext.
+ */
+const GROUNDED_STAGE_NAMES = [
+  "Childhood",
+  "First Signature",
+  "Rebellion",
+  "Inquiry",
+  "Steel",
+  "Darkness",
+  "Longing",
+  "Acceptance",
+] as const;
+
+/**
+ * Master gap integration (P0+P2+P3): build Music DNA → Grounded Life Story →
+ * Emotional Timeline from the journey selections. Songs must be provider-verified
+ * (Song[]); stage names come from the 8-era ordering. Fed hip from the wire
+ * path: `results.tsx` reads this instead of the raw selection list.
+ */
+export function generateGroundedAnalysis(
+  songs: Song[],
+  contexts?: LifeContext[],
+): {
+  dna: ReturnType<typeof generateMusicDNA>;
+  story: GroundedLifeStory;
+  timeline: EmotionalTimeline;
+} {
+  if (!songs || songs.length === 0) {
+    throw new Error("Grounded analysis requires at least 1 valid Song input.");
+  }
+
+  const lifeContexts: LifeContext[] =
+    contexts && contexts.length
+      ? contexts
+      : songs.map((song, idx) => ({
+          questionId: idx + 1,
+          stageName: GROUNDED_STAGE_NAMES[Math.min(idx, GROUNDED_STAGE_NAMES.length - 1)],
+          song,
+        }));
+
+  const dna = generateMusicDNA(songs);
+  const story = generateGroundedLifeStory(dna, lifeContexts);
+  const timeline = generateEmotionalTimeline(dna, lifeContexts);
+
+  return { dna, story, timeline };
 }

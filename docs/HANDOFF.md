@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
            (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   450/450 geçti (45 dosya)
+Testler:   454/454 geçti (46 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -23,7 +23,21 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Master Gap P3: Emotional Timeline Engine (TAM)
+## 2. Son biten iş — P1 Pipeline Integration (TAM)
+
+- **Yeni `generateGroundedAnalysis(songs, contexts?)`** `src/lib/ai/pipeline.ts`'de —
+  seçilen Song[]'u 8-stage `LifeContext[]`'e (kolaylık için `GROUNDED_STAGE_NAMES`)
+  çevirir ve üç engine'i zincirler: `generateMusicDNA` → `generateGroundedLifeStory` →
+  `generateEmotionalTimeline`. `analyzeUserJourney` (personality pipeline) birebir
+  olduğu gibi duruyor.
+- **Entegrasyon testi** `src/lib/ai/pipelineGrounded.test.ts` — 4 test: (1) 3-song
+  journey'de dna/story/timeline wire'ı; (2) explicit LifeContext[] stage matrisine
+  uygun node'lar; (3) boş selection f hata; (4) analyzeUserJourney regression.
+  ("Acceptance" fallback "Reflective Transition" — engine'in keyword matrisinin
+  kapsamadığı bir aşama).
+- **Testler**: 454/454 (46 dosya), tsc 0, lint 0e/7w.
+
+## 2-önceki. Önceki iş — Master Gap P3: Emotional Timeline Engine (TAM)
 
 - **P3 dosyaları** — `src/types/emotionalTimeline.ts` (EmotionalNode,
   EmotionalTimeline + overallTrajectory union) + `src/engine/emotionalTimelineEngine.ts`
