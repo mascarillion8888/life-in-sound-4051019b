@@ -10,8 +10,7 @@
 
 ```
 Aktif dal: main
-HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
+HEAD:      `3628a7f` — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
 Testler:   442/442 geçti (42 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
@@ -23,36 +22,102 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Kart Artwork Prompt Kontratı: Tipografik Plak Kapağı (TAM)
+## 2. Son biten iş — EraCard Sadeleştirilmiş + Master Gap P0/P2 (TAM)
 
-- **NEDEN:** AI painting'lerde iki sorun vardı: (1) prompt "framed painted
-  portrait of {artist}" istediği için model gerçek/tanınabilir sanatçı
-  yüzleri çiziyordu; (2) model kart başlığını ("9 YAŞ", "İLK KIVILCIM" gibi)
-  görselin İÇİNE çizmeye çalışıyordu — oysa bu metinler zaten QuizCard'ın
-  HTML header katmanında.
-- **NASIL:** İki prompt yolu da (`cardBlueprint.ts` `framing` cümlesi +
-  `cardArtwork.server.ts` 7 sahne spec'i + `Integration` satırı) tek
-  kontrata kilitlendi: çocuk silüeti artık **tipografik plak kapağına**
-  bakıyor — "pure abstract typographic design — stylized unreadable glyphs
-  and geometric shapes (light rays, circles, angular forms) on a flat muted
-  background, evoking {artist}'s aesthetic". Negatif kurallar prompt'a
-  açıkça yazıldı: "Absolutely no photographic face, portrait or human
-  figure on the sleeve, and no painted artist portrait anywhere in the
-  scene. Render only the scene — never draw card titles, headings or any
-  readable text into the image." Her sahne spec'i kendi dönem estetiğinde
-  tipografik kapağa çevrildi (brass-age glyphs, neon J-card, sun-ray
-  glyphs…). Reddedilen alternatif: sadece Integration satırını değiştirip
-  spec'leri bırakmak — spec'ler de portre istiyordu, yarım kalırdı.
-- **Test:** iki dosyada da yeni negatif-kural kontrat testleri
-  (`not.toContain("framed painted portrait")`, `toContain("no photographic
-  face…")`, `toContain("never draw card titles")`) + mevcut assertion'lar
-  yeni cümlelere güncellendi. **442/442 (42 dosya), tsc 0, lint 0e/7w.**
-- **Not:** Prompt değiştiği için cache kimliği de değişti — mevcut AI
-  painting'ler ilk reveal'da yeniden üretilecek (deterministik, beklenen).
-  Vercel'de `GEMINI_API_KEY` mevcut; bu ortamda görsel üretimi yapılamadı
-  (key yok) — prompt metni kod yolundan birebir doğrulandı.
+- **EraCard simplıfication** — Kullanıcının sağladığı sadeleştirilmiş
+  referansa (`EraCard` React component) kilitlendi. Responsive body
+  `w-full max-w-[340px]`, rounded-xl, p-4. Header: centered `AGE | TITLE |
+  ERA`. Art window: `aspect-square` rounded-lg altın hairline border.
+  Lore box: `#161920` dark inset `text-[11px] italic text-gray-300`. Yeni
+  footer: `┊🎼 {song} + score chip` (lucide Music icon × no emojis). Double
+  gold frame (`#c9a961` + inset `#8a6d3b` + L-brackets) korundu. Skeleton'a
+  spinner (`Loader2` animate-spin) + i18n caption (`t.quizCard.artGenerating`)
+  eklendi (5 locale: "Etched ink art generating…" / "Mürekkep …" /
+  "Arte en tinta …" / "Tintenkunst …" / "Art à l'encre …"). Testler yeni
+  kontrata güncellendi (simplified template lock, frame, skeleton spinner).
+- **Master gap P0/P2** — `src/types/musicDna.ts` (TemporalPattern, MusicalIdentity,
+  LifeContext, MusicDNA) + `src/types/lifeStory.ts` (StoryChapter, GroundedLifeStory)
+  + `src/engine/musicDnaEngine.ts` (calculateTemporalPattern, calculateMusicalIdentity,
+  generateMusicDNA) + `src/engine/lifeStoryEngine.ts` (generateGroundedLifeStory)
+  oluşturuldu. Henüz pipeline.ts'de kullanılmıyor — wire edilme sıradaki adım.
+- **Testler**: 442/442 (42 dosya), tsc 0, lint 0e/7w.
+- **Kural 10 tarayıcı doğrulama (TAM)**: Vite dev (port 12000) + localStorage
+  seed'i → `/journey`'de 1. şarkıyı seçip `EraCardReveal`'i açtı → sadeleştirilmiş
+  kart görünür: centered header, square art window, dark lore box, footer
+  score chip, double gold frame + corner brackets.
 
-## 2-önceki. QuizCard Çift Altın Çerçeve (TAM, kural 10 dahil)
+## 2-önceki. Önceki iş — Kart Artwork Prompt Kontratı (TAM)
+
+Kart artwort promptu tipografik plak kapağı kontratına kilitlendi (no
+portrait, no in-image title). Vercel Gemini prompt'u buna devam ediyor.
+
+## 2-önceki-2. Önceki iş — QuizCard Çift Altın Çerçeve (TAM, kural 10 dahil)
+
+Dış çift altın çerçeve (`#c9a961` + inset `#8a6d3b` + L-brackets) korundu.
+Yeni içerik/veri katmanları simplified reference layout'a uyarlandı.
+
+## 2-önceki-3. Önceki iş — Referans Gotik Woodcut Kart Şablonu (TAM)
+
+Artık simplified EraCard referansı üzerinden QuizCard kontratı.
+
+## 2a. Önceki iş — Editorial Master Poster + Modal Export (TAM)
+
+Sabit 2:3 editorial infographic (`MasterPosterSheet.tsx`) → Journey modal
+(`MasterPosterModal.tsx`) → PNG export (`html-to-image` toPng pixelRatio:2).
+
+## 2b. Önceki iş — posterTheme Her Yerde: Export + Lightbox (TAM)
+
+`themeFromAnalysis(analysis, songs)` bridge → PoeticAnalysis + şarkılardan
+PosterTheme; exportPoeticPoster canvas export'u themedPalette ile.
+
+## 2c. Önceki iş — Dynamic Master Poster Theme motoru (TAM)
+
+`posterTheme.ts` saf, deterministik resolver: Metal/Doom → gothic-thunder +
+Bronze; jazz/Classical → smoke-candlelight + Amber Brass; vb.
+
+## 2d. Önceki iş — Strict AI-Artwork Rule (revize edildi)
+
+QuizCard art penceresi: skeleton (generation) veya AI painting (cross-fade).
+
+## 2e. Önceki iş — Card Gallery & Social Share Poster (TAM)
+
+`/profile/cards` gothic grid + sort/scene filtreleri, sharePoster canvas.
+
+## 2f. Önceki işler (TAM)
+
+Option B kart motoru (cardBlueprint + generateCard.server + useCardLore) ·
+HF artwork tier · Cosmic Poster Grid · Painterly Backdrops. Detaylar git
+history'de — bu dosya günlük değildir.
+
+---
+
+## 3. Sıradaki iş adımları
+
+0. **Bağlam notu:** `lifeinsound-app` Next.js prototipi kullanıcı kararıyla
+   tamamen silindi (klasör + zip'ler + dev server; GitHub'a hiç
+   push'lanmamıştı). Tek odak bu repo.
+1. **KULLANICI AKSİYONU (hâlâ açık):** `0003_cards.sql`'i Supabase'e
+   uygula — uygulanmadan gallery hep empty state gösterir, persist skip'ler.
+2. Key'li ortamda uçtan uca zincir: kart üret → `cards` satırı + storage
+   object → `/profile/cards`'da görünür → Paylaş → PNG iner. RLS negatif
+   testi: ikinci bir anon tarayıcıyla başkasının kartı görünmemeli.
+3. Gallery'ye giriş linki: `/profile/cards` henüz hiçbir sayfadan linkli
+   değil — nav/sonuç sayfasına bağlantı kararı kullanıcıda.
+4. PosterLightbox içeriği: şu an statik `poster-preview.jpg`; ileride
+   temalı çerçevenin içini de MasterPosterSheet'e çevirme kararı açık
+   (çerçeve zaten temalı).
+5. Faz 4 tasarım onayı açık (`docs/TECH/DATABASE_PLAN.md` DRAFT).
+6. **Master gap wire:** `src/types/musicDna.ts` + `src/engine/musicDnaEngine.ts`
+   doğrudan pipeline.ts'ye bağla (P1 target). Life Story için
+   `generateGroundedLifeStory` de wire edilecek.
+
+---
+
+## 4. Olası sonuçlar (checkpoint sonrası git durumu)
+
+- Çalışma ağacı temiz; tüm iş origin/main'de. HEAD `3628a7f`.
+- Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
+  `npm test` (442/442).
 
 - **QuizCard.tsx'e katman 0 eklendi — dış çift altın çerçeve:** dış `border-2`
   `#c9a961` (eski `border-4 #8b7355` kaldırıldı), içte 7px inset `#8a6d3b`

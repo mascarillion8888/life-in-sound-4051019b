@@ -35,31 +35,28 @@ describe("QuizCard", () => {
     window.localStorage.clear();
   });
 
-  it("locks the reference template: engraved header, banner, parchment lore, octagon badge, credit", () => {
+  it("locks the simplified template: centered header, square art window, dark lore box, footer with score chip", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
-    // 1 · Engraved header: AGE | dynamic TITLE | ERA NAME + sequence.
+    // 1 · Centered gold header: AGE | dynamic TITLE | ERA NAME.
     const header = screen.getByTestId("card-header");
     expect(header.textContent).toContain("Ages 5-9");
     expect(header.textContent).toMatch(/DISCOVERY & [A-Z]+/);
     expect(header.textContent).toContain("FIRST SPARK");
-    expect(screen.getByTestId("card-sequence").textContent).toMatch(/^\d+\/100$/);
-    // 3 · Middle banner: type line + era name + emblem.
-    expect(screen.getByTestId("card-banner").textContent).toContain(
-      "Legendary Life Era — FIRST SPARK",
-    );
-    // 4 · Parchment lore box: narrative + ornamental signature.
+    expect(header.className).toContain("text-center");
+    // Removed layers stay gone.
+    expect(screen.queryByTestId("card-banner")).toBeNull();
+    expect(screen.queryByTestId("card-sequence")).toBeNull();
+    expect(screen.queryByTestId("card-credit")).toBeNull();
+    // 3 · Dark inset lore box.
     const loreBox = screen.getByTestId("card-lore-box");
     expect(loreBox.textContent).toMatch(/vast and soft/);
     expect(loreBox.textContent).toMatch(/carried by Fragile by Sting/);
-    // 5 · Octagonal score badge.
+    expect(loreBox.className).toContain("bg-[#161920]");
+    // 4 · Flat score chip in the footer (no octagon clip-path).
     const badge = screen.getByTestId("card-score-badge");
     expect(badge.textContent).toMatch(/\/10/);
-    expect(badge.textContent).toMatch(/INNOCENCE/);
-    expect(badge.style.clipPath).toContain("polygon");
-    // 6 · Footer credit.
-    expect(screen.getByTestId("card-credit").textContent).toBe(
-      "TM & © 2026 LifeInSound | Illus. R. Swanland",
-    );
+    expect(badge.className).toContain("bg-[#c8aa6e]/20");
+    expect(badge.style.clipPath).toBe("");
   });
 
   it("embeds the iTunes cover inside the black window — no skeleton when a cover exists", () => {
@@ -94,7 +91,11 @@ describe("QuizCard", () => {
   it("falls back to the gothic woodcut skeleton only for coverless songs", () => {
     render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
     expect(screen.queryByTestId("card-art-cover")).toBeNull();
-    expect(screen.getByTestId("card-art-skeleton").dataset.generating).toBe("true");
+    const skeleton = screen.getByTestId("card-art-skeleton");
+    expect(skeleton.dataset.generating).toBe("true");
+    // Spinner + i18n generation caption appear while the painting generates.
+    expect(skeleton.querySelector("svg.animate-spin")).toBeTruthy();
+    expect(skeleton.textContent).toContain("Etched ink art generating…");
   });
 
   it("signs the parchment footer with artist — title (year)", () => {
@@ -123,16 +124,13 @@ describe("QuizCard", () => {
     expect(screen.getByTestId("card-lore-box").textContent).toMatch(/threshold/);
   });
 
-  it("carries the wooden gallery frame: serif typeface, carved border, lucide motifs", () => {
+  it("carries the simplified frame: responsive 340px, serif typeface, carved border", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     const article = screen.getByTestId("quiz-card-1");
-    // Ornate wooden frame — responsive (no fixed pixel width), serif, carved border.
+    // Simplified frame — responsive (no fixed pixel width), serif, carved border.
     expect(article.className).toContain("font-serif");
-    expect(article.className).toContain("max-w-md");
+    expect(article.className).toContain("max-w-[340px]");
     expect(article.style.borderColor).toBe("rgb(201, 169, 97)"); // #c9a961
-    // Shield emblem in the middle banner (lucide, never an emoji glyph).
-    const banner = screen.getByTestId("card-banner");
-    expect(banner.querySelector("svg")).toBeTruthy();
   });
 
   it("wraps the whole card in a double gold frame with four corner brackets", () => {

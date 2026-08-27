@@ -36,6 +36,7 @@ export type Dictionary = {
     playPreviewAria: string;
     mutePreviewAria: string;
     previewUnavailableAria: string;
+    artGenerating: string;
   };
   results: {
     yourSoundmap: string;
@@ -120,6 +121,7 @@ const en: Dictionary = {
     playPreviewAria: "Play preview",
     mutePreviewAria: "Mute preview",
     previewUnavailableAria: "Preview unavailable",
+    artGenerating: "Etched ink art generating…",
   },
   results: {
     yourSoundmap: "Your SoundMap",
@@ -223,6 +225,7 @@ const tr: Dictionary = {
     playPreviewAria: "Önizlemeyi çal",
     mutePreviewAria: "Önizlemeyi sustur",
     previewUnavailableAria: "Önizleme yok",
+    artGenerating: "Gravür çizim üretiliyor…",
   },
   results: {
     yourSoundmap: "SoundMap'in",
@@ -326,6 +329,7 @@ const es: Dictionary = {
     playPreviewAria: "Reproducir vista previa",
     mutePreviewAria: "Silenciar vista previa",
     previewUnavailableAria: "Vista previa no disponible",
+    artGenerating: "Generando grabado a tinta…",
   },
   results: {
     yourSoundmap: "Tu SoundMap",
@@ -429,6 +433,7 @@ const de: Dictionary = {
     playPreviewAria: "Vorschau abspielen",
     mutePreviewAria: "Vorschau stummschalten",
     previewUnavailableAria: "Vorschau nicht verfügbar",
+    artGenerating: "Tuschradierung wird erstellt…",
   },
   results: {
     yourSoundmap: "Deine SoundMap",
@@ -532,6 +537,7 @@ const fr: Dictionary = {
     playPreviewAria: "Lire l'extrait",
     mutePreviewAria: "Couper le son de l'extrait",
     previewUnavailableAria: "Extrait indisponible",
+    artGenerating: "Gravure à l'encre en cours…",
   },
   results: {
     yourSoundmap: "Ta SoundMap",

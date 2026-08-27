@@ -1,30 +1,28 @@
 /**
  * QuizCard — Gothic woodcut collector card for one life era.
  *
- * Renders a LifeCard locked to the reference woodcut template:
- *   0. Outer frame      — double gold frame wrapping the whole card:
+ * Renders a LifeCard locked to the simplified reference layout:
+ *   0. Outer frame   — double gold frame wrapping the whole card:
  *      2px #c9a961 border, an inset #8a6d3b hairline and four 20×20
  *      L-shaped corner brackets (#c9a961).
- *   1. Top header bar   — aged gold/bronze engraved plaque:
- *      AGE | TITLE | ERA NAME + the collector sequence (e.g. "37/100").
- *   2. Main window      — black inner frame with corner scrollwork ovals;
+ *   1. Header        — centered uppercase gold line:
+ *      AGE | dynamic TITLE | ERA NAME.
+ *   2. Art window    — square black frame with a gold hairline border;
  *      the iTunes album cover sits inside it (painterly grading), the AI
  *      painting cross-fades over when ready, a coverless song gets the
- *      gothic woodcut skeleton.
- *   3. Middle banner    — "Legendary Life Era — ERA NAME" + emblem.
- *   4. Lore & footer    — distressed parchment box: serif italic lore,
- *      ornamental divider, track signature (♪ Artist — Title (Year)).
- *   5. Score badge      — octagonal bronze badge, bottom-right.
- *   6. Footer credit    — centered TM & © line.
+ *      gothic woodcut skeleton (with spinner while generating).
+ *   3. Lore box      — dark inset panel with serif italic lore.
+ *   4. Footer        — track signature (Music icon + Artist — Title (Year))
+ *      and the dynamic score chip (n/10).
  */
-import { Music, Shield, Volume2, VolumeX } from "lucide-react";
+import { Loader2, Music, Volume2, VolumeX } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
-import { LIFE_CARD_TONE_COLORS, type LifeCard } from "@/lib/soundmap/lifeCards";
+import type { LifeCard } from "@/lib/soundmap/lifeCards";
 import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
 import type { Song } from "@/lib/song/types";
 
@@ -33,7 +31,7 @@ import type { Song } from "@/lib/song/types";
  * painting generates. A breathing ornate empty frame with candle-glow:
  * never a bare icon box.
  */
-function CardArtSkeleton({ generating }: { generating: boolean }) {
+function CardArtSkeleton({ generating, caption }: { generating: boolean; caption: string }) {
   return (
     <span
       data-testid="card-art-skeleton"
@@ -96,6 +94,16 @@ function CardArtSkeleton({ generating }: { generating: boolean }) {
           }}
         />
       ) : null}
+      {/* Spinner + i18n caption — visual feedback while the painting generates. */}
+      {generating ? (
+        <span
+          aria-hidden
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-[#c8aa6e]" />
+          <span className="px-2 text-center text-xs font-mono text-amber-200/70">{caption}</span>
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -110,25 +118,6 @@ function InnerVignette() {
         background: "radial-gradient(ellipse at center, transparent 62%, rgba(8,6,10,0.42) 100%)",
       }}
     />
-  );
-}
-
-/** Engraved scrollwork oval guarding one corner of the black art window. */
-function CornerScroll({ v, h }: { v: "top" | "bottom"; h: "left" | "right" }) {
-  return (
-    <span
-      aria-hidden
-      className="pointer-events-none absolute z-10 flex h-7 w-9 items-center justify-center rounded-[50%] border border-[#a98c5f]/80"
-      style={{
-        [v]: 5,
-        [h]: 5,
-        background:
-          "radial-gradient(ellipse at 40% 35%, rgba(169,140,95,0.35) 0%, rgba(20,14,8,0.85) 70%)",
-        boxShadow: "0 0 6px rgba(0,0,0,0.8), inset 0 0 5px rgba(216,166,90,0.25)",
-      }}
-    >
-      <span className="h-3 w-4 rounded-[50%] border border-[#d8a65a]/50" />
-    </span>
   );
 }
 
@@ -179,7 +168,6 @@ export function QuizCard({
 }) {
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
-  const gem = LIFE_CARD_TONE_COLORS[card.tone];
   const era = eraStyleFor(song, card.index);
   const art = useCardArtwork(song, { cardIndex: card.index });
   // Poetic lore (LLM or deterministic server-side) — replaces the static
@@ -213,7 +201,7 @@ export function QuizCard({
       data-testid={`quiz-card-${card.songIndex}`}
       data-tone={card.tone}
       data-mount={era.mount}
-      className="relative w-full max-w-md overflow-hidden rounded-2xl border-2 bg-[#1c1815]/95 p-3 font-serif text-[#d4c3a3] shadow-2xl"
+      className="relative w-full max-w-[340px] overflow-hidden rounded-xl border-2 bg-[#1c1815]/95 p-4 font-serif text-[#d4c3a3] shadow-2xl"
       style={{
         borderColor: "#c9a961",
         // Layered depth — amber glow + inner recess = multi-dimensional frame.
@@ -235,40 +223,20 @@ export function QuizCard({
       <FrameCorner v="bottom" h="left" />
       <FrameCorner v="bottom" h="right" />
 
-      {/* 1 · Top header bar — aged gold/bronze engraved plaque. */}
+      {/* 1 · Header — centered uppercase gold line: AGE | TITLE | ERA NAME. */}
       <header
         data-testid="card-header"
-        className="mb-3 flex items-center justify-between gap-2 rounded-md border"
-        style={{
-          borderColor: "#3f2f1b",
-          background: "linear-gradient(to bottom, #6b5426 0%, #8b6f3a 45%, #5a451f 100%)",
-          boxShadow:
-            "inset 0 1px 0 rgba(240,226,192,0.35), inset 0 -2px 4px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.5)",
-        }}
+        className="mb-2 text-center text-[11px] font-bold uppercase tracking-widest text-[#c8aa6e]"
       >
-        <span className="truncate px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#f0e2c0] [text-shadow:0_1px_1px_rgba(0,0,0,0.7)]">
-          {card.ageRange} | {copy?.title ?? card.tag.toUpperCase()} | {card.eraTitle}
-        </span>
-        <span
-          data-testid="card-sequence"
-          className="m-1 shrink-0 rounded-[50%] border border-[#f0e2c0]/40 bg-[#241a0e]/70 px-2 py-1 text-[10px] font-bold tracking-wider text-[#f0e2c0]"
-          style={{ boxShadow: "inset 0 0 6px rgba(0,0,0,0.8)" }}
-        >
-          {copy?.sequence ?? `${card.songIndex}/100`}
-        </span>
+        {card.ageRange} | {copy?.title ?? card.tag.toUpperCase()} | {card.eraTitle}
       </header>
 
-      {/* 2 · Main window — black inner frame, corner scrollwork ovals. The
+      {/* 2 · Art window — square black frame with a gold hairline border. The
               iTunes cover sits inside it; the AI painting cross-fades over
-              when ready; coverless songs keep the woodcut skeleton. */}
+      		when ready; coverless songs keep the woodcut skeleton. */}
       <div
         data-testid="card-art-window"
-        className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded border-2 bg-[#060504] shadow-inner"
-        style={{
-          borderColor: "#6e5a47",
-          boxShadow:
-            "inset 0 0 0 1px rgba(0,0,0,0.9), inset 0 0 26px rgba(0,0,0,0.85), 0 0 10px rgba(216,166,90,0.08)",
-        }}
+        className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-[#c8aa6e]/50 bg-[#060504]"
       >
         {coverUrl ? (
           <img
@@ -281,7 +249,10 @@ export function QuizCard({
             style={{ filter: "sepia(0.18) contrast(1.05) brightness(0.95)" }}
           />
         ) : (
-          <CardArtSkeleton generating={song ? art.status === "loading" : false} />
+          <CardArtSkeleton
+            generating={song ? art.status === "loading" : false}
+            caption={t.quizCard.artGenerating}
+          />
         )}
         {song && art.status === "ready" && art.imageUrl ? (
           <img
@@ -296,10 +267,6 @@ export function QuizCard({
         ) : null}
         <InnerVignette />
         {/* Corner scrollwork ovals — engraved guards over the image. */}
-        <CornerScroll v="top" h="left" />
-        <CornerScroll v="top" h="right" />
-        <CornerScroll v="bottom" h="left" />
-        <CornerScroll v="bottom" h="right" />
         {/* Preview toggle — the 30s iTunes stream, singleton-faded. */}
         <button
           type="button"
@@ -322,73 +289,35 @@ export function QuizCard({
         </button>
       </div>
 
-      {/* 3 · Middle banner — Legendary Life Era — ERA NAME + emblem. */}
+      {/* 3 · Lore box — dark inset panel with serif italic lore. */}
       <div
-        data-testid="card-banner"
-        className="mb-3 flex items-center justify-between border-y border-[#5c4a3e] bg-[#2a231f] px-2 py-1"
+        data-testid="card-lore-box"
+        className="mt-4 rounded border border-[#c8aa6e]/30 bg-[#161920] p-3 text-[11px] italic text-gray-300"
       >
-        <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-[#c5b396]">
-          {card.typeLine} — {card.eraTitle}
-        </span>
-        <Shield className="h-3.5 w-3.5 shrink-0 text-[#c5b396]" aria-hidden />
+        {lore ?? copy?.body ?? card.narrative}
       </div>
 
-      {/* 4+5 · Lore & footer box — distressed parchment, italic serif lore,
-              ornamental divider, track signature; the octagonal score badge
-              hangs off its bottom-right corner. */}
-      <div className="relative mb-2">
-        <div
-          data-testid="card-lore-box"
-          className="rounded-sm border border-[#8a6f4a]/60 px-3 py-2 pr-16"
-          style={{
-            background: "linear-gradient(160deg, #e9dcbd 0%, #ddcda6 45%, #cbb684 100%)",
-            boxShadow:
-              "inset 0 0 18px rgba(120,90,50,0.35), inset 0 1px 0 rgba(255,248,230,0.5), 0 2px 8px rgba(0,0,0,0.45)",
-          }}
-        >
-          <p className="text-[11px] italic leading-relaxed text-[#3a2c18]">
-            {lore ?? copy?.body ?? card.narrative}
-          </p>
-          <OrnamentalDivider />
-          {song ? (
-            <p className="flex items-center gap-1.5 truncate text-[10px] font-semibold text-[#4a3820]">
-              <Music className="h-3 w-3 shrink-0" aria-hidden />
-              <span className="truncate">
-                {song.artist ? `${song.artist} — ` : ""}
-                {song.title}
-                {song.releaseYear ? ` (${song.releaseYear})` : ""}
-              </span>
-            </p>
-          ) : (
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6f5836]">
-              {card.tag}
-            </p>
-          )}
-        </div>
-        <div
+      {/* 4 · Footer — track signature (Music icon + Artist — Title (Year))
+              and the dynamic score chip (n/10). */}
+      <footer className="mt-3 flex items-center justify-between text-[11px] font-semibold text-[#c8aa6e]">
+        {song ? (
+          <span className="flex items-center gap-1.5 truncate">
+            <Music className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">
+              {song.artist ? `${song.artist} — ` : ""}
+              {song.title}
+              {song.releaseYear ? ` (${song.releaseYear})` : ""}
+            </span>
+          </span>
+        ) : (
+          <span className="truncate text-[10px] uppercase tracking-wider">{card.tag}</span>
+        )}
+        <span
           data-testid="card-score-badge"
-          className="absolute -bottom-2 right-2 flex h-14 w-14 flex-col items-center justify-center text-center"
-          style={{
-            clipPath: OCTAGON_CLIP,
-            background: `linear-gradient(160deg, ${gem} 0%, #8b6f3a 55%, #5a451f 100%)`,
-            boxShadow: "0 3px 8px rgba(0,0,0,0.6)",
-          }}
+          className="shrink-0 rounded border border-[#c8aa6e]/40 bg-[#c8aa6e]/20 px-2 py-0.5"
         >
-          <span className="text-[11px] font-black leading-none text-[#140e06]">
-            {copy ? `${copy.score}/10` : `${Math.round(card.intensity * 10)}/10`}
-          </span>
-          <span className="mt-0.5 max-w-[44px] truncate text-[6.5px] font-bold uppercase tracking-wider text-[#241a0e]">
-            {copy?.scoreLabel ?? card.tag}
-          </span>
-        </div>
-      </div>
-
-      {/* 6 · Footer credit — centered, engraved small print. */}
-      <footer
-        data-testid="card-credit"
-        className="pt-1 text-center text-[8.5px] font-medium uppercase tracking-widest text-[#8f8168]"
-      >
-        TM &amp; © 2026 LifeInSound | Illus. R. Swanland
+          {copy ? `${copy.score}/10` : `${Math.round(card.intensity * 10)}/10`}
+        </span>
       </footer>
     </article>
   );
