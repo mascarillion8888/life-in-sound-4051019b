@@ -1,0 +1,488 @@
+diff --git a/src/components/results/QuizCard.test.tsx b/src/components/results/QuizCard.test.tsx
+index 509afbb..52fc874 100644
+--- a/src/components/results/QuizCard.test.tsx
++++ b/src/components/results/QuizCard.test.tsx
+@@ -104,6 +104,27 @@ describe("QuizCard", () => {
+     expect(skeleton.textContent).toContain("Etched ink art generating…");
+   });
+ 
++  it("stamps the real song title and artist over the cover — code-rendered, not AI-drawn", () => {
++    render(<QuizCard card={cards[0]} song={song()} />);
++    const plate = screen.getByTestId("card-art-title-plate");
++    expect(plate.textContent).toContain("Fragile");
++    expect(plate.textContent).toContain("Sting");
++  });
++
++  it("stamps the title plate over the AI painting too once it cross-fades in", () => {
++    window.localStorage.setItem(
++      "soundmap.card-art.v1",
++      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
++    );
++    render(<QuizCard card={cards[0]} song={song()} />);
++    expect(screen.getByTestId("card-art-title-plate").textContent).toContain("Fragile");
++  });
++
++  it("never renders a title plate when there is no image to label", () => {
++    render(<QuizCard card={cards[1]} song={null} />);
++    expect(screen.queryByTestId("card-art-title-plate")).toBeNull();
++  });
++
+   it("signs the parchment footer with artist — title (year)", () => {
+     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+     expect(screen.getByText(/Sting — Fragile \(1987\)/)).toBeTruthy();
+diff --git a/src/components/results/QuizCard.tsx b/src/components/results/QuizCard.tsx
+index 2d95aab..9d9c2db 100644
+--- a/src/components/results/QuizCard.tsx
++++ b/src/components/results/QuizCard.tsx
+@@ -108,6 +108,35 @@ function CardArtSkeleton({ generating, caption }: { generating: boolean; caption
+   );
+ }
+ 
++/**
++ * Code-rendered title plate — the real song title (and artist), stamped
++ * over the generated scene like an engraved plaque. AI image models are
++ * unreliable at rendering legible in-image text, so the actual title never
++ * comes from the painting itself: it is always this HTML layer, guaranteed
++ * correct regardless of what the AI-generated art beneath it looks like.
++ * Replaces the earlier "abstract typographic glyphs on the sleeve" approach
++ * with a real, readable label — without asking the image model to spell
++ * anything.
++ */
++function ArtTitlePlate({ title, artist }: { title: string; artist: string }) {
++  return (
++    <span
++      data-testid="card-art-title-plate"
++      aria-hidden
++      className="pointer-events-none absolute inset-x-3 bottom-10 z-10 rounded border border-[#c8aa6e]/40 bg-[#0b0a08]/75 px-2 py-1.5 text-center backdrop-blur-[2px]"
++    >
++      <span className="block truncate text-[11px] font-bold uppercase tracking-[0.12em] text-[#e8d9b5]">
++        {title}
++      </span>
++      {artist ? (
++        <span className="block truncate text-[9px] uppercase tracking-widest text-[#c8aa6e]/80">
++          {artist}
++        </span>
++      ) : null}
++    </span>
++  );
++}
++
+ /** Soft inner vignette melting any image into the card frame. */
+ function InnerVignette() {
+   return (
+@@ -270,6 +299,13 @@ export function QuizCard({
+           />
+         ) : null}
+         <InnerVignette />
++        {/* The real title/artist, stamped over whichever image layer is
++            showing (cover or AI painting) — code-rendered, always correct,
++            never dependent on the AI model spelling anything right. Hidden
++            while only the empty skeleton shows (nothing to label yet). */}
++        {song && copy && (coverUrl || (art.status === "ready" && art.imageUrl)) ? (
++          <ArtTitlePlate title={song.title} artist={song.artist} />
++        ) : null}
+         {/* Corner scrollwork ovals — engraved guards over the image. */}
+         {/* Preview toggle — the 30s iTunes stream, singleton-faded. */}
+         <button
+diff --git a/src/lib/ai/pipeline.ts b/src/lib/ai/pipeline.ts
+index 732e604..8ffaab1 100644
+--- a/src/lib/ai/pipeline.ts
++++ b/src/lib/ai/pipeline.ts
+@@ -161,3 +161,50 @@ export function generateGroundedAnalysis(
+ 
+   return { dna, story, timeline };
+ }
++
++/**
++ * Unified analysis (single source of truth).
++ *
++ * Prior to this, `results.tsx` read `analyzeUserJourney(answers)` (archetype /
++ * emotions / recommendedGenres / poster — all answer-dimension-derived) and
++ * `generateGroundedAnalysis(songs)` (era / artist / diversity — all
++ * Song[]-derived) as two independent memos. Nothing wrong was displayed, but
++ * nothing forced them to agree, and the LLM narrative prompt only ever saw the
++ * answer-derived half.
++ *
++ * This function does not replace either engine — the personality dimensions
++ * genuinely come from answers, and Music DNA genuinely comes from songs, and
++ * conflating them would itself be a form of "uydurma". What it does is make
++ * both available from one call, and expose a single `groundedFacts` block
++ * that downstream consumers (UI, LLM prompt) can cite as verified-real,
++ * as distinct from the dimension-derived `profile` guesses (e.g.
++ * `recommendedGenres`, which remain personality-dimension suggestions, not
++ * claims about the actual tracks, until P1 genre enrichment lands).
++ */
++export function buildUnifiedMusicAnalysis(
++  answers: JourneyAnswers | null | undefined,
++  songs: Song[],
++  contexts?: LifeContext[],
++): {
++  profile: PersonalityProfile;
++  dna: ReturnType<typeof generateMusicDNA>;
++  story: GroundedLifeStory;
++  timeline: EmotionalTimeline;
++  isFullyGrounded: boolean;
++} | null {
++  const profile = analyzeUserJourney(answers);
++  if (!profile) return null;
++  if (!songs || songs.length === 0) return null;
++
++  const { dna, story, timeline } = generateGroundedAnalysis(songs, contexts);
++
++  return {
++    profile,
++    dna,
++    story,
++    timeline,
++    // True only when every song is provider-verified AND the DNA engine
++    // itself reports grounded — i.e. nothing in this response is a guess.
++    isFullyGrounded: dna.isGrounded && songs.every((s) => s.verified !== false),
++  };
++}
+diff --git a/src/lib/ai/pipelineGrounded.test.ts b/src/lib/ai/pipelineGrounded.test.ts
+index 0806b54..96ab067 100644
+--- a/src/lib/ai/pipelineGrounded.test.ts
++++ b/src/lib/ai/pipelineGrounded.test.ts
+@@ -1,6 +1,11 @@
+ import { describe, expect, it } from "vitest";
+-import { generateGroundedAnalysis, analyzeUserJourney } from "./pipeline";
++import {
++  generateGroundedAnalysis,
++  analyzeUserJourney,
++  buildUnifiedMusicAnalysis,
++} from "./pipeline";
+ import type { Song } from "@/lib/song/types";
++import type { JourneyAnswers } from "./types";
+ 
+ const song = (title: string, artist: string, releaseYear: number, providerId: string): Song => ({
+   provider: "itunes",
+@@ -73,3 +78,45 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
+     expect(profile).toBeNull();
+   });
+ });
++
++describe("buildUnifiedMusicAnalysis (single-source merge)", () => {
++  const journeySongs: Song[] = [
++    song("Holy Diver", "Dio", 1983, "s1"),
++    song("Paranoid", "Black Sabbath", 1970, "s2"),
++    song("Fragile", "Sting", 1987, "s3"),
++  ];
++  const answers: JourneyAnswers = { 1: "Holy Diver", 2: "Paranoid", 3: "Fragile" };
++
++  it("returns both the answer-derived profile and the songs-derived DNA from one call", () => {
++    const unified = buildUnifiedMusicAnalysis(answers, journeySongs);
++
++    expect(unified).not.toBeNull();
++    // Same values a separate analyzeUserJourney(answers) call would produce —
++    // this doesn't replace the dimension scoring, just exposes it alongside DNA.
++    expect(unified!.profile.archetype).toBe(analyzeUserJourney(answers)!.archetype);
++    // Same values a separate generateGroundedAnalysis(songs) call would produce.
++    expect(unified!.dna.songCount).toBe(3);
++    expect(unified!.dna.temporalPattern.primaryEra).toBe(
++      generateGroundedAnalysis(journeySongs).dna.temporalPattern.primaryEra,
++    );
++    expect(unified!.story.chapters).toHaveLength(3);
++    expect(unified!.timeline.nodes).toHaveLength(3);
++  });
++
++  it("marks isFullyGrounded false when any song failed provider verification", () => {
++    const unverified = [...journeySongs.slice(0, 2), { ...journeySongs[2], verified: false }];
++    const unified = buildUnifiedMusicAnalysis(answers, unverified);
++
++    expect(unified!.isFullyGrounded).toBe(false);
++    // The DNA itself is still computed — verification only affects the flag.
++    expect(unified!.dna.songCount).toBe(3);
++  });
++
++  it("returns null when answers are empty, even with valid songs", () => {
++    expect(buildUnifiedMusicAnalysis({}, journeySongs)).toBeNull();
++  });
++
++  it("returns null when songs are empty, even with valid answers", () => {
++    expect(buildUnifiedMusicAnalysis(answers, [])).toBeNull();
++  });
++});
+diff --git a/src/lib/llm/generateStory.server.ts b/src/lib/llm/generateStory.server.ts
+index 1212e9a..430d561 100644
+--- a/src/lib/llm/generateStory.server.ts
++++ b/src/lib/llm/generateStory.server.ts
+@@ -16,12 +16,15 @@
+ import { createServerFn } from "@tanstack/react-start";
+ 
+ import type { PersonalityProfile } from "@/lib/ai/types";
++import type { MusicDNA } from "@/types/musicDna";
+ import { runRole } from "@/lib/llm/orchestra";
+ import { buildLifeStoryPrompt } from "@/lib/llm/prompts";
+ 
+ export type GenerateStoryInput = {
+   profile: PersonalityProfile;
+   songs: string[];
++  /** Grounded Music DNA from the real Song[] selection. Optional for back-compat. */
++  dna?: MusicDNA;
+ };
+ 
+ export type GenerateStoryOutput = {
+@@ -39,13 +42,13 @@ export type GenerateStoryOutput = {
+ export const generateStory = createServerFn({ method: "POST" })
+   .validator((input: GenerateStoryInput): GenerateStoryInput => input)
+   .handler(async ({ data }) => {
+-    const { profile, songs } = data;
++    const { profile, songs, dna } = data;
+ 
+     if (!profile || !Array.isArray(songs) || songs.length === 0) {
+       return { story: null } satisfies GenerateStoryOutput;
+     }
+ 
+-    const prompt = buildLifeStoryPrompt({ profile, songs });
++    const prompt = buildLifeStoryPrompt({ profile, songs, dna });
+ 
+     try {
+       const narrative = await runRole("summarizer", prompt, {
+diff --git a/src/lib/llm/lifeStory.test.ts b/src/lib/llm/lifeStory.test.ts
+index d2943c1..7a41d56 100644
+--- a/src/lib/llm/lifeStory.test.ts
++++ b/src/lib/llm/lifeStory.test.ts
+@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
+ import { buildLifeStoryPrompt, deterministicLifeStory } from "@/lib/llm/prompts";
+ import { runRole } from "@/lib/llm/orchestra";
+ import type { PersonalityProfile } from "@/lib/ai/types";
++import type { MusicDNA } from "@/types/musicDna";
+ 
+ const TEST_SONGS = [
+   "First Song",
+@@ -102,6 +103,47 @@ describe("Life Story prompt construction", () => {
+     expect(prompt).toContain("No JSON");
+     expect(prompt).toContain("No markdown headings");
+   });
++
++  it("omits the GROUNDED MUSIC DATA block when no dna is supplied (back-compat)", () => {
++    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
++    expect(prompt).not.toContain("GROUNDED MUSIC DATA");
++  });
++
++  it("includes real Music DNA facts and prioritization rule when dna is supplied", () => {
++    const dna: MusicDNA = {
++      temporalPattern: {
++        primaryEra: "1980s",
++        spanYears: 17,
++        eraDistribution: { "1970s": 1, "1980s": 2 },
++        earliestReleaseYear: 1970,
++        latestReleaseYear: 1987,
++      },
++      musicalIdentity: {
++        topArtists: ["Dio", "Black Sabbath", "Sting"],
++        diversityScore: 100,
++        dominantVibe: "Eclectic Explorer",
++        hasVerifiedTracks: true,
++      },
++      songCount: 3,
++      isGrounded: true,
++      analyzedAt: "2026-08-27T00:00:00.000Z",
++    };
++
++    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS, dna });
++
++    expect(prompt).toContain("GROUNDED MUSIC DATA");
++    expect(prompt).toContain("1980s");
++    expect(prompt).toContain("Dio, Black Sabbath, Sting");
++    expect(prompt).toContain("Eclectic Explorer");
++    // The prioritization rule must be present so the model knows which half wins,
++    // and must NOT appear when no dna is supplied (checked in the back-compat test above).
++    expect(prompt).toContain("takes priority over the personality profile");
++  });
++
++  it("does not mention grounded-data prioritization when no dna is supplied", () => {
++    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
++    expect(prompt).not.toContain("takes priority over the personality profile");
++  });
+ });
+ 
+ describe("deterministic Life Story fallback", () => {
+diff --git a/src/lib/llm/prompts.ts b/src/lib/llm/prompts.ts
+index 3641865..cf46407 100644
+--- a/src/lib/llm/prompts.ts
++++ b/src/lib/llm/prompts.ts
+@@ -14,10 +14,20 @@
+  * without any provider access.
+  */
+ import type { PersonalityProfile } from "@/lib/ai/types";
++import type { MusicDNA } from "@/types/musicDna";
+ 
+ export type LifeStoryInput = {
+   profile: PersonalityProfile;
+   songs: string[];
++  /**
++   * Optional grounded Music DNA (from the real selected Song[] — era,
++   * artists, diversity). When present, these are verified facts and take
++   * priority over the profile's dimension-derived guesses (e.g.
++   * `recommendedGenres`) for anything the two might imply differently.
++   * Absent only for legacy callers that haven't migrated to
++   * `buildUnifiedMusicAnalysis` yet.
++   */
++  dna?: MusicDNA;
+ };
+ 
+ /** The deterministic Life Story template — used as the fallback narrative. */
+@@ -43,6 +53,10 @@ const GROUNDING_RULES = [
+   "Output narrative prose only. No JSON. No markdown headings. No bullet lists. No metadata.",
+ ];
+ 
++/** Only relevant when a GROUNDED MUSIC DATA block is actually supplied. */
++const DNA_PRIORITY_RULE =
++  "The GROUNDED MUSIC DATA above is verified fact about the user's actual selection (real era, real artists, real diversity) — it takes priority over the personality profile's dimension-derived guesses (e.g. recommended genres) if the two ever seem to point in different directions. Weave the grounded facts in naturally; do not just restate them as a list.";
++
+ function summariseProfile(profile: PersonalityProfile): string {
+   const emotions = profile.emotionalProfile.join(", ");
+   const traits = profile.traits.join(", ");
+@@ -67,6 +81,18 @@ function summariseSongs(songs: string[]): string {
+   return songs.map((s, i) => `${i + 1}. ${s}`).join("\n");
+ }
+ 
++function summariseDNA(dna: MusicDNA): string {
++  const { temporalPattern, musicalIdentity } = dna;
++  return [
++    `Primary era: ${temporalPattern.primaryEra}`,
++    `Sonic span: ${temporalPattern.spanYears} years (${temporalPattern.earliestReleaseYear}–${temporalPattern.latestReleaseYear})`,
++    `Top artists: ${musicalIdentity.topArtists.join(", ") || "—"}`,
++    `Artist diversity: ${musicalIdentity.diversityScore}%`,
++    `Dominant vibe: ${musicalIdentity.dominantVibe}`,
++    `Grounded (no fabricated data): ${dna.isGrounded ? "yes" : "no"}`,
++  ].join("\n");
++}
++
+ /**
+  * Build the grounded Life Story prompt. Returns the user message string that
+  * is sent to the Orchestra role. Contains explicit grounding rules and only
+@@ -75,16 +101,23 @@ function summariseSongs(songs: string[]): string {
+ export function buildLifeStoryPrompt(input: LifeStoryInput): string {
+   const songsBlock = summariseSongs(input.songs);
+   const profileBlock = summariseProfile(input.profile);
+-  const rulesBlock = GROUNDING_RULES.map((r, i) => `${i + 1}. ${r}`).join("\n");
++  const dnaBlock = input.dna ? summariseDNA(input.dna) : null;
++  const rules = dnaBlock ? [...GROUNDING_RULES, DNA_PRIORITY_RULE] : GROUNDING_RULES;
++  const rulesBlock = rules.map((r, i) => `${i + 1}. ${r}`).join("\n");
+ 
+   return [
+     "You are the narrative voice of Life in a Sound.",
+     "",
+     "INPUT:",
+-    "A deterministic personality profile and the user's selected songs.",
++    dnaBlock
++      ? "A deterministic personality profile, grounded Music DNA derived from the user's real song selection, and the songs themselves."
++      : "A deterministic personality profile and the user's selected songs.",
+     "",
+-    "PERSONALITY PROFILE (deterministic, factual):",
++    "PERSONALITY PROFILE (deterministic, dimension-derived from answers):",
+     profileBlock,
++    ...(dnaBlock
++      ? ["", "GROUNDED MUSIC DATA (verified, derived from the real Song[] selection):", dnaBlock]
++      : []),
+     "",
+     "SELECTED SONGS (in journey order; user-provided labels only):",
+     songsBlock,
+diff --git a/src/routes/results.tsx b/src/routes/results.tsx
+index 6db5506..76d0dec 100644
+--- a/src/routes/results.tsx
++++ b/src/routes/results.tsx
+@@ -9,13 +9,14 @@ import { resetJourneySession } from "@/lib/reset-session";
+ import { useSession } from "@/lib/supabase/use-session";
+ import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
+ import type { Song } from "@/lib/song/types";
++import type { MusicDNA } from "@/types/musicDna";
+ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+ import { useLanguage } from "@/lib/i18n/LanguageContext";
+ import { AnimatedReveal } from "@/components/AnimatedReveal";
+ import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
+ import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
+ import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
+-import { analyzeUserJourney, generateGroundedAnalysis } from "@/lib/ai/pipeline";
++import { analyzeUserJourney, buildUnifiedMusicAnalysis } from "@/lib/ai/pipeline";
+ import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
+ import { generateStory } from "@/lib/llm/generateStory.server";
+ import { deterministicLifeStory } from "@/lib/llm/prompts";
+@@ -92,9 +93,11 @@ type StoryStatus = "idle" | "loading" | "ready" | "fallback";
+ function LifeStory({
+   profile,
+   songs: songTitles,
++  dna,
+ }: {
+   profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
+   songs: string[];
++  dna?: MusicDNA;
+ }) {
+   const { t } = useLanguage();
+   const fallback = useMemo(() => deterministicLifeStory(songTitles), [songTitles]);
+@@ -102,8 +105,16 @@ function LifeStory({
+   // Stable fingerprint of the inputs — prevents duplicate LLM calls on re-render
+   // for the same Results state. Kept client-side only; contains no secrets.
+   const fingerprint = useMemo(
+-    () => JSON.stringify({ songs: songTitles, archetype: profile.archetype }),
+-    [songTitles, profile.archetype],
++    () =>
++      JSON.stringify({
++        songs: songTitles,
++        archetype: profile.archetype,
++        // Included so a re-verified/re-grounded DNA (e.g. songs finish
++        // provider-verification after first paint) triggers a fresh,
++        // properly-grounded narrative instead of reusing a stale one.
++        primaryEra: dna?.temporalPattern.primaryEra,
++      }),
++    [songTitles, profile.archetype, dna?.temporalPattern.primaryEra],
+   );
+ 
+   const [story, setStory] = useState<string | null>(null);
+@@ -115,7 +126,7 @@ function LifeStory({
+     let active = true;
+     setStatus("loading");
+ 
+-    generateStory({ data: { profile, songs: songTitles } })
++    generateStory({ data: { profile, songs: songTitles, dna } })
+       .then((result) => {
+         if (!active) return;
+         if (result && typeof result.story === "string" && result.story.length > 0) {
+@@ -295,17 +306,29 @@ function ResultsPage() {
+         isrc: null,
+       },
+   );
+-  const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+-  // Grounded P0/P2/P3 analysis — deterministic master-gap engines fed from the
+-  // journey Song[] selection (not just title strings). Never blocks the page:
+-  // the try/catch falls back to null when the journey is empty.
+-  const grounded = useMemo(() => {
++  // Single source of truth: combines the answer-derived PersonalityProfile
++  // (archetype/emotions/poster) with the songs-derived, grounded Music DNA
++  // (era/artists/diversity) + Life Story + Emotional Timeline. Both halves
++  // are exposed together so nothing downstream reads a stale independent
++  // half of the analysis. Never blocks the page: falls back to null when
++  // the journey is empty or answers are missing.
++  const unified = useMemo(() => {
+     try {
+-      return generateGroundedAnalysis(songs);
++      return buildUnifiedMusicAnalysis(answers, songs);
+     } catch {
+       return null;
+     }
+-  }, [songs]);
++  }, [answers, songs]);
++  // Fallback profile for the rare case buildUnifiedMusicAnalysis returns null
++  // (e.g. songs still loading) but answers already resolved — keeps the page
++  // rendering the personality section without waiting on songs. Always
++  // called (Rules of Hooks); unified.profile is preferred when available and
++  // is the same value analyzeUserJourney(answers) would produce.
++  const fallbackProfile = useMemo(() => analyzeUserJourney(answers), [answers]);
++  const profile = unified?.profile ?? fallbackProfile;
++  const grounded = unified
++    ? { dna: unified.dna, story: unified.story, timeline: unified.timeline }
++    : null;
+   // Same deterministic fallback DynamicMusicMap uses — the lightbox frame and
+   // the sheet paint the same palette.
+   const posterTheme = useMemo(
+@@ -360,7 +383,7 @@ function ResultsPage() {
+         {/* Life Story */}
+         <AnimatedReveal>
+           {profile ? (
+-            <LifeStory profile={profile} songs={songTitles} />
++            <LifeStory profile={profile} songs={songTitles} dna={grounded?.dna} />
+           ) : (
+             <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
+               <SectionHeading
