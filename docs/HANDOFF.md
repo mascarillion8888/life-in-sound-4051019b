@@ -23,7 +23,18 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Gallery/SocialShare grounded wire (TAM, kural 10 doğrulandı)
+## 2. Son biten iş — Supabase Card Adapter (TAM)
+
+- **Yeni adapter** — `src/adapters/supabaseCardAdapter.ts`:
+  bidirectional mapping between `GroundedLifeStory/EmotionalTimeline` and the
+  Supabase `CardRow` (packed `scene` as `<stage>|<vibe>|<intensity>`).
+  Includes `mapGroundedToCardRow(chapter, node?, imageUrl?)` and
+  `mapCardRowToGrounded(row)`.
+- **Testler** — `src/adapters/supabaseCardAdapter.test.ts`: round-trip + fallbacks
+  (4/4 yeşil).
+- **Testler**: 462/462 (48 dosya), tsc 0, lint 0e/7w.
+
+## 2-önceki. Önceki iş — Gallery/SocialShare grounded wire (TAM, kural 10 doğrulandı)
 
 - **Yeni grounded mapping helper'lar** — `src/types/gallery.ts`
   (`mapChapterToGalleryCard` — StoryChapter × optional EmotionalNode →
