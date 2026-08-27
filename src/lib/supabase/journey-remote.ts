@@ -22,8 +22,14 @@ import {
   saveJourney,
   type JourneyProgress,
 } from "../journey-storage";
+import { dbCache } from "../cache/supabaseCache";
 
 const TABLE = "journeys";
+
+/** In-memory cache key (30s TTL) for a user's reconciled journey row. */
+function journeyCacheKey(userId: string): string {
+  return `journey:${userId}`;
+}
 
 /**
  * Load the journey for the given user id. Reconciles the server copy with the
@@ -31,6 +37,9 @@ const TABLE = "journeys";
  * are instant and offline-safe. Returns null if nothing exists anywhere.
  */
 export async function loadRemoteJourney(userId: string): Promise<JourneyProgress | null> {
+  const cached = dbCache.get<JourneyProgress | null>(journeyCacheKey(userId));
+  if (cached) return cached;
+
   const supabase = getSupabase();
   if (!supabase) return loadJourney();
 
@@ -45,16 +54,21 @@ export async function loadRemoteJourney(userId: string): Promise<JourneyProgress
 
     if (error) {
       // Network/permission issue — fall back to local cache.
+      dbCache.set(journeyCacheKey(userId), local);
       return local;
     }
 
     const remote = toProgress(data);
     const merged = mergeJourneys(local, remote);
 
-    if (merged) saveJourney(merged);
+    if (merged) {
+      saveJourney(merged);
+      dbCache.set(journeyCacheKey(userId), merged);
+    }
     return merged;
   } catch {
     // Offline or request failed — keep using local cache.
+    dbCache.set(journeyCacheKey(userId), local);
     return local;
   }
 }
@@ -65,6 +79,8 @@ export async function loadRemoteJourney(userId: string): Promise<JourneyProgress
  * a network blip never blocks the UI.
  */
 export async function saveRemoteJourney(userId: string, progress: JourneyProgress): Promise<void> {
+  // Mutation invalidates any cached copy so the next read re-fetches.
+  dbCache.invalidate(journeyCacheKey(userId));
   // Always cache locally first.
   saveJourney(progress);
 
@@ -92,6 +108,8 @@ export async function saveRemoteJourney(userId: string, progress: JourneyProgres
  * and the user moves to results). Clears both the server row and local cache.
  */
 export async function clearRemoteJourney(userId: string): Promise<void> {
+  // Invalidate the cached copy — the row no longer exists.
+  dbCache.invalidate(journeyCacheKey(userId));
   clearJourney();
 
   const supabase = getSupabase();

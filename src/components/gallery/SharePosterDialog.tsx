@@ -8,13 +8,20 @@
  * export unchanged.
  */
 import { useEffect, useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, Loader2, Share2 } from "lucide-react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { exportSharePoster, renderSharePoster } from "@/lib/soundmap/sharePoster";
+import {
+  exportSharePoster,
+  renderSharePoster,
+  type SharePosterResult,
+} from "@/lib/soundmap/sharePoster";
 import type { CardRow } from "@/lib/supabase/cards-remote";
+
+type ShareStatus = "idle" | "busy" | "shared" | "downloaded" | "error";
+type ShareResult = SharePosterResult;
 
 export function SharePosterDialog({
   card,
@@ -31,7 +38,7 @@ export function SharePosterDialog({
   // the render once the canvas actually exists.
   const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const [rendering, setRendering] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [status, setStatus] = useState<ShareStatus>("idle");
 
   useEffect(() => {
     if (!open || !card || !canvasEl) return;
@@ -45,14 +52,16 @@ export function SharePosterDialog({
     };
   }, [open, card, canvasEl]);
 
+  // Reset the toast when a new poster is opened.
+  useEffect(() => {
+    if (open) setStatus("idle");
+  }, [open, card]);
+
   const download = async () => {
-    if (!card) return;
-    setDownloading(true);
-    try {
-      await exportSharePoster(card);
-    } finally {
-      setDownloading(false);
-    }
+    if (!card || status === "busy") return;
+    setStatus("busy");
+    const result: ShareResult = await exportSharePoster(card);
+    setStatus(result === "shared" ? "shared" : result === "downloaded" ? "downloaded" : "error");
   };
 
   return (
@@ -78,16 +87,46 @@ export function SharePosterDialog({
         </div>
         <Button
           onClick={() => void download()}
-          disabled={!card || rendering || downloading}
+          disabled={!card || rendering || status === "busy"}
           className="w-full bg-[#d8a65a] font-semibold text-[#1a140e] hover:bg-[#e5b76b]"
         >
-          {downloading ? (
+          {status === "busy" ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+          ) : status === "shared" ? (
+            <Check className="mr-2 h-4 w-4" aria-hidden />
           ) : (
-            <Download className="mr-2 h-4 w-4" aria-hidden />
+            <Share2 className="mr-2 h-4 w-4" aria-hidden />
           )}
-          {language === "tr" ? "İndir / Hikâyede Paylaş" : "Download / Share to Story"}
+          {status === "busy"
+            ? language === "tr"
+              ? "Hazırlanıyor…"
+              : "Preparing…"
+            : status === "shared"
+              ? language === "tr"
+                ? "Paylaşıldı"
+                : "Shared"
+              : status === "downloaded"
+                ? language === "tr"
+                  ? "İndirildi"
+                  : "Downloaded"
+                : language === "tr"
+                  ? "İndir / Hikâyede Paylaş"
+                  : "Download / Share to Story"}
         </Button>
+        {status === "error" ? (
+          <div
+            role="alert"
+            data-testid="share-poster-error"
+            className="mt-2 flex items-start gap-2 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-200"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              {language === "tr"
+                ? "Poster hazırlanamadı. Lütfen tekrar dene."
+                : "The poster could not be generated. Please try again."}
+            </span>
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

@@ -13,11 +13,14 @@
  * auth.uid()).
  */
 import { getSupabase } from "./client";
+import { dbCache } from "@/lib/cache/supabaseCache";
 
 const TABLE = "cards";
 const BUCKET = "card-artworks";
 /** Signed-URL lifetime: one hour — enough for a gallery session. */
 const SIGNED_URL_TTL_S = 3600;
+/** Cache key for the newest-first row list (see loadRemoteCards). */
+const CARDS_CACHE_KEY = "cards:all";
 
 /** One persisted era card, mirrors the columns of migration 0003. */
 export type CardRow = {
@@ -75,26 +78,50 @@ export function toCardRow(raw: unknown): CardRow | null {
 }
 
 /**
+ * Invalidate the cached card list. Call after any card mutation (insert /
+ * delete / update) so the gallery re-fetches on its next load instead of
+ * showing stale rows for up to the 30s TTL.
+ */
+export function invalidateCardsCache(): void {
+  dbCache.invalidate(CARDS_CACHE_KEY);
+}
+
+/**
  * Load the caller's own cards, newest first. Returns [] when Supabase is not
  * configured, when no session exists, or on any failure — the gallery shows
  * its empty state rather than an error.
+ *
+ * Results are held in `dbCache` (30s TTL) so repeated loads within a short
+ * window skip the network round-trip entirely; `invalidateCardsCache` clears
+ * the entry after a mutation.
  */
 export async function loadRemoteCards(): Promise<CardRow[]> {
+  const cached = dbCache.get<CardRow[]>(CARDS_CACHE_KEY);
+  if (cached) return cached;
+
   const supabase = getSupabase();
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select(
-        "id, track_key, title, artist, genre, release_year, birth_year, encounter_age, " +
-          "era_year, user_memory, scene, lore, image_path, created_at",
-      )
-      .order("created_at", { ascending: false });
-    if (error || !Array.isArray(data)) return [];
-    return data.map(toCardRow).filter((row): row is CardRow => row !== null);
-  } catch {
-    return [];
+  let rows: CardRow[];
+  if (!supabase) {
+    rows = [];
+  } else {
+    try {
+      const { data, error } = await supabase
+        .from(TABLE)
+        .select(
+          "id, track_key, title, artist, genre, release_year, birth_year, encounter_age, " +
+            "era_year, user_memory, scene, lore, image_path, created_at",
+        )
+        .order("created_at", { ascending: false });
+      rows =
+        error || !Array.isArray(data)
+          ? []
+          : data.map(toCardRow).filter((r): r is CardRow => r !== null);
+    } catch {
+      rows = [];
+    }
   }
+  dbCache.set(CARDS_CACHE_KEY, rows);
+  return rows;
 }
 
 /**

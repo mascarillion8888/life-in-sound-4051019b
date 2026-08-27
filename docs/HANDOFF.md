@@ -10,9 +10,9 @@
 
 ```
 Aktif dal: main
-HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-           (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
-Testler:   495/495 geçti (52 dosya)
+HEAD:      bu oturumun işi COMMIT'LENDİ (push kullanıcı onayı bekliyor/bitti
+           — `git log -1` ile doğrula; git'e güven, metne değil).
+Testler:   514/514 geçti (55 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -22,6 +22,59 @@ Build:     `npm run build` = 0 hata (Nitro .output)
 Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
+
+## 2-A. Supabase dbCache entegrasyonu (TAM)
+
+`src/lib/cache/supabaseCache.ts`'teki 30s TTL `InflightCache` singleton'ı
+(`dbCache`) artık iki veri katmanına bağlı:
+
+- **`src/lib/supabase/cards-remote.ts`** — `loadRemoteCards()` sonucunu
+  `CARDS_CACHE_KEY="cards:all"` altında cache'liyor (get/set). Tekrarlanan
+  yüklemeler ağ turunu tamamen atlar. Yeni `invalidateCardsCache()` eklendi —
+  bir kart mutasyonundan (insert/delete/update) sonra cache'i temizler.
+  Kullanıcı-scope: RLS zaten yalnızca çağıranın kendi satırlarını döndürür;
+  cache key singleton ama row set RLS-güvenli, userId geçirilmiyor (dizayn
+  kararı — key `cards:all`).
+- **`src/lib/supabase/journey-remote.ts`** — `loadRemoteJourney(userId)` artık
+  `journey:<userId>` anahtarıyla cache'liyor. Kullanıcı-scope key (userId)
+  paylaşım riskini ortadan kaldırıyor. `saveRemoteJourney` ve
+  `clearRemoteJourney` mutasyonlarında `dbCache.invalidate` çağrılıyor.
+- **Sunucu tarafı (client dbCache paylaşmaz):** `generateCard.server.ts`'teki
+  kart persist'i client cache'i göremez. Çözüm: gallery'e dönüşte
+  `invalidateCardsCache()` çağrılmalı (B1'de hala açık).
+- **Testler (yeni):** `src/lib/supabase/cards-cache.test.ts` (cache ikinci
+  load'da ağ turunu atlar; invalidate sonrası yeniden çeker; boş/hatalı sonucu
+  cache'ler) + `journey-remote.test.ts` 3 beforeEach'ine izolasyon için
+  `dbCache.invalidate()` eklendi.
+
+## 2-B. Gothic Poster Export + Web Share (TAM)
+
+`SharePosterDialog` (tek kart "Paylaş" modalı) ve `sharePoster.ts` canvas
+renderer'ına export/share katmanı eklendi:
+
+- **`src/lib/soundmap/sharePoster.ts`** yeni export'lar:
+  - `sharePosterFileName(title)` — temiz slug'lı PNG dosya adı.
+  - `canvasToPngBlob(canvas, ...)` — `toBlob` varsa kullanır, yoksa
+    DataURL→Blob'a düşer (injectable, test edilebilir).
+  - `downloadSharePoster(card)` — 1080×1920 backing store'dan blob'lu,
+    tam çözünürlüklü download (link.href=object URL, async revoke).
+  - `canShareFiles()` — Web Share API (dosyalı) yetenek probu.
+  - `trySharePoster(card)` — native `navigator.share({files:[...]})`;
+    destek yok/kullanıcı iptal/hata → `false` (çağıran download'a düşer).
+  - `exportSharePoster(card, opts?)` — **kayıt girişi:** önce Web Share,
+    çalışmazsa download. Hiç throw etmez; `"shared" | "downloaded" |
+    "failed"` döndürür. `options` testler için enjeksiyon noktası.
+- **`src/components/gallery/SharePosterDialog.tsx`** — web share'li yeni UI:
+  - Buton durumları: `busy` ("Preparing…") → `shared` ("Shared"/"Paylaşıldı",
+    Check ikonu) → `downloaded` ("Downloaded"/"İndirildi") → `error`
+    (inline `role=alert` fallback mesajı, `data-testid="share-poster-error"`).
+  - Yeni poster açıldığında status sıfırlanır. `Download` ikonu baştan
+    `Share2` ile değiştirildi (kullanılmayan import temizlendi).
+- **Testler (yeni):** `src/lib/soundmap/sharePoster.export.test.ts` (file
+  name, blob fallback/reject, download link+URL, web share yok/iptal,
+  export farklılaştırma matrix) + `src/components/gallery/SharePosterDialog.test.tsx`
+  (canvas render, cardsız disabled, busy spinner→download, error fallback —
+  deferred mock ile busy durum yakalanıyor).
 
 ## 2. Son biten iş — Gothic Art Generator UI: loading + fallback + boundary (TAM)
 
@@ -239,17 +292,18 @@ history'de — bu dosya günlük değildir.
    push'lanmamıştı). Tek odak bu repo.
 1. **KULLANICI AKSİYONU (hâlâ açık):** `0003_cards.sql`'i Supabase'e
    uygula — uygulanmadan gallery hep empty state gösterir, persist skip'ler.
-2. **Sıradaki öncelikli adım — Supabase dbCache entegrasyonu veya Poster
-   Export/Share akışı:**
-   - Gothic Art Generator'ın **UI katmanı** bu turda tamamlandı (gothic
-     loading skeleton + doom fallback + ErrorBoundary + HF hata sınıflandırması,
-     5 locale i18n). `generateGothicArt` artık görsel üretim akışına
-     bağlanmaya hazır.
+2. **Sıradaki öncelikli adım — kart persist + cache invalidation zinciri:**
+   - **B1 (açık):** `generateCard.server.ts`'teki kart persist'i client
+     `dbCache`'i göremez. Gallery'e dönüşte `invalidateCardsCache()` çağrılıp
+     yeni kartın listeye düşmesi için cache temizlenmeli (CardGallery /
+     loadGalleryCards reset path'i). dbCache artık `loadRemoteCards`'ı
+     cache'lediği için bu invalidation **olmadan** yeni kart 30s boyunca
+     görünmez — bu şu an en kritik açık adım.
    - Uçtan uca zinciri tamamlamak için: kart üret → `cards` satırı + storage
-     object (dbCache ile şablon) → `/profile/cards`'da görünür → Paylaş →
-     PNG iner. RLS negatif testi: ikinci bir anon tarayıcıyla başkasının
-     kartı görünmemeli. Token'lı ortamda HF görselinin persistence ile
-     birlikte bağlanması bu zincirin parçası.
+     object → invalidation → `/profile/cards`'da görünür → Paylaş → PNG/Web
+     Share. RLS negatif testi: ikinci anon tarayıcıyla başkasının kartı
+     görünmemeli. Token'lı ortamda HF görselinin persistence ile bağlanması
+     hala zincirin parçası.
 3. Gallery'ye giriş linki: `/profile/cards` henüz hiçbir sayfadan linkli
    değil — nav/sonuç sayfasına bağlantı kararı kullanıcıda.
 4. PosterLightbox içeriği: şu an statik `poster-preview.jpg`; ileride
@@ -264,9 +318,9 @@ history'de — bu dosya günlük değildir.
 
 ## 4. Olası sonuçlar (checkpoint sonrası git durumu)
 
-- Çalışma ağacı temiz; tüm iş origin/main'de. HEAD bu checkpoint'tır
-  (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
+- Çalışma ağacı temiz; tüm iş bu checkpoint'te COMMIT'LENDİ. Push kullanıcı
+  onayı bekliyor (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (495/495, 52 dosya) + `npm run typecheck` (0 hata) +
+  `npm test` (514/514, 55 dosya) + `npm run typecheck` (0 hata) +
   `npm run lint` (0 e / 8 w pre-existing).
 

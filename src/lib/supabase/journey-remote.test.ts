@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { JourneyProgress } from "../journey-storage";
 import type { Song } from "../song/types";
+import { dbCache } from "../cache/supabaseCache";
 
 function song(over: Partial<Song> = {}): Song {
   return {
@@ -104,6 +105,7 @@ import { clearRemoteJourney, loadRemoteJourney, saveRemoteJourney } from "./jour
 describe("loadRemoteJourney", () => {
   beforeEach(() => {
     localStorage.clear();
+    dbCache.invalidate();
     setFake(null);
   });
 
@@ -154,6 +156,20 @@ describe("loadRemoteJourney", () => {
     expect(result).toEqual({ current: 2, answers: { 1: "x" }, songs: {} });
   });
 
+  it("serves a repeated load from the in-memory cache, skipping Supabase", async () => {
+    const fake = makeFakeSupabase({
+      existing: { current: 3, answers: { 1: "remote" }, songs: {} },
+    });
+    setFake(fake);
+
+    await loadRemoteJourney("user-cache");
+    const again = await loadRemoteJourney("user-cache");
+
+    expect(again?.current).toBe(3);
+    // Only one server round-trip; the second load came entirely from dbCache.
+    expect(fake.calls.filter((c) => c === "maybeSingle")).toHaveLength(1);
+  });
+
   it("restores structured songs from the server copy", async () => {
     const serverSong = song();
     localStorage.setItem(
@@ -196,6 +212,7 @@ describe("loadRemoteJourney", () => {
 describe("saveRemoteJourney", () => {
   beforeEach(() => {
     localStorage.clear();
+    dbCache.invalidate();
     setFake(null);
   });
 
@@ -258,6 +275,7 @@ describe("saveRemoteJourney", () => {
 describe("clearRemoteJourney", () => {
   beforeEach(() => {
     localStorage.clear();
+    dbCache.invalidate();
     setFake(null);
   });
 

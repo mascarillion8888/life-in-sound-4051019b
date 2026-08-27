@@ -264,11 +264,135 @@ function defaultLoadImage(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
-/** Render + trigger a PNG download. */
-export async function exportSharePoster(card: CardRow): Promise<void> {
+/** Stable, sanitized download/share file name for a poster PNG. */
+export function sharePosterFileName(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `lifeinsound-${slug || "card"}.png`;
+}
+
+/**
+ * Convert a canvas to a PNG blob. Uses `toBlob` when available (keeps memory
+ * and fidelity high) and falls back to a DataURL -> Blob for older engines.
+ */
+export function canvasToPngBlob(
+  canvas: HTMLCanvasElement,
+  toBlobImpl: (c: HTMLCanvasElement, cb: (blob: Blob | null) => void) => void = (c, cb) =>
+    c.toBlob(cb, "image/png"),
+  toDataUrlImpl: (c: HTMLCanvasElement) => string = (c) => c.toDataURL("image/png"),
+  BlobCtor: typeof Blob = Blob,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    toBlobImpl(canvas, (blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+      try {
+        const dataUrl = toDataUrlImpl(canvas);
+        const bin = atob(dataUrl.split(",")[1] ?? "");
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        resolve(new BlobCtor([bytes], { type: "image/png" }));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+}
+
+/** A `<a download>` logger, injectable so tests can capture trigger without DOM. */
+export type PosterLinkLike = {
+  download?: string;
+  href?: string;
+  click: () => void;
+};
+
+/**
+ * Render the story poster and trigger a high-resolution PNG download.
+ * Uses the blob path end-to-end so the saved file keeps full fidelity.
+ */
+export async function downloadSharePoster(
+  card: CardRow,
+  createLink: (improved?: boolean) => PosterLinkLike = () => document.createElement("a"),
+): Promise<void> {
   const canvas = await renderSharePoster(card, document.createElement("canvas"));
-  const link = document.createElement("a");
-  link.download = `lifeinsound-${card.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "card"}.png`;
-  link.href = canvas.toDataURL("image/png");
+  const blob = await canvasToPngBlob(canvas);
+  const link = createLink();
+  const url = URL.createObjectURL(blob);
+  link.download = sharePosterFileName(card.title);
+  link.href = url;
   link.click();
+  // Async revoke so the download starts before the object URL is released.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Capability probe for the Web Share API (files supported). */
+export function canShareFiles(): boolean {
+  const nav = navigator as Navigator & {
+    canShare?: (data?: ShareData) => boolean;
+  };
+  return (
+    typeof nav.canShare === "function" &&
+    nav.canShare({ files: [new File(["x"], "x.png", { type: "image/png" })] })
+  );
+}
+
+/**
+ * Attempt to share the rendered poster via the native Web Share API with a
+ * file attachment. Returns false (and triggers nothing) when Web Share is
+ * unsupported, already sharing, or the browser rejects `share` — the caller
+ * should fall back to `downloadSharePoster`.
+ */
+export async function trySharePoster(card: CardRow, now = Date.now): Promise<boolean> {
+  const nav = navigator as Navigator & {
+    share?: (data?: ShareData) => Promise<void>;
+  };
+  if (typeof nav.share !== "function" || typeof nav.canShare !== "function") return false;
+  if (!canShareFiles()) return false;
+
+  try {
+    const canvas = await renderSharePoster(card, document.createElement("canvas"));
+    const blob = await canvasToPngBlob(canvas);
+    const file = new File([blob], sharePosterFileName(card.title), {
+      type: "image/png",
+      lastModified: now(),
+    });
+    await nav.share({
+      files: [file],
+      title: `LifeInSound — ${card.title}`,
+      text: `${card.title} by ${card.artist || "—"}`,
+    });
+    return true;
+  } catch {
+    // User canceled or share unavailable — fall back to download.
+    return false;
+  }
+}
+
+export type SharePosterResult = "shared" | "downloaded" | "failed";
+
+/**
+ * The one-call entry the dialog uses: try native Web Share first and, when
+ * unavailable, fall back to a direct download. Never throws — a render or
+ * download failure is reported as `"failed"` so the UI can show a fallback.
+ */
+export async function exportSharePoster(
+  card: CardRow,
+  options: {
+    tryWebShare?: (c: CardRow) => Promise<boolean>;
+    download?: (c: CardRow) => Promise<void>;
+  } = {},
+): Promise<SharePosterResult> {
+  const tryShare = options.tryWebShare ?? ((c) => trySharePoster(c));
+  const download = options.download ?? ((c) => downloadSharePoster(c));
+  if (await tryShare(card)) return "shared";
+  try {
+    await download(card);
+    return "downloaded";
+  } catch {
+    return "failed";
+  }
 }
