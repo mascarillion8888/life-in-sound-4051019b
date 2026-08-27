@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
@@ -80,12 +80,18 @@ describe("QuizCard", () => {
     expect(ai.className).toContain("fade-in");
   });
 
-  it("keeps the cover when AI generation fails or no key exists", () => {
-    // No cache, no key — generation resolves unavailable; the iTunes cover
-    // remains the window's imagery.
+  it("hides the album cover when AI generation fails — placeholder takes over", async () => {
+    // No cache, no key — generation resolves unavailable. The provider's
+    // album photo (e.g. a Michael Jackson cover) must NOT remain the card's
+    // imagery: the card face keeps the gothic placeholder instead.
     render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
+    // Gen fails fast server-side, but the hook only flips to "unavailable"
+    // after that resolves — wait for the cover to leave.
+    await waitFor(() => expect(screen.queryByTestId("card-art-cover")).toBeNull());
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
+    const skeleton = screen.getByTestId("card-art-skeleton");
+    // Static (non-pulsing) placeholder — nothing is generating anymore.
+    expect(skeleton.dataset.generating).toBe("false");
   });
 
   it("falls back to the gothic woodcut skeleton only for coverless songs", () => {

@@ -176,12 +176,14 @@ export function QuizCard({
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
-  // Artwork contract: the iTunes cover (song.artworkUrl) renders INSTANTLY
-  // inside the black window, styled with the painterly grading; the AI
-  // painting cross-fades over it when ready; a coverless song keeps the
-  // gothic woodcut skeleton. The provider still only supplies metadata, the
-  // cover bitmap and the 30s preview stream.
-  const coverUrl = song?.artworkUrl ?? null;
+  // Artwork contract: the provider cover (song.artworkUrl) is ONLY a
+  // transitional layer — it renders while the AI painting is loading (and
+  // sits underneath the finished painting). Once generation has failed
+  // (status "unavailable") the cover is NEVER substituted back in: the gothic
+  // woodcut placeholder takes over, so a card face can never get stuck on a
+  // plain album photo (e.g. a Michael Jackson cover).
+  const coverUrl =
+    song?.artworkUrl && art.status !== "unavailable" ? (song.artworkUrl ?? null) : null;
   // Dynamic copy — every string on the card is derived from the track's
   // identity + the era's emotion (deterministic; never static filler).
   const copy = song
@@ -232,8 +234,10 @@ export function QuizCard({
       </header>
 
       {/* 2 · Art window — square black frame with a gold hairline border. The
-              iTunes cover sits inside it; the AI painting cross-fades over
-      		when ready; coverless songs keep the woodcut skeleton. */}
+              provider cover is a transitional base while the AI painting
+              generates; a failed generation (unavailable) drops it for the
+              woodcut skeleton — the album photo never sticks as the face.
+              Coverless songs keep the skeleton from the start. */}
       <div
         data-testid="card-art-window"
         className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-[#c8aa6e]/50 bg-[#060504]"

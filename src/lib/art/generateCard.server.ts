@@ -159,6 +159,11 @@ export async function persistCardCore(
     if ((count ?? 0) >= DAILY_LIMIT) return false;
 
     const cardId = crypto.randomUUID();
+    // Only a paint-by-server data:image URL may become a stored painting.
+    // Any other string (album-art HTTP URL, empty scheme, …) is a missing
+    // painting: image_path stays null so the card face shows the gothic
+    // placeholder — the provider's album cover can never be persisted as the
+    // card's imagery.
     let imagePath: string | null = null;
 
     if (image) {
