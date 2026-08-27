@@ -15,7 +15,7 @@ import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
 import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
 import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
-import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { analyzeUserJourney, generateGroundedAnalysis } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { generateStory } from "@/lib/llm/generateStory.server";
 import { deterministicLifeStory } from "@/lib/llm/prompts";
@@ -296,6 +296,16 @@ function ResultsPage() {
       },
   );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+  // Grounded P0/P2/P3 analysis — deterministic master-gap engines fed from the
+  // journey Song[] selection (not just title strings). Never blocks the page:
+  // the try/catch falls back to null when the journey is empty.
+  const grounded = useMemo(() => {
+    try {
+      return generateGroundedAnalysis(songs);
+    } catch {
+      return null;
+    }
+  }, [songs]);
   // Same deterministic fallback DynamicMusicMap uses — the lightbox frame and
   // the sheet paint the same palette.
   const posterTheme = useMemo(
@@ -370,10 +380,49 @@ function ResultsPage() {
           <AIPersonalityCard profile={profile} />
         </AnimatedReveal>
 
-        {/* Music DNA */}
+        {/* Music DNA — grounded P0 row (era distribution / diversity / vibe)
+                sits above the original personality triad when the journey
+                carries at least one selection. */}
         <AnimatedReveal>
           <section>
             <SectionHeading icon={Dna} eyebrow={t.results.dnaEyebrow} title={t.results.dnaTitle} />
+            {grounded ? (
+              <div data-testid="grounded-music-dna" className="mt-8 grid gap-6 md:grid-cols-3">
+                <div className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+                    Primary Era
+                  </p>
+                  <p className="mt-6 text-2xl font-bold text-foreground">
+                    {grounded.dna.temporalPattern.primaryEra}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {grounded.dna.temporalPattern.spanYears}-year sonic journey
+                  </p>
+                </div>
+                <div className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+                    Artist Diversity
+                  </p>
+                  <p className="mt-6 text-2xl font-bold text-foreground">
+                    {grounded.dna.musicalIdentity.diversityScore}%
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {grounded.dna.musicalIdentity.topArtists.join(", ") || "—"}
+                  </p>
+                </div>
+                <div className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+                    Dominant Vibe
+                  </p>
+                  <p className="mt-6 text-2xl font-bold text-foreground">
+                    {grounded.dna.musicalIdentity.dominantVibe}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {grounded.dna.songCount}-track soundtrack
+                  </p>
+                </div>
+              </div>
+            ) : null}
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {[
                 {
@@ -433,7 +482,10 @@ function ResultsPage() {
           </section>
         </AnimatedReveal>
 
-        {/* Emotional Timeline */}
+        {/* Grounded Emotional Timeline — time-tracked P3 nodes (valency,
+            intensity, vibeLabel, stage, song + artist) with trajectory and
+            peak pinned inside. Falls back to the original question-row when
+            no grounded nodes exist. */}
         <AnimatedReveal>
           <section>
             <SectionHeading
@@ -441,6 +493,30 @@ function ResultsPage() {
               eyebrow={t.results.timelineEyebrow}
               title={t.results.timelineTitle}
             />
+            {grounded ? (
+              <ol
+                data-testid="grounded-emotional-timeline"
+                className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8"
+              >
+                {grounded.timeline.nodes.map((node) => (
+                  <li key={node.stageName} className="relative">
+                    <span className="absolute -left-[2.4rem] top-1.5 sm:-left-[2.65rem] flex h-6 w-6 items-center justify-center rounded-full border border-primary/40 bg-primary/15 text-[0.7rem] font-semibold text-primary">
+                      {node.temporalArcPosition}
+                    </span>
+                    <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+                      {node.stageName} · {node.vibeLabel}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
+                      {node.artistName ? `${node.artistName} — ` : ""}
+                      {node.songTitle}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Intensity {node.intensity}/10 · Valency {node.valency.toFixed(1)}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
             <ol className="mt-10 space-y-6 border-l border-border/60 pl-7 sm:pl-8">
               {questions.map((q, i) => {
                 const emotionLabels = getQuestionEmotionLabels(q.id);

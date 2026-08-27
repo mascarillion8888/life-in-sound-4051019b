@@ -23,21 +23,35 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — P1 Pipeline Integration (TAM)
+## 2. Son biten iş — Results page P1 wire (TAM, kural 10 doğrulandı)
+
+- **P1 → UI wire** — `results.tsx` bir `useMemo` içinde
+  `generateGroundedAnalysis(songs)` hesaplar (null-feathered try/catch).
+  İki yeni blok bu grounded `dna`/`timeline`'yi render eder:
+    - **`grounded-music-dna`** — Music DNA katmanı, yolun başındaki P0
+      metadata'dan beslenir (primaryEra + spanYears, artist diversity % + top
+      artists, dominantVibe + track count).
+    - **`grounded-emotional-timeline`** — P3 nodes listesi (solda border) —
+      temporalArcPosition badge (0→100), stage + vibeLabel, artist—title, intensity
+      /10 · valency. original question-row'un altına düşer.
+  Kos conforms existing both grids — fallback question listesini ve
+  raw-personality triad'ı koruruz.
+- **Tarayıcı doğrulama (kural 10, TAM):** Vite dev → `/results`'e seed 8-song
+  journey localStorage → Music DNA `grounded-music-dna` ve de
+  `grounded-emotional-timeline` node'lar (Sting—Fragile "Nostalgic Spark"
+  Childhood'da — 8 nodes: 0/14/29/43/57/71/86/100 arc-py ozisyon) render edildi.
+- **Testler**: 454/454 (46 dosya), tsc 0, lint 0e/7w.
+
+## 2-önceki. Önceki iş — P1 Pipeline Integration (TAM)
 
 - **Yeni `generateGroundedAnalysis(songs, contexts?)`** `src/lib/ai/pipeline.ts`'de —
   seçilen Song[]'u 8-stage `LifeContext[]`'e (kolaylık için `GROUNDED_STAGE_NAMES`)
   çevirir ve üç engine'i zincirler: `generateMusicDNA` → `generateGroundedLifeStory` →
   `generateEmotionalTimeline`. `analyzeUserJourney` (personality pipeline) birebir
   olduğu gibi duruyor.
-- **Entegrasyon testi** `src/lib/ai/pipelineGrounded.test.ts` — 4 test: (1) 3-song
-  journey'de dna/story/timeline wire'ı; (2) explicit LifeContext[] stage matrisine
-  uygun node'lar; (3) boş selection f hata; (4) analyzeUserJourney regression.
-  ("Acceptance" fallback "Reflective Transition" — engine'in keyword matrisinin
-  kapsamadığı bir aşama).
-- **Testler**: 454/454 (46 dosya), tsc 0, lint 0e/7w.
+- **Entegrasyon testi** `pipelineGrounded.test.ts` — 4 test yeşil.
 
-## 2-önceki. Önceki iş — Master Gap P3: Emotional Timeline Engine (TAM)
+## 2-önceki-2. Önceki iş — Master Gap P3: Emotional Timeline Engine (TAM)
 
 - **P3 dosyaları** — `src/types/emotionalTimeline.ts` (EmotionalNode,
   EmotionalTimeline + overallTrajectory union) + `src/engine/emotionalTimelineEngine.ts`
