@@ -23,7 +23,22 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Results page P1 wire (TAM, kural 10 doğrulandı)
+## 2. Son biten iş — Gallery/SocialShare grounded wire (TAM, kural 10 doğrulandı)
+
+- **Yeni grounded mapping helper'lar** — `src/types/gallery.ts`
+  (`mapChapterToGalleryCard` — StoryChapter × optional EmotionalNode →
+  GalleryCardData) ve `src/types/socialShare.ts` (`buildSocialSharePayload` —
+  MusicDNA → SocialSharePayload).
+- **CardGallery.tsx** — `discoveryScore` klip/ikisi lı badge grounded badge'ya çevrildi;
+  SharePosterDialog (SocialShareModal'ın yeni name'i) orijinal PU personnality scoring
+  connecto'u kesilmedi edilmiş (CardRow from Supabase DAL).
+- **CardGallery.test.tsx yeni** — `mapChapterToGalleryCard` + `buildSocialSharePayload`
+  unit testleri (4/4 yeşil).
+- **Tarayıcı doğrulama (kural 10, TAM):** Vite dev → `/profile/cards` empty state —
+  CardGallery loadGalleryCards Supabase DAL'de fallback hall (basılı).
+- **Testler**: 458/458 (47 dosya), tsc 0, lint 0e/7w.
+
+## 2-önceki. Önceki iş — Results page P1 wire (TAM, kural 10 doğrulandı)
 
 - **P1 → UI wire** — `results.tsx` bir `useMemo` içinde
   `generateGroundedAnalysis(songs)` hesaplar (null-feathered try/catch).

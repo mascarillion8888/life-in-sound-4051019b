@@ -16,7 +16,7 @@ import { Loader2, Music, Share2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { discoveryScore, eraCaption } from "@/lib/soundmap/sharePoster";
+import { eraCaption } from "@/lib/soundmap/sharePoster";
 import { loadGalleryCards, type CardRow } from "@/lib/supabase/cards-remote";
 import { useSession } from "@/lib/supabase/use-session";
 
@@ -99,10 +99,10 @@ function GalleryCard({
       </h3>
       <p className="truncate text-xs italic text-[#b8a890]">{card.artist || "—"}</p>
 
-      {/* Stat row */}
+      {/* Stat row — grounded badge (no personality/discovery scoring). */}
       <div className="mt-2 flex items-center justify-between border-t border-[#3a2f26] pt-2 text-[10px] uppercase tracking-wider text-[#8f8168]">
         <span>{caption || "—"}</span>
-        <span style={{ color: gem }}>{discoveryScore(card.trackKey)}/100</span>
+        <span style={{ color: gem }}>grounded</span>
       </div>
 
       {/* Lore */}
