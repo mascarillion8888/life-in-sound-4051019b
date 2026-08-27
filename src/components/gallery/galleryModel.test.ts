@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import type { CardRow } from "@/lib/supabase/cards-remote";
 
-import { applyGalleryView, availableScenes, filterCards, sortCards } from "./galleryModel";
+import {
+  applyGalleryView,
+  availableScenes,
+  bustImageUrl,
+  filterCards,
+  sortCards,
+} from "./galleryModel";
 
 function card(id: string, overrides: Partial<CardRow> = {}): CardRow {
   return {
@@ -68,5 +74,26 @@ describe("filterCards + availableScenes", () => {
   it("composes filter + sort", () => {
     const view = applyGalleryView(CARDS, "oldest", "gothic");
     expect(view.map((c) => c.id)).toEqual(["c", "a"]);
+  });
+});
+
+describe("bustImageUrl", () => {
+  it("sets a version param on an absolute signed URL while keeping the token", () => {
+    const url = bustImageUrl("https://cdn.supabase.co/obj/u/1.png?token=abc", 99);
+    const parsed = new URL(url);
+    expect(parsed.searchParams.get("v")).toBe("99");
+    expect(parsed.searchParams.get("token")).toBe("abc");
+  });
+
+  it("adds a version param to a bare URL with no previous query", () => {
+    expect(bustImageUrl("https://cdn.example.com/a.jpg", 7)).toBe(
+      "https://cdn.example.com/a.jpg?v=7",
+    );
+  });
+
+  it("appends a query param for non-URL placeholder paths", () => {
+    expect(bustImageUrl("/assets/default-woodcut-placeholder.jpg", 3)).toBe(
+      "/assets/default-woodcut-placeholder.jpg?v=3",
+    );
   });
 });

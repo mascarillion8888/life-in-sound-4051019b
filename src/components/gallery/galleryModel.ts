@@ -46,3 +46,26 @@ export function applyGalleryView(
 ): CardRow[] {
   return sortCards(filterCards(cards, filter), sort);
 }
+
+/**
+ * Add a cache-busting query param to a signed gallery image URL so a freshly
+ * re-generated (HuggingFace) gothic painting is re-fetched instead of a stale
+ * browser-cached frame. Signed Supabase URLs end in `…?token=…`, so we bump
+ * the token unconditionally to keep the URL parseable and stable per call.
+ */
+export function bustImageUrl(imageUrl: string, version: number): string {
+  try {
+    const url = new URL(imageUrl);
+    url.searchParams.set("v", String(version));
+    return url.toString();
+  } catch {
+    // Non-URL (e.g. a placeholder path) — append a query param defensively.
+    const separator = imageUrl.includes("?") ? "&" : "?";
+    return `${imageUrl}${separator}v=${version}`;
+  }
+}
+
+/** Version for a card's cached painting — re-signs a fresh URL per load. */
+export function imageVersion(): number {
+  return Date.now();
+}

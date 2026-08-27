@@ -10,7 +10,7 @@
  * Every failure path (no Supabase, no session, network error) resolves to
  * the empty state with a link back to /journey — the gallery never breaks.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Music, Share2, Sparkles } from "lucide-react";
 
@@ -27,6 +27,8 @@ import { GothicArtError, isRetryableHfError } from "@/services/huggingFaceServic
 import {
   applyGalleryView,
   availableScenes,
+  bustImageUrl,
+  imageVersion,
   SORTS,
   type GalleryFilter,
   type GallerySort,
@@ -78,7 +80,13 @@ function GalleryCard({
   const grounded = groundedOf(card);
   const caption = eraCaption(card);
   const [errored, setErrored] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  // Cache-bust the signed URL with a version held stable for this card mount
+  // (a freshly re-generated HuggingFace gothic painting must never be served
+  // stale from the image cache), while avoiding a src churn on re-render.
+  const version = useRef(imageVersion());
   const imageUrl = errored ? null : (card.imageUrl ?? null);
+  const displayImageUrl = imageUrl ? bustImageUrl(imageUrl, version.current) : null;
 
   return (
     <article
@@ -86,19 +94,28 @@ function GalleryCard({
       className="flex flex-col rounded-xl border bg-[#14100c] p-3 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.9)]"
       style={{ borderColor: `${gem}55` }}
     >
-      {/* Art frame — painting, or the doom fallback for a lost/broken etching. */}
+      {/* Art frame — painting, gothic loader while it downloads, or the doom
+          fallback for a lost/broken etching. */}
       <div
         className="relative aspect-[4/5] overflow-hidden rounded-lg border border-[#3a2f26] bg-[#0b0908]"
         style={{ boxShadow: `inset 0 0 40px rgba(0,0,0,0.8), 0 0 24px ${gem}22` }}
       >
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={`${card.title} — ${card.artist}`}
-            className="h-full w-full object-cover"
-            style={{ filter: "saturate(0.82) contrast(1.08) brightness(0.94) sepia(0.18)" }}
-            onError={() => setErrored(true)}
-          />
+        {displayImageUrl ? (
+          <>
+            {!imgLoaded ? (
+              <div className="absolute inset-0 z-10" data-testid="gallery-card-loading">
+                <GothicArtSkeleton generating caption={t.gothicArt.generating} />
+              </div>
+            ) : null}
+            <img
+              src={displayImageUrl}
+              alt={`${card.title} — ${card.artist}`}
+              className="h-full w-full object-cover"
+              style={{ filter: "saturate(0.82) contrast(1.08) brightness(0.94) sepia(0.18)" }}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setErrored(true)}
+            />
+          </>
         ) : (
           <GothicArtFallback title={t.gothicArt.genericTitle} message={t.gothicArt.brokenArtwork} />
         )}

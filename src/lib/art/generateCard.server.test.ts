@@ -1,10 +1,68 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createClient } from "@supabase/supabase-js";
 
 import {
   generateCardLoreCore,
   persistCardCore,
   type GenerateCardInput,
 } from "./generateCard.server";
+
+const invalidateCardsCacheMock = vi.fn();
+vi.mock("@/lib/supabase/cards-remote", () => ({
+  invalidateCardsCache: () => invalidateCardsCacheMock(),
+}));
+
+// Fake Supabase client: auth.getUser resolves, quota count is under limit,
+// insert has no error (flipped per-test via createClient's mock implementation).
+// Deliberately typed by hand (not inferred) so per-test `from` reassignment is
+// assignable without fighting the real SupabaseClient generics.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function branch(table: string, insertError?: unknown): any {
+  if (table !== "cards") {
+    return { select: vi.fn().mockResolvedValue({ data: null, error: null }) };
+  }
+  return {
+    select: vi.fn((_cols: string, _opts?: unknown) => ({
+      gte: vi.fn().mockResolvedValue({ data: null, error: null, count: 0 }),
+    })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    insert: vi.fn().mockResolvedValue({ error: insertError ?? null }) as any,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function fakeSession(insertError?: unknown): any {
+  return {
+    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
+    from: (table: string) => branch(table, insertError),
+    storage: {
+      from: vi.fn(() => ({ upload: vi.fn().mockResolvedValue({ error: null }) })),
+    },
+  };
+}
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(() => fakeSession()),
+}));
+
+// Access the real mocked module export (reference is fine after hoisting).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const createClientAny = createClient as any;
+
+/** Drive the mocked createClient's implementation directly. */
+function mockCreate(fn: typeof fakeSession) {
+  createClientAny.mockImplementation(fn);
+}
+
+// Runs after every test in this file regardless of describe block.
+afterEach(() => {
+  invalidateCardsCacheMock.mockReset();
+});
+
+/** Flip the cards-table insert to fail for the current test. */
+export function makeInsertFail(insertError: unknown) {
+  mockCreate(() => fakeSession(insertError));
+}
 
 const ENCOUNTER: GenerateCardInput = {
   trackKey: "itunes:123",
@@ -81,6 +139,11 @@ describe("generateCardLoreCore", () => {
 });
 
 describe("persistCardCore", () => {
+  beforeEach(() => {
+    // Ensure createClient keeps its fake-session implementation even after
+    // the shared afterEach's restoreAllMocks().
+    mockCreate(() => fakeSession());
+  });
   it("skips silently without an access token", async () => {
     const ok = await persistCardCore(ENCOUNTER, "lore", "gothic", null, {
       supabaseUrl: "https://example.supabase.co",
@@ -98,5 +161,31 @@ describe("persistCardCore", () => {
       { supabaseUrl: undefined, anonKey: undefined },
     );
     expect(ok).toBe(false);
+  });
+
+  it("invalidates the card list cache after a successful insert", async () => {
+    const ok = await persistCardCore(
+      { ...ENCOUNTER, accessToken: "token" },
+      "lore",
+      "gothic",
+      "data:image/png;base64,AA==",
+      { supabaseUrl: "https://example.supabase.co", anonKey: "anon" },
+    );
+    expect(ok).toBe(true);
+    expect(invalidateCardsCacheMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not invalidate the cache when the insert fails", async () => {
+    makeInsertFail(new Error("constraint violation"));
+
+    const ok = await persistCardCore(
+      { ...ENCOUNTER, accessToken: "token" },
+      "lore",
+      "gothic",
+      null,
+      { supabaseUrl: "https://example.supabase.co", anonKey: "anon" },
+    );
+    expect(ok).toBe(false);
+    expect(invalidateCardsCacheMock).not.toHaveBeenCalled();
   });
 });

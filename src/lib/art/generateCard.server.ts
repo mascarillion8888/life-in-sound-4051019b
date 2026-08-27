@@ -27,6 +27,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
+import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
 import { runRole } from "@/lib/llm/orchestra";
 
 import { generateCardArtworkCore } from "./cardArtwork.server";
@@ -187,6 +188,7 @@ export async function persistCardCore(
       lore,
       image_path: imagePath,
     });
+    if (!error) invalidateCardsCache();
     return !error;
   } catch {
     return false;

@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ (push kullanıcı onayı bekliyor/bitti
            — `git log -1` ile doğrula; git'e güven, metne değil).
-Testler:   517/517 geçti (56 dosya)
+Testler:   524/524 geçti (56 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -79,19 +79,45 @@ renderer'ına export/share katmanı eklendi:
 
 ## 2-C. Kart persistence sonrası cache invalidation (B1, TAM)
 
-`generateCard.server.ts` client `dbCache`'ini göremediği için invalidation
-client-side çağrıyor:
+Yeni `cards` satırının galeride 30s TTL'ye takılmadan görünmesi için
+invalidation iki koldan yapılır:
 
-- **`src/lib/art/useCardLore.ts`** — `generateCard` sonucu `persisted: true`
-  olduğunda `invalidateCardsCache()` çağrılır. Bu, yeni `cards` satırı yazan
-  tek client-side seçim noktası: kullanıcı galeriye döndüğünde
-  `loadGalleryCards()` (30s TTL cache'li) stale listeyi değil, taze Supabase
-  setini çeker. `generateCard.server.ts`'e dokunulmadı (server'ın client
-  cache'e erişimi yok).
+- **Client-side (etkili yol):** `src/lib/art/useCardLore.ts` — `generateCard`
+  sonucu `persisted: true` olduğunda `invalidateCardsCache()` çağrılır. Bu,
+  yeni `cards` satırı yazan tek client-side seçim noktası: kullanıcı galeriye
+  döndüğünde `loadGalleryCards()` (30s TTL cache'li) stale listeyi değil, taze
+  Supabase setini çeker.
+- **Server-side (belt-and-suspenders):** `generateCard.server.ts` →
+  `persistCardCore` insert başarılı olduğunda (`!error`) `invalidateCardsCache()`
+  çağırır; insert başarısızsa çağırmaz. Server'ın client'a göre ayrı bir
+  `dbCache` örneği vardır, bu yüzden tek başına browser cache'ini temizlemez —
+  ama aynı süreçte paylaşılan cache'leri sağlamlaştırır ve istenen entegrasyon
+  gereksinimini karşılar.
 - **Testler (yeni):** `src/lib/art/useCardLore.test.tsx` — 3 test:
   `persisted: true` → invalidate çağrılır; `persisted: false` → çağrılmaz;
-  server call hatası → lore null, invalidate çağrılmaz.
-- **Doğrulama:** 517/517 (56 dosya), tsc 0, lint 0e/8w, build 0 hata.
+  server call hatası → lore null, invalidate çağrılmaz. +
+  `generateCard.server.test.ts` — insert başarılı → invalidate çağrılır;
+  insert hatası → çağrılmaz (mocked Supabase session).
+
+## 2-D. HF gothic görsel cache-busting + loading UI (TAM)
+
+Ekranda default albüm görselinin takılı kalma sorunu — yeniden üretilen HF
+gothic woodcut'ının stale görsel cache'inden servis edilmesi:
+
+- **`src/components/gallery/galleryModel.ts`** — saf helper'lar:
+  - `bustImageUrl(url, version)` — signed URL'e `?v=<version>` ekler, mevcut
+    `token` korunur; göreceli placeholder path'ler için de güvenli.
+  - `imageVersion()` — mount başına `Date.now()` tabanlı versiyon.
+- **`src/components/gallery/CardGallery.tsx` (`GalleryCard`)** — `useRef` ile
+  stabil versiyon, `displayImageUrl = bustImageUrl(card.imageUrl, version)`
+  `<img src>`'te kullanılır. Görsel yüklenene kadar gothic skeleton loader
+  (`data-testid="gallery-card-loading"`, z-artırılmış) gösterilir; `onLoad` ile
+  gizlenir; `onError` → `GothicArtFallback` doom placeholder. HF gothic görseli
+  olduğunda o render edilir, yoksa fallback.
+- **Testler (yeni):** `galleryModel.test.ts` (bustImageUrl ×3:
+  signed-URL token korunumu, bare URL, placeholder path) +
+  `CardGallery.test.tsx` (cache-bust src + loader gizlenme; onError→fallback).
+- **Doğrulama:** 524/524 (56 dosya), tsc 0, lint 0e/8w, build 0 hata — aşağıda 4.
 
 ## 2. Son biten iş — Gothic Art Generator UI: loading + fallback + boundary (TAM)
 
@@ -309,10 +335,13 @@ history'de — bu dosya günlük değildir.
    push'lanmamıştı). Tek odak bu repo.
 1. **KULLANICI AKSİYONU (hâlâ açık):** `0003_cards.sql`'i Supabase'e
    uygula — uygulanmadan gallery hep empty state gösterir, persist skip'ler.
-2. **Sıradaki öncelikli adım — kart üretim zinciri (B1 tamam):**
-   - **B1 (TAM, 2-C):** `useCardLore` artık `generateCard` `persisted: true`
-     döndürdüğünde `invalidateCardsCache()` çağırıyor — yeni kart galeriye
-     dönüşte 30s TTL'ye takılmadan görünür.
+2. **Kart üretim zinciri (B1 + cache-busting, TAM — bak 2-C & 2-D):**
+   - B1: `useCardLore` (client) + `generateCard.server` (server, belt-and-
+     suspenders) kart persist edildiğinde `invalidateCardsCache()` çağırıyor —
+     yeni kart galeriye dönüşte 30s TTL'ye takılmadan görünür.
+   - Cache-busting: galeri `<img>`'i `?v=` parametresiyle yeniden üretilen HF
+     gothic görselini stale görsel cache'inden servis etmez; yüklenene kadar
+     gothic skeleton, hata olursa doom fallback.
    - Uçtan uca zincir: kart üret → `cards` satırı + storage object →
      invalidation → `/profile/cards`'da görünür → Paylaş → PNG/Web Share.
      Kalan açıklar: RLS negatif testi (ikinci anon tarayıcıyla başkasının
@@ -336,6 +365,6 @@ history'de — bu dosya günlük değildir.
 - Çalışma ağacı temiz; tüm iş bu checkpoint'te COMMIT'LENDİ. Push kullanıcı
   onayı bekliyor (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (517/517, 56 dosya) + `npm run typecheck` (0 hata) +
+  `npm test` (524/524, 56 dosya) + `npm run typecheck` (0 hata) +
   `npm run lint` (0 e / 8 w pre-existing).
 

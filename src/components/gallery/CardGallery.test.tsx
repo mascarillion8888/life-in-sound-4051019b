@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { StoryChapter } from "@/types/lifeStory";
 import type { EmotionalNode } from "@/types/emotionalTimeline";
 import { mapChapterToGalleryCard } from "@/types/gallery";
@@ -137,5 +137,74 @@ describe("CardGallery adapter wire (select path)", () => {
     expect(badges[0].textContent).toBe("Nostalgic Spark");
     expect(screen.getByText("Holy Diver")).toBeTruthy();
     expect(screen.getByText("Dio")).toBeTruthy();
+  });
+
+  it("cache-busts a gothic painting URL and hides the loader once loaded", async () => {
+    vi.mocked(loadGalleryCards).mockResolvedValue([
+      {
+        id: "c-img",
+        trackKey: "k",
+        title: "Gothic Crown",
+        artist: "Band",
+        genre: null,
+        releaseYear: null,
+        birthYear: null,
+        encounterAge: null,
+        eraYear: null,
+        userMemory: null,
+        scene: "gothic",
+        lore: null,
+        imagePath: "u/1.png",
+        imageUrl: "https://cdn.supabase.co/obj/u/1.png?token=abc",
+        createdAt: "2026-08-27T11:00:00Z",
+      },
+    ]);
+
+    render(<CardGallery />);
+    await screen.findAllByTestId("gallery-card");
+
+    // Skeleton loader is shown while the painting is still loading.
+    expect(screen.getByTestId("gallery-card-loading")).toBeTruthy();
+
+    // The <img> is cache-busted with a ?v= query param while keeping token.
+    const img = screen.getByRole("img") as HTMLImageElement;
+    const parsed = new URL(img.src, window.location.origin);
+    expect(parsed.pathname).toBe("/obj/u/1.png");
+    expect(parsed.searchParams.get("token")).toBe("abc");
+    expect(parsed.searchParams.get("v")).toBeTruthy();
+
+    // Loading resolves → skeleton unmounts, image stays.
+    fireEvent.load(img);
+    await waitFor(() => expect(screen.queryByTestId("gallery-card-loading")).toBeNull());
+  });
+
+  it("falls back to the gothic doom placeholder when the painting errors", async () => {
+    vi.mocked(loadGalleryCards).mockResolvedValue([
+      {
+        id: "c-broken",
+        trackKey: "k",
+        title: "Broken Etching",
+        artist: "Band",
+        genre: null,
+        releaseYear: null,
+        birthYear: null,
+        encounterAge: null,
+        eraYear: null,
+        userMemory: null,
+        scene: "gothic",
+        lore: null,
+        imagePath: "u/1.png",
+        imageUrl: "https://cdn.supabase.co/obj/u/2.png?token=abc",
+        createdAt: "2026-08-27T11:00:00Z",
+      },
+    ]);
+
+    render(<CardGallery />);
+    await screen.findAllByTestId("gallery-card");
+
+    const img = screen.getByRole("img") as HTMLImageElement;
+    fireEvent.error(img);
+    await waitFor(() => expect(screen.queryByTestId("gallery-card-loading")).toBeNull());
+    expect(screen.getByTestId("gothic-art-fallback")).toBeTruthy();
   });
 });
