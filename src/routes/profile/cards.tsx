@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 
-import { CardGallery } from "@/components/gallery/CardGallery";
+const CardGallery = lazy(() =>
+  import("@/components/gallery/CardGallery").then((m) => ({ default: m.CardGallery })),
+);
 
 export const Route = createFileRoute("/profile/cards")({
   component: ProfileCardsPage,
@@ -9,7 +12,9 @@ export const Route = createFileRoute("/profile/cards")({
 function ProfileCardsPage() {
   return (
     <main className="min-h-screen bg-[#0b0908]">
-      <CardGallery />
+      <Suspense fallback={null}>
+        <CardGallery />
+      </Suspense>
     </main>
   );
 }

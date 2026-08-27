@@ -23,7 +23,26 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — SupabaseCardRow Adapter + Gallery Wire (TAM)
+## 2. Son biten iş — HF Service + TTL Cache + Lazy Route (TAM)
+
+- **`src/services/huggingFaceService.ts`** — user-spec shape: `GenerateGothicArtParams`
+  (prompt + optional negativePrompt), `gothicArtPrompt` (inputs + structured
+  parameters), `generateGothicArt` (fetch with VITE_HF_TOKEN; note comment
+  warns that client-side VITE tokens are public by design — server-side calls
+  should use a non-VITE secret). Fixed wrapper: "dark gothic woodcut,
+  candlelit chiaroscuro style, etched ink lines, deep shadows, dramatic mood"
+  + negative default ("bright colors, cheerful, cartoon…").
+- **`src/lib/cache/supabaseCache.ts`** — `InflightCache` (30s TTL,
+  get/set/invalidate) + exported singleton `dbCache`. Domain-locked to avoid
+  react-refresh-only-export-components violations by extraction.
+- **Lazy route (CardGallery)** — `src/routes/profile/cards.tsx`: `lazy()`
+  named-export wrapper (`.then((m)=>({default:m.CardGallery}))`) +
+  `<Suspense fallback={null}>`. Production build produces a separate
+  `CardGallery-<hash>.js` chunk (verified in `.output/public/assets/`).
+- **Testler** — cache TTL unit testi (5) + HF prompt wrapper testi (3) +
+  lazy route yerinde. **471/471 (50 dosya), tsc 0, lint 0e/7w, build OK.**
+
+## 2-önceki. Önceki iş — SupabaseCardRow Adapter + Gallery Wire (TAM)
 
 - **Adapter yeniden yazıldı** — `src/adapters/supabaseCardAdapter.ts`: exported
   `SupabaseCardRow` interface (snake_case DB schema), private `encodeScene`/
