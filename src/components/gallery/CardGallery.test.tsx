@@ -1,9 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
 import type { StoryChapter } from "@/types/lifeStory";
 import type { EmotionalNode } from "@/types/emotionalTimeline";
 import { mapChapterToGalleryCard } from "@/types/gallery";
 import { buildSocialSharePayload } from "@/types/socialShare";
 import type { MusicDNA } from "@/types/musicDna";
+import { CardGallery } from "./CardGallery";
+import { loadGalleryCards } from "@/lib/supabase/cards-remote";
+
+/*
+ * The gallery's data layer is mocked — there is no real Supabase backend in
+ * the test environment, so the DAL must be stubbed. This is the only mock in
+ * the file; the model mapping helpers above exercise real code paths.
+ */
+vi.mock("@/lib/supabase/cards-remote", () => ({
+  loadGalleryCards: vi.fn(),
+}));
+vi.mock("@/lib/supabase/use-session", () => ({
+  useSession: () => ({ status: "anonymous", user: { id: "user-123" } }),
+}));
 
 function chapter(over: Partial<StoryChapter> = {}): StoryChapter {
   return {
@@ -86,5 +101,41 @@ describe("SocialSharePayload (buildSocialSharePayload)", () => {
     expect(payload.eraBadge).toBe("1980s");
     expect(payload.topArtistsText).toBe("Dio • Sting");
     expect(payload.shareUrl).toBe("https://lifeinsound.app/results");
+  });
+});
+
+/*
+ * Wire test — the gallery's select path goes through `mapCardRowToGrounded` —
+ * the badge renders the grounded vibe label decoded from the scene token.
+ */
+describe("CardGallery adapter wire (select path)", () => {
+  beforeEach(() => {
+    vi.mocked(loadGalleryCards).mockResolvedValue([
+      {
+        id: "c1",
+        trackKey: "dio — holy diver",
+        title: "Holy Diver",
+        artist: "Dio",
+        genre: null,
+        releaseYear: 1983,
+        birthYear: null,
+        encounterAge: null,
+        eraYear: 1983,
+        userMemory: null,
+        scene: "Childhood|Nostalgic Spark|9",
+        lore: "A defining track for childhood.",
+        imagePath: null,
+        createdAt: "2026-08-27T10:00:00Z",
+      },
+    ]);
+  });
+
+  it("decodes the packed scene through supabaseCardAdapter → vibe badge", async () => {
+    render(<CardGallery />);
+    expect(screen.queryByTestId("gallery-loading")).toBeTruthy();
+    const badges = await screen.findAllByTestId("grounded-vibe-badge");
+    expect(badges[0].textContent).toBe("Nostalgic Spark");
+    expect(screen.getByText("Holy Diver")).toBeTruthy();
+    expect(screen.getByText("Dio")).toBeTruthy();
   });
 });

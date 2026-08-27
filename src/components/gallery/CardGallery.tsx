@@ -19,6 +19,8 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraCaption } from "@/lib/soundmap/sharePoster";
 import { loadGalleryCards, type CardRow } from "@/lib/supabase/cards-remote";
 import { useSession } from "@/lib/supabase/use-session";
+import { mapCardRowToGrounded, type SupabaseCardRow } from "@/adapters/supabaseCardAdapter";
+import type { GalleryCardData } from "@/types/gallery";
 
 import {
   applyGalleryView,
@@ -35,6 +37,30 @@ function toneFor(index: number): string {
   return TONE_BORDERS[index % TONE_BORDERS.length];
 }
 
+/**
+ * From-DB mapping — a camelCase `CardRow` (DAL shape) is rebuilt into the
+ * snake_case `SupabaseCardRow` and normalized through the adapter so the
+ * badge shows the grounded vibe label instead of a static marker. Packed
+ * `<stage>|<vibe>|<intensity>` scenes decode deterministically.
+ */
+function groundedOf(card: CardRow): GalleryCardData {
+  const packed = card.scene.includes("|");
+  const snake: SupabaseCardRow = {
+    id: card.id,
+    stage_name: card.scene.split("|")[0] || card.scene,
+    song_title: card.title,
+    artist_name: card.artist,
+    release_year: card.releaseYear ?? "Unknown Year",
+    image_url: card.imageUrl ?? null,
+    dynamic_lore_text: packed ? `<!--SCENE:${card.scene}-->` : (card.lore ?? ""),
+    intensity_score: 8,
+    vibe_label: "Grounded Reflection",
+    is_grounded: true,
+    created_at: card.createdAt,
+  };
+  return mapCardRowToGrounded(snake);
+}
+
 function GalleryCard({
   card,
   index,
@@ -45,6 +71,7 @@ function GalleryCard({
   onShare: (card: CardRow) => void;
 }) {
   const gem = toneFor(index);
+  const grounded = groundedOf(card);
   const caption = eraCaption(card);
   const [errored, setErrored] = useState(false);
   const imageUrl = errored ? null : (card.imageUrl ?? null);
@@ -99,10 +126,12 @@ function GalleryCard({
       </h3>
       <p className="truncate text-xs italic text-[#b8a890]">{card.artist || "—"}</p>
 
-      {/* Stat row — grounded badge (no personality/discovery scoring). */}
+      {/* Stat row — grounded vibe badge (supabaseCardAdapter, no scoring). */}
       <div className="mt-2 flex items-center justify-between border-t border-[#3a2f26] pt-2 text-[10px] uppercase tracking-wider text-[#8f8168]">
         <span>{caption || "—"}</span>
-        <span style={{ color: gem }}>grounded</span>
+        <span data-testid="grounded-vibe-badge" style={{ color: gem }}>
+          {grounded.vibeLabel}
+        </span>
       </div>
 
       {/* Lore */}

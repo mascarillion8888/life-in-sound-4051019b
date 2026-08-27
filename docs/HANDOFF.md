@@ -23,16 +23,24 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — Supabase Card Adapter (TAM)
+## 2. Son biten iş — SupabaseCardRow Adapter + Gallery Wire (TAM)
 
-- **Yeni adapter** — `src/adapters/supabaseCardAdapter.ts`:
-  bidirectional mapping between `GroundedLifeStory/EmotionalTimeline` and the
-  Supabase `CardRow` (packed `scene` as `<stage>|<vibe>|<intensity>`).
-  Includes `mapGroundedToCardRow(chapter, node?, imageUrl?)` and
-  `mapCardRowToGrounded(row)`.
-- **Testler** — `src/adapters/supabaseCardAdapter.test.ts`: round-trip + fallbacks
-  (4/4 yeşil).
-- **Testler**: 462/462 (48 dosya), tsc 0, lint 0e/7w.
+- **Adapter yeniden yazıldı** — `src/adapters/supabaseCardAdapter.ts`: exported
+  `SupabaseCardRow` interface (snake_case DB schema), private `encodeScene`/
+  `decodeScene`, `mapGroundedToCardRow(chapter, node?, imageUrl?, userId?)`
+  (to-DB, packs `<stage>|<vibe>|<intensity>` into narrative as an HTML comment
+  `<!--SCENE:...-->`), `mapCardRowToGrounded(row)` (from-DB, decodes token →
+  GalleryCardData with clean narrative). Fallbacks: vibe "Grounded Reflection",
+  intensity 8, image → placeholder.
+- **CardGallery.tsx wire (select path)** — `groundedOf(card)` builds the snake
+  row from the camelCase `CardRow` (DAL) and normalizes through the adapter;
+  the stat-row badge now shows the real `vibeLabel` decoded from the scene
+  token (`data-testid="grounded-vibe-badge"`). No insert path exists in the
+  component — nothing to wire there (SharePosterDialog is canvas/export-only).
+- **Testler** — moved to `src/adapters/__tests__/supabaseCardAdapter.test.ts`
+  (4 adapter tests) + wire test in `src/components/gallery/CardGallery.test.tsx`
+  (mocked DAL + useSession — no real backend; sole mock, justified).
+- **Testler**: 463/463 (48 dosya), tsc 0, lint 0e/7w.
 
 ## 2-önceki. Önceki iş — Gallery/SocialShare grounded wire (TAM, kural 10 doğrulandı)
 
