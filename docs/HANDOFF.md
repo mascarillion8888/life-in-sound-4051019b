@@ -10,8 +10,9 @@
 
 ```
 Aktif dal: main
-HEAD:      `3628a7f` — bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
-Testler:   442/442 geçti (42 dosya)
+HEAD:      bu oturumun işi COMMIT'LENDİ ve PUSH TAMAM
+           (literal SHA `git log -1` ile doğrulanır; git'e güven, metne değil).
+Testler:   450/450 geçti (45 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 7 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -22,7 +23,22 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
 
 ---
 
-## 2. Son biten iş — EraCard Sadeleştirilmiş + Master Gap P0/P2 (TAM)
+## 2. Son biten iş — Master Gap P3: Emotional Timeline Engine (TAM)
+
+- **P3 dosyaları** — `src/types/emotionalTimeline.ts` (EmotionalNode,
+  EmotionalTimeline + overallTrajectory union) + `src/engine/emotionalTimelineEngine.ts`
+  (`generateEmotionalTimeline(dna, contexts)`: stage-emotion matrisi
+  (childhood→Nostalgic Spark, hard time→Cathartic Depth…), valency −1..+1,
+  intensity 1-10, temporalArcPosition 0-100, trajectory belirleyici
+  (Ascending/Descending/U-Shaped/Fluctuating), peakStage).
+- **P0/P2/P3 birim testleri** — `src/engine/__tests__/` altında 3 dosya
+  (musicDnaEngine, lifeStoryEngine, emotionalTimelineEngine). Repo vitest
+  kullanıyor (jest değil) — API jest-uyumlu; explicit `from "vitest"`
+  importları + Song mock'ları `song()` factory'sine taşındı (Song tipi
+  provider/providerId/album/artworkUrl/isrc zorunlu alanlar istiyor).
+- **Testler**: 450/450 (45 dosya), tsc 0, lint 0e/7w.
+
+## 2-önceki. Önceki iş — EraCard Sadeleştirilmiş + Master Gap P0/P2 (TAM)
 
 - **EraCard simplıfication** — Kullanıcının sağladığı sadeleştirilmiş
   referansa (`EraCard` React component) kilitlendi. Responsive body
