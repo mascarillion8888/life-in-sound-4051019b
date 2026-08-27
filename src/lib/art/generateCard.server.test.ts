@@ -139,10 +139,25 @@ describe("generateCardLoreCore", () => {
 });
 
 describe("persistCardCore", () => {
+  const VPREV = new Map<string, string | undefined>([
+    ["VITE_SUPABASE_URL", process.env.VITE_SUPABASE_URL],
+    ["VITE_SUPABASE_ANON_KEY", process.env.VITE_SUPABASE_ANON_KEY],
+  ]);
+  // These tests are about configuration logic, not the ambient machine env.
+  // Pin the process env DELETED for the whole suite so a developer laptop
+  // with real Supabase creds cannot flip "skips silently without env config".
   beforeEach(() => {
+    delete process.env.VITE_SUPABASE_URL;
+    delete process.env.VITE_SUPABASE_ANON_KEY;
     // Ensure createClient keeps its fake-session implementation even after
     // the shared afterEach's restoreAllMocks().
     mockCreate(() => fakeSession());
+  });
+  afterEach(() => {
+    for (const [k, v] of VPREV) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
   });
   it("skips silently without an access token", async () => {
     const ok = await persistCardCore(ENCOUNTER, "lore", "gothic", null, {

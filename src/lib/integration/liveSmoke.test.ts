@@ -128,4 +128,24 @@ describe("runLiveSmoke — per-provider injection", () => {
     const report = await runLiveSmoke({ fetchImpl: notCallableFetch(), supabaseClient: null });
     expect(find(report, "supabase", "skipped")).toBe(true);
   });
+
+  it("treats a Supabase 401/400 table ping as passed (reachable key under RLS)", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
+    vi.stubEnv("GROQ_API_KEY", "");
+    vi.stubEnv("VITE_HF_TOKEN", "");
+    vi.stubEnv("HF_TOKEN", "");
+    const report = await runLiveSmoke({ fetchImpl: okFetch({}, 401), supabaseClient: {} as never });
+    expect(find(report, "supabase", "passed")).toBe(true);
+  });
+
+  it("surfaces a Supabase 403/5xx table ping as failed", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
+    vi.stubEnv("GROQ_API_KEY", "");
+    vi.stubEnv("VITE_HF_TOKEN", "");
+    vi.stubEnv("HF_TOKEN", "");
+    const report = await runLiveSmoke({ fetchImpl: okFetch({}, 403), supabaseClient: {} as never });
+    expect(find(report, "supabase", "failed")).toBe(true);
+  });
 });

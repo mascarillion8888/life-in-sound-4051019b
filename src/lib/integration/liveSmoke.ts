@@ -74,15 +74,23 @@ async function probeSupabase(
   if (!url || !anon || !client) {
     return { status: "skipped", detail: "VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY unset" };
   }
-  // Key-validating REST ping (no row reads — cannot be blocked by RLS). A 2xx
-  // (or a 400/401) proves the URL + anon key are wired to a live project.
+  // RLS-safe table ping (NOT the REST root — the root endpoint always answers
+  // "Invalid API key … service_role" to a client anon key; PostgREST reserves
+  // it for the service-role key). A 2xx on `cards` proves the URL + anon key
+  // are wired to a live project regardless of row visibility: anon reads run
+  // under RLS and return `[]` when no rows are visible, 401 when the key is
+  // invalid. RLS-rejected queries surface as 401 with
+  // "policy does not contain any response column" — still a *reachable* key.
   const root = url.replace(/\/$/, "");
   const { ok, status, detail } = await ping(
-    `${root}/rest/v1/`,
+    `${root}/rest/v1/cards?select=id&limit=1`,
     { apikey: anon, Authorization: `Bearer ${anon}` },
     fetchImpl,
   );
-  return { status: ok ? "passed" : "failed", detail: `HTTP ${status}` };
+  if (ok || status === 400 || status === 401) {
+    return { status: "passed", detail };
+  }
+  return { status: "failed", detail };
 }
 
 async function probeGroq(fetchImpl: typeof fetch): Promise<ProbeStatus> {

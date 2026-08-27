@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ (push kullanıcı onayı bekliyor/bitti
            — `git log -1` ile doğrula; git'e güven, metne değil).
-Testler:   542/542 geçti (58 dosya)
+Testler:   546/546 geçti (59 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -153,19 +153,35 @@ gothic woodcut'ının stale görsel cache'inden servis edilmesi:
 - **`src/lib/integration/liveSmoke.ts`** — üç dış sağlayıcı için tek, env-gated
   probe: `VITE_SUPABASE_URL/ANON_KEY`, `GROQ_API_KEY`, `VITE_HF_TOKEN|HF_TOKEN`.
   Kredi YOKSA→`{status:"skipped"}` (asla ağa çıkmaz, asla sahte başarı üretmez);
-  Kredi VARSA→gerçek, authenticated HTTPS ping (HF `/whoami-v2`, GROQ
-  `/models`, Supabase REST kökü) ve healthy/unhealthy eşlemesi. Rapor detayı
-  hiçbir secret'ı yankılamaz. `allProbesPresent()` toplu kontrol.
-- **`liveSmoke.test.ts`** (+6): credentialsiz ortamda hepsi `skipped` + fetch
+  Kredi VARSA→gerçek, authenticated HTTPS ping ve healthy/unhealthy eşlemesi.
+  Rapor detayı hiçbir secret'ı yankılamaz. `allProbesPresent()` toplu kontrol.
+  **Supabase probe'u RLS-güvenli bir tablo ping'idir** (`/rest/v1/cards?select=id
+  &limit=1`): REST kökü client anon key'e her zaman "service_role only" 401'i
+  döndürdüğü için yanlış negatif üretir — tablo ping'i 2xx/401/400'ı "key +
+  proje canlı, RLS-denied da geçerli ve veri sızmıyor" olarak yorumlar.
+- **`liveSmoke.test.ts`** (+8): credentialsiz ortamda hepsi `skipped` + fetch
   hiç çağrılmaz; tek kredi inject edilince yalnızca o probe ağı kullanır;
-  401→`failed` (asla success); Supabase probe'tu URL+anon+client üçlüsü olmadan
-  skippeler; detay string'i token içermez.
-- **Bu sandbox'ta bulgu:** ağ erişilebilir (HF & GROQ 401 = reachable,
-  unauth) ama `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GROQ_API_KEY`,
-  `VITE_HF_TOKEN`, `HF_TOKEN` **hepsi unset** — bu yüzden tüm live probe
-  `skipped`. Yani kredi/URL olmadan tarayıcıda uçtan uca canlı doğrulama
-  yapılamıyor; env sağlanınca `runLiveSmoke` bunu ölçecek şekilde hazır.
-- **Doğrulama:** 542/542 (58 dosya), tsc 0, lint 0e/8w — aşağıda 4.
+  GROQ 401→`failed`; Supabase 401/400→`passed` (RLS-reachable), 403/5xx→
+  `failed`; detay string'i token içermez.
+- **`src/lib/supabase/rls-live.test.ts`** (+2) — **canlı RLS negatif**: gerçek
+  anon client + gerçek Supabase ile `journeys` & `cards` read'lerinin
+  anonim çağırıcıya `[]` dönmesini (veri sızıntısı yok) ve anahtarın
+  service-role DAVRANIŞI göstermemesini doğrular. Env varsa gerçek ağ, yoksa
+  all-skip (testler ortama göre kendiliğinden devre dışı).
+- **`generateCard.server.test.ts`** — persist testleri process env'i
+  (VITE_SUPABASE_URL/ANON_KEY) artık describe boyunca geçici silip geri
+  koyuyor; böylece gerçek kredili bir geliştirici makinesinde "env yoksa skip"
+  testi yanlışlıkla fail olmuyor.
+
+## Canlı ortam doğrulaması (TAM, gerçek kredilerle)
+
+Kullanıcı gerçek kredileri sağladı (Supabase anon + GROQ + HF). `runLiveSmoke`
+üç probe'u da gerçek ağda **`passed`** verdi: Supabase `HTTP 200`
+(RLS-güvenli cards ping), GROQ `HTTP 200`, HuggingFace `HTTP 200`. Ayrıca
+`rls-live.test.ts` gerçek Supabase'te geçti: anon key ile `journeys` ve
+`cards` **boş** — RLS aktif, veri sızıntısı yok, anahtar service-role değil;
+`.env`'e konan anon key'in browser'a güvenle gidebilirliği kanıtlandı.
+- **Doğrulama:** 546/546 (59 dosya), tsc 0, lint 0e/8w — aşağıda 4.
 
 ## 2. Son biten iş — Gothic Art Generator UI: loading + fallback + boundary (TAM)
 
@@ -392,11 +408,13 @@ history'de — bu dosya günlük değildir.
      gothic skeleton, hata olursa doom fallback.
    - Uçtan uca zincir: kart üret → `cards` satırı + storage object →
      invalidation → `/profile/cards`'da görünür → Paylaş → PNG/Web Share.
-     Doğrulandı: RLS negatif testi artık `rls-security.test.ts`'te (adım 2-E)
-     — başkasının kartı görünmemeli sözleşmesi client katmanında sabitlendi.
-     Kalan açık: token'lı ortamda HF görselinin persistence ile bağlanması —
-     gerçek Supabase/GROQ/key olmadan tarayıcıda uçtan uca doğrulama
-     yapılamıyor; env sağlanınca `liveSmoke` (adım 2-E) bunu ölçer.
+     Doğrulandı: RLS negatif testi artık `rls-security.test.ts` (mock) +
+     `rls-live.test.ts` (gerçek anon key) — başkasının kartı görünmemeli
+     sözleşmesi hem client katmanında hem canlı Supabase'te sabitlendi.
+     Env (Supabase anon + GROQ + HF) sağlandı; `liveSmoke` canlıda 3/3
+     passed. Kalan açık: gerçek bir auth'lu kullanıcı oturumuyla tarayıcıda
+     uçtan uca kart üretimi-persistence akışı doğrulaması (bir
+     auth sesion token'ı gerektirir) — smoke/RLS katmanı buna hazır.
 3. Gallery'ye giriş linki: `/profile/cards` henüz hiçbir sayfadan linkli
    değil — nav/sonuç sayfasına bağlantı kararı kullanıcıda.
 4. PosterLightbox içeriği: şu an statik `poster-preview.jpg`; ileride
@@ -414,11 +432,11 @@ history'de — bu dosya günlük değildir.
 - Çalışma ağacı temiz; tüm iş bu checkpoint'te COMMIT'LENDİ. Push kullanıcı
   onayı bekliyor (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (542/542, 58 dosya) + `npm run typecheck` (0 hata) +
+  `npm test` (546/546, 59 dosya) + `npm run typecheck` (0 hata) +
   `npm run lint` (0 e / 8 w pre-existing).
-- Canlı ortam notu: bu oturumda `VITE_SUPABASE_URL/ANON_KEY`, `GROQ_API_KEY`,
-  `VITE_HF_TOKEN`/`HF_TOKEN` ortamda yoktu → `runLiveSmoke` 3 probe'u da
-  `skipped` raporladı (ağ erişilebilir: HF & GROQ 401). Kullanıcı gerçek
-  Supabase/GROQ/HF kredilerini `.env` + shell env olarak sağlarsa canlı
-  uçtan uca doğrulama yapılabilir.
+- Canlı ortam notu: gerçek krediler (Supabase anon + GROQ + HF) `.env` +
+  shell olarak sağlandı; `runLiveSmoke` 3 probe'u da canlıda `passed`
+  (Supabase 200, GROQ 200, HF 200); `rls-live.test.ts` gerçek anon key'in
+  RLS altında hiç satır görmediğini doğruladı (service-role DEĞİL).
+  Krediler ortama girildiğinde tüm canlı testler de koşar.
 
