@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ (push kullanıcı onayı bekliyor/bitti
            — `git log -1` ile doğrula; git'e güven, metne değil).
-Testler:   514/514 geçti (55 dosya)
+Testler:   517/517 geçti (56 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -39,9 +39,10 @@ Doğrula: `git status && npm test`. Uyuşmuyorsa git'e güven, bildir.
   `journey:<userId>` anahtarıyla cache'liyor. Kullanıcı-scope key (userId)
   paylaşım riskini ortadan kaldırıyor. `saveRemoteJourney` ve
   `clearRemoteJourney` mutasyonlarında `dbCache.invalidate` çağrılıyor.
-- **Sunucu tarafı (client dbCache paylaşmaz):** `generateCard.server.ts`'teki
-  kart persist'i client cache'i göremez. Çözüm: gallery'e dönüşte
-  `invalidateCardsCache()` çağrılmalı (B1'de hala açık).
+- **Sunucu tarafı (client dbCache paylaşmaz):** `generateCard.server.ts` client
+  cache'ini göremez — invalidation client tarafta yapılır. `useCardLore` hook'u
+  `generateCard` `persisted: true` döndürdüğünde `invalidateCardsCache()`
+  çağırır (B1, TAM — aşağıda 2-C).
 - **Testler (yeni):** `src/lib/supabase/cards-cache.test.ts` (cache ikinci
   load'da ağ turunu atlar; invalidate sonrası yeniden çeker; boş/hatalı sonucu
   cache'ler) + `journey-remote.test.ts` 3 beforeEach'ine izolasyon için
@@ -75,6 +76,22 @@ renderer'ına export/share katmanı eklendi:
   export farklılaştırma matrix) + `src/components/gallery/SharePosterDialog.test.tsx`
   (canvas render, cardsız disabled, busy spinner→download, error fallback —
   deferred mock ile busy durum yakalanıyor).
+
+## 2-C. Kart persistence sonrası cache invalidation (B1, TAM)
+
+`generateCard.server.ts` client `dbCache`'ini göremediği için invalidation
+client-side çağrıyor:
+
+- **`src/lib/art/useCardLore.ts`** — `generateCard` sonucu `persisted: true`
+  olduğunda `invalidateCardsCache()` çağrılır. Bu, yeni `cards` satırı yazan
+  tek client-side seçim noktası: kullanıcı galeriye döndüğünde
+  `loadGalleryCards()` (30s TTL cache'li) stale listeyi değil, taze Supabase
+  setini çeker. `generateCard.server.ts`'e dokunulmadı (server'ın client
+  cache'e erişimi yok).
+- **Testler (yeni):** `src/lib/art/useCardLore.test.tsx` — 3 test:
+  `persisted: true` → invalidate çağrılır; `persisted: false` → çağrılmaz;
+  server call hatası → lore null, invalidate çağrılmaz.
+- **Doğrulama:** 517/517 (56 dosya), tsc 0, lint 0e/8w, build 0 hata.
 
 ## 2. Son biten iş — Gothic Art Generator UI: loading + fallback + boundary (TAM)
 
@@ -292,18 +309,16 @@ history'de — bu dosya günlük değildir.
    push'lanmamıştı). Tek odak bu repo.
 1. **KULLANICI AKSİYONU (hâlâ açık):** `0003_cards.sql`'i Supabase'e
    uygula — uygulanmadan gallery hep empty state gösterir, persist skip'ler.
-2. **Sıradaki öncelikli adım — kart persist + cache invalidation zinciri:**
-   - **B1 (açık):** `generateCard.server.ts`'teki kart persist'i client
-     `dbCache`'i göremez. Gallery'e dönüşte `invalidateCardsCache()` çağrılıp
-     yeni kartın listeye düşmesi için cache temizlenmeli (CardGallery /
-     loadGalleryCards reset path'i). dbCache artık `loadRemoteCards`'ı
-     cache'lediği için bu invalidation **olmadan** yeni kart 30s boyunca
-     görünmez — bu şu an en kritik açık adım.
-   - Uçtan uca zinciri tamamlamak için: kart üret → `cards` satırı + storage
-     object → invalidation → `/profile/cards`'da görünür → Paylaş → PNG/Web
-     Share. RLS negatif testi: ikinci anon tarayıcıyla başkasının kartı
-     görünmemeli. Token'lı ortamda HF görselinin persistence ile bağlanması
-     hala zincirin parçası.
+2. **Sıradaki öncelikli adım — kart üretim zinciri (B1 tamam):**
+   - **B1 (TAM, 2-C):** `useCardLore` artık `generateCard` `persisted: true`
+     döndürdüğünde `invalidateCardsCache()` çağırıyor — yeni kart galeriye
+     dönüşte 30s TTL'ye takılmadan görünür.
+   - Uçtan uca zincir: kart üret → `cards` satırı + storage object →
+     invalidation → `/profile/cards`'da görünür → Paylaş → PNG/Web Share.
+     Kalan açıklar: RLS negatif testi (ikinci anon tarayıcıyla başkasının
+     kartı görünmemeli) + token'lı ortamda HF görselinin persistence ile
+     bağlanması (gerçek Supabase/GROQ/key olmadan tarayıcıda uçtan uca
+     doğrulama yapılamıyor — env gerekli).
 3. Gallery'ye giriş linki: `/profile/cards` henüz hiçbir sayfadan linkli
    değil — nav/sonuç sayfasına bağlantı kararı kullanıcıda.
 4. PosterLightbox içeriği: şu an statik `poster-preview.jpg`; ileride
@@ -321,6 +336,6 @@ history'de — bu dosya günlük değildir.
 - Çalışma ağacı temiz; tüm iş bu checkpoint'te COMMIT'LENDİ. Push kullanıcı
   onayı bekliyor (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (514/514, 55 dosya) + `npm run typecheck` (0 hata) +
+  `npm test` (517/517, 56 dosya) + `npm run typecheck` (0 hata) +
   `npm run lint` (0 e / 8 w pre-existing).
 

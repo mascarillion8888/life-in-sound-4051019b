@@ -12,9 +12,14 @@
  * the track's artwork key, so the same track never re-generates its lore
  * within a session. Failures resolve to null — the card then keeps its
  * deterministic narrative (never an empty lore box).
+ *
+ * When the server reports `persisted: true`, this hook also invalidates the
+ * gallery's in-memory card list (`invalidateCardsCache`) so a fresh card is
+ * visible on the next gallery load without waiting out the 30s TTL.
  */
 import { useEffect, useState } from "react";
 
+import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
 import { getSupabase } from "@/lib/supabase/client";
 import type { Song } from "@/lib/song/types";
 
@@ -94,6 +99,10 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
           LORE_CACHE.set(key, out.lore);
           setState({ key, lore: out.lore });
         }
+        // A persisted card wrote a new `cards` row — bust the in-memory list
+        // cache (30s TTL) so the next gallery load shows it immediately
+        // instead of a fresh-card blank for up to half a minute.
+        if (out.persisted) invalidateCardsCache();
       } catch {
         /* lore is an enhancement — the deterministic narrative stays */
       }
