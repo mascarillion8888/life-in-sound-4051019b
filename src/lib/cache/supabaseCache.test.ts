@@ -18,9 +18,7 @@ describe("supabaseCache (TTL in-memory)", () => {
       data: unknown;
       timestamp: number;
     }
-    const map = (
-      dbCache as unknown as { cache: Map<string, CacheEntryInternal> }
-    ).cache;
+    const map = (dbCache as unknown as { cache: Map<string, CacheEntryInternal> }).cache;
     map.set("cards:stale", {
       data: [{ id: "c1" }],
       timestamp: Date.now() - 31_000,

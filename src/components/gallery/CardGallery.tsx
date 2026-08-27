@@ -12,15 +12,17 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Music, Share2, Sparkles } from "lucide-react";
+import { Music, Share2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraCaption } from "@/lib/soundmap/sharePoster";
 import { loadGalleryCards, type CardRow } from "@/lib/supabase/cards-remote";
 import { useSession } from "@/lib/supabase/use-session";
 import { mapCardRowToGrounded, type SupabaseCardRow } from "@/adapters/supabaseCardAdapter";
 import type { GalleryCardData } from "@/types/gallery";
+import { GothicArtError, isRetryableHfError } from "@/services/huggingFaceService";
 
 import {
   applyGalleryView,
@@ -30,6 +32,7 @@ import {
   type GallerySort,
 } from "./galleryModel";
 import { SharePosterDialog } from "./SharePosterDialog";
+import { GothicArtFallback, GothicArtSkeleton, gothicArtFallbackContent } from "./gothicArt";
 
 const TONE_BORDERS = ["#d8a65a", "#a78bfa", "#c0c8d8"] as const;
 
@@ -70,6 +73,7 @@ function GalleryCard({
   index: number;
   onShare: (card: CardRow) => void;
 }) {
+  const { t } = useLanguage();
   const gem = toneFor(index);
   const grounded = groundedOf(card);
   const caption = eraCaption(card);
@@ -82,7 +86,7 @@ function GalleryCard({
       className="flex flex-col rounded-xl border bg-[#14100c] p-3 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.9)]"
       style={{ borderColor: `${gem}55` }}
     >
-      {/* Art frame — painting or candlelit gothic placeholder. */}
+      {/* Art frame — painting, or the doom fallback for a lost/broken etching. */}
       <div
         className="relative aspect-[4/5] overflow-hidden rounded-lg border border-[#3a2f26] bg-[#0b0908]"
         style={{ boxShadow: `inset 0 0 40px rgba(0,0,0,0.8), 0 0 24px ${gem}22` }}
@@ -96,13 +100,7 @@ function GalleryCard({
             onError={() => setErrored(true)}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <span
-              aria-hidden
-              className="block h-1/2 w-2/3 rounded-t-full border-t-2"
-              style={{ borderColor: `${gem}66`, boxShadow: `0 -18px 50px -10px ${gem}44` }}
-            />
-          </div>
+          <GothicArtFallback title={t.gothicArt.genericTitle} message={t.gothicArt.brokenArtwork} />
         )}
         <div
           aria-hidden
@@ -183,7 +181,7 @@ function EmptyState() {
 }
 
 export function CardGallery() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const session = useSession();
   const [cards, setCards] = useState<CardRow[] | null>(null);
   const [sort, setSort] = useState<GallerySort>("newest");
@@ -210,89 +208,110 @@ export function CardGallery() {
       : { newest: "Newest", oldest: "Oldest", era: "Era Year", age: "Age" };
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-10">
-      <header className="mb-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#d8a65a]">
-          LifeInSound
-        </p>
-        <h1
-          className="mt-2 text-3xl font-bold tracking-wide text-[#ece2c8]"
-          style={{ fontFamily: "'Cinzel', Georgia, serif" }}
-        >
-          {language === "tr" ? "Kart Koleksiyonun" : "Your Card Collection"}
-        </h1>
-      </header>
+    <ErrorBoundary
+      fallback={({ error, reset }) => {
+        const kind = error instanceof GothicArtError ? error.kind : undefined;
+        const content = gothicArtFallbackContent(kind, t.gothicArt);
+        return (
+          <div className="mx-auto w-full max-w-6xl px-4 py-20">
+            <div className="aspect-[4/5] w-full max-w-sm">
+              <GothicArtFallback
+                title={content.title}
+                message={`${content.message} ${t.gothicArt.sectionError}`}
+                onRetry={isRetryableHfError(error) ? reset : undefined}
+              />
+            </div>
+          </div>
+        );
+      }}
+    >
+      <section className="mx-auto w-full max-w-6xl px-4 py-10">
+        <header className="mb-8 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#d8a65a]">
+            LifeInSound
+          </p>
+          <h1
+            className="mt-2 text-3xl font-bold tracking-wide text-[#ece2c8]"
+            style={{ fontFamily: "'Cinzel', Georgia, serif" }}
+          >
+            {language === "tr" ? "Kart Koleksiyonun" : "Your Card Collection"}
+          </h1>
+        </header>
 
-      {cards === null || session.status === "loading" ? (
-        <div className="flex justify-center py-20" data-testid="gallery-loading">
-          <Loader2 className="h-8 w-8 animate-spin text-[#d8a65a]" aria-hidden />
-        </div>
-      ) : visible.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <>
-          {/* Controls */}
-          <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
-            {SORTS.map((s) => (
+        {cards === null || session.status === "loading" ? (
+          <div
+            className="mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-lg border border-[#3a2f26]"
+            data-testid="gallery-loading"
+          >
+            <GothicArtSkeleton generating caption={t.gothicArt.generating} />
+          </div>
+        ) : visible.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* Controls */}
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+              {SORTS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSort(s)}
+                  data-testid={`sort-${s}`}
+                  className={`rounded-full border px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
+                    sort === s
+                      ? "border-[#d8a65a] bg-[#d8a65a]/15 text-[#e5b76b]"
+                      : "border-[#3a2f26] text-[#8f8168] hover:border-[#5c4a3e]"
+                  }`}
+                >
+                  {sortLabels[s]}
+                </button>
+              ))}
+              <span aria-hidden className="mx-1 h-4 w-px bg-[#3a2f26]" />
               <button
-                key={s}
                 type="button"
-                onClick={() => setSort(s)}
-                data-testid={`sort-${s}`}
+                onClick={() => setFilter("all")}
+                data-testid="filter-all"
                 className={`rounded-full border px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
-                  sort === s
+                  filter === "all"
                     ? "border-[#d8a65a] bg-[#d8a65a]/15 text-[#e5b76b]"
                     : "border-[#3a2f26] text-[#8f8168] hover:border-[#5c4a3e]"
                 }`}
               >
-                {sortLabels[s]}
+                {language === "tr" ? "Tümü" : "All"}
               </button>
-            ))}
-            <span aria-hidden className="mx-1 h-4 w-px bg-[#3a2f26]" />
-            <button
-              type="button"
-              onClick={() => setFilter("all")}
-              data-testid="filter-all"
-              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
-                filter === "all"
-                  ? "border-[#d8a65a] bg-[#d8a65a]/15 text-[#e5b76b]"
-                  : "border-[#3a2f26] text-[#8f8168] hover:border-[#5c4a3e]"
-              }`}
-            >
-              {language === "tr" ? "Tümü" : "All"}
-            </button>
-            {scenes.map((scene) => (
-              <button
-                key={scene}
-                type="button"
-                onClick={() => setFilter(scene)}
-                data-testid={`filter-${scene}`}
-                className={`rounded-full border px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
-                  filter === scene
-                    ? "border-[#d8a65a] bg-[#d8a65a]/15 text-[#e5b76b]"
-                    : "border-[#3a2f26] text-[#8f8168] hover:border-[#5c4a3e]"
-                }`}
-              >
-                {scene}
-              </button>
-            ))}
-          </div>
+              {scenes.map((scene) => (
+                <button
+                  key={scene}
+                  type="button"
+                  onClick={() => setFilter(scene)}
+                  data-testid={`filter-${scene}`}
+                  className={`rounded-full border px-3 py-1 text-xs uppercase tracking-wider transition-colors ${
+                    filter === scene
+                      ? "border-[#d8a65a] bg-[#d8a65a]/15 text-[#e5b76b]"
+                      : "border-[#3a2f26] text-[#8f8168] hover:border-[#5c4a3e]"
+                  }`}
+                >
+                  {scene}
+                </button>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((card, i) => (
-              <GalleryCard key={card.id} card={card} index={i} onShare={setShareTarget} />
-            ))}
-          </div>
-        </>
-      )}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {visible.map((card, i) => (
+                <GalleryCard key={card.id} card={card} index={i} onShare={setShareTarget} />
+              ))}
+            </div>
+          </>
+        )}
 
-      <SharePosterDialog
-        card={shareTarget}
-        open={shareTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setShareTarget(null);
-        }}
-      />
-    </section>
+        <SharePosterDialog
+          card={shareTarget}
+          open={shareTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setShareTarget(null);
+          }}
+        />
+      </section>
+    </ErrorBoundary>
   );
 }

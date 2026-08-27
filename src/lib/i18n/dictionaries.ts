@@ -38,6 +38,19 @@ export type Dictionary = {
     previewUnavailableAria: string;
     artGenerating: string;
   };
+  gothicArt: {
+    generating: string;
+    rateLimitTitle: string;
+    rateLimitMessage: string;
+    networkTitle: string;
+    networkMessage: string;
+    genericTitle: string;
+    genericMessage: string;
+    retry: string;
+    retrying: string;
+    sectionError: string;
+    brokenArtwork: string;
+  };
   results: {
     yourSoundmap: string;
     heroAccent: string;
@@ -122,6 +135,19 @@ const en: Dictionary = {
     mutePreviewAria: "Mute preview",
     previewUnavailableAria: "Preview unavailable",
     artGenerating: "Etched ink art generating…",
+  },
+  gothicArt: {
+    generating: "Etching your gothic art…",
+    rateLimitTitle: "Ink Supply Exhausted",
+    rateLimitMessage: "The engraver is at the limit of this session. Wait a moment and try again.",
+    networkTitle: "The Void Swallowed It",
+    networkMessage: "The engraver could not reach the forge. Check your connection and try again.",
+    genericTitle: "The Canvas Split",
+    genericMessage: "That etching could not be finished. Try again to re-summon it.",
+    retry: "Try Again",
+    retrying: "Resurrecting…",
+    sectionError: "This section could not be rendered",
+    brokenArtwork: "A lost etching",
   },
   results: {
     yourSoundmap: "Your SoundMap",
@@ -227,6 +253,19 @@ const tr: Dictionary = {
     previewUnavailableAria: "Önizleme yok",
     artGenerating: "Gravür çizim üretiliyor…",
   },
+  gothicArt: {
+    generating: "Gotik sanatın kazınıyor…",
+    rateLimitTitle: "Mürekkep Tükendi",
+    rateLimitMessage: "Kazıcı bu oturumun sınırına ulaştı. Bir an bekle ve tekrar dene.",
+    networkTitle: "Boşluk Yuttu",
+    networkMessage: "Kazıcı demirhaneye ulaşamadı. Bağlantını kontrol edip tekrar dene.",
+    genericTitle: "Tuval Yarıldı",
+    genericMessage: "Bu gravür tamamlanamadı. Yeniden çağırmak için tekrar dene.",
+    retry: "Tekrar Dene",
+    retrying: "Yeniden Canlandırılıyor…",
+    sectionError: "Bu bölüm görüntülenemedi",
+    brokenArtwork: "Kayıp bir gravür",
+  },
   results: {
     yourSoundmap: "SoundMap'in",
     heroAccent: "Sekiz şarkı.",
@@ -330,6 +369,20 @@ const es: Dictionary = {
     mutePreviewAria: "Silenciar vista previa",
     previewUnavailableAria: "Vista previa no disponible",
     artGenerating: "Generando grabado a tinta…",
+  },
+  gothicArt: {
+    generating: "Grabando tu arte gótico…",
+    rateLimitTitle: "Tinta Agotada",
+    rateLimitMessage:
+      "El grabador alcanzó el límite de esta sesión. Espera un momento e inténtalo de nuevo.",
+    networkTitle: "Lo Tragó el Vacío",
+    networkMessage: "El grabador no pudo llegar a la fragua. Comprueba tu conexión y reintenta.",
+    genericTitle: "El Lienzo se Partió",
+    genericMessage: "Ese grabado no pudo terminarse. Reintenta para volver a invocarlo.",
+    retry: "Reintentar",
+    retrying: "Resucitando…",
+    sectionError: "Esta sección no pudo renderizarse",
+    brokenArtwork: "Un grabado perdido",
   },
   results: {
     yourSoundmap: "Tu SoundMap",
@@ -435,6 +488,20 @@ const de: Dictionary = {
     previewUnavailableAria: "Vorschau nicht verfügbar",
     artGenerating: "Tuschradierung wird erstellt…",
   },
+  gothicArt: {
+    generating: "Deine gotische Kunst wird geätzt…",
+    rateLimitTitle: "Tinte Erschöpft",
+    rateLimitMessage:
+      "Der Graveur hat das Limit dieser Sitzung erreicht. Warte kurz und versuche es erneut.",
+    networkTitle: "Der Abgrund Verschluckte Es",
+    networkMessage: "Der Graveur konnte die Schmiede nicht erreichen. Prüfe deine Verbindung.",
+    genericTitle: "Die Leinwand Riss",
+    genericMessage: "Diese Radierung konnte nicht fertiggestellt werden. Versuche es erneut.",
+    retry: "Erneut Versuchen",
+    retrying: "Wird Auferweckt…",
+    sectionError: "Dieser Abschnitt konnte nicht gerendert werden",
+    brokenArtwork: "Eine verlorene Radierung",
+  },
   results: {
     yourSoundmap: "Deine SoundMap",
     heroAccent: "Acht Songs.",
@@ -538,6 +605,20 @@ const fr: Dictionary = {
     mutePreviewAria: "Couper le son de l'extrait",
     previewUnavailableAria: "Extrait indisponible",
     artGenerating: "Gravure à l'encre en cours…",
+  },
+  gothicArt: {
+    generating: "Gravure de votre art gothique…",
+    rateLimitTitle: "Encre Épuisée",
+    rateLimitMessage:
+      "Le graveur a atteint la limite de cette session. Attendez un instant puis réessayez.",
+    networkTitle: "Le Vide l'a Englouti",
+    networkMessage: "Le graveur n'a pas pu joindre la forge. Vérifiez votre connexion.",
+    genericTitle: "La Toile s'est Fendue",
+    genericMessage: "Cette gravure n'a pas pu être achevée. Réessayez pour la ressusciter.",
+    retry: "Réessayer",
+    retrying: "Résurrection…",
+    sectionError: "Cette section n'a pas pu être rendue",
+    brokenArtwork: "Une gravure perdue",
   },
   results: {
     yourSoundmap: "Ta SoundMap",
