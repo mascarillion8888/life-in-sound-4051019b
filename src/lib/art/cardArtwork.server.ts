@@ -24,6 +24,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { generateHfImage } from "./hfImage.server";
+import { cardArtworkScene, SCENE_SPECS, type SceneSpec } from "./scene";
 
 const IMAGEN_MODEL = () =>
   (typeof process !== "undefined" && process.env?.GEMINI_IMAGE_MODEL?.trim()) ||
@@ -50,6 +51,13 @@ export type CardArtworkInput = {
    */
   aesthetic?: string | null;
   /**
+   * Client-resolved scene id (cache discriminator). When supplied, the
+   * builder uses it verbatim instead of re-resolving — the client and server
+   * share `cardArtworkScene` from `./scene`, so they can never disagree
+   * even when the prompt itself evolves over time.
+   */
+  scene?: string | null;
+  /**
    * Fully synthesized prompt from the multidimensional blueprint
    * (`cardBlueprint.ts`). When present it replaces the internally built
    * brief; the scene is still resolved for cache identity.
@@ -65,150 +73,16 @@ export type CardArtworkOutput = {
 /** Process-level cache — successes only (transient failures stay retryable). */
 const SERVER_ART_CACHE = new Map<string, string>();
 
-/* -------------------------------------------------------------------------- */
-/* Dynamic scene selection — user preference, then genre, then era            */
-/* -------------------------------------------------------------------------- */
-
-type SceneSpec = {
-  /** Cache discriminator — the same track in a different scene is new art. */
-  id: string;
-  keywords: string[];
-  prompt: (artist: string) => string;
-};
-
 /**
- * One scene per aesthetic family, spec'd from the product brief. Order
- * matters: the first matching family wins.
+ * Build the multi-dimensional fine-art brief. Four dimensions travel
+ * together: the scene's lighting/medium (genre-aesthetic), the listener's
+ * life-stage environment (journey position), the era's emotion, and a
+ * TYPOGRAPHIC vinyl sleeve (abstract glyphs/geometry only — never a
+ * photographic face or painted portrait) integrated organically into the
+ * room's texture. Card titles live in the HTML layer; the painting renders
+ * the scene only, never card text. Exported for tests; the identity of the
+ * chosen scene feeds the cache key.
  */
-const SCENE_SPECS: SceneSpec[] = [
-  {
-    id: "gothic",
-    keywords: [
-      "goth",
-      "doom",
-      "folk",
-      "metal",
-      "thrash",
-      "slayer",
-      "sabbath",
-      "priest",
-      "maiden",
-      "punk",
-      "acoustic",
-      "country",
-      "americana",
-      "bluegrass",
-      "classical",
-      "orchestra",
-      "piano",
-      "symphony",
-      "sonata",
-    ],
-    prompt: (a) =>
-      `Atmospheric dark gothic oil painting concept, candlelit vintage room with detailed wood ` +
-      `carvings, the child gazing at a typographic vinyl sleeve echoing ${a} — abstract glyphs ` +
-      `and geometry only, seamlessly integrated into the scene.`,
-  },
-  {
-    id: "hiphop",
-    keywords: [
-      "rap",
-      "hiphop",
-      "hip hop",
-      "boombap",
-      "gangsta",
-      "trap",
-      "eminem",
-      "tupac",
-      "biggie",
-      "kendrick",
-      "drake",
-      "nas",
-      "jay z",
-      "wu tang",
-      "outkast",
-    ],
-    prompt: (a) =>
-      `Late-night studio glow, a typographic album sleeve echoing ${a} on a plum wall, abstract ` +
-      `glyph design in a gold frame, cinematic contemporary fine-art oil painting concept.`,
-  },
-  {
-    id: "grunge",
-    keywords: [
-      "grunge",
-      "nirvana",
-      "soundgarden",
-      "shoegaze",
-      "britpop",
-      "mudhoney",
-      "pumpkins",
-      "radiohead",
-      "oasis",
-      "alternative",
-    ],
-    prompt: (a) =>
-      `Moody 90s rehearsal basement, faded gig posters on the wall, dim slate ` +
-      `light, an abstract typographic gig flyer for ${a} — shapes and glyphs only, no faces — ` +
-      `tacked beside a worn canvas sleeve.`,
-  },
-  {
-    id: "soul",
-    keywords: [
-      "soul",
-      "funk",
-      "motown",
-      "stax",
-      "rnb",
-      "rhythm and blues",
-      "aretha",
-      "supremes",
-      "temptations",
-      "otis",
-      "wonder",
-    ],
-    prompt: (a) =>
-      `Warm vinyl listening room, amber lamp light and velvet textures, a typographic album ` +
-      `sleeve for ${a} — abstract gold-on-plum glyph design — beside a turntable, golden ` +
-      `soul-era memorial glow.`,
-  },
-  {
-    id: "jazz",
-    keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner"],
-    prompt: (a) =>
-      `Dimly lit vintage jazz club atmosphere, warm brass accents, smoky haze, a typographic ` +
-      `vinyl sleeve for ${a} — abstract brass-age glyphs and circles — resting on an antique desk.`,
-  },
-  {
-    id: "reggae",
-    keywords: ["reggae", "dub", "ska", "dancehall", "marley", "rastafari", "tosh"],
-    prompt: (a) =>
-      `Warm golden-hour sunlight, vintage Jamaican wood aesthetic, tropical/reggae fine-art oil ` +
-      `painting concept featuring a typographic album sleeve for ${a} — abstract sun-ray glyphs — ` +
-      `on a rustic wooden shelf, relaxed atmosphere.`,
-  },
-  {
-    id: "synth",
-    keywords: [
-      "synth",
-      "electro",
-      "techno",
-      "house",
-      "pop",
-      "dance",
-      "disco",
-      "kraftwerk",
-      "depeche",
-      "wave",
-      "neon",
-      "edm",
-      "eurodance",
-    ],
-    prompt: (a) =>
-      `Retro 80s neon-lit studio aesthetic, moody cyan and magenta ambient lighting, stylized ` +
-      `typographic cassette J-card for ${a} — abstract neon glyphs and grid shapes only.`,
-  },
-];
-
 /**
  * The listener's environment mirrors their age at that life era — journey
  * position stands in for the life stage when the song's own year is unknown.
@@ -235,54 +109,6 @@ const ERA_EMOTIONS = [
   "longing",
   "acceptance",
 ] as const;
-
-/**
- * Resolve the scene family for one card, strongest signal first:
- *   1. the listener's preferred aesthetic (explicit user preference),
- *   2. genre keywords in the song's own metadata (artist/title/album),
- *   3. the decade ladder as the tiebreaker — every era now carries its
- *      own visual identity ('70s soul vinyl, '90s grunge basement,
- *      contemporary hiphop studio); only a null year falls back to the
- *      gothic fine-art base rather than fabricating a culture the song
- *      never declared.
- */
-export function cardArtworkScene(
-  input: Pick<CardArtworkInput, "aesthetic">,
-  genreText: string,
-  releaseYear: number | null,
-): string {
-  const preference = input.aesthetic?.toLowerCase() ?? "";
-  for (const spec of SCENE_SPECS) {
-    if (preference && spec.keywords.some((k) => preference.includes(k))) return spec.id;
-  }
-  const haystack = genreText.toLowerCase();
-  for (const spec of SCENE_SPECS) {
-    if (spec.keywords.some((k) => keywordIn(haystack, k))) return spec.id;
-  }
-  if (releaseYear === null) return "gothic";
-  if (releaseYear <= 1969) return "jazz";
-  if (releaseYear <= 1979) return "soul";
-  if (releaseYear <= 1989) return "synth";
-  if (releaseYear <= 1999) return "grunge";
-  return "hiphop";
-}
-
-/** Word-ish boundary match — "dub" must not eat "Double Fantasy". */
-function keywordIn(haystack: string, keyword: string): boolean {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`).test(haystack);
-}
-
-/**
- * Build the multi-dimensional fine-art brief. Four dimensions travel
- * together: the scene's lighting/medium (genre-aesthetic), the listener's
- * life-stage environment (journey position), the era's emotion, and a
- * TYPOGRAPHIC vinyl sleeve (abstract glyphs/geometry only — never a
- * photographic face or painted portrait) integrated organically into the
- * room's texture. Card titles live in the HTML layer; the painting renders
- * the scene only, never card text. Exported for tests; the identity of the
- * chosen scene feeds the cache key.
- */
 export function buildCardArtworkPrompt(
   artist: string,
   title: string,
@@ -290,15 +116,18 @@ export function buildCardArtworkPrompt(
     genreText?: string;
     releaseYear?: number | null;
     aesthetic?: string | null;
+    scene?: string | null;
     cardIndex?: number;
   } = {},
 ): { prompt: string; scene: string } {
   const subject = artist || title;
-  const scene = cardArtworkScene(
-    { aesthetic: context.aesthetic },
-    context.genreText ?? `${title} ${artist}`,
-    context.releaseYear ?? null,
-  );
+  const scene =
+    context.scene ??
+    cardArtworkScene(
+      { aesthetic: context.aesthetic },
+      context.genreText ?? `${title} ${artist}`,
+      context.releaseYear ?? null,
+    );
   const spec = SCENE_SPECS.find((s) => s.id === scene) ?? SCENE_SPECS[0];
   const cardIndex = context.cardIndex ?? 0;
   const room = LIFE_STAGE_ROOMS[cardIndex % LIFE_STAGE_ROOMS.length];
@@ -397,6 +226,7 @@ export async function generateCardArtworkCore(
     genreText: `${input.title} ${input.artist} ${input.album ?? ""}`,
     releaseYear: input.releaseYear ?? null,
     aesthetic: input.aesthetic,
+    scene: input.scene ?? null,
     cardIndex: input.cardIndex,
   });
   // A blueprint-supplied brief wins over the internally built one; the

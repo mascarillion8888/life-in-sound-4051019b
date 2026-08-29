@@ -3,6 +3,7 @@
  *
  * The Era Card face shows a Gemini/Imagen fine-art painting (generated
  * server-side, see `cardArtwork.server.ts`); the provider's album cover is
+import { cardArtworkScene } from "./scene";
  * never used as card imagery. This hook owns the client cache tiers so a
  * painting is generated at most once per track:
  *
@@ -22,8 +23,9 @@ import { useEffect, useState } from "react";
 import type { Song } from "@/lib/song/types";
 
 import { generateCardArtwork } from "./cardArtwork.server";
+import { cardArtworkScene } from "./scene";
 
-const CARD_ART_STORAGE_KEY = "soundmap.card-art.v1";
+const CARD_ART_STORAGE_KEY = "soundmap.card-art.v2";
 /** Cap the persistent tier — base64 paintings are heavy, quota is finite. */
 const MAX_PERSISTED_PAINTINGS = 12;
 
@@ -42,6 +44,20 @@ export function cardArtworkKey(song: Song): string {
     return `manual:${song.artist.toLowerCase()}:${song.title.toLowerCase()}`;
   }
   return `${song.provider}:${song.providerId}`;
+}
+
+/**
+ * Cache storage identity — the artwork cache key (v2 + scene-aware).
+ *
+ * Version + scene ride alongside the track identity, so stal the scene
+ * (aesthetic/genre/era) or the generation pipeline version changes, the same
+ * track resolves to a DIFFERENT storage slot — eski v1 kayıtları (which
+ * carried na scens) can never be read again, and a scene change never reuses
+ * a stale painting. The value MUST be deterministic for identical inputs so
+ * a server round-trip-is only ever paid once per (track, scene, version).
+ */
+export function cardArtworkStorageKey(song: Song, scene: string): string {
+  return `v2|${cardArtworkKey(song)}|${scene}`;
 }
 
 function readPersisted(): Record<string, string> {
@@ -83,19 +99,32 @@ export function __clearCardArtworkMemoryCache(): void {
 
 export function useCardArtwork(
   song: Song | null,
-  context: { cardIndex?: number } = {},
+  context: { cardIndex?: number; aesthetic?: string | null } = {},
 ): {
   imageUrl: string | null;
   status: CardArtworkStatus;
 } {
   // Stable primitives — callers often rebuild Song objects every render, so
   // the effect must key off identity-free values, never the object itself.
-  const key = song ? cardArtworkKey(song) : "";
+  const trackKey = song ? cardArtworkKey(song) : "";
   const artist = song?.artist ?? "";
   const title = song?.title ?? "";
   const album = song?.album ?? null;
   const releaseYear = song?.releaseYear ?? null;
   const cardIndex = context.cardIndex;
+  // Scene is resolved client-side with the same pure matcher the server uses,
+  // so the cache slot can never disagree with what the server actually made.
+  const scene = song
+    ? cardArtworkScene(
+        { aesthetic: context.aesthetic },
+        `${song.title} ${song.artist} ${song.album ?? ""}`.trim(),
+        song.releaseYear ?? null,
+      )
+    : "";
+  // Storage identity: track + scene + cache version. Track identity alone
+  // (cardArtworkKey) STILL travels to the server as `trackKey`; the
+  // scene rides alongside as an explicit override.
+  const key = song ? cardArtworkStorageKey(song, scene) : "";
 
   const [state, setState] = useState<{
     key: string;
@@ -131,7 +160,16 @@ export function useCardArtwork(
       // the adaptive scene prompt (reggae wood / gothic candlelight / 80s
       // neon / jazz club) instead of one static aesthetic.
       void generateCardArtwork({
-        data: { trackKey: key, artist, title, album, releaseYear, cardIndex },
+        data: {
+          trackKey,
+          scene: scene || null,
+          aesthetic: context.aesthetic ?? null,
+          artist,
+          title,
+          album,
+          releaseYear,
+          cardIndex,
+        },
       })
         .then((out) => {
           if (!active) return;
@@ -151,7 +189,7 @@ export function useCardArtwork(
     return () => {
       active = false;
     };
-  }, [key, artist, title, album, releaseYear, cardIndex]);
+  }, [key, scene, context.aesthetic, trackKey, artist, title, album, releaseYear, cardIndex]);
 
   // A song change renders the placeholder synchronously — never a stale
   // painting from the previous track while the new one generates.

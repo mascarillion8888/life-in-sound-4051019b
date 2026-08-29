@@ -183,7 +183,9 @@ export function QuizCard({
   // woodcut placeholder takes over, so a card face can never get stuck on a
   // plain album photo (e.g. a Michael Jackson cover).
   const coverUrl =
-    song?.artworkUrl && art.status !== "unavailable" ? (song.artworkUrl ?? null) : null;
+    song?.artworkUrl && (art.status === "loading" || art.status === "idle")
+      ? (song.artworkUrl ?? null)
+      : null;
   // Dynamic copy — every string on the card is derived from the track's
   // identity + the era's emotion (deterministic; never static filler).
   const copy = song

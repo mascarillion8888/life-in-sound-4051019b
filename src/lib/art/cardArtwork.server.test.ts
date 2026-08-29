@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   __clearCardArtworkServerCache,
   buildCardArtworkPrompt,
-  cardArtworkScene,
   generateCardArtworkCore,
 } from "./cardArtwork.server";
+import { cardArtworkScene } from "./scene";
 
 function imagenOk(b64 = "aGVsbG8=") {
   return new Response(

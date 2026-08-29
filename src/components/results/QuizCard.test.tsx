@@ -69,12 +69,12 @@ describe("QuizCard", () => {
 
   it("cross-fades the AI painting over the cover when one is ready", () => {
     window.localStorage.setItem(
-      "soundmap.card-art.v1",
-      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
+      "soundmap.card-art.v2",
+      JSON.stringify({ "v2|itunes:42|gothic": "data:image/png;base64,AA==" }),
     );
     render(<QuizCard card={cards[0]} song={song()} />);
-    // The cover stays underneath; the painting fades in on top.
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
+    // The AI painting is now the primary layer — the cover is not rendered
+    expect(screen.queryByTestId("card-art-cover")).toBeNull();
     const ai = screen.getByTestId("card-art-ai") as HTMLImageElement;
     expect(ai.src).toContain("data:image/png;base64,AA==");
     expect(ai.className).toContain("fade-in");

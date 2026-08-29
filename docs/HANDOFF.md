@@ -481,3 +481,15 @@ history'de — bu dosya günlük değildir.
   RLS altında hiç satır görmediğini doğruladı (service-role DEĞİL).
   Krediler ortama girildiğinde tüm canlı testler de koşar.
 
+
+## Cache V2 & Scene-Aware Storage Key Migration
+- **Status**: Completed (549/549 tests passing)
+- **Changes**:
+  - Extracted deterministic `cardArtworkScene` and `SCENE_SPECS` to shared client-safe `scene.ts` module.
+
+  - Implemented `cardArtworkStorageKey(song, context)` with format `v2|<trackKey>|<sceneId>`.
+  - Updated `useCardArtwork` to derive scene on client and pass explicit `scene` override to server.
+  - Preserved `cardArtworkKey(song)` identity for persist/copy trackKeys while isolating client cache storage.
+
+  - Updated `QuizCard` and cache tests to validate V2 key behavior and loading states.
+
