@@ -59,11 +59,11 @@ describe("QuizCard", () => {
     expect(badge.style.clipPath).toBe("");
   });
 
-  it("embeds the iTunes cover inside the black window — no skeleton when a cover exists", () => {
+  it("renders the SilhouetteCanvas art base - the iTunes cover is never rendered", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
-    const cover = screen.getByTestId("card-art-cover") as HTMLImageElement;
-    expect(cover.src).toContain("art.jpg");
-    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
+    const canvas = screen.getByTestId("silhouette-canvas");
+    expect(canvas).toBeInTheDocument();
+    expect(screen.getByTestId("card-art-skeleton")).toHaveAttribute("data-generating", "true");
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
   });
 
@@ -80,20 +80,20 @@ describe("QuizCard", () => {
     expect(ai.className).toContain("fade-in");
   });
 
-  it("hides the album cover when AI generation fails — placeholder takes over", async () => {
-    // No cache, no key — generation resolves unavailable. The provider's
-    // album photo (e.g. a Michael Jackson cover) must NOT remain the card's
-    // imagery: the card face keeps the gothic placeholder instead.
+  it("keeps the silhouette base when AI generation fails - no cover returns", async () => {
+    // No cache, no key - generation resolves unavailable. The provider's
+    // album photo must stay gone:the card face keeps the silhouette base.
+    // imagery:the card face keeps the silhouette placeholder instead.
     render(<QuizCard card={cards[0]} song={song()} />);
     // Gen fails fast server-side, but the hook only flips to "unavailable"
-    // after that resolves — wait for the cover to leave.
-    await waitFor(() => expect(screen.queryByTestId("card-art-cover")).toBeNull());
+    // after that resolves - wait for the loading skeleton to leave.
+    await waitFor(() => expect(screen.queryByTestId("card-art-skeleton")).toBeNull());
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
-    const skeleton = screen.getByTestId("card-art-skeleton");
-    // Static (non-pulsing) placeholder — nothing is generating anymore.
-    expect(skeleton.dataset.generating).toBe("false");
+    expect(screen.queryByTestId("card-art-cover")).toBeNull();
+    expect(screen.getByTestId("silhouette-canvas")).toBeTruthy();
+    // Static placeholder when generation is unavailable - nothing generates.
+    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
   });
-
   it("falls back to the gothic woodcut skeleton only for coverless songs", () => {
     render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
     expect(screen.queryByTestId("card-art-cover")).toBeNull();

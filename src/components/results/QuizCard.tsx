@@ -18,6 +18,7 @@
 import { Loader2, Music, Volume2, VolumeX } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
+import { SilhouetteCanvas } from "./SilhouetteCanvas";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -176,16 +177,6 @@ export function QuizCard({
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
-  // Artwork contract: the provider cover (song.artworkUrl) is ONLY a
-  // transitional layer — it renders while the AI painting is loading (and
-  // sits underneath the finished painting). Once generation has failed
-  // (status "unavailable") the cover is NEVER substituted back in: the gothic
-  // woodcut placeholder takes over, so a card face can never get stuck on a
-  // plain album photo (e.g. a Michael Jackson cover).
-  const coverUrl =
-    song?.artworkUrl && (art.status === "loading" || art.status === "idle")
-      ? (song.artworkUrl ?? null)
-      : null;
   // Dynamic copy — every string on the card is derived from the track's
   // identity + the era's emotion (deterministic; never static filler).
   const copy = song
@@ -244,22 +235,14 @@ export function QuizCard({
         data-testid="card-art-window"
         className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-[#c8aa6e]/50 bg-[#060504]"
       >
-        {coverUrl ? (
-          <img
-            data-testid="card-art-cover"
-            src={coverUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ filter: "sepia(0.18) contrast(1.05) brightness(0.95)" }}
-          />
+        {song ? (
+          <SilhouetteCanvas artist={song.artist} songTitle={song.title} eraTitle={card.eraTitle} />
         ) : (
-          <CardArtSkeleton
-            generating={song ? art.status === "loading" : false}
-            caption={t.quizCard.artGenerating}
-          />
+          <CardArtSkeleton generating={false} caption={t.quizCard.artGenerating} />
         )}
+        {song && art.status === "loading" ? (
+          <CardArtSkeleton generating caption={t.quizCard.artGenerating} />
+        ) : null}
         {song && art.status === "ready" && art.imageUrl ? (
           <img
             data-testid="card-art-ai"
