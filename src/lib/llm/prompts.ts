@@ -14,10 +14,12 @@
  * without any provider access.
  */
 import type { PersonalityProfile } from "@/lib/ai/types";
+import type { MusicDNA } from "@/lib/analytics/music-dna-engine";
 
-export type LifeStoryInput = {
+export type LifeStoryInput ={
   profile: PersonalityProfile;
   songs: string[];
+  musicDNA?: MusicDNA;
 };
 
 /** The deterministic Life Story template — used as the fallback narrative. */
