@@ -1,3 +1,8 @@
+// Phase 0: this build-time room backdrop generator is DISABLED.
+// The application now renders a pure black stage (`SceneRoom`); regenerating
+// PNG backdrops is unnecessary - exit immediately without any side effects.
+process.exit(0);
+
 /**
  * generate-room-backdrop.mjs — build-time procedural renderer for the fixed
  * global library room. Produces one atmospheric backdrop PNG per scene theme

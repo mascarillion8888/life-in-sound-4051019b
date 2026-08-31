@@ -81,6 +81,8 @@ describe("itunes mapping: trackToSong", () => {
       album: "...Nothing Like the Sun",
       artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/600x600bb.jpg",
       releaseYear: 1987,
+      genre: null,
+      era: "1980s",
       previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
       isrc: null,
       verified: true,

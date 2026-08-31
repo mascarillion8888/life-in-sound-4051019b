@@ -1,4 +1,5 @@
 import type { Song } from "./song/types";
+import type { MusicDNA } from "./analytics/music-dna-engine";
 
 export const JOURNEY_STORAGE_KEY = "soundmap.journey.v1";
 
@@ -10,8 +11,16 @@ export type JourneyProgress = {
    * title strings in `answers` so the QuestionCard can restore the full
    * title + artist + artwork after a refresh. A Song is only stored here when
    * it has passed `isValidSong`; malformed entries are dropped on load.
+
+   * Optional deterministic Music DNA computed exclusively from `songs[]`
+   * (never from `answers[]`) by `computeMusicDNA` and attached before
+   * persisting/entering the results page.
+
    */
+
+
   songs: Record<number, Song>;
+  musicDNA?: MusicDNA;
 };
 
 export const emptyJourney: JourneyProgress = { current: 1, answers: {}, songs: {} };
