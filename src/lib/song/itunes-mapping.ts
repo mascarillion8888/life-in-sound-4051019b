@@ -34,6 +34,7 @@ export type ITunesTrack = {
   artworkUrl100?: unknown;
   releaseDate?: unknown;
   previewUrl?: unknown;
+  primaryGenreName?: unknown;
 };
 
 export type ITunesSearchResponse = {
@@ -84,6 +85,18 @@ function extractReleaseYear(value: unknown): number | null {
   if (!m) return null;
   const y = Number(m[1]);
   return Number.isInteger(y) && y > 0 ? y : null;
+}
+
+/** Decade band (e.g. "80s", "2000s") from a release year, or null when out of range. */
+function eraFromYear(year: number): string | null {
+  if (year >= 1950 && year < 1960) return "50s";
+  if (year >= 1960 && year < 1970) return "60s";
+  if (year >= 1970 && year < 1980) return "70s";
+  if (year >= 1980 && year < 1990) return "80s";
+  if (year >= 1990 && year < 2000) return "90s";
+  if (year >= 2000 && year < 2010) return "2000s";
+  if (year >= 2010 && year < 2020) return "2010s";
+  return null;
 }
 
 /** Lowercase, strip diacritics and punctuation, collapse whitespace. */
@@ -194,6 +207,8 @@ export function trackToSong(track: ITunesTrack): Song | null {
   if (!providerId || !title || !artist) return null;
 
   const artworkUrl100 = asString(track.artworkUrl100);
+  const releaseYear = extractReleaseYear(track.releaseDate);
+  const primaryGenreName = asString(track.primaryGenreName);
   return {
     provider: PROVIDER,
     providerId,
@@ -202,7 +217,11 @@ export function trackToSong(track: ITunesTrack): Song | null {
     album: asString(track.collectionName),
     // High-resolution variant of the real CDN artwork — never a stock/fake URL.
     artworkUrl: artworkUrl100 ? highResArtworkUrl(artworkUrl100) : null,
-    releaseYear: extractReleaseYear(track.releaseDate),
+    releaseYear,
+    // Primary genre label straight from the API — null when iTunes lacks one.
+    genre: primaryGenreName,
+    // Decade band derived from the release date, used for era theming (e.g. "80s").
+    era: releaseYear ? eraFromYear(releaseYear) : null,
     // 30s AAC preview straight from the API — null when iTunes has none.
     previewUrl: asString(track.previewUrl),
     isrc: null,
