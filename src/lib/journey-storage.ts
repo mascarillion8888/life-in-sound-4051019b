@@ -16,6 +16,9 @@ export type JourneyProgress = {
    * (never from `answers[]`) by `computeMusicDNA` and attached before
    * persisting/entering the results page.
 
+   */
+
+
   songs: Record<number, Song>;
   musicDNA?: MusicDNA;
 };
