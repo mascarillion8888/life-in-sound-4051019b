@@ -8,7 +8,6 @@
  * source of truth (the storage layer imports from here, not ad-hoc interfaces).
  */
 import type { Song } from "../song/types";
-import type { MusicDNA } from "../analytics/music-dna-engine";
 
 export type JourneyRow = {
   id: string;
@@ -17,7 +16,6 @@ export type JourneyRow = {
   answers: Record<number, string>;
   /** Structured Song selections per question id (migration 0002). */
   songs: Record<number, Song>;
-  musicDNA?: MusicDNA | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -25,5 +23,5 @@ export type JourneyRow = {
 
 export type JourneyUpsert = Pick<
   JourneyRow,
-  "user_id" | "current" | "answers" | "songs" | "musicDNA" | "version"
+  "user_id" | "current" | "answers" | "songs" | "version"
 >;
