@@ -21,33 +21,30 @@ function song(overrides: Partial<Song> = {}): Song {
   };
 }
 
-describe("SceneRoom - the fixed global library environment", () => {
-  it("renders the pure black stage in every theme (no procedural room PNG)", () => {
+describe("SceneRoom — the fixed global library environment", () => {
+  it("renders the rendered room backdrop image in every theme (no flat DOM vectors)", () => {
     for (const themeId of Object.keys(SCENE_THEMES)) {
       const { container, unmount } = render(
         <SceneRoom themeId={themeId as keyof typeof SCENE_THEMES} />,
       );
       expect(screen.getByTestId(`scene-room-${themeId}`)).toBeTruthy();
-      const wrap = container.querySelector(
-        `[data-testid="scene-backdrop-${themeId}"]`,
+      const backdrop = container.querySelector(
+        `[data-testid='scene-backdrop-${themeId}']`,
       ) as HTMLElement;
-      expect(wrap).toBeTruthy();
-      expect(wrap.style.backgroundImage).toContain("radial-gradient");
-      expect(wrap.style.background).toContain("radial-gradient");
+      expect(backdrop).toBeTruthy();
+      // Build-time rendered PNG texture (carved wood + lamp light), cover-fitted.
+      expect(backdrop.style.backgroundImage).toContain(`room-backdrop-${themeId}`);
+      expect(backdrop.style.backgroundSize).toBe("cover");
+      // No runtime DOM furniture vector elements are drawn.
+      expect(container.querySelectorAll("[aria-hidden]").length).toBeLessThan(5);
       unmount();
     }
   });
 
-  it("paints the neutral gold/amber chiaroscuro wash over pure black", () => {
+  it("paints the fallback wall gradient from the theme palette", () => {
     const { container } = render(<SceneRoom themeId="synth" />);
     const room = container.querySelector("[data-testid='scene-room-synth']") as HTMLElement;
-    expect(room).toBeTruthy();
-    expect(room.style.backgroundImage).toBe("none");
-    const wash = container.querySelector(
-      "[data-testid='scene-backdrop-synth']",
-    ) as HTMLElement;
-    expect(wash).toBeTruthy();
-    expect(wash.style.background).toContain("34, 211, 238");
+    expect(room.style.background).toContain("rgb(20, 15, 34)"); // #140f22
   });
 });
 

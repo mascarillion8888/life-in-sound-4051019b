@@ -34,7 +34,6 @@ export type ITunesTrack = {
   artworkUrl100?: unknown;
   releaseDate?: unknown;
   previewUrl?: unknown;
-  primaryGenreName?: unknown;
 };
 
 export type ITunesSearchResponse = {
@@ -85,12 +84,6 @@ function extractReleaseYear(value: unknown): number | null {
   if (!m) return null;
   const y = Number(m[1]);
   return Number.isInteger(y) && y > 0 ? y : null;
-}
-
-/** Deterministic era bucket ("1970s") derived from the release date's leading year. */
-function extractEra(value: unknown): string | null {
-  const year = extractReleaseYear(value);
-  return year === null ? null : `${Math.floor(year / 10) * 10}s`;
 }
 
 /** Lowercase, strip diacritics and punctuation, collapse whitespace. */
@@ -210,8 +203,6 @@ export function trackToSong(track: ITunesTrack): Song | null {
     // High-resolution variant of the real CDN artwork — never a stock/fake URL.
     artworkUrl: artworkUrl100 ? highResArtworkUrl(artworkUrl100) : null,
     releaseYear: extractReleaseYear(track.releaseDate),
-    genre: asString(track.primaryGenreName),
-    era: extractEra(track.releaseDate),
     // 30s AAC preview straight from the API — null when iTunes has none.
     previewUrl: asString(track.previewUrl),
     isrc: null,

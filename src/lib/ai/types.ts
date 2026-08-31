@@ -1,14 +1,7 @@
-import type { MusicDNA } from "../analytics/music-dna-engine";
-
 /** Shared types for the AI Personality Analysis pipeline. */
 
 /** Answers as stored by the journey: question id -> song title. */
 export type JourneyAnswers = Record<number, string>;
-
-/** Optional deterministic Music DNA attached to a journey payload (computed exclusively from `songs[]`, never from `answers[]`). */
-export type JourneyWithDna = {
-  musicDNA?: MusicDNA;
-};
 
 /** Deterministic personality dimensions supported by the 8 journey questions. */
 export type PersonalityDimension =

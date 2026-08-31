@@ -29,10 +29,6 @@ export type Song = {
   artworkUrl: string | null;
   /** Release year (4-digit) when the provider supplies a release date. */
   releaseYear?: number | null;
-  /** Primary genre label when the provider supplies one (iTunes primaryGenreName). */
-  genre?: string | null;
-  /** Era bucket (e.g. "1980s") derived deterministically from the release year. */
-  era?: string | null;
   /**
    * 30-second audio preview URL when the provider supplies one (iTunes
    * returns an AAC m4a preview for most tracks). Absent/null for manual
