@@ -90,7 +90,8 @@ export function isCompleteMetadata(song: Song | null | undefined): boolean {
 
 /** Ratio (0–1) of songs with complete metadata. */
 export function countMetadataCompletion(songs: (Song | null | undefined)[]): number {
-  if (!songs || songs.length === 0) return 0;
-  const complete = songs.filter((song) => isCompleteMetadata(song)).length;
-  return complete / songs.length;
+  const present = (songs ?? []).filter((song): song is Song => Boolean(song));
+  if (present.length === 0) return 0;
+  const complete = present.filter((song) => isCompleteMetadata(song)).length;
+  return complete / present.length;
 }
