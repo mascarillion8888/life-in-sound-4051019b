@@ -22,7 +22,7 @@ export type Song = {
   /** Display title (track/recording name, or a user-typed string). Always present. */
   title: string;
   /** Primary artist/credit name. Empty string for manual entries the user did not split out. */
-  artist: string;
+  artist: string | null;
   /** Album/release name when known. */
   album: string | null;
   /** Artwork image URL when one exists. */
@@ -43,6 +43,10 @@ export type Song = {
    * (or could not be) verified — verification never fabricates a song.
    */
   verified?: boolean;
+  /** Genre when a provider supplies one. Never fabricated. */
+  genre?: string | null;
+  /** Mood tag when a provider supplies one. Never fabricated. */
+  mood?: string | null;
 };
 
 /**
