@@ -43,6 +43,10 @@ export type Song = {
    * (or could not be) verified — verification never fabricates a song.
    */
   verified?: boolean;
+  /** Genre when a provider supplies one. Never fabricated. */
+  genre?: string | null;
+  /** Mood tag when a provider supplies one. Never fabricated. */
+  mood?: string | null;
 };
 
 /**

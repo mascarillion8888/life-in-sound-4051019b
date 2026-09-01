@@ -65,10 +65,14 @@
   --color-gold-light: var(--gold-light);
   --color-gold-glow: var(--gold-glow);
   --color-gold-subtle: var(--gold-subtle);
+  --color-violet: var(--violet);
+  --color-violet-glow: var(--violet-glow);
 }
 
 :root {
   --radius: 1rem;
+  --violet: oklch(0.62 0.19 300);
+  --violet-glow: color-mix(in oklch, var(--violet) 14%, transparent);
   --gold: oklch(0.78 0.17 85);
   --gold-light: oklch(0.9 0.1 85);
   --gold-glow: color-mix(in oklch, var(--gold) 15%, transparent);
@@ -145,6 +149,10 @@
 
 @utility glow-gold {
   background: radial-gradient(circle at 50% 0%, var(--gold-glow), transparent 60%);
+}
+
+@utility glow-violet {
+  background: radial-gradient(circle at 15% 85%, var(--violet-glow), transparent 55%);
 }
 
 @utility text-gold-gradient {

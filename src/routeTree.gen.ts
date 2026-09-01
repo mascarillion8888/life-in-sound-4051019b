@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as ResultsRouteImport } from './routes/results'
+import { Route as SoundmapRouteImport } from './routes/soundmap'
 import { Route as ProfileCardsRouteImport } from './routes/profile/cards'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const ResultsRoute = ResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SoundmapRoute = SoundmapRouteImport.update({
+  id: '/soundmap',
+  path: '/soundmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileCardsRoute = ProfileCardsRouteImport.update({
   id: '/profile/cards',
   path: '/profile/cards',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/journey': typeof JourneyRoute
   '/results': typeof ResultsRoute
+  '/soundmap': typeof SoundmapRoute
   '/profile/cards': typeof ProfileCardsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/journey': typeof JourneyRoute
   '/results': typeof ResultsRoute
+  '/soundmap': typeof SoundmapRoute
   '/profile/cards': typeof ProfileCardsRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,23 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/journey': typeof JourneyRoute
   '/results': typeof ResultsRoute
+  '/soundmap': typeof SoundmapRoute
   '/profile/cards': typeof ProfileCardsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/journey' | '/results' | '/profile/cards'
+  fullPaths: '/' | '/journey' | '/results' | '/soundmap' | '/profile/cards'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/journey' | '/results' | '/profile/cards'
-  id: '__root__' | '/' | '/journey' | '/results' | '/profile/cards'
+  to: '/' | '/journey' | '/results' | '/soundmap' | '/profile/cards'
+  id:
+    '__root__' | '/' | '/journey' | '/results' | '/soundmap' | '/profile/cards'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JourneyRoute: typeof JourneyRoute
   ResultsRoute: typeof ResultsRoute
+  SoundmapRoute: typeof SoundmapRoute
   ProfileCardsRoute: typeof ProfileCardsRoute
 }
 
@@ -92,6 +103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/soundmap': {
+      id: '/soundmap'
+      path: '/soundmap'
+      fullPath: '/soundmap'
+      preLoaderRoute: typeof SoundmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile/cards': {
       id: '/profile/cards'
       path: '/profile/cards'
@@ -106,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JourneyRoute: JourneyRoute,
   ResultsRoute: ResultsRoute,
+  SoundmapRoute: SoundmapRoute,
   ProfileCardsRoute: ProfileCardsRoute,
 }
 export const routeTree = rootRouteImport
