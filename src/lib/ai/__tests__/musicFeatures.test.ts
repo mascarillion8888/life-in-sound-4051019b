@@ -103,7 +103,7 @@ describe("musicFeatures", () => {
 
     it("should handle song with null artist", () => {
       const song = mockSong({
-        artist: null,
+        artist: "",
         title: "Unknown Song",
       });
 
@@ -155,7 +155,7 @@ describe("musicFeatures", () => {
     it("should handle minimal song (title only)", () => {
       const song = mockSong({
         title: "Minimal Song",
-        artist: null,
+        artist: "",
         releaseYear: null,
         genre: undefined,
         mood: undefined,
@@ -313,7 +313,7 @@ describe("musicFeatures", () => {
       it("should return true for song with title and releaseYear", () => {
         const song = mockSong({
           title: "Song",
-          artist: null,
+          artist: "",
           releaseYear: 2000,
         });
         expect(hasMusicMetadata(song)).toBe(true);
@@ -331,7 +331,7 @@ describe("musicFeatures", () => {
       it("should return false for song with only title", () => {
         const song = mockSong({
           title: "Song",
-          artist: null,
+          artist: "",
           releaseYear: null,
         });
         expect(hasMusicMetadata(song)).toBe(false);
@@ -355,7 +355,7 @@ describe("musicFeatures", () => {
       it("should return false for song missing artist", () => {
         const song = mockSong({
           title: "Song",
-          artist: null,
+          artist: "",
           releaseYear: 2000,
         });
         expect(isCompleteMetadata(song)).toBe(false);
@@ -398,7 +398,7 @@ describe("musicFeatures", () => {
       it("should return 0.5 for half complete metadata", () => {
         const songs = [
           mockSong({ title: "A", artist: "Artist A", releaseYear: 1980 }),
-          mockSong({ title: "B", artist: null, releaseYear: 1990 }),
+          mockSong({ title: "B", artist: "", releaseYear: 1990 }),
           mockSong({ title: "C", artist: "Artist C", releaseYear: null }),
           mockSong({ title: "D", artist: "Artist D", releaseYear: 2000 }),
         ];
@@ -408,9 +408,9 @@ describe("musicFeatures", () => {
 
       it("should return 0.0 for no complete metadata", () => {
         const songs = [
-          mockSong({ title: "A", artist: null, releaseYear: null }),
+          mockSong({ title: "A", artist: "", releaseYear: null }),
           mockSong({ title: "B", artist: "Artist B", releaseYear: null }),
-          mockSong({ title: "C", artist: null, releaseYear: 2000 }),
+          mockSong({ title: "C", artist: "", releaseYear: 2000 }),
         ];
 
         expect(countMetadataCompletion(songs)).toBe(0);
@@ -440,12 +440,12 @@ describe("musicFeatures", () => {
       it("should calculate 2 complete out of 8 as 0.25", () => {
         const songs = [
           mockSong({ title: "A", artist: "Artist A", releaseYear: 1980 }),
-          mockSong({ title: "B", artist: null, releaseYear: null }),
-          mockSong({ title: "C", artist: null, releaseYear: null }),
-          mockSong({ title: "D", artist: null, releaseYear: null }),
-          mockSong({ title: "E", artist: null, releaseYear: null }),
-          mockSong({ title: "F", artist: null, releaseYear: null }),
-          mockSong({ title: "G", artist: null, releaseYear: null }),
+          mockSong({ title: "B", artist: "", releaseYear: null }),
+          mockSong({ title: "C", artist: "", releaseYear: null }),
+          mockSong({ title: "D", artist: "", releaseYear: null }),
+          mockSong({ title: "E", artist: "", releaseYear: null }),
+          mockSong({ title: "F", artist: "", releaseYear: null }),
+          mockSong({ title: "G", artist: "", releaseYear: null }),
           mockSong({ title: "H", artist: "Artist H", releaseYear: 2000 }),
         ];
 
@@ -484,7 +484,7 @@ describe("musicFeatures", () => {
         }),
         mockSong({
           title: "Mystery Song",
-          artist: null,
+          artist: "",
           releaseYear: null,
         }),
         mockSong({

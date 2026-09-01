@@ -22,7 +22,7 @@ export type Song = {
   /** Display title (track/recording name, or a user-typed string). Always present. */
   title: string;
   /** Primary artist/credit name. Empty string for manual entries the user did not split out. */
-  artist: string | null;
+  artist: string;
   /** Album/release name when known. */
   album: string | null;
   /** Artwork image URL when one exists. */
