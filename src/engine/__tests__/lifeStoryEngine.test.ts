@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { describe, it, expect } from "vitest";
 import { generateLifeStory } from "../lifeStoryEngine";
 import { LifeContext } from "../../types/musicDna";
 
