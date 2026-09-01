@@ -105,8 +105,15 @@ export function extractSongFeatures(song: Song | null): SongFeatures | null {
     artist: song.artist || null,
     releaseYear: song.releaseYear || null,
     era: song.releaseYear ? computeEra(song.releaseYear) : null,
-    genre: song.genre ?? null,
-    mood: song.mood ?? null,
+  // song nesnesi üzerinden genre ve mood okuma
+const songGenre = (song as Record<string, unknown>).genre ?? null;
+const songMood = (song as Record<string, unknown>).mood ?? null;
+
+return {
+  // ... diğer alanlar
+  genre: (songGenre as string | null),
+  mood: (songMood as string | null),
+};
   };
 }
 

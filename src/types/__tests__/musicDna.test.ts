@@ -10,8 +10,8 @@ import type {
   MusicalIdentity,
   EmotionalSignature,
   MusicDNA,
-} from "../../musicDna";
-import { FALLBACK_MUSIC_DNA } from "../../musicDna";
+} from "../musicDna";
+import { FALLBACK_MUSIC_DNA } from "../musicDna";
 
 describe("MusicDNA Types", () => {
   describe("TemporalPattern", () => {
