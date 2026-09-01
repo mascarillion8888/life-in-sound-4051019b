@@ -1,34 +1,85 @@
-import type { Song } from "../lib/song/types";
+export interface SongData {
+  id?: string;
+  title: string;
+  artist: string;
+  year?: number | null;
+  releaseYear?: number | null;
+  genre?: string | null;
+  verified?: boolean;
+  provider?: "manual" | "musicbrainz" | "itunes" | "spotify" | string;
+  providerId?: string | null;
+  album?: string | null;
+  artworkUrl?: string | null;
+  isrc?: string | null;
+  [key: string]: any;
+}
 
-// Şarkı seçiminden elde edilen zamansal (Era) dağılım
+export interface LifeContext {
+  id?: string;
+  song: SongData;
+  contextText?: string;
+  stageName?: string;
+  questionId?: number;
+  [key: string]: any;
+}
+
 export interface TemporalPattern {
-  primaryEra: string; // Örn: "1980s"
-  spanYears: number; // En eski ve en yeni şarkı arasındaki yıl farkı
-  eraDistribution: Record<string, number>; // Örn: { "1980s": 3, "1990s": 5 }
+  primaryEra: string;
+  dominantEra?: string;
+  spanYears: number;
   earliestReleaseYear: number;
   latestReleaseYear: number;
+  eraDistribution: Record<string, number>;
+  [key: string]: any;
 }
 
-// Sanatçı ve Müzikal Kimlik Deseni
 export interface MusicalIdentity {
+  dominantVibe: string;
+  diversityScore: number;
+  hasVerifiedTracks: boolean;
   topArtists: string[];
-  diversityScore: number; // 0-100 arası çeşitlilik metriği (farklı artist/dönem oranı)
-  dominantVibe: string; // Şarkı ve dönem ağırlıklarından türetilen genel atmosfer
-  hasVerifiedTracks: boolean; // Tüm şarkıların doğrulanmışlık durumu
+  genreDistribution?: Record<string, number>;
+  [key: string]: any;
 }
 
-// Soruların hayat bağlamı (8 Life Context)
-export interface LifeContext {
-  questionId: number;
-  stageName: string; // Örn: "Childhood", "First Love"
-  song: Song;
-}
-
-// Ana Music DNA Çıktı Modeli (P0 Hedefi)
 export interface MusicDNA {
+  primaryGenre?: string;
+  dominantEra?: string;
+  topArtists?: string[];
+  diversityScore?: number;
+  songCount?: number;
+  tracksCount?: number;
+  isGrounded?: boolean;
   temporalPattern: TemporalPattern;
   musicalIdentity: MusicalIdentity;
-  songCount: number;
-  isGrounded: boolean; // Uydurma veri olmadığını garanti eden bayrak
-  analyzedAt: string; // ISO Timestamp
+  acousticProfile?: {
+    energyEstimate: number;
+    nostalgiaFactor: number;
+  };
+  genreDistribution?: Record<string, number>;
+  eraDistribution?: Record<string, number>;
+  [key: string]: any;
 }
+
+export const FALLBACK_MUSIC_DNA: MusicDNA = {
+  primaryGenre: "Eclectic",
+  dominantEra: "Modern",
+  topArtists: [],
+  diversityScore: 0,
+  songCount: 0,
+  tracksCount: 0,
+  isGrounded: false,
+  temporalPattern: {
+    primaryEra: "Modern",
+    spanYears: 0,
+    earliestReleaseYear: 2020,
+    latestReleaseYear: 2026,
+    eraDistribution: {}
+  },
+  musicalIdentity: {
+    dominantVibe: "Eclectic",
+    diversityScore: 0,
+    hasVerifiedTracks: false,
+    topArtists: []
+  }
+};
