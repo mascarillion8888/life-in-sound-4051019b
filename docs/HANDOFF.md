@@ -12,7 +12,7 @@
 Aktif dal: main
 HEAD:      bu oturumun işi COMMIT'LENDİ (push kullanıcı onayı bekliyor/bitti
            — `git log -1` ile doğrula; git'e güven, metne değil).
-Testler:   546/546 geçti (59 dosya)
+Testler:   549/549 geçti (59 dosya)
 tsc:       temiz (`npm run typecheck` = 0 hata)
 Lint:      0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn +
            LanguageContext)
@@ -119,6 +119,47 @@ gothic woodcut'ının stale görsel cache'inden servis edilmesi:
   `CardGallery.test.tsx` (cache-bust src + loader gizlenme; onError→fallback).
 - **Doğrulama:** 524/524 (56 dosya), tsc 0, lint 0e/8w, build 0 hata — aşağıda 4.
 
+## 2-F. Kart veri akışı onarımı: artık resim Spotify kapağına takılmıyor (TAM)
+
+**Belirti:** Tüm kod mantığına rağmen kart görseli Michael Jackson kapağına
+takılı kalıyordu. Kök neden iki katmanlıydı:
+
+- **UI (kök neden):** `QuizCard` art penceresinde sağlayıcı albüm kapağı
+  (`song.artworkUrl`) KOŞULSUZ alt katman olarak render ediliyordu; AI boyaması
+  yalnızca `ready` olduğunda üzerine cross-fade oluyordu. HF/Gemini görseli
+  üretilemezse (`art.status === "unavailable"`) kapak sonsuza dek altta kalıyor
+  → "Michael Jackson kapağında takılı" görüntü.
+- **DB (zaten güvenli, artık testlerle sabit):** `cards` tablosunda `image_url`
+  sütunu YOKTUR (`image_path` vardır — storage object path). `persistCardCore`
+  zaten yalnızca `data:image/...` görsellerini storage'a yollar ve `image_path`
+  yazar; bir HTTP albüm URL'i hiçbir zaman DB'ye yazılmaz.
+
+**Yapılan değişiklikler:**
+- **`QuizCard.tsx`** — `coverUrl`, `art.status !== "unavailable"` koşuluna
+  bağlandı: kapak yalnızca geçiş katmanı (loading/ready) iken gösterilir; üretim
+  başarısızsa kapak gizlenir ve gothic woodcut placeholder (`CardArtSkeleton`,
+  `data-generating="false"`) gösterilir. Açıklama yorumları kontrata göre
+  güncellendi ("the album photo never sticks as the face").
+- **`generateCard.server.ts`** — `persistCardCore`: üretim dışı (ör. HTTP URL)
+  `image` değerlerinin asla storage'a/DB'ye yazılmadığını açıkça belgeleyen
+  savunma yorumu eklendi; davranış değişmedi (zaten doğruydu).
+- **`generateCard.server.test.ts`** — `persistCardCore` +3 test:
+  - başarılı `data:image/png;base64` → `image_path` = `<user_id>/<uuid>.png`
+    (DB'ye), upload 1 kez, `image_path` HTTP içermez;
+  - `image: null` → `image_path` null, upload 0;
+  - HTTP albüm URL (Spotify/MJ kapağı) verilse bile `image_path` null, `image_url`
+    anahtarı yok, upload 0.
+  Mock `fakeSession`'ı cards-branch + storage-branch'ı paylaşan tekil referanslara
+  refactor edildi böylece insert row + upload çağrıları doğrulanabiliyor.
+- **`QuizCard.test.tsx`** — "AI üretimi başarısızken kapak korunur" testi iptal
+  edilip yerine: üretim `unavailable` olduğunda `card-art-cover` YOK, `card-art-ai`
+  yok, skeleton `data-generating="false"` gösterilir (async olduğu için
+  `waitFor`). Diğer iki render testi (cover'ın varlığı + hazır AI cross-fade)
+  dokunulmadı: cover hâlâ loading/ready anlarında geçiş katmanı olarak duruyor.
+
+**Kontrat:** "Sağlayıcı kapak asla kart yüzü olarak kalamaz: üretim sürerken
+geçiş katmanı, üretim biteyince ya AI boyaması ya da gothic placeholder."
+
 ## 2-E. Poster savunması + RLS negatif + canlı smoke (3 adımlık paket, TAM)
 
 **Adım 1 — Poster Export & Web Share görsel/UI savunması:**
@@ -181,7 +222,7 @@ Kullanıcı gerçek kredileri sağladı (Supabase anon + GROQ + HF). `runLiveSmo
 `rls-live.test.ts` gerçek Supabase'te geçti: anon key ile `journeys` ve
 `cards` **boş** — RLS aktif, veri sızıntısı yok, anahtar service-role değil;
 `.env`'e konan anon key'in browser'a güvenle gidebilirliği kanıtlandı.
-- **Doğrulama:** 546/546 (59 dosya), tsc 0, lint 0e/8w — aşağıda 4.
+- **Doğrulama:** 549/549 (59 dosya), tsc 0, lint 0e/8w — aşağıda 4.
 
 ## 2. Son biten iş — Gothic Art Generator UI: loading + fallback + boundary (TAM)
 
@@ -432,11 +473,23 @@ history'de — bu dosya günlük değildir.
 - Çalışma ağacı temiz; tüm iş bu checkpoint'te COMMIT'LENDİ. Push kullanıcı
   onayı bekliyor (commit'e `git log -1` ile doğrula; git'e güven, metne değil).
 - Doğrulama: `git status` (clean) + `git log -1` (bu checkpoint) +
-  `npm test` (546/546, 59 dosya) + `npm run typecheck` (0 hata) +
+  `npm test` (549/549, 59 dosya) + `npm run typecheck` (0 hata) +
   `npm run lint` (0 e / 8 w pre-existing).
 - Canlı ortam notu: gerçek krediler (Supabase anon + GROQ + HF) `.env` +
   shell olarak sağlandı; `runLiveSmoke` 3 probe'u da canlıda `passed`
   (Supabase 200, GROQ 200, HF 200); `rls-live.test.ts` gerçek anon key'in
   RLS altında hiç satır görmediğini doğruladı (service-role DEĞİL).
   Krediler ortama girildiğinde tüm canlı testler de koşar.
+
+
+## Cache V2 & Scene-Aware Storage Key Migration
+- **Status**: Completed (549/549 tests passing)
+- **Changes**:
+  - Extracted deterministic `cardArtworkScene` and `SCENE_SPECS` to shared client-safe `scene.ts` module.
+
+  - Implemented `cardArtworkStorageKey(song, context)` with format `v2|<trackKey>|<sceneId>`.
+  - Updated `useCardArtwork` to derive scene on client and pass explicit `scene` override to server.
+  - Preserved `cardArtworkKey(song)` identity for persist/copy trackKeys while isolating client cache storage.
+
+  - Updated `QuizCard` and cache tests to validate V2 key behavior and loading states.
 

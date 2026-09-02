@@ -32,13 +32,48 @@ function branch(table: string, insertError?: unknown): any {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fakeSession(insertError?: unknown): any {
+  const cardsBranch = branch("cards", insertError);
+  const storageBranch = { upload: vi.fn().mockResolvedValue({ error: null }) };
   return {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-1" } } }) },
-    from: (table: string) => branch(table, insertError),
-    storage: {
-      from: vi.fn(() => ({ upload: vi.fn().mockResolvedValue({ error: null }) })),
-    },
+    from: (table: string) => (table === "cards" ? cardsBranch : branch(table, insertError)),
+    storage: { from: vi.fn(() => storageBranch) },
   };
+}
+
+type InsertRow = {
+  id: string;
+  user_id: string;
+  track_key: string;
+  title: string;
+  artist: string;
+  genre: string | null;
+  release_year: number | null;
+  birth_year: number | null;
+  encounter_age: number | null;
+  user_memory: string | null;
+  scene: string;
+  lore: string;
+  image_path: string | null;
+  image_url?: unknown;
+};
+
+/** Capture the cards.insert row — the single shared cards-branch insert mock. */
+function lastInsertRow(): InsertRow | undefined {
+  const session = createClientAny.mock.results.at(-1)?.value;
+  const cardsBranch = session?.from?.("cards");
+  return cardsBranch?.insert?.mock.calls.at(-1)?.[0] as InsertRow | undefined;
+}
+function storageUploadCalls(): { path: string; contentType: string }[] {
+  const session = createClientAny.mock.results.at(-1)?.value;
+  const upload = session?.storage?.from?.().upload;
+  if (!upload) return [];
+  return (upload.mock.calls as unknown as [string, unknown, { contentType?: string }][]).map(
+    ([path, , options]) => ({
+      path,
+      contentType: options?.contentType ?? "",
+    }),
+  );
 }
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -188,6 +223,57 @@ describe("persistCardCore", () => {
     );
     expect(ok).toBe(true);
     expect(invalidateCardsCacheMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists the generated painting path (no external album URL) on success", async () => {
+    const ok = await persistCardCore(
+      { ...ENCOUNTER, accessToken: "token" },
+      "lore",
+      "gothic",
+      "data:image/png;base64,AA==",
+      { supabaseUrl: "https://example.supabase.co", anonKey: "anon" },
+    );
+    expect(ok).toBe(true);
+    const row = lastInsertRow();
+    expect(row).toBeDefined();
+    // The freshly generated painting lands in the private bucket as
+    // "<user_id>/<uuid>.png" — never a provider album-art URL.
+    expect(row!.image_path).toMatch(/^user-1\/[0-9a-f-]{36}\.png$/);
+    const uploads = storageUploadCalls();
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0].contentType).toBe("image/png");
+    expect(row!.image_path).toBe(uploads[0].path);
+    expect(String(row!.image_path)).not.toContain("http");
+  });
+
+  it("stores image_path null when no painting was generated (never a cover URL)", async () => {
+    const ok = await persistCardCore(
+      { ...ENCOUNTER, accessToken: "token" },
+      "lore",
+      "gothic",
+      null,
+      { supabaseUrl: "https://example.supabase.co", anonKey: "anon" },
+    );
+    expect(ok).toBe(true);
+    expect(lastInsertRow()?.image_path).toBeNull();
+    expect(storageUploadCalls()).toHaveLength(0);
+  });
+
+  it("refuses an album-art HTTP URL as the painting (image_path stays null)", async () => {
+    // A provider cover leaking into `image` (e.g. a Spotify/iTunes artwork
+    // URL) must never be written to the DB — the card face keeps the gothic
+    // placeholder instead of a stuck album photo.
+    const ok = await persistCardCore(
+      { ...ENCOUNTER, accessToken: "token" },
+      "lore",
+      "gothic",
+      "https://example.com/album/michael-jackson-cover.jpg",
+      { supabaseUrl: "https://example.supabase.co", anonKey: "anon" },
+    );
+    expect(ok).toBe(true);
+    expect(lastInsertRow()?.image_path).toBeNull();
+    expect(lastInsertRow()?.image_url).toBeUndefined();
+    expect(storageUploadCalls()).toHaveLength(0);
   });
 
   it("does not invalidate the cache when the insert fails", async () => {

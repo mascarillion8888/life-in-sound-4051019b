@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
@@ -59,35 +59,41 @@ describe("QuizCard", () => {
     expect(badge.style.clipPath).toBe("");
   });
 
-  it("embeds the iTunes cover inside the black window — no skeleton when a cover exists", () => {
+  it("renders the SilhouetteCanvas art base - the iTunes cover is never rendered", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
-    const cover = screen.getByTestId("card-art-cover") as HTMLImageElement;
-    expect(cover.src).toContain("art.jpg");
-    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
+    const canvas = screen.getByTestId("silhouette-canvas");
+    expect(canvas).toBeInTheDocument();
+    expect(screen.getByTestId("card-art-skeleton")).toHaveAttribute("data-generating", "true");
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
   });
 
   it("cross-fades the AI painting over the cover when one is ready", () => {
     window.localStorage.setItem(
-      "soundmap.card-art.v1",
-      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
+      "soundmap.card-art.v2",
+      JSON.stringify({ "v2|itunes:42|gothic": "data:image/png;base64,AA==" }),
     );
     render(<QuizCard card={cards[0]} song={song()} />);
-    // The cover stays underneath; the painting fades in on top.
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
+    // The AI painting is now the primary layer — the cover is not rendered
+    expect(screen.queryByTestId("card-art-cover")).toBeNull();
     const ai = screen.getByTestId("card-art-ai") as HTMLImageElement;
     expect(ai.src).toContain("data:image/png;base64,AA==");
     expect(ai.className).toContain("fade-in");
   });
 
-  it("keeps the cover when AI generation fails or no key exists", () => {
-    // No cache, no key — generation resolves unavailable; the iTunes cover
-    // remains the window's imagery.
+  it("keeps the silhouette base when AI generation fails - no cover returns", async () => {
+    // No cache, no key - generation resolves unavailable. The provider's
+    // album photo must stay gone:the card face keeps the silhouette base.
+    // imagery:the card face keeps the silhouette placeholder instead.
     render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
+    // Gen fails fast server-side, but the hook only flips to "unavailable"
+    // after that resolves - wait for the loading skeleton to leave.
+    await waitFor(() => expect(screen.queryByTestId("card-art-skeleton")).toBeNull());
     expect(screen.queryByTestId("card-art-ai")).toBeNull();
+    expect(screen.queryByTestId("card-art-cover")).toBeNull();
+    expect(screen.getByTestId("silhouette-canvas")).toBeTruthy();
+    // Static placeholder when generation is unavailable - nothing generates.
+    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
   });
-
   it("falls back to the gothic woodcut skeleton only for coverless songs", () => {
     render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
     expect(screen.queryByTestId("card-art-cover")).toBeNull();

@@ -12,7 +12,12 @@ vi.mock("./cardArtwork.server", () => ({
   generateCardArtwork: (args: unknown) => generateMock(args),
 }));
 
-import { __clearCardArtworkMemoryCache, cardArtworkKey, useCardArtwork } from "./useCardArtwork";
+import {
+  __clearCardArtworkMemoryCache,
+  cardArtworkKey,
+  cardArtworkStorageKey,
+  useCardArtwork,
+} from "./useCardArtwork";
 
 function song(overrides: Partial<Song> = {}): Song {
   return {
@@ -38,6 +43,18 @@ describe("cardArtworkKey", () => {
   });
 });
 
+describe("cardArtworkStorageKey", () => {
+  it("bakes the cache version and the scene into the storage slot", () => {
+    expect(cardArtworkStorageKey(song(), "gothic")).toBe("v2|itunes:42|gothic");
+  });
+
+  it("discriminates by scene — the same track in a different scene is a different slot", () => {
+    expect(cardArtworkStorageKey(song(), "synth"))?.not.toBe(
+      cardArtworkStorageKey(song(), "gothic"),
+    );
+  });
+});
+
 describe("useCardArtwork", () => {
   beforeEach(() => {
     __clearCardArtworkMemoryCache();
@@ -53,8 +70,8 @@ describe("useCardArtwork", () => {
 
   it("serves a persisted painting instantly — no API call", () => {
     window.localStorage.setItem(
-      "soundmap.card-art.v1",
-      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
+      "soundmap.card-art.v2",
+      JSON.stringify({ "v2|itunes:42|gothic": "data:image/png;base64,AA==" }),
     );
     const { result } = renderHook(() => useCardArtwork(song()));
     expect(result.current.status).toBe("ready");
@@ -71,9 +88,9 @@ describe("useCardArtwork", () => {
 
     // Persisted tier written for the next reload.
     const persisted = JSON.parse(
-      window.localStorage.getItem("soundmap.card-art.v1") ?? "{}",
+      window.localStorage.getItem("soundmap.card-art.v2") ?? "{}",
     ) as Record<string, string>;
-    expect(persisted["itunes:42"]).toBe("data:image/png;base64,BB==");
+    expect(persisted["v2|itunes:42|gothic"]).toBe("data:image/png;base64,BB==");
 
     // A second mount is instant and does not spend another API call.
     const second = renderHook(() => useCardArtwork(song()));

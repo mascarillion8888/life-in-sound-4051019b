@@ -18,6 +18,7 @@
 import { Loader2, Music, Volume2, VolumeX } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
+import { SilhouetteCanvas } from "./SilhouetteCanvas";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -176,12 +177,6 @@ export function QuizCard({
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
-  // Artwork contract: the iTunes cover (song.artworkUrl) renders INSTANTLY
-  // inside the black window, styled with the painterly grading; the AI
-  // painting cross-fades over it when ready; a coverless song keeps the
-  // gothic woodcut skeleton. The provider still only supplies metadata, the
-  // cover bitmap and the 30s preview stream.
-  const coverUrl = song?.artworkUrl ?? null;
   // Dynamic copy — every string on the card is derived from the track's
   // identity + the era's emotion (deterministic; never static filler).
   const copy = song
@@ -232,28 +227,22 @@ export function QuizCard({
       </header>
 
       {/* 2 · Art window — square black frame with a gold hairline border. The
-              iTunes cover sits inside it; the AI painting cross-fades over
-      		when ready; coverless songs keep the woodcut skeleton. */}
+              provider cover is a transitional base while the AI painting
+              generates; a failed generation (unavailable) drops it for the
+              woodcut skeleton — the album photo never sticks as the face.
+              Coverless songs keep the skeleton from the start. */}
       <div
         data-testid="card-art-window"
         className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-[#c8aa6e]/50 bg-[#060504]"
       >
-        {coverUrl ? (
-          <img
-            data-testid="card-art-cover"
-            src={coverUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ filter: "sepia(0.18) contrast(1.05) brightness(0.95)" }}
-          />
+        {song ? (
+          <SilhouetteCanvas artist={song.artist} songTitle={song.title} eraTitle={card.eraTitle} />
         ) : (
-          <CardArtSkeleton
-            generating={song ? art.status === "loading" : false}
-            caption={t.quizCard.artGenerating}
-          />
+          <CardArtSkeleton generating={false} caption={t.quizCard.artGenerating} />
         )}
+        {song && art.status === "loading" ? (
+          <CardArtSkeleton generating caption={t.quizCard.artGenerating} />
+        ) : null}
         {song && art.status === "ready" && art.imageUrl ? (
           <img
             data-testid="card-art-ai"

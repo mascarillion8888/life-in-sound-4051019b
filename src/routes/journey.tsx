@@ -4,7 +4,7 @@ import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/journey/ProgressBar";
-import { QuestionCard } from "@/components/journey/QuestionCard";
+import { QuizCard } from "@/components/journey/QuizCard";
 import { EraCardReveal } from "@/components/journey/EraCardReveal";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MasterPosterModal } from "@/components/results/MasterPosterModal";
@@ -344,35 +344,37 @@ function JourneyPage() {
               }}
             />
           ) : (
-            <QuestionCard
+            <QuizCard
               key={question.id}
-              number={current}
-              title={question.title}
-              description={question.description}
-              answer={answers[question.id]}
-              selected={songs[question.id] ?? null}
-              verified={verified}
-              suggestions={suggestions[question.id]?.songs}
-              onSelectSuggestion={(song) => {
-                setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
-                setSongs((prev) => ({ ...prev, [question.id]: song }));
-                setDraft("");
-                setReveal(question.id);
-              }}
-              draft={draft}
-              onDraftChange={handleDraftChange}
-              onChoose={(song) => {
-                // answers keeps the raw typed text; the structured song is
-                // enriched only when a verification for this exact text has
-                // already resolved — committing never waits on it.
+              question={question}
+              song={songs[question.id] ?? null}
+              onSelect={(song) => {
+                // Reference: select passes the picked Song up. We mirror the
+                // old commit path: persist title, structure song (enriched
+                // by the exact verification text when present), reveal era card.
+                
                 setAnswers((prev) => ({ ...prev, [question.id]: song.title }));
                 setSongs((prev) => ({
                   ...prev,
                   [question.id]: withVerifiedMatch(question.id, song),
                 }));
-                // The era card reveals immediately — artwork scene + preview.
+                setDraft("");
                 setReveal(question.id);
               }}
+              onNext={() => {
+                // Advance after the era reveal — same semantics as EraCardReveal.
+
+                setReveal(null);
+                if (isLast) {
+                  setCompleted(true);
+                  setPosterOpen(true);
+                } else {
+                  setCurrent((c) => Math.min(total, c + 1));
+                }
+              }}
+              isActive={reveal !== question.id}
+              currentIndex={current - 1}
+              totalQuestions={total}
             />
           )}
         </div>
