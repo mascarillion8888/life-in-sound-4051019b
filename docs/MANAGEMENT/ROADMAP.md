@@ -59,3 +59,22 @@
 - Companion conversation / narrative voice over the full timeline
 - Design exists; no schema or code in this branch. Requires the Validation
   Gate above to be passed first.
+
+## Future: Emotional Semantic Tracking (FUTURE, NOT IMPLEMENTED)
+
+Goal: track the emotional/semantic meaning between a songs and the user's
+personal memories over time, via the conceptual flow:
+
+`Song → Memory → Emotion → Meaning → MusicDNA`
+
+Key ideas:
+
+* A same song can take on different meanings in different periods of the
+  user's life; emotional/semantic layers can emerge over time..
+* Emotional Semantic Tracking must **not replace** the existing MusicDNA —
+  MusicDNA represents the general musical/emotional profile of the selection,
+  while Emotional Semantic Tracking would represent the temporal meaning
+  layer that emerges from personal memories..
+* Status: **FUTURE / NOT IMPLEMENTED** — not part of the currently working
+  product; conceptual roadmap note only, no data model, types, or code
+  defined yet..
