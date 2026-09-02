@@ -109,6 +109,10 @@ describe("QuestionCard", () => {
     expect(arg.artist).toBe("");
     expect(arg.album).toBeNull();
     expect(arg.artworkUrl).toBeNull();
+    expect(arg.previewUrl).toBeNull();
+    expect(arg.releaseYear).toBeNull();
+    expect(arg.genre).toBeNull();
+    expect(arg.mood).toBeNull();
     expect(arg.isrc).toBeNull();
     expect(typeof arg.providerId).toBe("string");
     expect(arg.providerId.length).toBeGreaterThan(0);

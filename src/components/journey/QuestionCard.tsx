@@ -19,7 +19,10 @@ function manualSong(text: string): Song {
     artist: "",
     album: null,
     artworkUrl: null,
+    previewUrl: null,
     releaseYear: null,
+    genre: null,
+    mood: null,
     isrc: null,
   };
 }
