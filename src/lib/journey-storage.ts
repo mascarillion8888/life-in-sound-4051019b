@@ -45,7 +45,15 @@ export function isValidSong(value: unknown): value is Song {
   );
 }
 
-/** Coerce a validated Song's nullable fields to `null` when absent/non-string. */
+/**
+ * Coerce a validated Song's fields to safe, normalized values.
+ *
+ * Preserves EVERY metadata field the Song model carries — including the ones
+ * the Music DNA engine consumes (`releaseYear` for era distribution;`genre`/
+ * `mood` for musical-characteristics analysis;`previewUrl`, `isrc` for
+ * downstream features). Dropping them here is what used to leave the grounded
+ * DNA hollow after a reload (era always "Unknown", no genre signal).
+ */
 export function normalizeSong(song: Song): Song {
   return {
     provider: song.provider,
@@ -54,7 +62,14 @@ export function normalizeSong(song: Song): Song {
     artist: song.artist,
     album: typeof song.album === "string" ? song.album : null,
     artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
+    previewUrl: typeof song.previewUrl === "string" ? song.previewUrl : null,
     isrc: typeof song.isrc === "string" ? song.isrc : null,
+    releaseYear:
+      typeof song.releaseYear === "number" && !Number.isNaN(song.releaseYear)
+        ? song.releaseYear
+        : null,
+    genre: typeof song.genre === "string" && song.genre.length > 0 ? song.genre : null,
+    mood: typeof song.mood === "string" && song.mood.length > 0 ? song.mood : null,
     verified: song.verified === true ? true : undefined,
   };
 }

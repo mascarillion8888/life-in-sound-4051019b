@@ -12,6 +12,10 @@ function song(over: Partial<Song> = {}): Song {
     artist: "Jack Johnson",
     album: null,
     artworkUrl: null,
+    previewUrl: null,
+    releaseYear: null,
+    genre: null,
+    mood: null,
     isrc: null,
     ...over,
   };

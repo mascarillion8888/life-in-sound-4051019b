@@ -34,19 +34,58 @@ export interface MusicalIdentity {
   hasVerifiedTracks: boolean;
 }
 
+/**
+ * Genre read (real song.genre when present; deterministic fallback
+ * via a curated known-artist map, then an era-style map — never fabricated).
+ */
+export interface GenreProfile {
+  /** Most frequent genre across the selection. */
+  dominantGenre: string;
+  /** Secondary genres, most frequent first. */
+  secondaryGenres: string[];
+  /** Where the genre came from: real song metadata, known-artist mapping,
+   * era-based style mapping, or unknown. */
+  source: "song" | "artist" | "era" | "unknown";
+}
+
+/**
+ * Aggregate emotional read of the selection — derived deterministically
+ * from genre mood/energy tables (never invented as a raw score）。
+ */
+export interface EmotionalSignature {
+  /** Most frequent mood across songs. */
+  dominantMood: string;
+  /** Runner-up moods, most frequent first. */
+  secondaryMoods: string[];
+  /** Emotional intensity 1-10 (frequency-weighted) */
+  intensity: number;
+  /** -1 (dark) .. +1 (bright). */
+  valency: number;
+  /** Energy estimate 1-10 (genre-averaged). */
+  energy: number;
+}
+
 /** Complete grounded musical identity. */
 export interface MusicDNA {
   temporalPattern: TemporalPattern;
   musicalIdentity: MusicalIdentity;
+  /** Deterministic genre read (real metadata or anchored fallback.). */
+  genreProfile: GenreProfile;
+  /** Aggregate emotional read of the selection. */
+  emotionalSignature: EmotionalSignature;
+  /** Prose summary — e.g. "Eclectic 1980s Hard Rock with intense undertones". */
+  summary: string;
+  /** 0/1 completeness score (analyzedSongs / 8). */
+  confidence: number;
   /** Number of songs that fed this analysis. */
   songCount: number;
-  /** True when the DNA came from real song data (never fabricated). */
+  /** True when the DNA came from real song data (never fabricated.). */
   isGrounded: boolean;
   /** ISO timestamp of generation. */
   analyzedAt: string;
 }
 
-/** One life stage + the song the user attached to it. */
+/** One life stage +the song the user attached to it. */
 export interface LifeContext {
   id?: string;
   questionId?: number;
@@ -70,6 +109,20 @@ export const FALLBACK_MUSIC_DNA: MusicDNA = {
     dominantVibe: "Undefined",
     hasVerifiedTracks: false,
   },
+  genreProfile: {
+    dominantGenre: "Unknown",
+    secondaryGenres: [],
+    source: "unknown",
+  },
+  emotionalSignature: {
+    dominantMood: "Neutral",
+    secondaryMoods: [],
+    intensity: 0,
+    valency: 0,
+    energy: 5,
+  },
+  summary: "No songs analyzed",
+  confidence: 0,
   songCount: 0,
   isGrounded: false,
   analyzedAt: "",

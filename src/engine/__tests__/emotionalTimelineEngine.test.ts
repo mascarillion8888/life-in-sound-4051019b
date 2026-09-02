@@ -18,7 +18,8 @@ describe("emotionalTimelineEngine", () => {
 
     expect(result.nodes).toHaveLength(1);
     expect(result.nodes[0].songTitle).toBe("Song A");
-    expect(result.nodes[0].contextText).toBe("Childhood memories");
+    expect(result.nodes[0].stageName).toBe("Childhood");
+    expect(result.nodes[0].valency).toBeGreaterThan(0);
     expect(result.isGrounded).toBe(true);
   });
 

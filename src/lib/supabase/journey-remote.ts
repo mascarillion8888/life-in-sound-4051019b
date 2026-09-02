@@ -138,6 +138,8 @@ function toProgress(
       const id = Number(key);
       if (Number.isFinite(id) && isValidSong(value)) {
         const song = value as Song;
+        // Preserve EVERY metadata field — including releaseYear (era), genre/mood
+        // (musical characteristics) so reloaded journeys still feed real Music DNA.
         songs[id] = {
           provider: song.provider,
           providerId: song.providerId,
@@ -145,7 +147,14 @@ function toProgress(
           artist: song.artist,
           album: typeof song.album === "string" ? song.album : null,
           artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
+          previewUrl: typeof song.previewUrl === "string" ? song.previewUrl : null,
           isrc: typeof song.isrc === "string" ? song.isrc : null,
+          releaseYear:
+            typeof song.releaseYear === "number" && !Number.isNaN(song.releaseYear)
+              ? song.releaseYear
+              : null,
+          genre: typeof song.genre === "string" && song.genre.length > 0 ? song.genre : null,
+          mood: typeof song.mood === "string" && song.mood.length > 0 ? song.mood : null,
           verified: song.verified === true ? true : undefined,
         };
       }

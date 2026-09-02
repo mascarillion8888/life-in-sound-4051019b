@@ -1,39 +1,112 @@
-import { LifeContext } from "../types/musicDna";
-import { EmotionalTimeline, EmotionalNode } from "../types/emotionalTimeline";
+import type { MusicDNA, LifeContext } from "../types/musicDna";
+import type { EmotionalNode, EmotionalTimeline } from "../types/emotionalTimeline";
 
-export function generateEmotionalTimeline(dna: any, contexts: LifeContext[]): EmotionalTimeline {
-  if (!contexts || !Array.isArray(contexts)) {
-    return { 
-      nodes: [], 
-      overallTrajectory: "Fluctuating", 
-      dominantEmotion: "Unknown", 
-      peakStage: "Unknown", 
-      isGrounded: false 
+/**
+ * Yaşam Aşaması ve Müzik Seçimine Göre Valence ve Intensity Matrisi
+ * (Deterministik/Grounded Duygu Haritası)
+ */
+function calculateStageEmotion(
+  context: LifeContext,
+  index: number,
+  totalStages: number,
+): EmotionalNode {
+  const { stageName, song } = context;
+  const stageLower = stageName.toLowerCase();
+
+  let valency = 0.2;
+  let intensity = 6;
+  let vibeLabel = "Reflective Transition";
+
+  if (stageLower.includes("childhood") || stageLower.includes("first spark")) {
+    valency = 0.8;
+    intensity = 7;
+    vibeLabel = "Nostalgic Spark";
+  } else if (stageLower.includes("teenage") || stageLower.includes("rebellion")) {
+    valency = 0.4;
+    intensity = 9;
+    vibeLabel = "Raw Energy & Exploration";
+  } else if (stageLower.includes("first love") || stageLower.includes("connection")) {
+    valency = 0.9;
+    intensity = 8;
+    vibeLabel = "Warm Resonance";
+  } else if (stageLower.includes("hard time") || stageLower.includes("darkness")) {
+    valency = -0.8;
+    intensity = 10;
+    vibeLabel = "Cathartic Depth";
+  } else if (stageLower.includes("unstoppable") || stageLower.includes("turning point")) {
+    valency = 0.7;
+    intensity = 9;
+    vibeLabel = "Resilient Triumph";
+  }
+
+  const temporalArcPosition = Math.round((index / (totalStages - 1 || 1)) * 100);
+
+  return {
+    stageName: stageName || "Unknown",
+    songTitle: song?.title || "Unknown Song",
+    artistName: song?.artist || "Unknown Artist",
+    releaseYear: song?.year ?? song?.releaseYear ?? "Unknown Year",
+    valency,
+    intensity,
+    vibeLabel,
+    temporalArcPosition,
+  };
+}
+
+/**
+ * Toplam Duygu Eğrisini (Trajectory Pattern) Belirleyici
+ */
+function determineTrajectoryType(nodes: EmotionalNode[]): EmotionalTimeline["overallTrajectory"] {
+  if (nodes.length < 2) return "Fluctuating";
+
+  const firstHalf = nodes.slice(0, Math.floor(nodes.length / 2));
+  const secondHalf = nodes.slice(Math.floor(nodes.length / 2));
+
+  const avgFirstValency = firstHalf.reduce((acc, n) => acc + n.valency, 0) / firstHalf.length;
+  const avgSecondValency = secondHalf.reduce((acc, n) => acc + n.valency, 0) / secondHalf.length;
+
+  if (avgSecondValency > avgFirstValency + 0.3) return "Ascending";
+  if (avgFirstValency > avgSecondValency + 0.3) return "Descending";
+
+  const hasDeepDrop = nodes.some((n) => n.valency < -0.5);
+  const endsHigh = nodes[nodes.length - 1]?.valency > 0.5;
+
+  if (hasDeepDrop && endsHigh) return "U-Shaped";
+
+  return "Fluctuating";
+}
+
+/**
+ * P3 — Main Emotional Timeline Pipeline Engine
+ */
+export function generateEmotionalTimeline(
+  dna: MusicDNA | null,
+  contexts: LifeContext[],
+): EmotionalTimeline {
+  if (!contexts || contexts.length === 0) {
+    return {
+      nodes: [],
+      overallTrajectory: "Fluctuating",
+      dominantEmotion: "Unknown",
+      peakStage: "Unknown",
+      isGrounded: false,
     };
   }
 
-  const nodes: EmotionalNode[] = contexts.map((ctx, index) => ({
-    id: ctx.id || `timeline-${index}`,
-    songTitle: ctx.song?.title || "Bilinmeyen Şarkı",
-    artistName: ctx.song?.artist || "Bilinmeyen Sanatçı",
-    releaseYear: ctx.song?.year ?? ctx.song?.releaseYear ?? 2000,
-    contextText: ctx.contextText || "",
-    stageName: ctx.stageName || "Unknown",
-    valency: 0.5,
-    energy: 0.5,
-    intensity: 0.5,
-    primaryEmotion: "Nostalgic",
-    vibeLabel: "Melancholic",
-    temporalArcPosition: index / Math.max(1, contexts.length - 1),
-    color: "#000000",
-    questionId: ctx.questionId
-  }));
+  const nodes: EmotionalNode[] = contexts.map((ctx, idx) =>
+    calculateStageEmotion(ctx, idx, contexts.length),
+  );
+
+  const peakNode = [...nodes].sort((a, b) => b.intensity - a.intensity)[0];
+  const overallTrajectory = determineTrajectoryType(nodes);
 
   return {
     nodes,
-    overallTrajectory: "Fluctuating",
-    dominantEmotion: "Nostalgic",
-    peakStage: nodes.length > 0 ? (nodes[0].stageName || "Unknown") : "Unknown",
-    isGrounded: true
+    overallTrajectory,
+    dominantEmotion: dna ? dna.musicalIdentity.dominantVibe : "Nostalgic",
+    peakStage: peakNode ? `${peakNode.stageName} (${peakNode.songTitle})` : "Unknown",
+    isGrounded: dna
+      ? dna.isGrounded && contexts.every((c) => c.song?.verified !== false)
+      : contexts.every((c) => c.song?.verified !== false),
   };
 }

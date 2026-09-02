@@ -19,6 +19,10 @@ function song(over: Partial<Song> = {}): Song {
     artist: "Jack Johnson",
     album: null,
     artworkUrl: null,
+    previewUrl: null,
+    releaseYear: null,
+    genre: null,
+    mood: null,
     isrc: null,
     ...over,
   };
@@ -166,6 +170,10 @@ describe("journey-storage structured Song persistence", () => {
       artist: "",
       album: null,
       artworkUrl: null,
+      previewUrl: null,
+      releaseYear: null,
+      genre: null,
+      mood: null,
       isrc: null,
     };
     saveJourney({ current: 1, answers: { 1: manual.title }, songs: { 1: manual } });
