@@ -14,6 +14,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
+import { MusicUniverseHero } from "@/components/results/MusicUniverseHero";
+import { SongUniverseCard } from "@/components/results/SongUniverseCard";
 import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
 import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
 import { analyzeUserJourney, generateGroundedAnalysis } from "@/lib/ai/pipeline";
@@ -377,6 +379,11 @@ function ResultsPage() {
           </header>
         </AnimatedReveal>
 
+        {/* Universe Hero — Phase 1: the visual multiverse entry point */}
+        <AnimatedReveal>
+          <MusicUniverseHero profile={profile} grounded={grounded} songs={songs} />
+        </AnimatedReveal>
+
         {/* Life Story */}
         <AnimatedReveal>
           {profile ? (
@@ -480,6 +487,18 @@ function ResultsPage() {
                     ))}
                   </ul>
                 </div>
+              ))}
+            </div>
+          </section>
+        </AnimatedReveal>
+
+        {/* Song Universe Cards — Phase 1: one song, one universe */}
+        <AnimatedReveal>
+          <section>
+            <SectionHeading icon={Dna} eyebrow={t.results.dnaEyebrow} title="Song Universes" />
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {songs.map((song, i) => (
+                <SongUniverseCard key={`${song.providerId}-${i}`} song={song} index={i} />
               ))}
             </div>
           </section>
