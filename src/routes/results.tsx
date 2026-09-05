@@ -9,6 +9,7 @@ import { resetJourneySession } from "@/lib/reset-session";
 import { useSession } from "@/lib/supabase/use-session";
 import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
 import type { Song } from "@/lib/song/types";
+import type { GroundedLifeStory } from "@/types/lifeStory";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
@@ -92,9 +93,11 @@ type StoryStatus = "idle" | "loading" | "ready" | "fallback";
 function LifeStory({
   profile,
   songs: songTitles,
+  groundedStory,
 }: {
   profile: NonNullable<ReturnType<typeof analyzeUserJourney>>;
   songs: string[];
+  groundedStory?: GroundedLifeStory | null;
 }) {
   const { t } = useLanguage();
   const fallback = useMemo(() => deterministicLifeStory(songTitles), [songTitles]);
@@ -147,9 +150,26 @@ function LifeStory({
       />
       <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
         {showFallback ? (
-          fallback
-            .split("\n\n")
-            .map((paragraph, i) => <p key={i}>{highlightSongs(paragraph, songTitles)}</p>)
+          groundedStory ? (
+            <div className="space-y-5">
+              <p className="text-xl font-semibold text-foreground">{groundedStory.title}</p>
+              <p>{groundedStory.summary}</p>
+              {groundedStory.chapters.map((chapter, i) => (
+                <div key={i} className="space-y-1">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-primary/80">
+                    {chapter.stageName} · {chapter.songTitle} — {chapter.artistName}
+                  </p>
+                  <p>{chapter.narrative}</p>
+                </div>
+              ))}
+              <p>{groundedStory.dominantEraText}</p>
+              <p>{groundedStory.diversityInsight}</p>
+            </div>
+          ) : (
+            fallback
+              .split("\n\n")
+              .map((paragraph, i) => <p key={i}>{highlightSongs(paragraph, songTitles)}</p>)
+          )
         ) : (
           <p className="whitespace-pre-line">{story}</p>
         )}
@@ -360,7 +380,11 @@ function ResultsPage() {
         {/* Life Story */}
         <AnimatedReveal>
           {profile ? (
-            <LifeStory profile={profile} songs={songTitles} />
+            <LifeStory
+              profile={profile}
+              songs={songTitles}
+              groundedStory={grounded?.story ?? null}
+            />
           ) : (
             <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
               <SectionHeading
