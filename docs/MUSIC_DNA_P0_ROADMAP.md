@@ -10,6 +10,7 @@
 ## 🎯 Executive Summary
 
 ### Current State
+
 - ✅ Users select 8 real songs
 - ✅ Songs stored with full metadata (artist, album, artwork, release year, ISRC)
 - ❌ Music DNA **ignores songs** → analyzes question answers instead
@@ -17,6 +18,7 @@
 - ❌ Emotional Timeline weak
 
 ### Target State
+
 ```
 8 REAL SONGS
     ↓
@@ -57,16 +59,16 @@ GROUNDED ANALYSIS
 export interface TemporalPattern {
   /** Array of (era, count) — e.g., [("70s", 2), ("90s", 3), ("2000s", 2), ("2020s", 1)] */
   eraDistribution: Array<{ era: string; count: number }>;
-  
+
   /** Earliest release year in selection */
   earliestYear: number | null;
-  
+
   /** Most recent release year */
   latestYear: number | null;
-  
+
   /** Span in years (latestYear - earliestYear) */
   spanYears: number | null;
-  
+
   /** Primary decade(s) — where most songs cluster */
   dominantEra: string; // e.g., "1990s", "2000s"
 }
@@ -77,16 +79,16 @@ export interface TemporalPattern {
 export interface MusicalIdentity {
   /** Unique artist count / 8 */
   artistDiversity: number; // 0.0-1.0 (8 different = 1.0, all same = 0.125)
-  
+
   /** Top N artists (by frequency) */
   topArtists: Array<{ name: string; frequency: number }>;
-  
+
   /** Estimated dominant genre(s) from songs */
   dominantGenre: string; // e.g., "Rock", "Hip-Hop", "Classical", "Electronic"
-  
+
   /** Secondary genres */
   secondaryGenres: string[];
-  
+
   /** Estimated listening style — e.g., "introspective", "energetic", "eclectic" */
   listeningStyle: string;
 }
@@ -97,16 +99,16 @@ export interface MusicalIdentity {
 export interface EmotionalSignature {
   /** Dominant emotional tone across songs */
   dominantMood: string; // e.g., "melancholic", "uplifting", "aggressive", "peaceful"
-  
+
   /** Secondary moods */
   secondaryMoods: string[];
-  
+
   /** Overall emotional intensity 1-10 */
   intensity: number;
-  
+
   /** Valency: -1 (sad) to +1 (happy) */
   valency: number;
-  
+
   /** Energy level estimate 1-10 */
   energy: number;
 }
@@ -117,25 +119,26 @@ export interface EmotionalSignature {
 export interface MusicDNA {
   /** Temporal characteristics */
   temporal: TemporalPattern;
-  
+
   /** Artist & genre identity */
   identity: MusicalIdentity;
-  
+
   /** Emotional signature */
   emotional: EmotionalSignature;
-  
+
   /** Prose summary — e.g., "Eclectic 90s romantic with indie undertones" */
   summary: string;
-  
+
   /** Confidence score (0-1) — how complete/reliable is this analysis? */
   confidence: number;
-  
+
   /** Raw input — which songs were analyzed */
   analyzedSongs: number; // count of non-null songs
 }
 ```
 
 **Tests:** `src/types/__tests__/musicDna.test.ts`
+
 - Type construction
 - Null/undefined handling
 - Serialization round-trip
@@ -149,7 +152,7 @@ export interface MusicDNA {
 ```typescript
 /**
  * Extract features from a single Song
- * 
+ *
  * Public extraction rules:
  * - Use ONLY what the Song model provides
  * - NEVER invent metadata (no hallucinated genre, era, or mood)
@@ -172,13 +175,13 @@ export interface SongFeatures {
 export function extractSongFeatures(songs: (Song | null)[]): SongFeatures[] {
   return songs
     .filter((s): s is Song => s !== null)
-    .map(song => ({
+    .map((song) => ({
       title: song.title,
       artist: song.artist || null,
       releaseYear: song.releaseYear,
       era: song.releaseYear ? computeEra(song.releaseYear) : null,
       genre: song.genre ?? null, // Don't invent
-      mood: song.mood ?? null,   // Don't invent
+      mood: song.mood ?? null, // Don't invent
     }));
 }
 
@@ -193,6 +196,7 @@ export function computeEra(year: number): string {
 ```
 
 **Tests:** `src/lib/ai/musicFeatures.test.ts`
+
 - Null handling
 - Era computation
 - Feature extraction matrix
@@ -208,7 +212,7 @@ export function computeEra(year: number): string {
 ```typescript
 /**
  * calculateTemporalPattern — analyze era distribution
- * 
+ *
  * Algorithm:
  * 1. Extract era from each song's releaseYear
  * 2. Count occurrences per era
@@ -219,7 +223,7 @@ export function calculateTemporalPattern(features: SongFeatures[]): TemporalPatt
   const eras: Map<string, number> = new Map();
   const years: number[] = [];
 
-  features.forEach(f => {
+  features.forEach((f) => {
     if (f.era) {
       eras.set(f.era, (eras.get(f.era) ?? 0) + 1);
     }
@@ -238,15 +242,14 @@ export function calculateTemporalPattern(features: SongFeatures[]): TemporalPatt
     eraDistribution,
     earliestYear: years.length > 0 ? Math.min(...years) : null,
     latestYear: years.length > 0 ? Math.max(...years) : null,
-    spanYears: years.length > 0 
-      ? Math.max(...years) - Math.min(...years) 
-      : null,
+    spanYears: years.length > 0 ? Math.max(...years) - Math.min(...years) : null,
     dominantEra,
   };
 }
 ```
 
 **Tests:** `src/engine/__tests__/musicDnaEngine.test.ts`
+
 - Single era (all 2000s) → dominantEra = "2000s"
 - Multiple eras (90s, 2000s, 2020s) → sorted distribution
 - Empty features → dominantEra = "Unknown"
@@ -261,7 +264,7 @@ export function calculateTemporalPattern(features: SongFeatures[]): TemporalPatt
 ```typescript
 /**
  * calculateMusicalIdentity — artist diversity, dominant genre
- * 
+ *
  * Algorithm:
  * 1. Count unique artists
  * 2. Compute diversity = uniqueCount / totalCount
@@ -272,7 +275,7 @@ export function calculateMusicalIdentity(features: SongFeatures[]): MusicalIdent
   const artists: Map<string, number> = new Map();
   const genres = new Set<string>();
 
-  features.forEach(f => {
+  features.forEach((f) => {
     if (f.artist) {
       artists.set(f.artist, (artists.get(f.artist) ?? 0) + 1);
     }
@@ -282,9 +285,7 @@ export function calculateMusicalIdentity(features: SongFeatures[]): MusicalIdent
   });
 
   const uniqueArtists = artists.size;
-  const artistDiversity = features.length > 0 
-    ? uniqueArtists / features.length 
-    : 0;
+  const artistDiversity = features.length > 0 ? uniqueArtists / features.length : 0;
 
   const topArtists = Array.from(artists.entries())
     .map(([name, frequency]) => ({ name, frequency }))
@@ -307,6 +308,7 @@ export function calculateMusicalIdentity(features: SongFeatures[]): MusicalIdent
 ```
 
 **Tests:**
+
 - All same artist → artistDiversity = 0.125, listeningStyle = "Loyal"
 - All different artists → artistDiversity = 1.0, listeningStyle = "Adventurous"
 - Genre inference from features
@@ -320,7 +322,7 @@ export function calculateMusicalIdentity(features: SongFeatures[]): MusicalIdent
 ```typescript
 /**
  * calculateEmotionalSignature — mood, intensity, energy, valency
- * 
+ *
  * Algorithm:
  * 1. Extract mood from song features
  * 2. Aggregate into dominant mood
@@ -333,7 +335,7 @@ export function calculateEmotionalSignature(features: SongFeatures[]): Emotional
   let totalEnergy = 0;
   let energyCount = 0;
 
-  features.forEach(f => {
+  features.forEach((f) => {
     if (f.mood) {
       moods.set(f.mood, (moods.get(f.mood) ?? 0) + 1);
     }
@@ -344,9 +346,8 @@ export function calculateEmotionalSignature(features: SongFeatures[]): Emotional
     }
   });
 
-  const moodEntries = Array.from(moods.entries())
-    .sort((a, b) => b[1] - a[1]);
-  
+  const moodEntries = Array.from(moods.entries()).sort((a, b) => b[1] - a[1]);
+
   const dominantMood = moodEntries[0]?.[0] ?? "Neutral";
   const secondaryMoods = moodEntries.slice(1, 3).map(([m]) => m);
   const valency = moodToValency(dominantMood);
@@ -398,6 +399,7 @@ function estimateEnergy(genre: string): number {
 ```
 
 **Tests:**
+
 - Mood aggregation
 - Valency mapping
 - Energy estimation
@@ -412,7 +414,7 @@ function estimateEnergy(genre: string): number {
 ```typescript
 /**
  * generateMusicDNA — complete analysis from 8 songs
- * 
+ *
  * Steps:
  * 1. Extract features
  * 2. Calculate temporal pattern
@@ -506,6 +508,7 @@ function fallbackMusicDNA(): MusicDNA {
 ```
 
 **Tests:** `src/engine/__tests__/musicDnaEngine.test.ts`
+
 - Full 8 songs → confidence = 1.0
 - 4 songs → confidence = 0.5
 - Empty → fallback
@@ -520,25 +523,33 @@ function fallbackMusicDNA(): MusicDNA {
 **File:** `src/lib/ai/pipeline.ts` (modify existing)
 
 **Current code:**
+
 ```typescript
-export function generateGroundedAnalysis(songs: Song[], contexts?: LifeContext[]): GroundedAnalysis {
+export function generateGroundedAnalysis(
+  songs: Song[],
+  contexts?: LifeContext[],
+): GroundedAnalysis {
   // Calls generateMusicDNA, generateGroundedLifeStory, generateEmotionalTimeline
   // But generateMusicDNA currently doesn't use real song data
 }
 ```
 
 **Change to:**
+
 ```typescript
-export function generateGroundedAnalysis(songs: Song[], contexts?: LifeContext[]): GroundedAnalysis {
+export function generateGroundedAnalysis(
+  songs: Song[],
+  contexts?: LifeContext[],
+): GroundedAnalysis {
   // NEW: Use real Music DNA engine
   const musicDna = generateMusicDNA(songs);
-  
+
   // Feed real musicDna to Life Story
   const lifeStory = generateGroundedLifeStory(musicDna, contexts ?? GROUNDED_STAGE_NAMES);
-  
+
   // Feed real musicDna to Emotional Timeline
   const timeline = generateEmotionalTimeline(musicDna, contexts ?? GROUNDED_STAGE_NAMES);
-  
+
   return {
     musicDna,
     lifeStory,
@@ -548,6 +559,7 @@ export function generateGroundedAnalysis(songs: Song[], contexts?: LifeContext[]
 ```
 
 **Tests:**
+
 - Verify songs flow through to Music DNA
 - Verify Music DNA feeds Life Story
 - Verify Music DNA feeds Timeline
@@ -560,11 +572,14 @@ export function generateGroundedAnalysis(songs: Song[], contexts?: LifeContext[]
 **File:** `src/routes/results.tsx` (modify rendering)
 
 **Add new section:**
+
 ```tsx
-{/* Music DNA Explorer */}
+{
+  /* Music DNA Explorer */
+}
 <section className="space-y-4 rounded-lg border border-border/50 bg-card/60 p-6 backdrop-blur-xl">
   <h3 className="text-xl font-bold">Music DNA</h3>
-  
+
   {/* Temporal Pattern */}
   <div>
     <span className="text-sm font-semibold text-muted-foreground">Temporal Profile</span>
@@ -573,21 +588,21 @@ export function generateGroundedAnalysis(songs: Song[], contexts?: LifeContext[]
       Era span: {analysis.musicDna.temporal.earliestYear} — {analysis.musicDna.temporal.latestYear}
     </p>
   </div>
-  
+
   {/* Musical Identity */}
   <div>
     <span className="text-sm font-semibold text-muted-foreground">Artist Diversity</span>
     <p>{(analysis.musicDna.identity.artistDiversity * 100).toFixed(0)}%</p>
-    <p>Top artists: {analysis.musicDna.identity.topArtists.map(a => a.name).join(", ")}</p>
+    <p>Top artists: {analysis.musicDna.identity.topArtists.map((a) => a.name).join(", ")}</p>
   </div>
-  
+
   {/* Emotional Signature */}
   <div>
     <span className="text-sm font-semibold text-muted-foreground">Emotional Tone</span>
     <p>{analysis.musicDna.emotional.dominantMood}</p>
     <p>Intensity: {analysis.musicDna.emotional.intensity}/10</p>
   </div>
-</section>
+</section>;
 ```
 
 ---
@@ -669,6 +684,7 @@ Related: Gap Analysis checkpoint 7747a120"
 #### 5.2 — Update Docs
 
 **File:** `docs/HANDOFF.md` — Update with:
+
 ```markdown
 ## P0 — Music DNA Engine (TAM)
 
@@ -686,9 +702,11 @@ Related: Gap Analysis checkpoint 7747a120"
 
 ```markdown
 ### ✅ Tamamlanan Fazlar
+
 - **Faz 3.5:** Music DNA gerçek veriye dayandırıldı (Sep 1, 2026)
 
 ### ⏳ Sıradaki Fazlar
+
 - **Faz 4a:** Genre enrichment (external source if needed)
 - **Faz 4b:** Music Memory veri modeli
 ```
@@ -698,11 +716,13 @@ Related: Gap Analysis checkpoint 7747a120"
 ## 🎯 Implementation Checklist
 
 ### Phase 1: Types & Contracts
+
 - [ ] `src/types/musicDna.ts` created
 - [ ] `src/lib/ai/musicFeatures.ts` created
 - [ ] Type tests pass (20+ tests)
 
 ### Phase 2: Engine Implementation
+
 - [ ] `calculateTemporalPattern()` implemented & tested
 - [ ] `calculateMusicalIdentity()` implemented & tested
 - [ ] `calculateEmotionalSignature()` implemented & tested
@@ -710,17 +730,20 @@ Related: Gap Analysis checkpoint 7747a120"
 - [ ] Engine tests pass (80+ tests)
 
 ### Phase 3: Integration
+
 - [ ] `pipeline.ts` wired to use real Music DNA
 - [ ] `results.tsx` displays Music DNA section
 - [ ] Integration tests pass (20+ tests)
 
 ### Phase 4: Validation
+
 - [ ] All 546+ tests still pass
 - [ ] TypeScript: 0 errors
 - [ ] Lint: 0 errors
 - [ ] Browser: Rule 10 visual validation ✅
 
 ### Phase 5: Documentation
+
 - [ ] Migration commit created
 - [ ] `docs/HANDOFF.md` updated
 - [ ] `STATE.md` roadmap updated
@@ -730,14 +753,14 @@ Related: Gap Analysis checkpoint 7747a120"
 
 ## ⏱️ Total Estimated Time
 
-| Phase | Hours | Notes |
-|---|---|---|
-| 1. Types | 4-6 | Define contracts |
-| 2. Engine | 8-12 | Core implementation |
-| 3. Integration | 6-8 | Wiring + UI updates |
-| 4. Tests | 4-6 | Comprehensive validation |
-| 5. Deploy | 2-3 | Docs + migration |
-| **TOTAL** | **24-35 hrs** | ~3-5 days |
+| Phase          | Hours         | Notes                    |
+| -------------- | ------------- | ------------------------ |
+| 1. Types       | 4-6           | Define contracts         |
+| 2. Engine      | 8-12          | Core implementation      |
+| 3. Integration | 6-8           | Wiring + UI updates      |
+| 4. Tests       | 4-6           | Comprehensive validation |
+| 5. Deploy      | 2-3           | Docs + migration         |
+| **TOTAL**      | **24-35 hrs** | ~3-5 days                |
 
 ---
 
@@ -774,6 +797,7 @@ Related: Gap Analysis checkpoint 7747a120"
 ## 📞 Next Steps
 
 1. **Create feature branch:**
+
    ```bash
    git checkout main
    git pull origin main

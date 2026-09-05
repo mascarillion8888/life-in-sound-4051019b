@@ -14,6 +14,7 @@ kişisel bir deneyim platformu.
 
 Kullanıcı 8 soruyu cevaplar, her soruya bir şarkı seçer.
 Sistem bu seçimlerden şunları üretir:
+
 - **Life Story** — AI'ın yazdığı kişisel anlatı
 - **Music DNA** — müzikal kimlik analizi
 - **Emotional Timeline** — duygusal yolculuk haritası
@@ -34,6 +35,7 @@ Bu protokol tam da bunun için tasarlandı.
 ## 🗺️ YOL HARİTASI (tüm fazlar)
 
 ### ✅ Tamamlanan Fazlar
+
 - **Faz 1:** Landing Page, Journey Wizard, Results Page, Responsive Design
 - **Faz 2:** Journey Persistence, Results Polish, Timeline Improvements
 - **Faz 3:** AI Story Engine, Companion Experience v1 (ardından düzeltme ile
@@ -41,6 +43,7 @@ Bu protokol tam da bunun için tasarlandı.
 - **Faz 3.5:** Gerçek şarkı arama (MusicBrainz), F5 kalıcılığı, stability fix
 
 ### ⏳ Sıradaki Fazlar
+
 - **Faz 4:** Music Memory veri modeli (tasarım onayı gerekli — `docs/TECH/DATABASE_PLAN.md` DRAFT, henüz implement edilmedi)
 - **Faz 5:** User Accounts (anonim → email migration)
 - **Faz 6:** Public Beta → Product Hunt → Mobile
@@ -69,6 +72,7 @@ Bu protokol tam da bunun için tasarlandı.
 ChatGPT "reached your limit", veya cevap gecikmesi/belirsizlik.
 
 **ADIM 2 — `docs/HANDOFF.md`'yi TAMAMEN yeniden yaz (ekleme değil, üzerine yaz):**
+
 - §1 doğrulanabilir gerçek (dal, HEAD, test, worktree)
 - §2 son biten iş (NEDEN + NASIL)
 - §3 açık/bekleyen tek şey + sıradaki çalıştırılabilir adım
@@ -78,6 +82,7 @@ ChatGPT "reached your limit", veya cevap gecikmesi/belirsizlik.
 - §7 devir kaydının son 5 satırı
 
 **ADIM 3 — Commit + push (checkpoint formatı):**
+
 ```
 git add docs/HANDOFF.md
 git commit -m "checkpoint: [özet] — HANDOFF.md güncellendi"
@@ -94,11 +99,13 @@ git push origin main
 **Ne zaman checkpoint:** Test suite geçti + build temiz + worktree temiz.
 
 **Checkpoint = HANDOFF.md güncellemesini içerir (ayrı/opsiyonel değil):**
+
 ```
 git add -A
 git commit -m "checkpoint: [özet] — HANDOFF.md güncellendi"
 git push origin [branch]
 ```
+
 Checkpoint sonrası `docs/HANDOFF.md` zaten yeniden yazılmış olmalı.
 
 ---
@@ -106,6 +113,7 @@ Checkpoint sonrası `docs/HANDOFF.md` zaten yeniden yazılmış olmalı.
 ## ⚖️ 3'LÜ KONSENSÜS PROTOKOLÜ
 
 Bir AI planın dışına çıkan veya geri dönüşü zor bir karar önerirse:
+
 1. Bu bölüme yazar (uygulamaz)
 2. Kullanıcı diğer iki AI'a kopyalar
 3. Her AI görüşünü + gerekçesini yazar
@@ -142,6 +150,8 @@ Uygulayan: [AI]
 8. **Checkpoint oluştur:** Her temiz test+build sonrasında — HANDOFF.md güncellemesi dahil.
 9. **Her checkpoint (temiz test+build sonrası) otomatik olarak şunu içerir: docs/HANDOFF.md'yi tamamen yeniden yaz, commit+push et, güncel içeriğini kullanıcıya göster. Bu, checkpoint'in ayrılmaz parçasıdır, opsiyonel bir ek adım değildir.
 10. **🖼️ Görsel Doğrulama Kuralı (ihlal edilemez, 2026-08-19'da eklendi):** Sebep: bir UI hatası (journey wizard'da state kirliliği + MusicBrainz sonuç metni bitişik yazılması + uyarı mesajının görsel render durumu belirsizliği) sadece `npm test`/`tsc` yeşil olduğu için fark edilmedi — kullanıcı kendi gözüyle test edince ortaya çıktı. Kural: (1) Hiçbir UI/arayüz değişikliği sadece terminal çıktısına (test/tsc/build yeşil) bakılarak "tamamlandı" ilan edilemez. (2) Her UI değişikliğinde gerçek tarayıcıda (Web Preview / Playwright) GERÇEK etkileşimle (tıklama, form doldurma, modal açma) akışın sonuna kadar görsel olarak doğrulanır, ekran görüntüsü alınır. (3) Rapor formatı: "E2E tarayıcı testinde [X] butonuna basıldı, [Y] ekranına geçildi, akış tamamlandı" — soyut "çalışıyor" ifadesi yetmez. (4) Kullanıcı ekranda görüp "Arayüz Onaylandı" demeden hiçbir görev STATE.md/docs/HANDOFF.md'de "TAMAMLANDI" olarak işaretlenmez. (5) Bu kural sadece tek bir oturuma değil TÜM gelecekteki AI oturumlarına (Claude/Gemini/ChatGPT/OpenHands) uygulanır — STATE.md'de yaşadığı için.
+
 ---
+
 _Son güncelleme: OpenHands — 2026-08-19 (Görsel Doğrulama Kuralı 10. madde olarak eklendi; STATE.md bölündü: anlık durum → docs/HANDOFF.md)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._

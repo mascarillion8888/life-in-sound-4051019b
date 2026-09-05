@@ -130,4 +130,3 @@ you keep becoming. That is the product. Everything else is in service of it.
 ---
 
 _End of product vision._
-

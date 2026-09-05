@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&display=swap");
 
 .card-container {
   width: 340px;
@@ -9,7 +9,7 @@
   flex-direction: column;
   justify-content: space-between;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85);
-  font-family: 'Cinzel', 'Georgia', serif;
+  font-family: "Cinzel", "Georgia", serif;
   position: relative;
   box-sizing: border-box;
   user-select: none;
@@ -20,71 +20,216 @@
   background: #120f0d;
   border: 3px solid #b8860b;
   color: #c5b391;
-  background-image: radial-gradient(circle, rgba(20,15,10,0.95) 0%, rgba(5,5,5,0.98) 100%);
+  background-image: radial-gradient(circle, rgba(20, 15, 10, 0.95) 0%, rgba(5, 5, 5, 0.98) 100%);
 }
-.genre-gothic .card-era { color: #f5d77f; }
-.genre-gothic .card-image-frame { border: 1px solid #8b6508; }
-.genre-gothic .card-banner { background: #1c1612; border-color: #8b6508; color: #e5c158; }
-.genre-gothic .card-narrative { background: #0a0807; border-color: #5c430a; color: #c5b391; }
-.genre-gothic .card-badge { background: #2a1f18; border: 1px solid #b8860b; color: #f5d77f; }
+.genre-gothic .card-era {
+  color: #f5d77f;
+}
+.genre-gothic .card-image-frame {
+  border: 1px solid #8b6508;
+}
+.genre-gothic .card-banner {
+  background: #1c1612;
+  border-color: #8b6508;
+  color: #e5c158;
+}
+.genre-gothic .card-narrative {
+  background: #0a0807;
+  border-color: #5c430a;
+  color: #c5b391;
+}
+.genre-gothic .card-badge {
+  background: #2a1f18;
+  border: 1px solid #b8860b;
+  color: #f5d77f;
+}
 
 /* 2. JAZZ / BLUES TEMASI */
 .genre-jazz {
   background: #0b131f;
   border: 3px solid #4a6fa5;
   color: #d1e0ed;
-  background-image: radial-gradient(circle, rgba(15,25,40,0.95) 0%, rgba(4,8,15,0.98) 100%);
+  background-image: radial-gradient(circle, rgba(15, 25, 40, 0.95) 0%, rgba(4, 8, 15, 0.98) 100%);
 }
-.genre-jazz .card-era { color: #64b5f6; }
-.genre-jazz .card-image-frame { border: 1px solid #2b4c7e; }
-.genre-jazz .card-banner { background: #122033; border-color: #2b4c7e; color: #90caf9; }
-.genre-jazz .card-narrative { background: #060c14; border-color: #1a365d; color: #d1e0ed; }
-.genre-jazz .card-badge { background: #1b2a3a; border: 1px solid #4a6fa5; color: #64b5f6; }
+.genre-jazz .card-era {
+  color: #64b5f6;
+}
+.genre-jazz .card-image-frame {
+  border: 1px solid #2b4c7e;
+}
+.genre-jazz .card-banner {
+  background: #122033;
+  border-color: #2b4c7e;
+  color: #90caf9;
+}
+.genre-jazz .card-narrative {
+  background: #060c14;
+  border-color: #1a365d;
+  color: #d1e0ed;
+}
+.genre-jazz .card-badge {
+  background: #1b2a3a;
+  border: 1px solid #4a6fa5;
+  color: #64b5f6;
+}
 
 /* 3. POP / SYNTHWAVE TEMASI */
 .genre-pop {
   background: #18051b;
   border: 3px solid #d81b60;
   color: #f8bbd0;
-  background-image: radial-gradient(circle, rgba(35,10,40,0.95) 0%, rgba(10,2,12,0.98) 100%);
+  background-image: radial-gradient(circle, rgba(35, 10, 40, 0.95) 0%, rgba(10, 2, 12, 0.98) 100%);
 }
-.genre-pop .card-era { color: #ff4081; }
-.genre-pop .card-image-frame { border: 1px solid #ad1457; }
-.genre-pop .card-banner { background: #2a082e; border-color: #ad1457; color: #ff80ab; }
-.genre-pop .card-narrative { background: #0f0212; border-color: #880e4f; color: #f8bbd0; }
-.genre-pop .card-badge { background: #380a3d; border: 1px solid #d81b60; color: #ff4081; }
+.genre-pop .card-era {
+  color: #ff4081;
+}
+.genre-pop .card-image-frame {
+  border: 1px solid #ad1457;
+}
+.genre-pop .card-banner {
+  background: #2a082e;
+  border-color: #ad1457;
+  color: #ff80ab;
+}
+.genre-pop .card-narrative {
+  background: #0f0212;
+  border-color: #880e4f;
+  color: #f8bbd0;
+}
+.genre-pop .card-badge {
+  background: #380a3d;
+  border: 1px solid #d81b60;
+  color: #ff4081;
+}
 
 /* 4. NEW AGE / ETHEREAL TEMASI */
 .genre-newage {
   background: #08140c;
   border: 3px solid #4d7c0f;
   color: #d9f99d;
-  background-image: radial-gradient(circle, rgba(12,30,18,0.95) 0%, rgba(3,8,4,0.98) 100%);
+  background-image: radial-gradient(circle, rgba(12, 30, 18, 0.95) 0%, rgba(3, 8, 4, 0.98) 100%);
 }
-.genre-newage .card-era { color: #a3e635; }
-.genre-newage .card-image-frame { border: 1px solid #365314; }
-.genre-newage .card-banner { background: #112616; border-color: #365314; color: #bef264; }
-.genre-newage .card-narrative { background: #040a06; border-color: #1a2e0b; color: #d9f99d; }
-.genre-newage .card-badge { background: #1a2e0b; border: 1px solid #4d7c0f; color: #a3e635; }
+.genre-newage .card-era {
+  color: #a3e635;
+}
+.genre-newage .card-image-frame {
+  border: 1px solid #365314;
+}
+.genre-newage .card-banner {
+  background: #112616;
+  border-color: #365314;
+  color: #bef264;
+}
+.genre-newage .card-narrative {
+  background: #040a06;
+  border-color: #1a2e0b;
+  color: #d9f99d;
+}
+.genre-newage .card-badge {
+  background: #1a2e0b;
+  border: 1px solid #4d7c0f;
+  color: #a3e635;
+}
 
 /* ORTAK İÇ YAPI ELEMANLARI */
-.card-header { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 4px; }
-.card-age-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; letter-spacing: 1px; }
-.card-stage { font-size: 9px; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; }
-.card-era { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+.card-header {
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 4px;
+}
+.card-age-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.card-stage {
+  font-size: 9px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+.card-era {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
-.card-image-frame { margin: 8px 0; width: 100%; height: 200px; background: #000; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.card-image-frame img { width: 100%; height: 100%; object-fit: cover; }
+.card-image-frame {
+  margin: 8px 0;
+  width: 100%;
+  height: 200px;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-image-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-.card-banner { padding: 4px 8px; border-width: 1px 0; font-size: 11px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-.card-symbol { font-size: 10px; }
+.card-banner {
+  padding: 4px 8px;
+  border-width: 1px 0;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-symbol {
+  font-size: 10px;
+}
 
-.card-narrative { border-radius: 4px; padding: 8px; font-size: 11px; line-height: 1.5; font-style: italic; min-height: 70px; display: flex; align-items: center; }
+.card-narrative {
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  font-style: italic;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+}
 
-.card-footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px; }
-.card-meta { font-size: 10px; font-weight: bold; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding-top: 4px;
+}
+.card-meta {
+  font-size: 10px;
+  font-weight: bold;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.card-badge { border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; text-align: center; line-height: 1.1; }
-.badge-sub { font-size: 7px; opacity: 0.8; }
+.card-badge {
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.1;
+}
+.badge-sub {
+  font-size: 7px;
+  opacity: 0.8;
+}
 
-.card-watermark { font-size: 8px; text-align: center; opacity: 0.5; margin-top: 4px; }
+.card-watermark {
+  font-size: 8px;
+  text-align: center;
+  opacity: 0.5;
+  margin-top: 4px;
+}

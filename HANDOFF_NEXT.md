@@ -102,6 +102,7 @@ clean together, on the same tree, before saying the step is done.
 ### Step 3 — Stop and report back
 
 Do not merge to `main` yet even if everything is green. Summarize:
+
 - What you changed and why, file by file.
 - Whether the original P0 Music DNA intent (grounding DNA in real `Song[]`
   data, not fabricating `genre`) was preserved or altered.

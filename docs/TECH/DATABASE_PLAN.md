@@ -33,7 +33,7 @@ journeys
 RLS is owner-scoped (select/insert/update/delete on `auth.uid() = user_id`).
 There is exactly one active journey per user (`journeys_user_id_uniq`).
 
-The `journeys` row is a *session*, not a *memory*: it captures the 8-question
+The `journeys` row is a _session_, not a _memory_: it captures the 8-question
 onboarding. A Music Memory is a different, longitudinal unit (see
 `MUSIC_MEMORY.md`). The two coexist; one does not replace the other.
 
@@ -45,7 +45,7 @@ onboarding. A Music Memory is a different, longitudinal unit (see
 
 A Music Memory is one row. The only required field is the song (mirroring the
 product model). Provider-neutral `Song` is reused from `src/lib/song/types.ts`
-so a memory can carry a structured song (from MusicBrainz search) *or* a
+so a memory can carry a structured song (from MusicBrainz search) _or_ a
 free-text label when the user types one without searching.
 
 ```
@@ -67,6 +67,7 @@ memories
 ```
 
 **Indexes**
+
 - `memories_user_id_created_idx` on `(user_id, created_at desc)` — timeline list.
 - `memories_user_id_happened_idx` on `(user_id, happened_at desc)` — chronological timeline. NULLs last.
 - `memories_user_id_status_idx` on `(user_id, status)` — active vs archived filtering.
@@ -122,7 +123,7 @@ memory_interpretations
 ```
 
 RLS owner-scoped. `source_memory_snapshot` ensures an interpretation stays
-truthful to the memory *as it was when derived*, even after the memory is
+truthful to the memory _as it was when derived_, even after the memory is
 edited (stale/superseded handling).
 
 ### Timeline scaling (v1)
@@ -168,6 +169,7 @@ category names (the CHECK constraint is the real enforcement).
 ## Open for review
 
 Before any migration is written, confirm:
+
 - [ ] 1:1 song-per-memory is correct (vs 1:many).
 - [ ] Soft-delete + purge grace window (vs hard-delete).
 - [ ] Interpretation storage approach (snapshot + stale/superseded).

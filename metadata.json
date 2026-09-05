@@ -1,0 +1,6 @@
+{
+  "name": "Life in a Sound",
+  "description": "An AI-powered music journey platform creating personal narratives, Music DNA, emotional timelines, and gothic posters from your life soundtrack.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

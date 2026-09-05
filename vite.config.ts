@@ -9,8 +9,8 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   vite: {
     server: {
-      // DEV-ONLY: allow the OpenHands Cloud preview host (work-*.all-hands.dev).
-      // Not committed - sandbox-local concern only.
+      host: "0.0.0.0",
+      port: 3000,
       allowedHosts: true,
       cors: true,
     },

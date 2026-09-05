@@ -233,7 +233,7 @@ describe("musicFeatures", () => {
 
       const features = extractSongFeaturesArray(songs);
 
-      expect(features.map(f => f.title)).toEqual(["A", "B", "C", "D"]);
+      expect(features.map((f) => f.title)).toEqual(["A", "B", "C", "D"]);
     });
   });
 
@@ -553,7 +553,7 @@ describe("musicFeatures", () => {
 
       expect(features).toHaveLength(8);
       expect(completion).toBe(1.0);
-      expect(features.map(f => f.era)).toEqual([
+      expect(features.map((f) => f.era)).toEqual([
         "1990s",
         "2000s",
         "2000s",

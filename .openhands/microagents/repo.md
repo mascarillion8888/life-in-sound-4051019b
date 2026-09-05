@@ -62,6 +62,7 @@ cp .env.example .env
 ```
 
 `.env` contents:
+
 ```
 VITE_SUPABASE_URL=<your-supabase-project-url>
 VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>

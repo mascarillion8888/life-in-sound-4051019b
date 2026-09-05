@@ -8,6 +8,9 @@ export interface EmotionalNode {
   intensity: number; // 1 - 10 arası duygusal yoğunluk
   vibeLabel: string; // Örn: "Nostalgic Spark", "Resilient Catharsis"
   temporalArcPosition: number; // Timeline üzerindeki yüzdesel sıra (0 - 100)
+  id?: string;
+  contextText?: string;
+  questionId?: number;
 }
 
 // Ana Emotional Timeline Çıktısı (P3 Target)

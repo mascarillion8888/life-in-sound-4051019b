@@ -1,6 +1,7 @@
 # Sprint Board
 
 ## Completed
+
 Sprint 001
 Sprint 002
 Sprint 003
@@ -16,4 +17,5 @@ Sprint 012 - Results Polish
 Sprint 013 - Timeline Improvements
 
 ## Ready
+
 _(next roadmap item to be planned — see ROADMAP.md Phase 2)_

@@ -6,7 +6,7 @@
 
 # Music Memory — Conceptual Model
 
-This is a product/model design document. It describes what a Music Memory *is*
+This is a product/model design document. It describes what a Music Memory _is_
 and the principles that govern it. It is deliberately **not** a schema, an API,
 or an implementation plan. No SQL, no TypeScript types, no storage decisions
 belong here — those are deferred until the design is approved and a sprint is
@@ -76,7 +76,7 @@ This distinction is foundational and must be preserved end-to-end.
 - **AI interpretation** is anything the product generates from those facts: a
   Life Story, a through-line across memories, a pattern, a reflection. It is
   derivative. It is clearly labelled as interpretation, never presented as a
-  fact, and never stored *as* the memory.
+  fact, and never stored _as_ the memory.
 
 The AI must **not** invent:
 

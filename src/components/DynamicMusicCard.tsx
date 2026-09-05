@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-export type MusicGenre = 'gothic' | 'jazz' | 'pop' | 'newage' | 'classical';
+export type MusicGenre = "gothic" | "jazz" | "pop" | "newage" | "classical";
 
 interface DynamicMusicCardProps {
   genre?: MusicGenre;
@@ -16,7 +16,7 @@ interface DynamicMusicCardProps {
 }
 
 export const DynamicMusicCard: React.FC<DynamicMusicCardProps> = ({
-  genre = 'gothic',
+  genre = "gothic",
   ageLabel,
   stageTitle,
   eraSubtitle,
@@ -25,7 +25,7 @@ export const DynamicMusicCard: React.FC<DynamicMusicCardProps> = ({
   songTitle,
   artistName,
   releaseYear,
-  cardNumber
+  cardNumber,
 }) => {
   return (
     <div id="exportable-card" className={`card-container genre-${genre}`}>
@@ -51,9 +51,7 @@ export const DynamicMusicCard: React.FC<DynamicMusicCardProps> = ({
       </div>
 
       {/* Gemini Metni */}
-      <div className="card-narrative">
-        "{narrative}"
-      </div>
+      <div className="card-narrative">"{narrative}"</div>
 
       {/* Künye & Rozet */}
       <div className="card-footer">
@@ -66,9 +64,7 @@ export const DynamicMusicCard: React.FC<DynamicMusicCardProps> = ({
         </div>
       </div>
 
-      <div className="card-watermark">
-        TM & © 2026 LifeinSound | Master Collection
-      </div>
+      <div className="card-watermark">TM & © 2026 LifeinSound | Master Collection</div>
     </div>
   );
 };

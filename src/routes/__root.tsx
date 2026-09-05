@@ -78,11 +78,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SoundMap" },
-      { name: "description", content: "Your music, visualized." },
-      { name: "author", content: "SoundMap" },
-      { property: "og:title", content: "SoundMap" },
-      { property: "og:description", content: "Your music, visualized." },
+      { title: "Life in a Sound" },
+      {
+        name: "description",
+        content:
+          "An AI-powered music journey platform creating personal narratives, Music DNA, emotional timelines, and gothic posters from your life soundtrack.",
+      },
+      { name: "author", content: "Life in a Sound" },
+      { property: "og:title", content: "Life in a Sound" },
+      {
+        property: "og:description",
+        content:
+          "An AI-powered music journey platform creating personal narratives, Music DNA, emotional timelines, and gothic posters from your life soundtrack.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@SoundMap" },
