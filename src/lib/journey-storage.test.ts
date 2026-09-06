@@ -104,6 +104,32 @@ describe("journey-storage structured Song persistence", () => {
     expect(loaded?.songs[1]).toEqual(full);
   });
 
+  it("preserves releaseYear and previewUrl on round-trip", () => {
+    const full = song({
+      provider: "itunes",
+      providerId: "14617433",
+      releaseYear: 2002,
+      previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/preview.m4a",
+    });
+    saveJourney({ current: 1, answers: { 1: full.title }, songs: { 1: full } });
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(full);
+  });
+
+  it("coerces non-finite releaseYear and non-string previewUrl to absent", () => {
+    const weird = {
+      ...song(),
+      releaseYear: "2002" as unknown,
+      previewUrl: 42,
+    };
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({ current: 1, answers: { 1: "x" }, songs: { 1: weird } }),
+    );
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual({ ...song(), releaseYear: undefined, previewUrl: undefined });
+  });
+
   it("rejects a malformed Song entry (missing artist) and keeps valid ones", () => {
     const valid = song();
     const malformed = {

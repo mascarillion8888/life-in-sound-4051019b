@@ -27,9 +27,9 @@ function isBrowser() {
  * split into artist + title legitimately have `artist: ""`, per the Song type
  * contract — dropping them on load would silently lose the selected song and
  * leave a stale title-only answer behind). The nullable fields (album,
- * artworkUrl, isrc) are coerced to null when absent or non-string so a
- * malformed payload can never produce a Song with an undefined field. Mirrors
- * the guarantees of the Song type.
+ * artworkUrl,isrc, releaseYear, previewUrl)are coerced to null when
+ * absent, non-string or (for releaseYear) non-numeric so a malformed
+ * payload can never produce a Song with an undefined field. Mirrors
  */
 export function isValidSong(value: unknown): value is Song {
   if (!value || typeof value !== "object") return false;
@@ -55,6 +55,11 @@ export function normalizeSong(song: Song): Song {
     album: typeof song.album === "string" ? song.album : null,
     artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
     isrc: typeof song.isrc === "string" ? song.isrc : null,
+    releaseYear:
+      typeof song.releaseYear === "number" && Number.isFinite(song.releaseYear)
+        ? song.releaseYear
+        : undefined,
+    previewUrl: typeof song.previewUrl === "string" ? song.previewUrl : undefined,
     verified: song.verified === true ? true : undefined,
   };
 }
