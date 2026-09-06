@@ -34,6 +34,7 @@ export type ITunesTrack = {
   artworkUrl100?: unknown;
   releaseDate?: unknown;
   previewUrl?: unknown;
+  primaryGenreName?: unknown;
 };
 
 export type ITunesSearchResponse = {
@@ -199,6 +200,8 @@ export function trackToSong(track: ITunesTrack): Song | null {
     providerId,
     title,
     artist,
+    genre: asString(track.primaryGenreName),
+    mood: null,
     album: asString(track.collectionName),
     // High-resolution variant of the real CDN artwork — never a stock/fake URL.
     artworkUrl: artworkUrl100 ? highResArtworkUrl(artworkUrl100) : null,

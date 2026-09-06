@@ -15,6 +15,8 @@ export interface MusicalIdentity {
   diversityScore: number; // 0-100 arası çeşitlilik metriği (farklı artist/dönem oranı)
   dominantVibe: string; // Şarkı ve dönem ağırlıklarından türetilen genel atmosfer
   hasVerifiedTracks: boolean; // Tüm şarkıların doğrulanmışlık durumu
+  topGenres: string[]; // En sık geçen 3 genre, gerçek sağlayıcı verisi (uydurma değil)
+  genreCoverage: number; // Genre taşıyan şarkıların yüzdesi (0-100), tipik 33/67/100
 }
 
 // Soruların hayat bağlamı (8 Life Context)

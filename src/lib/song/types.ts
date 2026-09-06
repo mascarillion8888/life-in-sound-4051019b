@@ -35,6 +35,8 @@ export type Song = {
    * entries that were never verified — never fabricated.
    */
   previewUrl?: string | null;
+  genre?: string | null;
+  mood?: string | null;
   /** ISRC when the recording carries one (iTunes does not supply one — always null for itunes). */
   isrc: string | null;
   /**

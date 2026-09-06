@@ -32,6 +32,11 @@ const TRACK_FRAGILE = {
   releaseDate: "1987-10-01T07:00:00Z",
   previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
 };
+const TRACK_FRAGILE_WITH_GENRE = {
+  ...TRACK_FRAGILE,
+  trackId: 14617434,
+  primaryGenreName: "Rock",
+};
 
 const TRACK_PAINKILLER = {
   wrapperType: "track",
@@ -78,6 +83,8 @@ describe("itunes mapping: trackToSong", () => {
       providerId: "14617433",
       title: "Fragile",
       artist: "Sting",
+      genre: null,
+      mood: null,
       album: "...Nothing Like the Sun",
       artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/600x600bb.jpg",
       releaseYear: 1987,
@@ -85,6 +92,13 @@ describe("itunes mapping: trackToSong", () => {
       isrc: null,
       verified: true,
     });
+  });
+  it("maps the real iTunes primaryGenreName into Song.genre when present", () => {
+    expect(trackToSong(TRACK_FRAGILE_WITH_GENRE)?.genre).toBe("Rock");
+  });
+
+  it("never fabricates mood — always null regardless of input", () => {
+    expect(trackToSong(TRACK_FRAGILE_WITH_GENRE)?.mood).toBeNull();
   });
 
   it("maps the 30s preview URL only when the API supplies one", () => {

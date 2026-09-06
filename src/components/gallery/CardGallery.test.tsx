@@ -87,6 +87,8 @@ describe("SocialSharePayload (buildSocialSharePayload)", () => {
       diversityScore: 25,
       dominantVibe: "Focused Nostalgic",
       hasVerifiedTracks: true,
+      topGenres: [],
+      genreCoverage: 0,
     },
     songCount: 3,
     isGrounded: true,
