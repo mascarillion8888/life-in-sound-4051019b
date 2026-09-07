@@ -9,36 +9,29 @@
 ## 1. Doğrulanabilir gerçek
 
 ```
-Aktif ortam: Google AI Studio build container
-HEAD:        MusicDNA, Grounded Story ve Song Universe entegrasyonu tamamlandı.
+Aktif ortam: OpenHands build container (/workspace/project)
+HEAD:        1f904e4 — "fix: resolve issue and apply code update" (origin/main ile eşit)
 Testler:     601/601 geçti (62 dosya, 2 skipped live RLS)
-tsc:         temiz (`npm run typecheck` = 0 hata)
-Lint:        0 HATA, 8 react-refresh uyarısı pre-existing (ui/* shadcn + LanguageContext)
-Build:       `compile_applet` / `npm run build` = 0 hata (Nitro .output / Vite production bundle)
-Server:      Port 3000 üzerinde dev server ve üretim derlemesi stabil.
+tsc:        temiz (`npm run typecheck` = 0 hata)
+Lint:       0 HATA, 8 react-refresh uyarısı pre-existing(ui/* shadcn + LanguageContext)
+Build:      `npm run build` = 0 hata (Vite production bundle[)
 ```
 
-Doğrula: `npm test && npm run typecheck`.
+Doğrula: `npm test && npm run typecheck && npm run lint`.
 
 ---
 
-## 2. Son Biten İş: Results Page Build-up & Component Entegrasyonu (TAM)
+## 2. Son Biten İş: Tip Düzeltmesi + Doküman Eklemesi (TAM)
 
-Kullanıcının "repair wrong files and build up entire" talebi kapsamında:
-1. **Tip Onarımı ve Düzeltmeler:**
-   - `src/types/emotionalTimeline.ts`: `EmotionalNode` interface'ine `id`, `contextText` ve `questionId` alanları eklenerek geriye dönük ve yeni motor tipleri senkronize edildi.
-   - `src/routes/results.tsx`: `Question.title` erişimi ve tip güvenliği sağlandı.
-2. **MusicUniverseHero Bileşeni (`src/components/results/MusicUniverseHero.tsx`):**
-   - Grounded `MusicDNA` verisini (Primary Era, Artist Diversity %, Dominant Vibe, Top Artists) modern, Chiaroscuro ve editorial estetiğiyle gösteren kahraman başlık kartı geliştirildi.
-   - Unit testleri (`MusicUniverseHero.test.tsx`, 3/3 geçti).
-3. **SongUniverseCard Bileşeni (`src/components/results/SongUniverseCard.tsx`):**
-   - Kullanıcının 8 aşamalı yolculuğundaki her şarkı için albüm kapağı (`song.artworkUrl`), sahne adı (`stageName`), duygu/vibe etiketi (`vibeLabel`), yayın yılı ve zamansal yay pozisyonunu (`temporalArcPosition%`) sergileyen koleksiyonluk kart tasarımı.
-   - Unit testleri (`SongUniverseCard.test.tsx`, 3/3 geçti).
-4. **Results Sayfası Entegrasyonu (`src/routes/results.tsx`):**
-   - Sayfa başlığının hemen altına `MusicUniverseHero` entegre edildi.
-   - `LifeStory` bileşenine `groundedStory` (`GroundedLifeStory`) desteği eklendi; LLM yanıtı beklenirken veya fallback durumunda deterministik grounded bölümler (baskın çağ, çeşitlilik içgörüsü, aşama anlatıları) render ediliyor.
-   - `DynamicMusicMap` öncesinde "Song Universes" başlıklı yeni bir 8 kartlık galeri bölümü (`SongUniverseCard` grid) entegre edildi.
-   - Prettier ile formatlandı, ESLint kurallarına 100% uyum sağlandı.
+Son oturumda (push `1f904e4`, 2026-09-07):
+1. **`src/routes/__root.tsx`** — `ErrorComponent`'in `error` prop'u `Error` → `unknown` yapıldı (TanStack Router'ın güncel `ErrorComponentProps`'i `unknown` kullanıyor; `console.error` öncesi `instanceof Error` daraltması eklendi. Bu, `npm run typecheck`'i 0 hataya indiren son hataydı.
+2. **`package.json`** — `@testing-library/dom` `devDependencies`'e eklendi. Bu, `@testing-library/react`'in peer dependency'si; npm 10'un bilinen `edgesOut` arborist bug'ı yüzünden otomatik kurulmuyordu (bu yüzden `screen`/`waitFor` TS'e "missing" görünüyordu. Repoda commit'li `package-lock.json` yoktur; lock üretilmedi.
+3. **Yeni dokümanlar** (`docs/` altına, henüz commit'siz):
+   - `docs/SoundMap_Master_to_Code_Gap_Analysis-last check.md` — Master dokümanı vs kod denetim analizi
+   - `docs/LIFE IN SOUNDxxxx.docx` — Master proje dokümanı (64 KB; ikili dosya)
+   > Not: Bu 2 dosya repo'ya eklendi ancak henüz commit'lenmedi — kullanıcı onayı bekliyor.
+
+
 
 ---
 
@@ -50,26 +43,60 @@ Kullanıcının "repair wrong files and build up entire" talebi kapsamında:
   - `src/engine/emotionalTimelineEngine.ts` (P3: Zamansal duygusal yay, valans, yoğunluk)
 - **Pipeline:**
   - `src/lib/ai/pipeline.ts` -> `generateGroundedAnalysis(songs, contexts)` ile her üç motor tek merkezden çağrılır ve `results.tsx`'te `useMemo` ile deterministik olarak kullanılır.
+
+- **Results Page (PHASE 1):**
+  - `MusicUniverseHero` (hero'den hemen sonra, sonuç sayfasının kimlik kartı; grounded `MusicDNA`'dan türetilir, ağ/AI yok。
+  - `SongUniverseCard` galerisi ("Song Universes", 8 kart; her kart gerçek `song.artworkUrl`'yi görsel çapa olarak kullanır, title/artist/album/releaseYear gösterir; genre/emotion uydurmaz。
+
 - **Cache & Storage:**
-  - `src/lib/cache/supabaseCache.ts` singleton `dbCache` (30s TTL).
-  - `src/lib/supabase/cards-remote.ts` ve `journey-remote.ts` cache ve RLS-güvenli sorgular.
-  - `src/lib/art/useCardLore.ts` ve `generateCard.server.ts` mutasyon sonrası otomatik invalidation.
+  - `src/lib/cache/supabaseCache.ts` singleton `dbCache` (30s TTL。
+  - `src/lib/supabase/cards-remote.ts` ve `journey-remote.ts` cache ve RLS-güvenli sorgular。
+  - `src/lib/art/useCardLore.ts` ve `generateCard.server.ts` mutasyon sonrası otomatik invalidation。
 - **Poster & Gallery:**
-  - `MasterPosterCanvas.tsx`, `SharePosterDialog.tsx`, `CardGallery.tsx` ve `GothicArtSkeleton` tam fonksiyonel.
+  - `MasterPosterCanvas.tsx`, `SharePosterDialog.tsx`, `CardGallery.tsx` ve `GothicArtSkeleton` tam fonksiyonel。
+
+
 
 ---
 
 ## 4. Test ve Derleme İstatistikleri
 
-- **Vitest:** 62 test dosyası, 601 test başarılı (0 hata, 2 skipped live RLS).
-- **TypeScript:** `tsc --noEmit` hatasız (0 hata).
-- **Linter:** `eslint .` hatasız (0 hata).
-- **Compiler:** `compile_applet` sorunsuz tamamlandı.
+- **Vitest:** 62 test dosyası, 601 test başarılı (0 hata, 2 skipped live RLS。
+- **TypeScript:** `tsc --noEmit` hatasız (0 hata。
+- **Linter:** `eslint .` hatasız (0 hata; 8 pre-existing react-refresh uyarısı。
+- **Build:** `npm run build` hatasız (0 hata。
+
+
 
 ---
 
-## 5. Sıradaki İş Adımları (Next Steps)
+## 5. Açık / Bekleyen İşler
 
-1. Kullanıcıdan gelen yeni gereksinim veya arayüz geri bildirimleri doğrultusunda genişletme yapmak.
-2. `/profile/cards` (Gothic Card Gallery) rotasına sonuç sayfasından veya navigasyondan doğrudan geçiş linki/butonu eklemek.
-3. Canlı Supabase tablosu migration'ı (`0003_cards.sql`) kullanıcı ortamında kontrol edilmek üzere hazır tutuluyor.
+1. **PR #5 — `feat: populate Song genre/era from iTunes API`** (`feature/itunes-genre-era` → `main`; 10 commit; +1394/−328; checks ✅ 3/3 başarılı, Sonar Quality Gate passed, Vercel deploy tamam。
+   > **İçerik analizi:** 3 ayrı paket karışımı:
+   > - ✅ **Asıl issue — iTunes genre/era mapping** (`primaryGenreName`→`genre`, `releaseDate`→`era`, `Song` tipine `era` alanı; temiz/uyumlu)
+   > - ⚠️ **QuizCard/kart görsel akışı onarımı** (kapak sadece geçiş katmanı, generateCard savunma testleri)
+   > - ❌ **HANDOFF_NEXT.md'nin "ignore/diriltme/dokunma" dediği paket** — `SilhouetteCanvas` diriltme + `ThemeMapper`, `cardArtwork.server.ts` scene-aware rewrite, `scene.ts`, Cache V2, `era-themes.ts`, `questions.ts` (tam Türkçe/yaş rewrite), `docs/HANDOFF.md` içinde "Completed" işareti + devasa `musicdna-unified-source (1).patch`
+   > **Karar bekliyor:** bölünmüş merge (sadece paket 1) mi,ü olduğu gibi squash mı,ü bekle mi? — kullanıcı karar verecek.
+
+2. **`handoff-check` workflow'u** — son push'ta X (kod değişti ama `docs/HANDOFF.md` güncellenmedi; bu güncelleme bu commit'le birlikte giderilir. Bir önceki `Fixed typecheck build errors` commit'i de aynı nedenden X idiom。
+
+3. **Yeni eklenen dokümanların commit'i** (`docs/SoundMap_Master_to_Code_Gap_Analysis-last check.md`, `docs/LIFE IN SOUNDxxxx.docx`) — kullanıcı onayı bekliyor۔
+
+
+4. **PR #5 dışındaki eski branch'ler** — uzakta yalnızca `main` var; `feature/itunes-genre-era` yalnızca PR içinde duruyor (PR kapanınca silinebilir۔
+
+
+
+---
+
+## 6. Sıradaki İş Adımları (Next Steps)
+
+1. **Bu güncellemeyi commit + push'la** (handoff-check'i yeşile çevirir; önerilen mesaj: `checkpoint: HANDOFF.md güncellendi — typecheck/test/lint yeşil`。
+2. **Kullanıcı onayıyla:** 2 yeni dokümanı commit'le (veya bu commit'e dahil et)。.
+。
+3. **PR #5 kararı**: bölünmüş merge (yalnızca iTunes mapping paketi) / olduğu gibi squash / bekle — kullanıcı karar verecek。
+。
+4. **Faz 3 kapanışını resmileştir** (ROADMAP'te Phase 3'e ✅; Validation Gate hazırlığıyla birlikte Sprint 014 planı)。。
+
+5. **Validation Gate** — Faz 1–3 akışını en az 10 gerçek kişiye göster, geri bildirim topla (Faz 4/6 ön koşulu)。。。
