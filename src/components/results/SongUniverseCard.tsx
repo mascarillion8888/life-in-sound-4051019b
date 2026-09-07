@@ -1,7 +1,7 @@
 import React from "react";
 import { Music2, Calendar, Sparkles } from "lucide-react";
 import type { Song } from "@/lib/song/types";
-
+import { eraThemeForYear } from "@/lib/visual/eraThemes";
 export interface SongUniverseCardProps {
   song: Song;
   stageName?: string;
@@ -18,12 +18,14 @@ export const SongUniverseCard: React.FC<SongUniverseCardProps> = ({
   temporalArcPosition = 0,
 }) => {
   const formattedStep = String(stepNumber).padStart(2, "0");
-
+  const eraTheme = eraThemeForYear(song.releaseYear);
   return (
     <div
       data-testid={`song-universe-card-${stepNumber}`}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 sm:p-6"
-    >
+      className="group relative isolate flex flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 sm:p-6"
+    >        {eraTheme.overlayClasses && (
+          <div aria-hidden="true" className={eraTheme.overlayClasses} />
+        )}
       <div className="space-y-4">
         {/* Header Badges */}
         <div className="flex items-center justify-between gap-2">
