@@ -19,7 +19,7 @@ import { QuizCard } from "@/components/results/QuizCard";
 import { sceneThemeFor } from "@/lib/art/sceneTheme";
 import { LIFE_CARD_COUNT, type LifeCard } from "@/lib/soundmap/lifeCards";
 import type { Song } from "@/lib/song/types";
-
+import { eraThemeForYear } from "@/lib/visual/eraThemes";
 export function EraCardReveal({
   card,
   song,
@@ -34,6 +34,7 @@ export function EraCardReveal({
   onContinue: () => void;
 }) {
   const themeId = sceneThemeFor(song);
+  const eraTheme = eraThemeForYear(song?.releaseYear);
   return (
     <div
       data-testid={`era-reveal-${card.songIndex}`}
@@ -56,7 +57,10 @@ export function EraCardReveal({
         </div>
 
         {/* The card stands on the desk. */}
-        <div className="w-full max-w-xs animate-in fade-in zoom-in-95 duration-500">
+        <        <div className="relative isolate w-full max-w-xs animate-in fade-in zoom-in-95 duration-500">
+            {eraTheme.overlayClasses && (
+            <div aria-hidden="true" className={eraTheme.overlayClasses} />
+          )}
           <QuizCard card={card} song={song} autoPlayPreview />
         </div>
 
