@@ -466,7 +466,13 @@ function ResultsPage() {
                 },
                 {
                   label: t.results.recommendedGenres,
-                  items: profile?.recommendedGenres ?? [],
+                  // Prefer real, provider-sourced genres from the selected songs
+                  // (Faz A/B grounding). Falls back to the legacy Q&A-predicted
+                  // genres only when no song in the selection carries a real
+                  // genre — never silently hides that the data is a guess.
+                  items: grounded?.dna.musicalIdentity.topGenres.length
+                    ? grounded.dna.musicalIdentity.topGenres
+                    : (profile?.recommendedGenres ?? []),
                 },
               ].map((group) => (
                 <div
