@@ -100,3 +100,13 @@ Son oturumda (push `1f904e4`, 2026-09-07):
 4. **Faz 3 kapanışını resmileştir** (ROADMAP'te Phase 3'e ✅; Validation Gate hazırlığıyla birlikte Sprint 014 planı)。。
 
 5. **Validation Gate** — Faz 1–3 akışını en az 10 gerçek kişiye göster, geri bildirim topla (Faz 4/6 ön koşulu)。。。
+---
+
+## Recent Updates (September 2026)
+
+### Status Update
+- **Lint Verification:** Code formatting issues caused by recent commits were resolved using Prettier (`eraThemes.ts`, `SongUniverseCard.tsx`, `EraCardReveal.tsx`). `npm run lint` now completes with **0 errors**.
+- **Architecture Documentation:** Added `docs/ARCHITECTURE.md` defining the technical stack, data contracts (`Song` domain), engine pipelines,and 15 Master Visual Rules.
+
+- **Verification Summary:**
+  - `npm test`: ✅ Passed (601 passed,2 skipped)
