@@ -58,7 +58,7 @@ export function EraCardReveal({
 
         {/* The card stands on the desk. */}
         <div className="relative isolate w-full max-w-xs animate-in fade-in zoom-in-95 duration-500">
-            {eraTheme.overlayClasses && (
+          {eraTheme.overlayClasses && (
             <div aria-hidden="true" className={eraTheme.overlayClasses} />
           )}
           <QuizCard card={card} song={song} autoPlayPreview />

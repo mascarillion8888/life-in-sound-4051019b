@@ -23,9 +23,9 @@ export const SongUniverseCard: React.FC<SongUniverseCardProps> = ({
     <div
       data-testid={`song-universe-card-${stepNumber}`}
       className="group relative isolate flex flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 sm:p-6"
-    >        {eraTheme.overlayClasses && (
-          <div aria-hidden="true" className={eraTheme.overlayClasses} />
-        )}
+    >
+      {" "}
+      {eraTheme.overlayClasses && <div aria-hidden="true" className={eraTheme.overlayClasses} />}
       <div className="space-y-4">
         {/* Header Badges */}
         <div className="flex items-center justify-between gap-2">
@@ -70,7 +70,6 @@ export const SongUniverseCard: React.FC<SongUniverseCardProps> = ({
           </p>
         </div>
       </div>
-
       {/* Footer Meta */}
       <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
