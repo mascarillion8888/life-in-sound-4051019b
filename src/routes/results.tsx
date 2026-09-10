@@ -25,7 +25,10 @@ import { deterministicLifeStory } from "@/lib/llm/prompts";
 import { deterministicPoeticAnalysis, type PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
+import { GeneratedPoster } from "@/components/results/GeneratedPoster";
+import { posterToDataUrl } from "@/lib/ai/posterRenderer";
 import posterPreview from "@/assets/poster-preview.jpg";
+
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
 
@@ -372,6 +375,22 @@ function ResultsPage() {
     void resetJourneySession(userId);
     void navigate({ to: "/journey", search: { fresh: undefined } });
   };
+
+  // Re-renders the poster off-screen and downloads it as a PNG.
+  const downloadPosterPng = () => {
+    if (!profile?.poster) return;
+    const url = posterToDataUrl(
+      profile.poster,
+      songs.map((s) => ({ title: s.title, artist: s.artist })),
+    );
+    if (!url) return;
+    const link = document.createElement("a");
+    link.download = "life-in-a-sound-poster.png";
+    link.href = url;
+    link.click();
+  };
+
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
