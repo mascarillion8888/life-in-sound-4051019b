@@ -25,7 +25,10 @@ import { deterministicLifeStory } from "@/lib/llm/prompts";
 import { deterministicPoeticAnalysis, type PoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
+import { GeneratedPoster } from "@/components/results/GeneratedPoster";
+import { posterToDataUrl } from "@/lib/ai/posterRenderer";
 import posterPreview from "@/assets/poster-preview.jpg";
+
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
 
@@ -373,6 +376,22 @@ function ResultsPage() {
     void navigate({ to: "/journey", search: { fresh: undefined } });
   };
 
+  // Re-renders the poster off-screen and downloads it as a PNG.
+  const downloadPosterPng = () => {
+    if (!profile?.poster) return;
+    const url = posterToDataUrl(
+      profile.poster,
+      songs.map((s) => ({ title: s.title, artist: s.artist })),
+    );
+    if (!url) return;
+    const link = document.createElement("a");
+    link.download = "life-in-a-sound-poster.png";
+    link.href = url;
+    link.click();
+  };
+
+
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
@@ -636,12 +655,20 @@ function ResultsPage() {
               title={t.results.posterTitle}
             />
             <div className="group relative mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
-              <img
-                src={posterPreview}
-                alt={t.results.posterAlt}
-                loading="lazy"
-                className="w-full rounded-[1.5rem] object-cover"
-              />
+              {profile?.poster ? (
+                <GeneratedPoster
+                  model={profile.poster}
+                  songs={songs.map((s) => ({ title: s.title, artist: s.artist }))}
+                  alt={t.results.posterAlt}
+                />
+              ) : (
+                <img
+                  src={posterPreview}
+                  alt={t.results.posterAlt}
+                  loading="lazy"
+                  className="w-full rounded-[1.5rem] object-cover"
+                />
+              )}
               <button
                 onClick={() => setPosterOpen(true)}
                 className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-card/80 text-foreground shadow-lg sm:right-6 sm:top-6 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-card md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100"
@@ -673,9 +700,18 @@ function ResultsPage() {
                 </div>
               ) : null}
             </div>
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              A printable poster of your SoundMap is coming soon.
-            </p>
+            {profile?.poster ? (
+              <div className="mt-4 flex justify-center">
+                <Button variant="outline" onClick={downloadPosterPng} className="rounded-full">
+                  Download Poster (PNG)
+                </Button>
+              </div>
+            ) : (
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                A printable poster of your SoundMap is coming soon.
+              </p>
+            )}
+
           </section>
         </AnimatedReveal>
 

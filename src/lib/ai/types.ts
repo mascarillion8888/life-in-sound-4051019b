@@ -22,13 +22,37 @@ export type MusicProfile = {
   listeningStyle: string;
 };
 
+/** Concrete, renderable visual spec derived from personality + emotion + music. */
+export type PosterVisual = {
+  /** Poster background base color. */
+  background: string;
+  /** Primary accent (title gradient start). */
+  accent: string;
+  /** Secondary accent (title gradient end). */
+  accentSoft: string;
+  /** Atmospheric glow color (rgba-friendly hex). */
+  glow: string;
+  /** Body/label text color. */
+  text: string;
+  /** Muted text color. */
+  textMuted: string;
+  /** Background motif driven by the music profile. */
+  motif: "waveform" | "orbit" | "grid" | "rays";
+  /** 0..1 — emotional intensity; drives glow strength and motif amplitude. */
+  intensity: number;
+  /** Title gradient angle in degrees, derived deterministically from the archetype. */
+  gradientAngle: number;
+};
+
 export type PosterModel = {
   headline: string;
   subheadline: string;
   archetype: string;
   paletteLabel: string;
   keywords: string[];
+  visual: PosterVisual;
 };
+
 
 export type PersonalityProfile = {
   archetype: string;
