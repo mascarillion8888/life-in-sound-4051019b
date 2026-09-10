@@ -36,7 +36,11 @@ dist-ssr
 .env.local
 .env.*
 !.env.example
+# gemini-cli settings
+.gemini/
 
+# GitHub App credentials
+gha-creds-*.json
 # Python
 __pycache__/
 *.py[cod]
