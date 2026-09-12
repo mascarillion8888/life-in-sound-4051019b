@@ -45,6 +45,8 @@ describe("MusicDNA Types", () => {
         diversityScore: 75,
         dominantVibe: "Eclectic Explorer",
         hasVerifiedTracks: true,
+        topGenres: [],
+        genreCoverage: 0,
       };
 
       expect(identity.topArtists).toHaveLength(3);
@@ -68,6 +70,8 @@ describe("MusicDNA Types", () => {
           diversityScore: 33,
           dominantVibe: "Focused Nostalgic",
           hasVerifiedTracks: false,
+          topGenres: [],
+          genreCoverage: 0,
         },
         songCount: 3,
         isGrounded: true,

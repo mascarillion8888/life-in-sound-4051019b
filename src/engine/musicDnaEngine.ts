@@ -40,23 +40,60 @@ export function calculateTemporalPattern(songs: Song[]): TemporalPattern {
 /**
  * Müzikal Kimlik Hesaplayıcı (Identity Engine)
  */
+
+/** Genre-tabanlı etiketlemenin güvenilir sayılması için gereken minimum
+ *  gerçek sağlayıcı genre taşıyan şarkı yüzdesi. Altında kalan seçimlerde
+ *  çoğu şarkıda gerçek genre yoktur (manuel yazılanlar, genre eşleme
+ *  öncesi bulunanlar) — genre etiketi verinin desteklediğinden daha
+ *  iddialı olur, o yüzden eski diversity tabanlı etikete düşülür. */
+const MIN_GENRE_COVERAGE_FOR_LABEL = 50;
+
+/** İnsan-okur vibe etiketi. Seçimin yeterli kısmı gerçek genre taşıyorsa
+ *  genre verisini tercih eder; değilse orijinal diversity-only sezgisel
+ *  etikete döner — boşluğu doldurmak için asla genre uydurmaz. */
+function deriveDominantVibe(
+  topGenres: string[],
+  genreCoverage: number,
+  diversityScore: number,
+): string {
+  if (genreCoverage >= MIN_GENRE_COVERAGE_FOR_LABEL && topGenres.length > 0) {
+    const [primaryGenre] = topGenres;
+    return topGenres.length > 1 ? `${primaryGenre} & Beyond` : `${primaryGenre} Devotee`;
+  }
+  return diversityScore > 75 ? "Eclectic Explorer" : "Focused Nostalgic";
+}
+
 export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
   const artistCounts: Record<string, number> = {};
+  const genreCounts: Record<string, number> = {};
+  let songsWithGenre = 0;
 
   songs.forEach((song) => {
     if (song.artist) {
       artistCounts[song.artist] = (artistCounts[song.artist] || 0) + 1;
+    }
+    if (song.genre) {
+      genreCounts[song.genre] = (genreCounts[song.genre] || 0) + 1;
+      songsWithGenre += 1;
     }
   });
 
   const uniqueArtists = Object.keys(artistCounts);
   const diversityScore = Math.round((uniqueArtists.length / (songs.length || 1)) * 100);
 
+  const topGenres = Object.entries(genreCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([genre]) => genre)
+    .slice(0, 3);
+  const genreCoverage = Math.round((songsWithGenre / (songs.length || 1)) * 100);
+
   return {
     topArtists: uniqueArtists.slice(0, 3),
     diversityScore,
-    dominantVibe: diversityScore > 75 ? "Eclectic Explorer" : "Focused Nostalgic",
+    dominantVibe: deriveDominantVibe(topGenres, genreCoverage, diversityScore),
     hasVerifiedTracks: songs.every((s) => s.verified === true),
+    topGenres,
+    genreCoverage,
   };
 }
 

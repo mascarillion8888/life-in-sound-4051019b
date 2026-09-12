@@ -32,6 +32,10 @@ export interface MusicalIdentity {
   dominantVibe: string;
   /** True only when every song was provider-verified. */
   hasVerifiedTracks: boolean;
+  /** Up to 3 real provider-sourced genres, most frequent first. Never invented. */
+  topGenres: string[];
+  /** Share of songs carrying a real provider genre (0-100); gates label trust. */
+  genreCoverage: number;
 }
 
 /** Complete grounded musical identity. */
@@ -69,6 +73,8 @@ export const FALLBACK_MUSIC_DNA: MusicDNA = {
     diversityScore: 0,
     dominantVibe: "Undefined",
     hasVerifiedTracks: false,
+    topGenres: [],
+    genreCoverage: 0,
   },
   songCount: 0,
   isGrounded: false,

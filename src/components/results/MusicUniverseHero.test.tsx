@@ -17,6 +17,8 @@ describe("MusicUniverseHero", () => {
       diversityScore: 88,
       dominantVibe: "Eclectic Explorer",
       hasVerifiedTracks: true,
+      topGenres: [],
+      genreCoverage: 0,
     },
     songCount: 8,
     isGrounded: true,
