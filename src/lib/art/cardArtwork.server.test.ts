@@ -245,6 +245,82 @@ describe("generateCardArtworkCore", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("shares one cache entry between the artwork hook and the card route (no ::card suffix)", async () => {
+    // Regression guard for the double-paint bug: useCardArtwork and useCardLore
+    // (via generateCard.server.ts) must land on the SAME `trackKey::scene` key.
+    // The card route passes a blueprint promptOverride and a different cardinal
+    // context, but the cache identity is trackKey+scene only — so both calls
+    // must share one generation. A "::card" suffix on the card route would make
+    // the second call miss the cache and paint twice.
+    process.env.GEMINI_API_KEY = "test-key";
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const artworkCall = { trackKey: "itunes:42", artist: "Sting", title: "Fragile" };
+    const cardRouteCall = {
+      trackKey: "itunes:42", // same key — the card route must NOT add "::card"
+      artist: "Sting",
+      title: "Fragile",
+      promptOverride: "A multidimensional blueprint prompt with candlelight and a typographic sleeve.",
+    };
+    const first = await generateCardArtworkCore(artworkCall, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const second = await generateCardArtworkCore(cardRouteCall, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(first).toBe(second);
+    // Exactly one provider call across both hooks — the second call hit the
+    // shared process-level cache instead of regenerating.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("an 8-card journey spends exactly ONE generation per track (shared between hooks)", async () => {
+    // End-to-end call-count contract for the audit finding: 8 cards, each
+    // rendered by BOTH useCardArtwork (screen) and useCardLore (persist to
+    // gallery). With the shared trackKey, each card's two server calls hit the
+    // same cache entry → exactly 8 provider calls total (one per scene), not 16.
+    process.env.GEMINI_API_KEY = "test-key";
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const cards = [
+      { trackKey: "itunes:1", artist: "Sting", title: "Fragile" },
+      { trackKey: "itunes:2", artist: "Nirvana", title: "Lithium" },
+      { trackKey: "itunes:3", artist: "Adele", title: "Rolling in the Deep" },
+      { trackKey: "itunes:4", artist: "Eminem", title: "Lose Yourself" },
+      { trackKey: "itunes:5", artist: "Marvin Gaye", title: "Inner City Blues" },
+      { trackKey: "itunes:6", artist: "A-ha", title: "Take On Me" },
+      { trackKey: "itunes:7", artist: "Bob Marley", title: "Three Little Birds" },
+      { trackKey: "itunes:8", artist: "Miles Davis", title: "So What" },
+    ];
+    for (const card of cards) {
+      // useCardArtwork path (no promptOverride).
+      await generateCardArtworkCore(card, {
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      });
+      // useCardLore → generateCard path (blueprint promptOverride, same key).
+      await generateCardArtworkCore(
+        { ...card, promptOverride: "card blueprint override prompt" },
+        { fetchImpl: fetchImpl as unknown as typeof fetch },
+      );
+    }
+    expect(fetchImpl).toHaveBeenCalledTimes(8);
+  });
+
+  it("does NOT share a cache entry when the track key differs (a manual ::card suffix would double-paint)", async () => {
+    // Documents that the cache identity is trackKey+scene: if the card route
+    // ever reintroduces a suffix, it generates a second painting. This is the
+    // failure mode Bulgu 2 was reporting — kept as a canary.
+    process.env.GEMINI_API_KEY = "test-key";
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    await generateCardArtworkCore(
+      { trackKey: "itunes:42", artist: "Sting", title: "Fragile" },
+      { fetchImpl: fetchImpl as unknown as typeof fetch },
+    );
+    await generateCardArtworkCore(
+      { trackKey: "itunes:42::card", artist: "Sting", title: "Fragile" },
+      { fetchImpl: fetchImpl as unknown as typeof fetch },
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it("maps total failure to null and does not cache the failure", async () => {
     process.env.GEMINI_API_KEY = "test-key";
     const fetchImpl = vi.fn().mockRejectedValue(new Error("network down"));
