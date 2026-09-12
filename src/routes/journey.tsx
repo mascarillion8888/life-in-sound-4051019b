@@ -10,6 +10,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MasterPosterModal } from "@/components/results/MasterPosterModal";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { buildPosterModel } from "@/lib/ai/posterModel";
+import type { EmotionProfile, MusicProfile, PersonalityProfile } from "@/lib/ai/types";
 import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { questions } from "@/lib/questions";
 import { loadJourney, saveJourney } from "@/lib/journey-storage";
@@ -23,6 +25,45 @@ import type { Song } from "@/lib/song/types";
 
 const VERIFICATION_DEBOUNCE_MS = 300;
 const SUGGESTION_DEBOUNCE_MS = 300;
+
+// Fallback personality when the journey has no answers yet — poster derived via
+// buildPosterModel so the required visual: PosterVisual field (added in
+// c9fb515) can never drift out of sync in hand-written literals.
+const FALLBACK_EMOTIONS: EmotionProfile = {
+  dominantEmotion: "nostalgia",
+  secondaryEmotions: [],
+  intensity: 0.5,
+};
+const FALLBACK_MUSIC: MusicProfile = {
+  primaryGenres: [],
+  secondaryGenres: [],
+  mood: "melancholic",
+  listeningStyle: "slow",
+};
+
+const FALLBACK_PROFILE: PersonalityProfile = {
+  archetype: "the dreamer",
+  title: "Untitled Journey",
+  description: "",
+  emotionalProfile: [],
+  traits: [],
+  musicProfile: "",
+  recommendedGenres: [],
+  confidence: 0,
+  scores: {
+    introspection: 0.5,
+    nostalgia: 0.5,
+    energy: 0.5,
+    melancholy: 0.5,
+    hope: 0.5,
+    rebellion: 0.5,
+    connection: 0.5,
+  },
+  emotions: FALLBACK_EMOTIONS,
+  music: FALLBACK_MUSIC,
+  poeticSummary: "",
+  poster: buildPosterModel("the dreamer", "Untitled Journey", FALLBACK_EMOTIONS, FALLBACK_MUSIC),
+};
 
 export const Route = createFileRoute("/journey")({
   // `?fresh` marks a clean-restart entry (landing CTA, results "Start Over"):
@@ -453,40 +494,7 @@ function JourneyPage() {
       {posterOpen ? (
         <MasterPosterModal
           analysis={deterministicPoeticAnalysis(
-            analyzeUserJourney(answers) ?? {
-              archetype: "the dreamer",
-              title: "Untitled Journey",
-              description: "",
-              emotionalProfile: [],
-              traits: [],
-              musicProfile: "",
-              recommendedGenres: [],
-              confidence: 0,
-              scores: {
-                introspection: 0.5,
-                nostalgia: 0.5,
-                energy: 0.5,
-                melancholy: 0.5,
-                hope: 0.5,
-                rebellion: 0.5,
-                connection: 0.5,
-              },
-              emotions: { dominantEmotion: "nostalgia", secondaryEmotions: [], intensity: 0.5 },
-              music: {
-                primaryGenres: [],
-                secondaryGenres: [],
-                mood: "melancholic",
-                listeningStyle: "slow",
-              },
-              poeticSummary: "",
-              poster: {
-                headline: "",
-                subheadline: "",
-                archetype: "the dreamer",
-                paletteLabel: "",
-                keywords: [],
-              },
-            },
+            analyzeUserJourney(answers) ?? FALLBACK_PROFILE,
             Object.values(answers),
           )}
           songs={Object.values(songs)}

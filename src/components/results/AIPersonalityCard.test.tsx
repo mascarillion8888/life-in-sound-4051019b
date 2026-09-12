@@ -2,7 +2,21 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { AIPersonalityCard } from "./AIPersonalityCard";
-import type { PersonalityProfile } from "@/lib/ai/types";
+import { buildPosterModel } from "@/lib/ai/posterModel";
+import type { EmotionProfile, MusicProfile, PersonalityProfile } from "@/lib/ai/types";
+
+const DEFAULT_EMOTIONS: EmotionProfile = {
+  dominantEmotion: "nostalgia",
+  secondaryEmotions: ["hope"],
+  intensity: 0.6,
+};
+
+const DEFAULT_MUSIC: MusicProfile = {
+  primaryGenres: ["indie folk"],
+  secondaryGenres: ["ambient"],
+  mood: "bittersweet",
+  listeningStyle: "album-oriented",
+};
 
 function buildProfile(overrides: Partial<PersonalityProfile> = {}): PersonalityProfile {
   return {
@@ -23,21 +37,12 @@ function buildProfile(overrides: Partial<PersonalityProfile> = {}): PersonalityP
       rebellion: 1,
       connection: 3,
     },
-    emotions: { dominantEmotion: "nostalgia", secondaryEmotions: ["hope"], intensity: 0.6 },
-    music: {
-      primaryGenres: ["indie folk"],
-      secondaryGenres: ["ambient"],
-      mood: "bittersweet",
-      listeningStyle: "album-oriented",
-    },
+    emotions: DEFAULT_EMOTIONS,
+    music: DEFAULT_MUSIC,
     poeticSummary: "A quiet map of where you've been.",
-    poster: {
-      headline: "The Wanderer",
-      subheadline: "Seeker of Sound",
-      archetype: "The Wanderer",
-      paletteLabel: "Dusk",
-      keywords: ["drift", "memory"],
-    },
+    // Derive from buildPosterModel so the required visual: PosterVisual field
+    // (added in c9fb515) stays in sync — never hand-write poster literals.
+    poster: buildPosterModel("The Wanderer", "Seeker of Sound", DEFAULT_EMOTIONS, DEFAULT_MUSIC),
     ...overrides,
   };
 }

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildLifeStoryPrompt, deterministicLifeStory } from "@/lib/llm/prompts";
 import { runRole } from "@/lib/llm/orchestra";
-import type { PersonalityProfile } from "@/lib/ai/types";
+import { buildPosterModel } from "@/lib/ai/posterModel";
+import type { EmotionProfile, MusicProfile, PersonalityProfile } from "@/lib/ai/types";
 
 const TEST_SONGS = [
   "First Song",
@@ -15,6 +16,21 @@ const TEST_SONGS = [
   "Remember Me",
 ];
 
+const TEST_EMOTIONS: EmotionProfile = {
+  dominantEmotion: "Nostalgia",
+  secondaryEmotions: ["Tenderness", "Hope"],
+  intensity: 0.7,
+};
+
+const TEST_MUSIC: MusicProfile = {
+  primaryGenres: ["Classic soul"],
+  secondaryGenres: ["Retro pop"],
+  mood: "Warm",
+  listeningStyle: "Old playlists on repeat",
+};
+
+// poster is derived via buildPosterModel — single source of truth so the
+// required visual: PosterVisual field (added in c9fb515) can never drift.
 const TEST_PROFILE: PersonalityProfile = {
   archetype: "The Keeper",
   title: "You carry every year with you",
@@ -33,25 +49,10 @@ const TEST_PROFILE: PersonalityProfile = {
     rebellion: 0.3,
     connection: 0.8,
   },
-  emotions: {
-    dominantEmotion: "Nostalgia",
-    secondaryEmotions: ["Tenderness", "Hope"],
-    intensity: 0.7,
-  },
-  music: {
-    primaryGenres: ["Classic soul"],
-    secondaryGenres: ["Retro pop"],
-    mood: "Warm",
-    listeningStyle: "Old playlists on repeat",
-  },
+  emotions: TEST_EMOTIONS,
+  music: TEST_MUSIC,
   poeticSummary: "Your music feels like an old photograph that still smells like summer.",
-  poster: {
-    headline: "The Keeper",
-    subheadline: "You carry every year with you",
-    archetype: "The Keeper",
-    paletteLabel: "Sunlit memory",
-    keywords: ["memory", "loyalty", "warmth"],
-  },
+  poster: buildPosterModel("The Keeper", "You carry every year with you", TEST_EMOTIONS, TEST_MUSIC),
 };
 
 describe("Life Story prompt construction", () => {
