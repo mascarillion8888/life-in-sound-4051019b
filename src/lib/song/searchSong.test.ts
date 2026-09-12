@@ -31,6 +31,7 @@ const TRACK_FRAGILE = {
   artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music/fragile/100x100bb.jpg",
   releaseDate: "1987-10-01T07:00:00Z",
   previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
+  primaryGenreName: "Rock",
 };
 
 const TRACK_PAINKILLER = {
@@ -84,7 +85,18 @@ describe("itunes mapping: trackToSong", () => {
       previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
       isrc: null,
       verified: true,
+      genre: "Rock",
+      mood: null,
     });
+  });
+
+  it("maps the primary genre when the API supplies one, else null", () => {
+    expect(trackToSong(TRACK_FRAGILE)?.genre).toBe("Rock");
+    // iTunes never supplies a mood tag — mood stays null for provider results.
+    expect(trackToSong(TRACK_FRAGILE)?.mood).toBeNull();
+    const { primaryGenreName: _omitted, ...noGenre } = TRACK_FRAGILE;
+    expect(trackToSong(noGenre)?.genre).toBeNull();
+    expect(trackToSong({ ...TRACK_FRAGILE, primaryGenreName: "  " })?.genre).toBeNull();
   });
 
   it("maps the 30s preview URL only when the API supplies one", () => {

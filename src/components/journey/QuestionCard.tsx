@@ -20,7 +20,12 @@ function manualSong(text: string): Song {
     album: null,
     artworkUrl: null,
     releaseYear: null,
+    previewUrl: null,
     isrc: null,
+    // Explicit "unknown" — the engine's str() helpers map null to "bilinmiyor".
+    // Never fabricated: a user-typed string carries no reliable genre/mood.
+    genre: null,
+    mood: null,
   };
 }
 

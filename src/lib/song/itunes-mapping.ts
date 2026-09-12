@@ -34,6 +34,7 @@ export type ITunesTrack = {
   artworkUrl100?: unknown;
   releaseDate?: unknown;
   previewUrl?: unknown;
+  primaryGenreName?: unknown;
 };
 
 export type ITunesSearchResponse = {
@@ -207,6 +208,10 @@ export function trackToSong(track: ITunesTrack): Song | null {
     previewUrl: asString(track.previewUrl),
     isrc: null,
     verified: true,
+    // Primary genre straight from the API — null when iTunes has none. iTunes
+    // does not supply a mood tag, so mood stays null for provider results.
+    genre: asString(track.primaryGenreName),
+    mood: null,
   };
 }
 
