@@ -1,0 +1,4 @@
+# TanStack router plugin dev-time artifact — regenerated on every vite run.
+# Force LF in the working tree so CRLF/LF regeneration never shows up as
+# spurious "modified" (repo stores LF; git config core.autocrlf=true).
+src/routeTree.gen.ts text eol=lf
