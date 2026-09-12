@@ -19,6 +19,7 @@ import {
   isValidSong,
   loadJourney,
   mergeJourneys,
+  normalizeSong,
   saveJourney,
   type JourneyProgress,
 } from "../journey-storage";
@@ -132,22 +133,15 @@ function toProgress(
 
   // Server data is untrusted — validate each Song entry and drop malformed ones
   // so a corrupt/partial row can never produce a Song with undefined fields.
+  // Field coercion goes through the shared `normalizeSong` (powered by the
+  // SONG_FIELDS whitelist) so the remote tier can never drift from the local
+  // tier — a field added to the Song type is covered by both, or neither.
   const songs: Record<number, Song> = {};
   if (row.songs && typeof row.songs === "object") {
     for (const [key, value] of Object.entries(row.songs as Record<string, unknown>)) {
       const id = Number(key);
       if (Number.isFinite(id) && isValidSong(value)) {
-        const song = value as Song;
-        songs[id] = {
-          provider: song.provider,
-          providerId: song.providerId,
-          title: song.title,
-          artist: song.artist,
-          album: typeof song.album === "string" ? song.album : null,
-          artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
-          isrc: typeof song.isrc === "string" ? song.isrc : null,
-          verified: song.verified === true ? true : undefined,
-        };
+        songs[id] = normalizeSong(value);
       }
     }
   }

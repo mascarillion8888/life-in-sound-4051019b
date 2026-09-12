@@ -12,7 +12,11 @@ function song(over: Partial<Song> = {}): Song {
     artist: "Jack Johnson",
     album: null,
     artworkUrl: null,
+    releaseYear: null,
+    previewUrl: null,
     isrc: null,
+    genre: null,
+    mood: null,
     ...over,
   };
 }
@@ -206,6 +210,52 @@ describe("loadRemoteJourney", () => {
     const result = await loadRemoteJourney("user-1");
 
     expect(result?.songs).toEqual({ 1: valid });
+  });
+
+  it("restores EVERY Song field from the server copy — releaseYear, previewUrl, genre, mood", async () => {
+    const full = song({
+      provider: "itunes",
+      releaseYear: 1987,
+      previewUrl: "https://itunes.apple.com/preview.m4a",
+      genre: "Pop",
+      mood: "uplifting",
+    });
+    const fake = makeFakeSupabase({
+      existing: {
+        current: 1,
+        answers: { 1: full.title },
+        songs: { 1: full },
+      },
+    });
+    setFake(fake);
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1]).toEqual(full);
+  });
+
+  it("normalizes absent optional fields on server rows (null, not undefined)", async () => {
+    const sparse = song({ releaseYear: null, previewUrl: null, genre: null, mood: null });
+    const fake = makeFakeSupabase({
+      existing: {
+        current: 1,
+        answers: { 1: sparse.title },
+        songs: {
+          1: {
+            ...sparse,
+            releaseYear: undefined,
+            previewUrl: undefined,
+            genre: undefined,
+            mood: undefined,
+          } as unknown as Song,
+        },
+      },
+    });
+    setFake(fake);
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1]).toEqual(sparse);
   });
 });
 

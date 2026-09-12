@@ -19,7 +19,11 @@ function song(over: Partial<Song> = {}): Song {
     artist: "Jack Johnson",
     album: null,
     artworkUrl: null,
+    releaseYear: null,
+    previewUrl: null,
     isrc: null,
+    genre: null,
+    mood: null,
     ...over,
   };
 }
@@ -137,7 +141,18 @@ describe("journey-storage structured Song persistence", () => {
       JSON.stringify({ current: 1, answers: { 1: "x" }, songs: { 1: weird } }),
     );
     const loaded = loadJourney();
-    expect(loaded?.songs[1]).toEqual({ ...song(), album: null, artworkUrl: null, isrc: null });
+    // Every nullable field survives the round-trip in its canonical null shape
+    // — including the newer optional ones (releaseYear/previewUrl/genre/mood).
+    expect(loaded?.songs[1]).toEqual({
+      ...song(),
+      album: null,
+      artworkUrl: null,
+      isrc: null,
+      releaseYear: null,
+      previewUrl: null,
+      genre: null,
+      mood: null,
+    });
   });
 
   it("isValidSong accepts a full Song and rejects garbage", () => {
@@ -166,7 +181,11 @@ describe("journey-storage structured Song persistence", () => {
       artist: "",
       album: null,
       artworkUrl: null,
+      releaseYear: null,
+      previewUrl: null,
       isrc: null,
+      genre: null,
+      mood: null,
     };
     saveJourney({ current: 1, answers: { 1: manual.title }, songs: { 1: manual } });
     const loaded = loadJourney();
@@ -189,6 +208,72 @@ describe("journey-storage structured Song persistence", () => {
       JSON.stringify({ current: 1, answers: { 1: "x" }, songs: { 1: garbage } }),
     );
     expect(loadJourney()?.songs[1].verified).toBeUndefined();
+  });
+
+  it("round-trips EVERY Song field — releaseYear, previewUrl, genre, mood included", () => {
+    const full = song({
+      provider: "itunes",
+      releaseYear: 1987,
+      previewUrl: "https://itunes.apple.com/preview.m4a",
+      genre: "Rock",
+      mood: "melancholic",
+    });
+    saveJourney({ current: 1, answers: { 1: full.title }, songs: { 1: full } });
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(full);
+  });
+
+  it("normalizes absent optional fields to their canonical shapes (null) on load", () => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: {
+          1: { ...song(), genre: undefined, mood: undefined, releaseYear: undefined, previewUrl: undefined },
+        },
+      }),
+    );
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual({
+      ...song(),
+      releaseYear: null,
+      previewUrl: null,
+      genre: null,
+      mood: null,
+    });
+  });
+
+  it("coerces non-string genre/mood and non-number releaseYear to null", () => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: { 1: { ...song(), genre: 42, mood: {}, releaseYear: "1987" } },
+      }),
+    );
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual({
+      ...song(),
+      releaseYear: null,
+      previewUrl: null,
+      genre: null,
+      mood: null,
+    });
+  });
+
+  it("keeps empty-string genre/mood as null (never empty strings)", () => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: { 1: { ...song(), genre: "", mood: "" } },
+      }),
+    );
+    expect(loadJourney()?.songs[1].genre).toBeNull();
+    expect(loadJourney()?.songs[1].mood).toBeNull();
   });
 });
 

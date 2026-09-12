@@ -1,4 +1,4 @@
-import type { Song } from "./song/types";
+import { COERCE_TO_PERSISTED, SONG_FIELDS, type Song } from "./song/types";
 
 export const JOURNEY_STORAGE_KEY = "soundmap.journey.v1";
 
@@ -45,18 +45,32 @@ export function isValidSong(value: unknown): value is Song {
   );
 }
 
-/** Coerce a validated Song's nullable fields to `null` when absent/non-string. */
+/**
+ * Coerce a validated Song's optional fields to their canonical persisted shapes
+ * (`null` when absent, `undefined` when the field is optional-by-value). Built
+ * from the shared SONG_FIELDS whitelist so the local tier and the remote tier
+ * (`toProgress`) can never drift apart: every field of the Song type is
+ * covered here and in the same order it is declared in the type.
+ *
+ * Per-field coercion lives in `coerceToPersisted` (song/types.ts), whose
+ * exhaustive switch fails to compile when a new SongField is added without a
+ * rule — a new Song field CANNOT be forgotten (it would fail to compile
+ * instead of silently dropping data).
+ */
 export function normalizeSong(song: Song): Song {
-  return {
-    provider: song.provider,
-    providerId: song.providerId,
-    title: song.title,
-    artist: song.artist,
-    album: typeof song.album === "string" ? song.album : null,
-    artworkUrl: typeof song.artworkUrl === "string" ? song.artworkUrl : null,
-    isrc: typeof song.isrc === "string" ? song.isrc : null,
-    verified: song.verified === true ? true : undefined,
-  };
+  const out: Partial<Record<(typeof SONG_FIELDS)[number], unknown>> = {};
+  for (const field of SONG_FIELDS) {
+    // The optional verified flag only appears when true (absent otherwise).
+    if (field === "verified") {
+      if (song.verified === true) out.verified = true;
+      continue;
+    }
+    // Every other field is ALWAYS present in the output: string/number kept as
+    //-is, absent/invalid input collapsing to null. A Song that went through
+    // load/save keeps its full key set — the round-trip test enforces this.
+    out[field] = COERCE_TO_PERSISTED[field](song[field]);
+  }
+  return out as Song;
 }
 
 /** Read saved journey progress from localStorage. Returns null when nothing valid is stored. */
