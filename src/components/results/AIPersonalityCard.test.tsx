@@ -77,6 +77,22 @@ describe("AIPersonalityCard", () => {
     expect(screen.getByText("ambient")).toBeInTheDocument();
   });
 
+  it("prefers grounded topGenres over the legacy Q&A-predicted genres", () => {
+    render(<AIPersonalityCard profile={buildProfile()} topGenres={["Metal", "Rock", "Jazz"]} />);
+    expect(screen.getByText("Metal")).toBeInTheDocument();
+    expect(screen.getByText("Rock")).toBeInTheDocument();
+    expect(screen.getByText("Jazz")).toBeInTheDocument();
+    // Legacy prediction must not leak through when grounded data exists.
+    expect(screen.queryByText("indie folk")).not.toBeInTheDocument();
+    expect(screen.queryByText("ambient")).not.toBeInTheDocument();
+  });
+
+  it("falls back to legacy recommendedGenres when topGenres is empty", () => {
+    render(<AIPersonalityCard profile={buildProfile()} topGenres={[]} />);
+    expect(screen.getByText("indie folk")).toBeInTheDocument();
+    expect(screen.getByText("ambient")).toBeInTheDocument();
+  });
+
   it("renders confidence as a rounded percentage", () => {
     render(<AIPersonalityCard profile={buildProfile({ confidence: 0.725 })} />);
     // Math.round(0.725 * 100) === 73

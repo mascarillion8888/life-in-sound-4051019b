@@ -2,7 +2,13 @@ import { Brain } from "lucide-react";
 
 import type { PersonalityProfile } from "@/lib/ai/types";
 
-export function AIPersonalityCard({ profile }: { profile: PersonalityProfile | null }) {
+export function AIPersonalityCard({
+  profile,
+  topGenres,
+}: {
+  profile: PersonalityProfile | null;
+  topGenres?: string[];
+}) {
   if (!profile) {
     return (
       <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 text-center backdrop-blur-xl sm:p-8 md:p-12">
@@ -14,6 +20,13 @@ export function AIPersonalityCard({ profile }: { profile: PersonalityProfile | n
   }
 
   const confidencePct = Math.round((profile.confidence ?? 0) * 100);
+
+  // Grounded topGenres (from real Song.genre via musicDnaEngine) wins over the
+  // legacy Q&A-predicted profile.recommendedGenres — same preference as the
+  // Recommended Genres panel in results.tsx. This fallback is currently
+  // duplicated in both places: if a THIRD usage appears, extract it into a
+  // shared helper instead of copying again.
+  const genres = topGenres && topGenres.length > 0 ? topGenres : (profile.recommendedGenres ?? []);
 
   return (
     <section className="rounded-[2rem] border border-border/50 bg-card/60 p-6 backdrop-blur-xl sm:p-8 md:p-12">
@@ -81,7 +94,7 @@ export function AIPersonalityCard({ profile }: { profile: PersonalityProfile | n
             Recommended genres
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
-            {(profile.recommendedGenres ?? []).map((item) => (
+            {genres.map((item) => (
               <li
                 key={item}
                 className="rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary"

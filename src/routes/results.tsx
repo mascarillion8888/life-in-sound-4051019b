@@ -448,7 +448,7 @@ function ResultsPage() {
 
         {/* AI Personality */}
         <AnimatedReveal>
-          <AIPersonalityCard profile={profile} />
+          <AIPersonalityCard profile={profile} topGenres={grounded?.dna.musicalIdentity.topGenres} />
         </AnimatedReveal>
 
         {/* Music DNA — grounded P0 row (era distribution / diversity / vibe)
