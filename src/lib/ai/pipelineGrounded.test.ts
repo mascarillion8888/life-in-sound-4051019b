@@ -1,6 +1,27 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { generateGroundedAnalysis, analyzeUserJourney } from "./pipeline";
+import { inferMood } from "./moodInference";
 import type { Song } from "@/lib/song/types";
+
+// Gerçek LLM/HTTP çağrısı yapılmaz — inferMood deterministic mock'lanır
+// (bazı şarkılara mood verir, bazılarına null). Bu, Promise.allSettled'ın
+// "başarısız olan null ile devam eder" davranışını da kapsar.
+vi.mock("./moodInference", () => ({
+  inferMood: vi.fn(async ({ title }: { title: string }) =>
+    title === "Holy Diver" ? "Dark" : null,
+  ),
+  MOOD_SET: [
+    "Energetic",
+    "Euphoric",
+    "Playful",
+    "Romantic",
+    "Melancholic",
+    "Dreamy",
+    "Nostalgic",
+    "Dark",
+    "World",
+  ],
+}));
 
 const song = (title: string, artist: string, releaseYear: number, providerId: string): Song => ({
   provider: "itunes",
@@ -21,8 +42,11 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
     song("Fragile", "Sting", 1987, "s3"),
   ];
 
-  it("wires Song[] → Music DNA → Grounded Life Story → Emotional Timeline", () => {
-    const { dna, story, timeline } = generateGroundedAnalysis(journeySongs);
+  it("wires Song[] → Music DNA → Grounded Life Story → Emotional Timeline", async () => {
+    const { dna, story, timeline } = await generateGroundedAnalysis(journeySongs);
+
+    // Mood enrichment: her şarkı için inferMood çağrıldı (paralel, 3 şarkı).
+    expect(inferMood).toHaveBeenCalledTimes(3);
 
     // P0 Music DNA — era 1970–1987 span, 3 tracks.
     expect(dna.songCount).toBe(3);
@@ -46,8 +70,8 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
     expect(timeline.dominantEmotion).toBe(dna.musicalIdentity.dominantVibe);
   });
 
-  it("respects explicit 8-stage LifeContext[] when the journey passes its own", () => {
-    const { timeline } = generateGroundedAnalysis(journeySongs, [
+  it("respects explicit 8-stage LifeContext[] when the journey passes its own", async () => {
+    const { timeline } = await generateGroundedAnalysis(journeySongs, [
       { questionId: 1, stageName: "Childhood", song: journeySongs[0] },
       { questionId: 4, stageName: "Hard Time", song: journeySongs[1] },
       { questionId: 8, stageName: "Acceptance", song: journeySongs[2] },
@@ -62,8 +86,8 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
     expect(nodes[2].vibeLabel).toBe("Reflective Transition");
   });
 
-  it("throws on an empty journey selection", () => {
-    expect(() => generateGroundedAnalysis([])).toThrow(
+  it("throws on an empty journey selection", async () => {
+    await expect(generateGroundedAnalysis([])).rejects.toThrow(
       "Grounded analysis requires at least 1 valid Song input.",
     );
   });

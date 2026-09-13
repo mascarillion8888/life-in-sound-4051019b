@@ -10,6 +10,7 @@ import type { LifeContext } from "@/types/musicDna";
 import type { GroundedLifeStory } from "@/types/lifeStory";
 import type { EmotionalTimeline } from "@/types/emotionalTimeline";
 import { generateMusicDNA } from "@/engine/musicDnaEngine";
+import { inferMood } from "./moodInference";
 import { generateGroundedLifeStory } from "@/engine/lifeStoryEngine";
 import { generateEmotionalTimeline } from "@/engine/emotionalTimelineEngine";
 
@@ -134,28 +135,42 @@ const GROUNDED_STAGE_NAMES = [
  * (Song[]); stage names come from the 8-era ordering. Fed hip from the wire
  * path: `results.tsx` reads this instead of the raw selection list.
  */
-export function generateGroundedAnalysis(
+export async function generateGroundedAnalysis(
   songs: Song[],
   contexts?: LifeContext[],
-): {
+): Promise<{
   dna: ReturnType<typeof generateMusicDNA>;
   story: GroundedLifeStory;
   timeline: EmotionalTimeline;
-} {
+}> {
   if (!songs || songs.length === 0) {
     throw new Error("Grounded analysis requires at least 1 valid Song input.");
   }
 
+  // Mood enrichment (P1): her şarkı için LLM mood çıkarımı, PARALEL
+  // (Promise.allSettled — 8 şarkı için 8 çağrı sıralı değil eşzamanlı).
+  // Bir şarkının inference'ı başarısız olursa diğerlerini etkilemez: o şarkı
+  // null mood ile devam eder (mood-coverage gate'i dürüstçe düşer, uydurma yok).
+  const moodResults = await Promise.allSettled(
+    songs.map((song) =>
+      inferMood({ title: song.title, artist: song.artist, genre: song.genre ?? null }),
+    ),
+  );
+  const enrichedSongs: Song[] = songs.map((song, idx) => {
+    const mood = moodResults[idx].status === "fulfilled" ? moodResults[idx].value : null;
+    return mood ? { ...song, mood } : song;
+  });
+
   const lifeContexts: LifeContext[] =
     contexts && contexts.length
       ? contexts
-      : songs.map((song, idx) => ({
+      : enrichedSongs.map((song, idx) => ({
           questionId: idx + 1,
           stageName: GROUNDED_STAGE_NAMES[Math.min(idx, GROUNDED_STAGE_NAMES.length - 1)],
           song,
         }));
 
-  const dna = generateMusicDNA(songs);
+  const dna = generateMusicDNA(enrichedSongs);
   const story = generateGroundedLifeStory(dna, lifeContexts);
   const timeline = generateEmotionalTimeline(dna, lifeContexts);
 

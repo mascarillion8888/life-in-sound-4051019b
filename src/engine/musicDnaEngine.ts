@@ -44,14 +44,28 @@ export function calculateTemporalPattern(songs: Song[]): TemporalPattern {
  *  label would be more confident than the data supports. */
 const MIN_GENRE_COVERAGE_FOR_LABEL = 50;
 
-/** Human-readable vibe label. Prefers real genre data when enough of the
- *  selection carries it; otherwise falls back to the original
- *  diversity-only heuristic — never invents a genre to fill the gap. */
+/** Minimum % of songs carrying an inferred mood before a mood-aware label is
+ *  trusted over the genre-only one. Arbitrary starting value — tune with real
+ *  usage data. */
+const MIN_MOOD_COVERAGE_FOR_LABEL = 60;
+
+/** Human-readable vibe label. Layered trust: a mood-aware label (real genre +
+ *  inferred mood) when enough of the selection carries an inferred mood; the
+ *  genre-only label when enough carries a real provider genre; otherwise the
+ *  original diversity-only heuristic. Never invents a genre or mood to fill
+ *  the gap. */
 function deriveDominantVibe(
   topGenres: string[],
   genreCoverage: number,
+  topMoods: string[],
+  moodCoverage: number,
   diversityScore: number,
 ): string {
+  if (moodCoverage >= MIN_MOOD_COVERAGE_FOR_LABEL && topMoods.length > 0) {
+    const primaryMood = topMoods[0];
+    const primaryGenre = topGenres[0];
+    return primaryGenre ? `${primaryGenre} · ${primaryMood}` : `${primaryMood} Mood`;
+  }
   if (genreCoverage >= MIN_GENRE_COVERAGE_FOR_LABEL && topGenres.length > 0) {
     const [primaryGenre] = topGenres;
     return topGenres.length > 1 ? `${primaryGenre} & Beyond` : `${primaryGenre} Devotee`;
@@ -66,7 +80,9 @@ function deriveDominantVibe(
 export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
   const artistCounts: Record<string, number> = {};
   const genreCounts: Record<string, number> = {};
+  const moodCounts: Record<string, number> = {};
   let songsWithGenre = 0;
+  let songsWithMood = 0;
 
   songs.forEach((song) => {
     if (song.artist) {
@@ -75,6 +91,10 @@ export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
     if (song.genre) {
       genreCounts[song.genre] = (genreCounts[song.genre] || 0) + 1;
       songsWithGenre += 1;
+    }
+    if (song.mood) {
+      moodCounts[song.mood] = (moodCounts[song.mood] || 0) + 1;
+      songsWithMood += 1;
     }
   });
 
@@ -87,13 +107,21 @@ export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
     .slice(0, 3);
   const genreCoverage = Math.round((songsWithGenre / (songs.length || 1)) * 100);
 
+  const topMoods = Object.entries(moodCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([mood]) => mood)
+    .slice(0, 3);
+  const moodCoverage = Math.round((songsWithMood / (songs.length || 1)) * 100);
+
   return {
     topArtists: uniqueArtists.slice(0, 3),
     diversityScore,
-    dominantVibe: deriveDominantVibe(topGenres, genreCoverage, diversityScore),
+    dominantVibe: deriveDominantVibe(topGenres, genreCoverage, topMoods, moodCoverage, diversityScore),
     hasVerifiedTracks: songs.every((s) => s.verified === true),
     topGenres,
     genreCoverage,
+    topMoods,
+    moodCoverage,
   };
 }
 

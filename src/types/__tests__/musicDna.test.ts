@@ -47,6 +47,8 @@ describe("MusicDNA Types", () => {
         hasVerifiedTracks: true,
         topGenres: [],
         genreCoverage: 0,
+        topMoods: [],
+        moodCoverage: 0,
       };
 
       expect(identity.topArtists).toHaveLength(3);
@@ -72,6 +74,8 @@ describe("MusicDNA Types", () => {
           hasVerifiedTracks: false,
           topGenres: [],
           genreCoverage: 0,
+          topMoods: [],
+          moodCoverage: 0,
         },
         songCount: 3,
         isGrounded: true,

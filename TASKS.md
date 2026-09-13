@@ -6,6 +6,14 @@
 
 ---
 
+## P1 — Önemli (mevcut sprint içinde)
+
+- [ ] **mood inference:** `src/lib/ai/moodInference.ts` oluştur — LLM tabanlı,
+  deterministik (temp 0), 9 kapalı mood setiyle sınırlı, bilinmeyende null.
+  `generateGroundedAnalysis` pipeline'ına entegre et. `musicDnaEngine`'e
+  `MIN_MOOD_COVERAGE_FOR_LABEL` gate'i ekle (genre-coverage gate'iyle aynı desen).
+  (Kaynak: STATE.md → KARARLAR, 13 Eylül)
+
 ## P2 — İyileştirmeler
 
 - [ ] **MusicUniverseHero görsel zenginliğini geri kazan (placeholder/skeleton ile)** —

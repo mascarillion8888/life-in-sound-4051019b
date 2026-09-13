@@ -89,6 +89,8 @@ describe("SocialSharePayload (buildSocialSharePayload)", () => {
       hasVerifiedTracks: true,
       topGenres: [],
       genreCoverage: 0,
+      topMoods: [],
+      moodCoverage: 0,
     },
     songCount: 3,
     isGrounded: true,

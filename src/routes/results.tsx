@@ -322,14 +322,23 @@ function ResultsPage() {
   );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
   // Grounded P0/P2/P3 analysis — deterministic master-gap engines fed from the
-  // journey Song[] selection (not just title strings). Never blocks the page:
-  // the try/catch falls back to null when the journey is empty.
-  const grounded = useMemo(() => {
-    try {
-      return generateGroundedAnalysis(songs);
-    } catch {
-      return null;
-    }
+  // journey Song[] selection (not just title strings), upgraded with per-song
+  // LLM mood inference. Never blocks the page: the async call falls back to
+  // null when the journey is empty or the inference fails.
+  const [grounded, setGrounded] = useState<Awaited<ReturnType<typeof generateGroundedAnalysis>> | null>(null);
+  useEffect(() => {
+    let active = true;
+    setGrounded(null);
+    generateGroundedAnalysis(songs)
+      .then((result) => {
+        if (active) setGrounded(result);
+      })
+      .catch(() => {
+        if (active) setGrounded(null);
+      });
+    return () => {
+      active = false;
+    };
   }, [songs]);
   // Same deterministic fallback DynamicMusicMap uses — the lightbox frame and
   // the sheet paint the same palette.

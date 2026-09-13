@@ -21,6 +21,8 @@ describe("MusicUniverseHero", () => {
       hasVerifiedTracks: true,
       topGenres: [],
       genreCoverage: 0,
+      topMoods: [],
+      moodCoverage: 0,
     },
     songCount: 8,
     isGrounded: true,

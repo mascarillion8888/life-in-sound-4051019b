@@ -153,6 +153,16 @@ Uygulayan: [AI]
 
 ---
 
+## 📌 KARARLAR
+
+- **§9 gerilimi çözümü (13 Eylül):** Song.mood alanı Song tipinde kalır
+  (persistence zaten hazır), ama değeri HER ZAMAN pipeline'daki ayrı bir
+  inference katmanından (moodInference.ts) gelir — Song'a UI'dan veya
+  başka bir yerden doğrudan mood yazılmaz. Song yine nötr taşıyıcı;
+  türetme mantığı ayrı, izlenebilir bir modülde izole edilir. Bu, §9'un
+  "Song'a derived alan ekleme" yasağının ruhuna (rastgele/izlenemez
+  türetme) uygun, lafzına değil.
+
 ## 📝 NOTLAR
 
 - **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.

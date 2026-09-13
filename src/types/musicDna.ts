@@ -36,6 +36,10 @@ export interface MusicalIdentity {
   topGenres: string[];
   /** Share of songs carrying a real provider genre (0-100); gates label trust. */
   genreCoverage: number;
+  /** Up to 3 inferred moods (LLM moodInference), most frequent first. Never fabricated. */
+  topMoods: string[];
+  /** Share of songs carrying an inferred mood (0-100); gates mood-aware label trust. */
+  moodCoverage: number;
 }
 
 /** Complete grounded musical identity. */
@@ -75,6 +79,8 @@ export const FALLBACK_MUSIC_DNA: MusicDNA = {
     hasVerifiedTracks: false,
     topGenres: [],
     genreCoverage: 0,
+    topMoods: [],
+    moodCoverage: 0,
   },
   songCount: 0,
   isGrounded: false,
