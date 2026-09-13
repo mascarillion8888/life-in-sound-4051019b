@@ -19,6 +19,10 @@ olarak okunur.
 - Sır/API anahtarı/kimlik bilgisi asla koda gömülmez, `.env` kullanılır.
 - Her ajan yalnızca kendi sorumluluk alanındaki dosyalara dokunur (aşağıya
   bakınız). Alan dışına çıkması gerekiyorsa bunu açıkça belirtip onay ister.
+- **TEK KAYNAK KURALI:** `CLAUDE.md` yalnızca kök dizinde, `ANA_YASA.md`
+  yalnızca `docs/` altında bulunur — başka yerde kopyası OLUŞTURULMAZ.
+  (Kök `ANA_YASA.md` ve `docs/CLAUDE.md` kopyaları 13 Eylül'de kaldırıldı:
+  iki kopya senkron sorunu yaratıyordu, tek kaynak esastır.)
 
 ---
 

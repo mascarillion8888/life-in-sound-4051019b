@@ -322,7 +322,7 @@ onaysız değiştirilmemeli.
 | Artwork | 🟢 |
 | 30 sn preview altyapısı | 🟡 veri sözleşmesi tamamlanmalı |
 | Journey persistence | 🟢 |
-| Music DNA | 🔴 gerçek müzik verisine yeterince dayanmıyor |
+| Music DNA | 🟢 mood-aware (13 Eylül) — genre > mood > diversity katmanlı gate |
 | Life Story | 🟡 mimari doğru, veri temeli güçlendirilmeli |
 | Emotional Timeline | 🟡 mevcut, Music DNA düzeltmesi sonrası yeniden beslenmeli |
 | Cinematic Poster | 🟢 teknik olarak güçlü |
@@ -342,6 +342,9 @@ onaysız değiştirilmemeli.
 P0 — Music DNA:        Song[] → SongFeatures → gerçek Music DNA
 P1 — Metadata enrichment: genre, era, artist metadata, musical
                         characteristics — gerçek kaynaktan, uydurma yok
+                        → mood inference + gate tamamlandı ✅ (13 Eylül).
+                        Kalan: çoklu-kaynak genre (iTunes tekelini kır),
+                        artist metadata, musical characteristics
 P2 — Life Story:        Music DNA + 8 songs + 8 life contexts
                         → Grounded Life Story
 P3 — Emotional Timeline: gerçek Music DNA üzerinden yeniden üretilmeli
