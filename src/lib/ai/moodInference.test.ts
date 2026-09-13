@@ -17,10 +17,11 @@ import {
  * `callGeminiPoeticAnalyzer`'ı test ettiği desenle aynı.
  */
 
-// `callGeminiMoodInference` key yoksa fetch'e hiç gitmez (null döner) — test
-// ortamında key stub'layarak mock fetch'in gerçekten çağrıldığını garanti ederiz.
+// `callGeminiMoodInference` (OpenRouter üzerinden) key yoksa fetch'e hiç
+// gitmez (null döner) — test ortamında key stub'layarak mock fetch'in gerçekten
+// çağrıldığını garanti ederiz.
 beforeAll(() => {
-  vi.stubEnv("GEMINI_API_KEY", "test-key");
+  vi.stubEnv("OPENROUTER_API_KEY", "test-key");
 });
 afterAll(() => {
   vi.unstubAllEnvs();

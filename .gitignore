@@ -46,3 +46,7 @@ __pycache__/
 *.py[cod]
 # Vercel build output (config file vercel.json stays tracked)
 .vercel
+
+# Geçici canlı test script'leri (commit edilmez)
+scripts/test-mood-live.ts
+scripts/test-openrouter-live.ts

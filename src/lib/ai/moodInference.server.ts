@@ -1,16 +1,16 @@
 /**
- * Server-only mood inference bridge — routes `inferMood` to Gemini.
+ * Server-only mood inference bridge — routes `inferMood` to OpenRouter.
  *
  * Receives the song identity (title + artist + genre), builds the grounded
- * mood prompt, calls Gemini via its OpenAI-compatible chat-completions endpoint
- * (native fetch, no SDK) with `temperature: 0` for determinism, and returns the
- * parsed mood — or `null` on any failure, so the caller degrades gracefully
- * (the mood-coverage gate falls back honestly; nothing is ever fabricated).
+ * mood prompt, calls OpenRouter (`callOpenRouter`) with `temperature: 0` for
+ * determinism (primary model, ucuz fallback ile), and returns the parsed mood —
+ * or `null` on any failure, so the caller degrades gracefully (the
+ * mood-coverage gate falls back honestly; nothing is ever fabricated).
  *
  * SECURITY:
  *   - TanStack Start server function: runs only on the server.
- *   - The key is read from `GEMINI_API_KEY` — a server-only env var, NEVER
- *     `VITE_`-prefixed.
+ *   - The key is read by `callOpenRouter` from `OPENROUTER_API_KEY` — a
+ *     server-only env var, NEVER `VITE_`-prefixed.
  *   - No key is ever returned or logged; the return type carries the mood only.
  *     Every failure path resolves to `{ mood: null }`.
  */
@@ -18,29 +18,13 @@ import { createServerFn } from "@tanstack/react-start";
 
 import type { Song } from "@/lib/song/types";
 import { extractJsonObject } from "@/lib/llm/poetic-analyzer";
+import { callOpenRouter } from "@/lib/openrouter.server";
 import { MOOD_SET } from "./moodInference";
-
-const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const GEMINI_MODEL = "gemini-2.5-flash";
 
 export type InferMoodInput = Pick<Song, "title" | "artist" | "genre">;
 export type InferMoodOutput = {
   mood: string | null;
 };
-
-function getGeminiServerKey(): string | null {
-  const value = process.env?.GEMINI_API_KEY;
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
-}
-
-function extractContent(payload: unknown): string | null {
-  if (typeof payload !== "object" || payload === null) return null;
-  const choices = (payload as { choices?: unknown }).choices;
-  if (!Array.isArray(choices) || choices.length === 0) return null;
-  const first = choices[0] as { message?: { content?: unknown } };
-  const content = first?.message?.content;
-  return typeof content === "string" && content.trim().length > 0 ? content : null;
-}
 
 /**
  * Build the Gemini prompt for mood inference. Pure string construction — no
@@ -83,8 +67,8 @@ export function parseMoodResponse(raw: unknown): string | null {
 }
 
 /**
- * Call Gemini with the mood prompt. Returns the raw text on success, `null` on
- * any failure. Exported for tests (fetch injectable); never throws, never
+ * Call OpenRouter with the mood prompt. Returns the raw text on success, `null`
+ * on any failure. Exported for tests (fetch injectable); never throws, never
  * exposes the key.
  */
 export async function callGeminiMoodInference(
@@ -94,46 +78,17 @@ export async function callGeminiMoodInference(
     signal?: AbortSignal;
   } = {},
 ): Promise<string | null> {
-  const apiKey = getGeminiServerKey();
-  if (!apiKey) return null;
-
-  const fetchImpl = options.fetchImpl ?? fetch;
-
-  let response: Response;
-  try {
-    response = await fetchImpl(GEMINI_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${apiKey}`,
+  return callOpenRouter(
+    [
+      {
+        role: "system",
+        content:
+          "You are a music mood analyst. You answer with strict JSON only — no markdown, no code fences, no commentary.",
       },
-      signal: options.signal,
-      body: JSON.stringify({
-        model: GEMINI_MODEL,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a music mood analyst. You answer with strict JSON only — no markdown, no code fences, no commentary.",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0,
-        max_tokens: 64,
-        response_format: { type: "json_object" },
-      }),
-    });
-  } catch {
-    return null;
-  }
-
-  if (!response.ok) return null;
-
-  try {
-    return extractContent(await response.json());
-  } catch {
-    return null;
-  }
+      { role: "user", content: prompt },
+    ],
+    { temperature: 0, maxTokens: 64, jsonMode: true, signal: options.signal, fetchImpl: options.fetchImpl },
+  ).catch(() => null);
 }
 
 /**
