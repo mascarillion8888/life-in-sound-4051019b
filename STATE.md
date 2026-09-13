@@ -153,5 +153,10 @@ Uygulayan: [AI]
 
 ---
 
-_Son güncelleme: OpenHands — 2026-08-19 (Görsel Doğrulama Kuralı 10. madde olarak eklendi; STATE.md bölündü: anlık durum → docs/HANDOFF.md)_
+## 📝 NOTLAR
+
+- **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.
+- **2026-09-13 (Claude):** SongUniverseCard merge çakışması: origin/dev/next tutuldu. HEAD'in stageName='Life Stage', vibeLabel='Grounded Reflection', temporalArcPosition=0 fallback'leri ANA_YASA §0 gereği reddedildi — bunlar gerçek analiz verisi olmadan sabit değer gösteriyordu.
+
+_Son güncelleme: Claude — 2026-09-13 (MusicUniverseHero merge çakışması çözüldü: origin/dev/next tarafı tutuldu, HEAD'in uydurma fallback'leri ANA_YASA §0 gereği reddedildi — NOTLAR bölümüne bakın)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._

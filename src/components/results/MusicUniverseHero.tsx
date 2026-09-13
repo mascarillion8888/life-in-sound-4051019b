@@ -1,77 +1,104 @@
-import React from "react";
-import { Disc3, Compass, Sparkles, Radio } from "lucide-react";
+import { Sparkles } from "lucide-react";
+
+import type { PersonalityProfile } from "@/lib/ai/types";
+import type { Song } from "@/lib/song/types";
 import type { MusicDNA } from "@/types/musicDna";
 
-export interface MusicUniverseHeroProps {
-  dna: MusicDNA | null;
-  songCount: number;
-  primaryEra?: string;
-  dominantVibe?: string;
+interface MusicUniverseHeroProps {
+  profile: PersonalityProfile | null;
+  grounded: { dna: MusicDNA } | null;
+  songs: Song[];
+  title?: string;
+  subtitle?: string;
 }
 
-export const MusicUniverseHero: React.FC<MusicUniverseHeroProps> = ({
-  dna,
-  songCount,
-  primaryEra,
-  dominantVibe,
-}) => {
-  const era = primaryEra || dna?.temporalPattern?.primaryEra || "Timeless";
-  const vibe = dominantVibe || dna?.musicalIdentity?.dominantVibe || "Eclectic Explorer";
-  const span = dna?.temporalPattern?.spanYears ?? 0;
-  const diversity = dna?.musicalIdentity?.diversityScore ?? 100;
-  const topArtists = dna?.musicalIdentity?.topArtists ?? [];
+/**
+ * MusicUniverseHero — the visual entry point into the song universes.
+ *
+ * Uses only existing result-page data (personality profile + grounded Music DNA +
+ * the 8-song selection) — no network calls, no AI generation, no invented
+ * metadata. Deterministic: identical input always renders identically.
+ *
+ * Background (the "World") ring on the grounded era/data;the card grid that
+ * follows renders the artifacts in front of it. Grounded data may be absent
+ * for a fresh journey — the hero degrades gracefully to the profile-only state.
+ */
+export function MusicUniverseHero({
+  profile,
+  grounded,
+  songs,
+  title = "Your Music Universe",
+  subtitle = "Eight songs. Eight worlds. One soundtrack.",
+}: MusicUniverseHeroProps) {
+  const primaryEra = grounded?.dna.temporalPattern.primaryEra ?? null;
+  const spanYears = grounded?.dna.temporalPattern.spanYears ?? null;
+  const dominantVibe = grounded?.dna.musicalIdentity.dominantVibe ?? null;
+  const diversityScore = grounded?.dna.musicalIdentity.diversityScore ?? null;
+  const archetype = profile?.archetype ?? null;
 
   return (
     <section
+      aria-label="Your Music Universe"
+      className="relative overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-8 backdrop-blur-xl sm:p-10 md:p-14"
       data-testid="music-universe-hero"
-      className="relative overflow-hidden rounded-[2.5rem] border border-border/60 bg-gradient-to-b from-card/80 via-card/50 to-background/90 p-8 shadow-2xl backdrop-blur-2xl sm:p-12 md:p-16"
     >
-      <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-amber-500/5 blur-3xl" />
+      {/* Cinematic atmosphere — the World behind the cards. No fabricated imagery. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          background:
+            "radial-gradient(ellipse at 30% 20%, rgba(216,166,90,0.16), transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(96,72,148,0.12), transparent 50%)",
+        }}
+      />
 
-      <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="max-w-xl space-y-4">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              Music Universe
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1 text-xs font-medium text-foreground/80">
-              <Radio className="h-3 w-3 text-primary" />
-              {era} Era
-            </span>
+      <div className="relative space-y-4">
+        <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
+          <Sparkles className="h-4 w-4" />
+          {title}
+        </span>
+
+        {archetype ? (
+          <p className="text-sm font-medium text-muted-foreground">{archetype}</p>
+        ) : null}
+
+        <h2 className="max-w-3xl text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+          {subtitle}
+        </h2>
+
+        {grounded ? (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {primaryEra ? (
+              <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+                {primaryEra}
+              </span>
+            ) : null}
+            {spanYears !== null ? (
+              <span className="rounded-full border border-border/60 px-4 py-1.5 text-sm font-medium text-foreground/80">
+                {spanYears}-year span
+              </span>
+            ) : null}
+            {dominantVibe ? (
+              <span className="rounded-full border border-border/60 px-4 py-1.5 text-sm font-medium text-foreground/80">
+                {dominantVibe}
+              </span>
+            ) : null}
+            {diversityScore !== null ? (
+              <span className="rounded-full border border-border/60 px-4 py-1.5 text-sm font-medium text-foreground/80">
+                {diversityScore}% artist diversity
+              </span>
+            ) : null}
           </div>
+        ) : null}
 
-          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            A sonic tapestry anchored in <span className="text-gold-gradient">{era}</span>
-          </h2>
-
-          <p className="text-sm leading-relaxed text-foreground/75 sm:text-base">
-            Your life soundtrack weaves through{" "}
-            {span > 0 ? `${span} years of musical evolution` : "a spectrum of eras"}, expressing a{" "}
-            <strong className="font-semibold text-foreground">{vibe}</strong> identity.
-            {topArtists.length > 0 && <> Guided by voices like {topArtists.join(", ")}.</>}
+        {songs.length ? (
+          <p className="pt-2 text-sm text-muted-foreground">
+            {songs.length} songs discovered — plunge into each universe below.
           </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:w-80">
-          <div className="rounded-2xl border border-border/50 bg-background/50 p-4 text-center backdrop-blur-md">
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Disc3 className="h-4 w-4" />
-            </div>
-            <p className="mt-2 text-2xl font-bold text-foreground">{songCount}</p>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Key Anthems</p>
-          </div>
-
-          <div className="rounded-2xl border border-border/50 bg-background/50 p-4 text-center backdrop-blur-md">
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Compass className="h-4 w-4" />
-            </div>
-            <p className="mt-2 text-2xl font-bold text-foreground">{diversity}%</p>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Diversity</p>
-          </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );
-};
+}
+
+export default MusicUniverseHero;

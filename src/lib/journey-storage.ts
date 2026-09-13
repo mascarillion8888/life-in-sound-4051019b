@@ -27,9 +27,9 @@ function isBrowser() {
  * split into artist + title legitimately have `artist: ""`, per the Song type
  * contract — dropping them on load would silently lose the selected song and
  * leave a stale title-only answer behind). The nullable fields (album,
- * artworkUrl, isrc) are coerced to null when absent or non-string so a
- * malformed payload can never produce a Song with an undefined field. Mirrors
- * the guarantees of the Song type.
+ * artworkUrl,isrc, releaseYear, previewUrl)are coerced to null when
+ * absent, non-string or (for releaseYear) non-numeric so a malformed
+ * payload can never produce a Song with an undefined field. Mirrors
  */
 export function isValidSong(value: unknown): value is Song {
   if (!value || typeof value !== "object") return false;
@@ -46,8 +46,12 @@ export function isValidSong(value: unknown): value is Song {
 }
 
 /**
- * Coerce a validated Song's optional fields to their canonical persisted shapes
- * (`null` when absent, `undefined` when the field is optional-by-value). Built
+ * Coerce a validated Song's optional fields to their canonical persisted shapes.
+ * Every field is ALWAYS present in the output — absent/invalid input collapses
+ * to `null`, never `undefined`. The single exception is `verified`: it is the
+ * only optional-by-value field (drops to `undefined` when not true). This
+ * matches the `PersistedSong` contract ("every field present") in song/types.ts.
+ * Built
  * from the shared SONG_FIELDS whitelist so the local tier and the remote tier
  * (`toProgress`) can never drift apart: every field of the Song type is
  * covered here and in the same order it is declared in the type.
@@ -58,7 +62,7 @@ export function isValidSong(value: unknown): value is Song {
  * instead of silently dropping data).
  */
 export function normalizeSong(song: Song): Song {
-  const out: Partial<Record<(typeof SONG_FIELDS)[number], unknown>> = {};
+const out: Partial<Record<(typeof SONG_FIELDS)[number], unknown>> = {};
   for (const field of SONG_FIELDS) {
     // The optional verified flag only appears when true (absent otherwise).
     if (field === "verified") {

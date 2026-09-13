@@ -14,9 +14,9 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
 import { AIPersonalityCard } from "@/components/results/AIPersonalityCard";
-import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
 import { MusicUniverseHero } from "@/components/results/MusicUniverseHero";
 import { SongUniverseCard } from "@/components/results/SongUniverseCard";
+import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
 import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
 import { analyzeUserJourney, generateGroundedAnalysis } from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
@@ -155,38 +155,20 @@ function LifeStory({
       />
       <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
         {showFallback ? (
-          groundedStory && groundedStory.chapters.length > 0 ? (
-            <div data-testid="grounded-life-story" className="space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-primary/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                  {groundedStory.dominantEraText}
-                </span>
-                <span className="rounded-full border border-border/50 bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
-                  {groundedStory.diversityInsight}
-                </span>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {groundedStory.chapters.map((chapter) => (
-                  <div
-                    key={chapter.stageName}
-                    className="rounded-xl border border-border/40 bg-background/40 p-4 transition-all hover:border-primary/30"
-                  >
-                    <div className="flex items-center justify-between text-xs text-primary font-semibold uppercase tracking-wider">
-                      <span>{chapter.stageName}</span>
-                      <span className="text-muted-foreground">{chapter.releaseYear}</span>
-                    </div>
-                    <p className="mt-2 text-sm font-bold text-foreground">
-                      {chapter.songTitle}{" "}
-                      <span className="font-normal text-muted-foreground">
-                        · {chapter.artistName}
-                      </span>
-                    </p>
-                    <p className="mt-2 text-xs leading-relaxed text-foreground/75">
-                      {chapter.narrative}
-                    </p>
-                  </div>
-                ))}
-              </div>
+groundedStory ? (
+            <div className="space-y-5">
+              <p className="text-xl font-semibold text-foreground">{groundedStory.title}</p>
+              <p>{groundedStory.summary}</p>
+              {groundedStory.chapters.map((chapter, i) => (
+                <div key={i} className="space-y-1">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-primary/80">
+                    {chapter.stageName} · {chapter.songTitle} — {chapter.artistName}
+                  </p>
+                  <p>{chapter.narrative}</p>
+                </div>
+              ))}
+              <p>{groundedStory.dominantEraText}</p>
+              <p>{groundedStory.diversityInsight}</p>
             </div>
           ) : (
             fallback
@@ -416,12 +398,9 @@ function ResultsPage() {
           </header>
         </AnimatedReveal>
 
-        {/* Music Universe Hero — macro sonic identity */}
+{/* Universe Hero — Phase 1: the visual multiverse entry point */}
         <AnimatedReveal>
-          <MusicUniverseHero
-            dna={grounded?.dna ?? null}
-            songCount={songs.filter((s) => Boolean(s.title)).length}
-          />
+          <MusicUniverseHero profile={profile} grounded={grounded} songs={songs} />
         </AnimatedReveal>
 
         {/* Life Story */}
@@ -538,27 +517,14 @@ function ResultsPage() {
           </section>
         </AnimatedReveal>
 
-        {/* Song Universes — Artifact collectible cards for the journey */}
+{/* Song Universe Cards — Phase 1: one song, one universe */}
         <AnimatedReveal>
-          <section data-testid="song-universes-section">
-            <SectionHeading icon={Disc3} eyebrow="SONG ARTIFACTS" title="Song Universes" />
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {songs.map((song, idx) => {
-                const node = grounded?.timeline?.nodes?.[idx];
-                return (
-                  <SongUniverseCard
-                    key={song.providerId || idx}
-                    song={song}
-                    stageName={node?.stageName || `Stage ${idx + 1}`}
-                    vibeLabel={node?.vibeLabel || "Formative Sound"}
-                    stepNumber={idx + 1}
-                    temporalArcPosition={
-                      node?.temporalArcPosition ??
-                      Math.round((idx / Math.max(1, songs.length - 1)) * 100)
-                    }
-                  />
-                );
-              })}
+          <section>
+            <SectionHeading icon={Dna} eyebrow={t.results.dnaEyebrow} title="Song Universes" />
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {songs.map((song, i) => (
+                <SongUniverseCard key={`${song.providerId}-${i}`} song={song} index={i} />
+              ))}
             </div>
           </section>
         </AnimatedReveal>

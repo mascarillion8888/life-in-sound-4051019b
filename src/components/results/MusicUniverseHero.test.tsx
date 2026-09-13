@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MusicUniverseHero } from "./MusicUniverseHero";
 import type { MusicDNA } from "@/types/musicDna";
+import type { PersonalityProfile } from "@/lib/ai/types";
+import type { Song } from "@/lib/song/types";
 
 describe("MusicUniverseHero", () => {
   const mockDna: MusicDNA = {
@@ -25,26 +27,38 @@ describe("MusicUniverseHero", () => {
     analyzedAt: "2026-09-05T00:00:00.000Z",
   };
 
-  it("renders primary era and dominant vibe from DNA", () => {
-    render(<MusicUniverseHero dna={mockDna} songCount={8} />);
+  const mockSongs: Song[] = Array.from({ length: 8 }, (_, i) => ({
+    provider: "manual" as const,
+    providerId: `manual-${i}`,
+    title: `Song ${i + 1}`,
+    artist: "Artist",
+    album: null,
+    artworkUrl: null,
+    isrc: null,
+  }));
+
+  it("renders primary era and dominant vibe from grounded DNA", () => {
+    render(<MusicUniverseHero profile={null} grounded={{ dna: mockDna }} songs={mockSongs} />);
 
     expect(screen.getByTestId("music-universe-hero")).toBeInTheDocument();
-    expect(screen.getByText(/1980s Era/i)).toBeInTheDocument();
+    expect(screen.getByText("1980s")).toBeInTheDocument();
     expect(screen.getByText("Eclectic Explorer")).toBeInTheDocument();
-    expect(screen.getByText("8")).toBeInTheDocument();
-    expect(screen.getByText("88%")).toBeInTheDocument();
+    expect(screen.getByText(/8 songs discovered/i)).toBeInTheDocument();
+    expect(screen.getByText(/88% artist diversity/i)).toBeInTheDocument();
   });
 
-  it("renders top artists when provided", () => {
-    render(<MusicUniverseHero dna={mockDna} songCount={8} />);
-    expect(screen.getByText(/The Cure, Depeche Mode, New Order/i)).toBeInTheDocument();
+  it("renders the profile archetype when provided", () => {
+    // The component only reads `profile.archetype` — a partial mock is enough.
+    const mockProfile = { archetype: "The Curator" } as unknown as PersonalityProfile;
+    render(<MusicUniverseHero profile={mockProfile} grounded={null} songs={[]} />);
+
+    expect(screen.getByText("The Curator")).toBeInTheDocument();
   });
 
-  it("handles null DNA gracefully", () => {
-    render(<MusicUniverseHero dna={null} songCount={0} />);
+  it("handles null grounded DNA gracefully", () => {
+    render(<MusicUniverseHero profile={null} grounded={null} songs={[]} />);
 
     expect(screen.getByTestId("music-universe-hero")).toBeInTheDocument();
-    expect(screen.getByText(/Timeless Era/i)).toBeInTheDocument();
-    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(screen.getByText("Your Music Universe")).toBeInTheDocument();
   });
 });

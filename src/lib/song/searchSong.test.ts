@@ -33,6 +33,11 @@ const TRACK_FRAGILE = {
   previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
   primaryGenreName: "Rock",
 };
+const TRACK_FRAGILE_WITH_GENRE = {
+  ...TRACK_FRAGILE,
+  trackId: 14617434,
+  primaryGenreName: "Rock",
+};
 
 const TRACK_PAINKILLER = {
   wrapperType: "track",
@@ -88,6 +93,13 @@ describe("itunes mapping: trackToSong", () => {
       genre: "Rock",
       mood: null,
     });
+  });
+  it("maps the real iTunes primaryGenreName into Song.genre when present", () => {
+    expect(trackToSong(TRACK_FRAGILE_WITH_GENRE)?.genre).toBe("Rock");
+  });
+
+  it("never fabricates mood — always null regardless of input", () => {
+    expect(trackToSong(TRACK_FRAGILE_WITH_GENRE)?.mood).toBeNull();
   });
 
   it("maps the primary genre when the API supplies one, else null", () => {

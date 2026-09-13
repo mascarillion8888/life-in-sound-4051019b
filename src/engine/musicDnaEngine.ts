@@ -37,20 +37,16 @@ export function calculateTemporalPattern(songs: Song[]): TemporalPattern {
   };
 }
 
-/**
- * Müzikal Kimlik Hesaplayıcı (Identity Engine)
- */
-
-/** Genre-tabanlı etiketlemenin güvenilir sayılması için gereken minimum
- *  gerçek sağlayıcı genre taşıyan şarkı yüzdesi. Altında kalan seçimlerde
- *  çoğu şarkıda gerçek genre yoktur (manuel yazılanlar, genre eşleme
- *  öncesi bulunanlar) — genre etiketi verinin desteklediğinden daha
- *  iddialı olur, o yüzden eski diversity tabanlı etikete düşülür. */
+/** Minimum % of songs needing a real provider genre before we trust
+ *  genre-derived labeling over the old diversity-only heuristic. Below
+ *  this, most of the selection has no real genre (e.g. manually-typed
+ *  songs, or songs found before genre mapping existed) and a genre-based
+ *  label would be more confident than the data supports. */
 const MIN_GENRE_COVERAGE_FOR_LABEL = 50;
 
-/** İnsan-okur vibe etiketi. Seçimin yeterli kısmı gerçek genre taşıyorsa
- *  genre verisini tercih eder; değilse orijinal diversity-only sezgisel
- *  etikete döner — boşluğu doldurmak için asla genre uydurmaz. */
+/** Human-readable vibe label. Prefers real genre data when enough of the
+ *  selection carries it; otherwise falls back to the original
+ *  diversity-only heuristic — never invents a genre to fill the gap. */
 function deriveDominantVibe(
   topGenres: string[],
   genreCoverage: number,
@@ -62,6 +58,10 @@ function deriveDominantVibe(
   }
   return diversityScore > 75 ? "Eclectic Explorer" : "Focused Nostalgic";
 }
+
+/**
+ * Müzikal Kimlik Hesaplayıcı (Identity Engine)
+ */
 
 export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
   const artistCounts: Record<string, number> = {};
