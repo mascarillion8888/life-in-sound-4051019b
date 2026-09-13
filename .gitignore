@@ -47,6 +47,9 @@ __pycache__/
 # Vercel build output (config file vercel.json stays tracked)
 .vercel
 
+# TypeScript build artifact (tsc --incremental / tsBuildInfoFile)
+*.tsbuildinfo
+
 # Geçici canlı test script'leri (commit edilmez)
 scripts/test-mood-live.ts
 scripts/test-openrouter-live.ts
