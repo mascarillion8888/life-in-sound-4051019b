@@ -163,11 +163,22 @@ Uygulayan: [AI]
   "Song'a derived alan ekleme" yasağının ruhuna (rastgele/izlenemez
   türetme) uygun, lafzına değil.
 
+- **OpenRouter geçişi (13 Eylül):** Tüm LLM çağrıları (mood inference + poetic
+  analyzer) Gemini native SDK yerine OpenRouter üzerinden yapılıyor —
+  `src/lib/openrouter.server.ts`: primary `google/gemini-2.5-flash-lite`,
+  fallback `openrouter/free`; HTTP 429/5xx'te tek retry, istemci hatalarında
+  (400/401) throw (transient değil, fallback anlamsız); key server-only
+  `OPENROUTER_API_KEY` (asla `VITE_` prefix'i değil), hiçbir yere loglanmaz.
+  Neden: tek modele bağımlılık + kredi sınırları; OpenRouter tek anahtarla
+  çoklu model + fallback zinciri sağlıyor. `@google/genai` kaldırıldı.
+  (commit `eee319d`)
+
 ## 📝 NOTLAR
 
 - **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.
 - **2026-09-13 (Claude):** SongUniverseCard merge çakışması: origin/dev/next tutuldu. HEAD'in stageName='Life Stage', vibeLabel='Grounded Reflection', temporalArcPosition=0 fallback'leri ANA_YASA §0 gereği reddedildi — bunlar gerçek analiz verisi olmadan sabit değer gösteriyordu.
 - **2026-09-13 (Claude):** mood inference pipeline'a entegre edildi, musicDnaEngine mood-coverage gate'i kuruldu. P1'in mood kısmı tamamlandı.
+- **2026-09-13 (Claude, akşam):** Yerel klon eskiydi (75a1589) — `git pull origin main` ile bugünün 4 commit'i geldi (b42e605 merge, 3a97968 mood, 95a9d9c docs, eee319d OpenRouter). Doğrulama: `tsc` 0 hata, vitest 631 passed / 2 skipped. `docs/HANDOFF.md` yenilendi, OpenRouter kararı KARARLAR'a işlendi. Ders: bir işin "yokluğunu" ilan etmeden önce daima fetch/pull — yerel klon yanıltabilir.
 
-_Son güncelleme: Claude — 2026-09-13 (MusicUniverseHero merge çakışması çözüldü: origin/dev/next tarafı tutuldu, HEAD'in uydurma fallback'leri ANA_YASA §0 gereği reddedildi — NOTLAR bölümüne bakın)_
+_Son güncelleme: Claude — 2026-09-13 akşam (pull sonrası doğrulama + HANDOFF/STATE/TASKS senkron; OpenRouter kararı KARARLAR'a işlendi)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._
