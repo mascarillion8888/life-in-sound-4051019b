@@ -151,39 +151,148 @@ Sorular kaldırılmayacak, ama görevleri ayrışacak:
 
 ---
 
-## 5. Visual Multiverse Engine (🔵 TASARIM — mock, production'a sızdırılmamalı)
+## 5. Music Multiverse / Visual Multiverse Engine (🔵 TASARIM — mock, production'a sızdırılmamalı)
 
-Bu, 4-5 Eylül'de tasarlanan **gelecek vizyonu**. Şu an production
-kodunda karşılığı yok, kavramsal olarak dokümante ediliyor ki ileride
-tutarlı inşa edilsin:
+Bu, 4-5 Eylül'de başlayıp en son (bugünkü) oturumda olgunlaşan
+**gelecek vizyonu**. Şu an production kodunda karşılığı yok, kavramsal
+olarak dokümante ediliyor ki ileride tutarlı inşa edilsin. Bu bölüm,
+önceki taslağın (First Melody Hit, Emo-Location, Era+Cultural Theme)
+yerini almaz — onları **kapsayan, genişleten** en güncel modeldir.
+
+### 5.1 Sekiz boyutlu model
 
 ```
-SONG → MUSIC IDENTITY → EMOTIONAL PROFILE → ERA/CULTURE → LIFE STAGE
-  → FIRST MELODY HIT → EMO-LOCATION → PERSONAL MEMORY
-  → VISUAL PROFILE → VISUAL RESOLVER → VISUAL UNIVERSE
+MUSIC MULTIVERSE
+│
+├── ERA                 1900s → 1910s → ... → 2020s
+│                        (Era Master Style: dönemin görsel DNA'sı)
+│
+├── GENRE / SUBGENRE     Pop, Rock, Jazz, Soul/R&B, Hip-Hop,
+│                        Classical, Electronic, Metal...
+│                        (müziğin görsel DNA'sı)
+│
+├── LIFE-STAGE           Childhood, Adolescence, Young Adult,
+│                        Adult, Midlife, Later Life
+│                        (kişinin o müziği hayatının HANGİ
+│                        döneminde yaşadığı — biyolojik yaş değil)
+│
+├── GENERATION           Birth Cohort (doğum yılına göre nesil)
+│                        — aynı Life-Stage bile farklı Generation'da
+│                        farklı anlam taşır
+│
+├── CULTURE / PLACE      Region / Country
+│                        (1980s Pop Turkey ≠ 1980s Pop UK)
+│
+├── MEDIA / TECHNOLOGY   gramophone(1900s) → radio(1930s) →
+│                        vinyl(1950s) → cassette/Walkman/MTV(1980s) →
+│                        CD(1990s) → MP3/iPod(2000s) →
+│                        streaming(2010s-2020s)
+│                        (müziğin dönemde NASIL yaşandığı — Music
+│                        Memory tarafıyla birleşir)
+│
+├── MOOD                 Energetic, Euphoric, Playful, Romantic,
+│                        Melancholic, Dreamy, Nostalgic, Dark, World
+│
+└── PERSONAL MEMORY      Kullanıcının kendi anlattığı bağlam
+                         ("babamın arabasında, 1987 yazı, yol
+                         gezisi") — kişiselleştirilmiş multiverse
 ```
 
-**Yeni kavramlar (🔵 TASARIM, henüz veri modeli yok):**
+**Kilit içgörü (Generation ayrımı):** Aynı Era + aynı Genre + aynı
+Mood ("Nostalgic") bile, farklı bir Birth Cohort/Life-Stage
+kombinasyonunda **aynı nostalji değildir**:
+
+```
+ERA 1980s + BIRTH COHORT 1970s-doğumlu + LIFE STAGE Childhood
+  + GENRE Pop + MOOD Nostalgic
+        ≠
+ERA 1980s + BIRTH COHORT 1950s-doğumlu + LIFE STAGE Adult
+  + GENRE Pop + MOOD Nostalgic
+```
+
+Aynı şarkı (`Take On Me`, 1985), 10 yaşında dinleyen biri için
+"okul / ilk kaset / çizgi filmler / aile arabası" dünyasına;
+30 yaşında dinleyen biri için "gece hayatı / kariyer / kulüp / ilişki"
+dünyasına açılır. **Aynı şarkı, farklı multiverse kapısı.**
+
+### 5.2 Asset patlamasını önleme prensibi (🔴 kritik mimari kısıtlama)
+
+**Bu boyutların kartezyen çarpımı için ayrı asset üretilmeyecek** —
+aksi halde sistem asset sayısı patlamasıyla kısa sürede sürdürülemez
+hale gelir. Onun yerine:
+
+```
+BASE ASSET (Era × Genre → Master Style, örn. "1980s × Pop")
+      +
+LIFE-STAGE VISUAL MODIFIER
+      +
+GENERATIONAL CONTEXT
+      +
+CULTURAL CONTEXT
+      +
+PERSONAL MEMORY
+      ↓
+VISUAL RESOLVER (deterministic, runtime'da AI YOK)
+      ↓
+PRE-GENERATED ASSET seçimi/kompozisyonu
+      ↓
+CARD
+```
+
+Örnek: `1980s × Pop` için **9 master asset** (mood başına bir tane)
+üretilir. 10 yaşındaki kullanıcı ile 30 yaşındaki kullanıcı için ayrı
+ayrı 9'ar yeni asset üretilmez — resolver, aynı base asset üzerine
+life-stage/generation/culture modifier'larını (katman, skin,
+kompozisyon değişikliği olarak) uygular.
+
+### 5.3 Rollout stratejisi — pilot evren
+
+Tüm Era × Genre matrisini aynı anda inşa etmek yerine, önce **tek bir
+pilot universe** üzerinden mimari doğrulanacak:
+
+```
+MUSIC MULTIVERSE
+   ├── 1900s...1970s  (henüz yok)
+   ├── 1980s ← PİLOT
+   │      └── Pop ← PİLOT  (9 mood × master style = proof of concept)
+   ├── 1990s...2020s  (henüz yok)
+```
+
+Mimari doğrulandıktan sonra yeni bir Era×Genre (örn. `1970s Rock`,
+`1990s Hip-Hop`) eklemek **yeni sistem yazmak değil, yeni bir universe
+paketi eklemek** olmalı. Bu, mimarinin doğru kurulduğunun testidir —
+eğer yeni bir dönem/tür eklemek büyük kod değişikliği gerektiriyorsa,
+resolver mimarisi yanlış kurulmuş demektir.
+
+### 5.4 Önceki taslak kavramlar (hâlâ geçerli, bu modele dahil)
+
 - **First Melody Hit / İlk Kıvılcım:** "Seni önce ne yakaladı: melodi,
   ses, ritim, enstrüman, atmosfer, sözler?" — sözlerden önce melodinin/
-  sesin etkisini yakalamayı hedefliyor.
+  sesin etkisini yakalamayı hedefler. Personal Memory katmanına girdi
+  sağlayabilir.
 - **Emo-Location:** "Bu şarkı seni nereye götürüyor?" — Discovery
   Location (şarkıyı ilk duyduğun gerçek yer) ile Emotional Location
   (bugün dinlerken zihninde gittiğin yer) AYRI kavramlar, aynı olmak
-  zorunda değil.
-- **Era + Cultural Theme Model:** Era tek bir "80'ler estetiği" etiketi
-  değil; visual language, technology, media, fashion, architecture,
-  youth culture gibi çok boyutlu bir **Era DNA Profile**. Cultural
-  Theme dekoratif obje değil, o dönemde gerçekten anlam taşıyan bağlam.
-  İlk kapsam: 1950s–2020s (on yıllık dilimler).
+  zorunda değil. Culture/Place ve Personal Memory katmanlarını besler.
 
 **Asset üretim prensibi (🟢 karar verildi, uygulanacak):**
 > Runtime'da AI görsel üretimi YOK. AI yalnızca asset tasarım stüdyosu
 > olarak kullanılır. Uygulama, önceden üretilmiş hazır asset'ler
-> arasından seçim yapar.
+> arasından seçim yapar (Visual Universe Library → Visual Resolver).
 
 5 katmanlı ekran yığını: Background (statik asset) → Kart iskeleti
 (React) → Kart skin (şeffaf PNG/WebP) → [üst katmanlar rapor devamında].
+
+### 5.5 Bu bölümün veri modeliyle ilişkisi — ÖNEMLİ UYARI
+
+§2'de listelenen 🔴 EKSİK alanlar (`genre`, `mood`) bu 8 boyutlu
+modelin sadece İKİ tanesini karşılıyor. `Generation/Birth Cohort`,
+`Culture/Place`, `Media/Technology`, `Personal Memory` için
+**Song modelinde veya kullanıcı profilinde HİÇBİR alan yok**. Bu
+bölümdeki hiçbir boyut, önce P0-P1 (bkz. §8) tamamlanmadan koda
+yazılmaya başlanmamalı — sıra: önce genre/mood gerçek veriyle
+doldurulacak, ancak ondan sonra Generation/Culture/Memory katmanları
+tasarlanacak.
 
 ---
 
@@ -259,6 +368,10 @@ tamamlanmadan geçilmemeli.
 - Mock genre/mood/emotion verisini production koduna veya UI'a sızdırma.
 - Visual Multiverse Engine (§5) kavramlarını "zaten var" gibi ele alıp
   üstüne kod yazma — bunlar tasarım aşamasında, önce P0-P1 bitmeli.
+- 8 boyutlu Music Multiverse modelinin (Era/Genre/Life-Stage/
+  Generation/Culture/Media/Mood/Personal Memory) her kombinasyonu için
+  ayrı asset üretme — bkz. §5.2, kartezyen çarpım YASAK, Base Asset +
+  Modifier + Resolver mimarisi zorunlu.
 - Büyük/kontrolsüz refactor ile başlama; her zaman en küçük güvenli
   diff.
 - `main` branch'e doğrudan yazma.
