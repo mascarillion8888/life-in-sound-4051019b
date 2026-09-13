@@ -111,23 +111,24 @@ Bugünün işi uzak repo'da (`origin/main`) 4 commit olarak duruyordu; yerel klo
 
 ## 5. Açık / Bekleyen İşler
 
-### P0 — GÜVENLİK (kullanıcı eylemi gerekli)
-1. **Eski OpenRouter key'i revoke et** — eski key chat'te ifşa oldu. Tespit
-   durumu: repo `git history` **temiz** (0 commit `sk-or-v1` geçiyor); disk'teki
-   tek key yerel `settings.json`'da (untracked — Claude Code'u OpenRouter
-   üzerinden çalıştıran harness config). İşlem: https://openrouter.ai/settings/keys →
-   ifşa olan key'i DELETE; yeni key'i kullan. **DİKKAT:** eğer iptal edeceğin key
-   `settings.json`'daki `ANTHROPIC_AUTH_TOKEN` ise, önce yeni key'i o dosyaya
-   yaz, sonra iptal et — yoksa Claude Code sonraki açılışta bağlanamaz.
+### P0 — GÜVENLİK ✅ (2026-09-13 kapanış, doğrulandı)
+1. **OpenRouter key rotasyonu TAMAM + doğrulandı:** Eski key iptal edildi
+   (key-info testi → **HTTP 401**), yeni key `settings.json` + `.env`'de
+   aktif (**HTTP 200**, is_free_tier=false). Repo git history temiz (0 commit
+   `sk-or-v1`). Güvenlik konusu kapandı.
 
-### UI doğrulaması (kullanıcı eylemi — STATE.md Görsel Doğrulama Kuralı madde 10)
-2. **Mood-aware vibe etiketini ("Rock · Melancholic") gerçek tarayıcıda doğrula:**
-   - Kök dizinde `.env` oluştur (`.env.example` kopyala) ve
-     `OPENROUTER_API_KEY=<yeni-key>` doldur. **Key yoksa mood inference `null`
-     döner ve etiket genre-only görünür** — bu beklenen davranıştır.
-   - `npm run dev` → http://localhost:3000 → journey'i 8 soru şarkıyla tamamla →
-     sonuç sayfasında MusicUniverseHero'daki vibe chip'inde `{Genre} · {Mood}`.
-   - Kullanıcı ekranda görüp "Arayüz Onaylandı" demeden bu görev TAMAMLANDI sayılmaz.
+### UI doğrulaması (kullanıcı görsel onayı bekliyor — STATE.md kural 10)
+2. **Mood-aware vibe etiketini ("Rock · Melancholic") gerçek tarayıcıda doğrula**
+   (kısmen hazırlandı — 2026-09-13 akşam):
+   - ✅ `.env` mevcut, `OPENROUTER_API_KEY` dolu — mood inference runtime'da çalışır.
+   - ✅ Vibe kodu yolu testleri: MusicUniverseHero + pipelineGrounded +
+     musicDnaEngine → 14/14 geçti.
+   - ✅ Dev sunucu ayakta: `npm run dev` → **http://localhost:3000** (HTTP 200).
+   - ⏳ Kalan: kullanıcı tarayıcıda journey'i 8 soru şarkıyla tamamlayıp sonuç
+     sayfasında MusicUniverseHero vibe chip'inde `{Genre} · {Mood}` (ör.
+     "Rock · Melancholic") görecek ve "Arayüz Onaylandı" diyecek. Mood etiketi,
+     şarkıların ≥%60'ında mood çıkarılabiliyorsa görünür (moodCoverage ≥ 60 gate'i);
+     aksi halde genre-only etiket beklenen davranıştır.
 
 ### Küçük karar
 3. **scripts/ kalıntısı:** `.gitignore` `scripts/test-mood-live.ts` +
