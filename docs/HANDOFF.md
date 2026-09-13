@@ -20,8 +20,14 @@ HEAD:       eee319d — "feat: migrate mood/poetic analyzer from Gemini SDK to
 Testler:    631 passed / 2 skipped (633) — 66 dosya (65 passed, 1 skipped)
             vitest v4.1.10, `npm test` exit 0 (2026-09-13, akşam doğrulaması)
 tsc:        temiz (`npm run typecheck` = 0 hata)
-Lint:       görüntülenecek (`npm run lint` — bu oturum sonunda)
-Build:      görüntülenecek (`npm run build` — bu oturum sonunda)
+Lint:       kod temiz — `npx eslint src scripts --rule 'prettier/prettier: off'`
+            = 0 hata, 8 uyarı (react-refresh, pre-existing: ui/* + LanguageContext).
+            ⚠️ Ham `npm run lint` CRLF yığını döndürür (32k prettier hatası) —
+            çevresel: çalışma kopyası Windows CRLF (core.autocrlf=true), repo LF;
+            .gitattributes yalnız src/routeTree.gen.ts'yi normalize eder. Ayrıca
+            `eslint .` untracked debri (iç içe soundtrack-ai/ klonu, .next/, app/)
+            yüzünden asılıyor.
+Build:      temiz (`npm run build` exit 0, 2026-09-13 — Vite 3.27s + Nitro üretimi)
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
@@ -163,6 +169,10 @@ Bugünün işi uzak repo'da (`origin/main`) 4 commit olarak duruyordu; yerel klo
 - Kök `ANA_YASA.md` / `docs/CLAUDE.md` kopyası açma — tek kaynak kuralı.
 - Testleri "geçsin diye" değiştirme / zayıflatma; mood etiketini sabit değerle
    uydurma.
+- **Lint/çizgi sonu tuzağı:** `eslint .`'yi koşma (untracked debri yüzünden
+   asılıyor); `prettier --write .` veya `git add --renormalize`'ı rastgele çalıştırma
+   (çalışma kopyası CRLF, repo LF — tüm ağacı değiştiren dev bir diff üretir).
+   Lint için: `npx eslint src scripts --rule 'prettier/prettier: off'`.
 
 ---
 
