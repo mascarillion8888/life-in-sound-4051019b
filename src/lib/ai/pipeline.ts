@@ -129,24 +129,89 @@ const GROUNDED_STAGE_NAMES = [
   "Acceptance",
 ] as const;
 
+export type GroundedAnalysis = {
+  dna: ReturnType<typeof generateMusicDNA>;
+  story: GroundedLifeStory;
+  timeline: EmotionalTimeline;
+};
+
+/**
+ * Session-scoped dedupe for `generateGroundedAnalysis`.
+ *
+ * WHY: the results page (`results.tsx`) derives its Song[] from live state and
+ * rebuilds BOTH the array and its fallback object literals on every render, so
+ * its identity is never stable across renders. Keying on CONTENT (not identity)
+ * means a repeat call for the SAME song set — even with brand-new array objects
+ * — shares a single in-flight/completed result instead of firing another
+ * parallel LLM mood-inference batch (8 songs → 8 OpenRouter calls). A genuinely
+ * different song set produces a different fingerprint and runs fresh inference.
+ *
+ * The map is bounded by the number of distinct song sets a user reaches in one
+ * page session (in practice: one). It holds Promises, so a concurrent re-entry
+ * mid-batch is also deduped, never duplicated.
+ */
+const groundedMemo = new Map<string, Promise<GroundedAnalysis>>();
+
+/**
+ * Test-only reset for the session memo. Clears `groundedMemo` so pipelineGrounded
+ * tests are isolation-clean and execution-order-independent. Not used by any
+ * production path (`results.tsx` only calls `generateGroundedAnalysis`), so the
+ * public memoization contract is undisturbed.
+ */
+export function __resetGroundedMemo(): void {
+  groundedMemo.clear();
+}
+
+/** Stable, content-based fingerprint of the song set (and optional contexts). */
+function groundedFingerprint(songs: Song[], contexts?: LifeContext[]): string {
+  const songKeys = songs.map((s) =>
+    JSON.stringify([s.provider, s.providerId, s.title, s.artist, s.releaseYear ?? null]),
+  );
+  const ctxKeys = contexts?.map((c) =>
+      JSON.stringify([
+        c.questionId,
+        c.stageName,
+        c.song?.providerId ?? c.song?.title ?? String(c.questionId),
+        // contextText is a real input consumed by the grounded engines, so it
+        // must be part of the memo key — otherwise two calls with identical
+        // songs+stage but different contextText would collide and reuse a stale
+        // result. `?? null` keeps behaviour identical for inputs without it.
+        c.contextText ?? null,
+      ]),
+    );
+  return JSON.stringify([songKeys, ctxKeys ?? null]);
+}
+
 /**
  * Master gap integration (P0+P2+P3): build Music DNA → Grounded Life Story →
  * Emotional Timeline from the journey selections. Songs must be provider-verified
  * (Song[]); stage names come from the 8-era ordering. Fed hip from the wire
  * path: `results.tsx` reads this instead of the raw selection list.
+ *
+ * Result is memoized per distinct song-set fingerprint so a render-driven repeat
+ * call for the same set never re-fires the mood-inference batch.
  */
 export async function generateGroundedAnalysis(
   songs: Song[],
   contexts?: LifeContext[],
-): Promise<{
-  dna: ReturnType<typeof generateMusicDNA>;
-  story: GroundedLifeStory;
-  timeline: EmotionalTimeline;
-}> {
+): Promise<GroundedAnalysis> {
   if (!songs || songs.length === 0) {
     throw new Error("Grounded analysis requires at least 1 valid Song input.");
   }
 
+  const fingerprint = groundedFingerprint(songs, contexts);
+  const memoized = groundedMemo.get(fingerprint);
+  if (memoized) return memoized;
+
+  const promise = runGroundedAnalysis(songs, contexts);
+  groundedMemo.set(fingerprint, promise);
+  return promise;
+}
+
+async function runGroundedAnalysis(
+  songs: Song[],
+  contexts?: LifeContext[],
+): Promise<GroundedAnalysis> {
   // Mood enrichment (P1): her şarkı için LLM mood çıkarımı, PARALEL
   // (Promise.allSettled — 8 şarkı için 8 çağrı sıralı değil eşzamanlı).
   // Bir şarkının inference'ı başarısız olursa diğerlerini etkilemez: o şarkı

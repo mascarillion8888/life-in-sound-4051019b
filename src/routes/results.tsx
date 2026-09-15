@@ -308,17 +308,40 @@ function ResultsPage() {
 
   const answers = stateAnswers ?? storedAnswers;
   const songTitles = questions.map((q) => answers?.[q.id] ?? `Untitled track ${q.id}`);
-  const songs = questions.map(
-    (q) =>
-      journey?.songs?.[q.id] ?? {
-        provider: "manual" as const,
-        providerId: `manual-${q.id}`,
-        title: answers?.[q.id] ?? `Untitled track ${q.id}`,
-        artist: "",
-        album: null,
-        artworkUrl: null,
-        isrc: null,
-      },
+
+  // The song set is derived from stable state (journey + answers), but the
+  // `map` below would build a NEW array (and new fallback object literals) on
+  // EVERY render. Because the grounded-analysis effect below depends on `songs`
+  // by identity, an unstable identity re-fired the effect (and a parallel
+  // 8-song LLM mood batch) on every render. We memoize `songs` on a CONTENT
+  // fingerprint: equal content ⇒ same array instance ⇒ stable effect dependency.
+  // A genuinely different song set changes the fingerprint and re-runs.
+  const songsFingerprint = useMemo(
+    () =>
+      JSON.stringify(
+        questions.map((q) => {
+          const s = journey?.songs?.[q.id];
+          return s
+            ? `1|${s.provider}|${s.providerId}|${s.title}|${s.artist}`
+            : `0|${q.id}|${answers?.[q.id]}`;
+        }),
+      ),
+    [journey, answers],
+  );
+  const songs = useMemo(
+    () =>
+      questions.map((q) =>
+        journey?.songs?.[q.id] ?? {
+          provider: "manual" as const,
+          providerId: `manual-${q.id}`,
+          title: answers?.[q.id] ?? `Untitled track ${q.id}`,
+          artist: "",
+          album: null,
+          artworkUrl: null,
+          isrc: null,
+        },
+      ),
+    [songsFingerprint],
   );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
   // Grounded P0/P2/P3 analysis — deterministic master-gap engines fed from the
