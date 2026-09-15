@@ -6,6 +6,7 @@
     "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "true",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "~deepseek/deepseek-v4-flash-latest",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "~deepseek/deepseek-v4-flash-latest",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "~deepseek/deepseek-v4-flash-latest"
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "~deepseek/deepseek-v4-flash-latest",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }

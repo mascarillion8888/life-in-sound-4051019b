@@ -173,6 +173,19 @@ Uygulayan: [AI]
   çoklu model + fallback zinciri sağlıyor. `@google/genai` kaldırıldı.
   (commit `eee319d`)
 
+- **Visual DNA kararı (15 Eylül):** GPT Image (2.5 Flare/Sunburst) runtime'da
+  asla görsel ÜRETMEZ — kullanıcıya anlık görsel veren bir servis DEĞİL.
+  İşlevi offline **Asset Factory**'dir: master'ları üretir, art-review'dan
+  geçen `APPROVED` asset'ler Supabase Storage + Asset Registry'ye yazılır;
+  runtime'daki **Visual Resolver** yalnızca onaylı asset'lerden deterministik
+  seçim yapar (üretim çağrısı yok, ANA_YASA §0 uydurma yasağı kapsamında).
+  Görsel evren, `STYLE_CORE` (değişmez) + era + genre(pop) + 9 MOOD_SET
+  katmanından oluşur; mood yalnızca ışık/kontrast/atmosferi değiştirir.
+  İlk benchmark: **1980s × Pop × 9 Mood** — golden master onaylanmadan
+  era/genre genişlemesi yok. (Bu, golden-benchmark PRODUCTION'dır, ancak
+  bugün üretim YOK — karar repo karar defterine işlendi, spec üretilmedi:
+  kullanıcı "üretim yapmıyoruz" dedi.)
+
 ## 📝 NOTLAR
 
 - **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.
