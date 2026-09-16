@@ -21,6 +21,8 @@ import backdropSoul from "@/assets/room-backdrop-soul.png";
 import backdropSynth from "@/assets/room-backdrop-synth.png";
 
 import { SCENE_PALETTES, type ScenePalette, type SceneThemeId } from "./scenePalettes";
+import { moodBackdropUrl } from "./moodBackdrop";
+import type { Mood } from "@/lib/ai/moodInference";
 
 export type { SceneThemeId } from "./scenePalettes";
 export type { ScenePalette as SceneTheme } from "./scenePalettes";
@@ -41,9 +43,24 @@ const BACKDROPS: Record<SceneThemeId, string> = {
 /**
  * The fixed library room. Children render over the desk zone — the backdrop
  * image supplies shelves, desk, lamp and boxes as real texture.
+ *
+ * `mood` (optional): if a mood-specific wallpaper exists
+ * (`src/assets/mood-backdrop-<mood>.png`), its IMAGE replaces the genre-themed
+ * backdrop IMAGE. Genre still drives the palette below the image (identity kept).
+ * When the mood file is missing/absent, the genre/decade backdrop is used — so
+ * this is fully backward-compatible while the 9 mood files are still arriving.
  */
-export function SceneRoom({ themeId, children }: { themeId: SceneThemeId; children?: ReactNode }) {
+export function SceneRoom({
+  themeId,
+  mood,
+  children,
+}: {
+  themeId: SceneThemeId;
+  mood?: Mood | string | null;
+  children?: ReactNode;
+}) {
   const theme = SCENE_PALETTES[themeId];
+  const moodImage = moodBackdropUrl(mood);
   return (
     <div
       data-testid={`scene-room-${themeId}`}
@@ -56,7 +73,9 @@ export function SceneRoom({ themeId, children }: { themeId: SceneThemeId; childr
         data-testid={`scene-backdrop-${themeId}`}
         className="absolute inset-0"
         style={{
-          backgroundImage: `url(${BACKDROPS[themeId]})`,
+          // moodImage (mood wallpaper) wins when its file exists; otherwise the
+          // genre/decade backdrop. See moodBackdrop.ts for the missing-file fallback.
+          backgroundImage: `url(${moodImage ?? BACKDROPS[themeId]})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

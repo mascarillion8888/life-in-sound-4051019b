@@ -41,8 +41,10 @@ export function EraCardReveal({
       data-scene={themeId}
       className="relative -mx-5 -my-10 flex min-h-[calc(100vh-8rem)] w-[calc(100%+2.5rem)] flex-col items-center justify-center gap-6 px-5 py-10 sm:-mx-6 sm:w-[calc(100%+3rem)]"
     >
-      {/* The fixed global room — shelves, desk, lamp — themed to the music. */}
-      <SceneRoom themeId={themeId} />
+      {/* The fixed global room — shelves, desk, lamp — themed to the music.
+                mood (optional) picks a mood-backdrop wallpaper when that file exists,
+                else the genre/decade backdrop; see moodBackdrop.ts. */}
+            <SceneRoom themeId={themeId} mood={song?.mood ?? null} />
 
       <div className="relative z-10 flex flex-col items-center gap-6">
         <div className="space-y-2 text-center">
