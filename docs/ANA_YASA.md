@@ -366,8 +366,20 @@ tamamlanmadan geçilmemeli.
   visual state) doğrudan ekleme — bu türetilmiş veriler ayrı motor
   katmanlarında üretilir, Song nötr/ham veri taşıyıcısı kalmalı.
 - Card artwork kontratını (bkz. §6) onaysız değiştirme.
-- Runtime'da AI görsel üretimi ekleme — asset üretimi offline/tasarım
-  aşamasında olmalı.
+- MİMARİ YASAL (hedef): Visual AI katmanı/AI görsel üretimi, KULLANICI
+  runtime'da beklerken her talep için yeni görsel üreten bir servis DEĞİLDİR.
+  Hedef, kontrollü bir üretim sınırıdır: `Visual AI (offline/üretim katmanı)
+  → GPT Image → Candidate Visuals → QA/Approval → onaylı Asset Registry →
+  runtime'da yalnızca deterministik Visual Resolver seçimi`. Bu hedef
+  devreye girince runtime'da YENİ üretim YAPILMAZ (üretim çağrısı yok;
+  ANA_YASA §0 uydurma yasağı kapsamında). Bu gelecek-geçiş yönüdür, bugünün
+  durumu değildir.
+- CURRENT/IMPLEMENTED İSTİSNA (geçici, gizlenmez): `src/lib/art/cardArtwork.server.ts`
+  (Imagen→Gemini→HuggingFace zinciri) ŞU AN runtime'da — kullanıcı şarkı
+  seçtiğinde — görsel üretmektedir (Era Card fine-art). Bu, mevcut/kalıcı
+  tasarım değil, Visual AI katmanı devreye girene kadar süren GEÇİCİ ve
+  bilinen bir istisnadır; üretim yapanları yeni modüllerle ÇOĞALTMA. Bu
+  ayrım için: `docs/TECH/ARCHITECTURE.md` + `docs/TECH/VISUAL_ARCHITECTURE.md`.
 - Mock genre/mood/emotion verisini production koduna veya UI'a sızdırma.
 - Visual Multiverse Engine (§5) kavramlarını "zaten var" gibi ele alıp
   üstüne kod yazma — bunlar tasarım aşamasında, önce P0-P1 bitmeli.

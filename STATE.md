@@ -186,6 +186,38 @@ Uygulayan: [AI]
   bugün üretim YOK — karar repo karar defterine işlendi, spec üretilmedi:
   kullanıcı "üretim yapmıyoruz" dedi.)
 
+- **AYRI VISUAL AI KATMANI kararı (16 Eylül — LOCKED/PROPOSED):** Büyük, elle
+  üretilmiş `era × genre × mood` asset matrisi ÜRETİLMEZ. Bunun yerine ayrı bir
+  **Visual AI katmanı** kontrollü bir reference-image kütüphanesinden (style/era/
+  genre/lighting/object anchors — kopyalama DEĞİL, visual grounding) GPT image
+  generation ile görsel varyasyonlar üretir. Mimaride 4 sorumluluk AYRI tutulur:
+  Music AI (FACT→MusicDNA→mood, görsel üretmez) → Visual Intelligence (DNA+
+  constraints→VisualProfile) → Visual Resolver (VisualProfile→VisualSpec; runtime'da
+  GPT Image ÇAĞIRMAZ) → Visual AI (VisualSpec+approved references→generated variant;
+  provider adapter arkasında, değiştirilebilir). Kararlar dokümana işlendi:
+  `docs/TECH/ARCHITECTURE.md` (kanonik) + `docs/TECH/VISUAL_ARCHITECTURE.md` (görsel
+  derin daldırma). **Kod gerçeklemesi YOK — bugün yalnızca doküman:** 8× fix, Music DNA,
+  deterministik çekirdek, mevcut `cardArtwork` runtime üretimi (Imagen→Gemini→HF) DEĞİŞMEDİ.
+  Yeni doküman kararları kullanıcı onayıyla; implementation gelecek fazda.
+
+- **ANA_YASA §9 uzlaştırması (16 Eylül):** `cardArtwork.server.ts`'nin runtime'da
+  (kullanıcı şarkı seçtiğinde Imagen→Gemini→HF) görsel ürettiği artık §9'da açıkça
+  CURRENT/IMPLEMENTED **geçici istisna** olarak işaretlendi (gizlenmeden); hedef ise
+  Visual AI katmanı devreye girince runtime'da YENİ üretim YAPILMAMASI, yalnızca onaylı
+  Asset Registry'den deterministik Visual Resolver seçimi. Referans:
+  `docs/ANA_YASA.md §9`, `docs/TECH/ARCHITECTURE.md`, `docs/TECH/VISUAL_ARCHITECTURE.md`.
+
+- **Deployment netleştirmesi (16 Eylül, kanıta dayalı):** Repoda Dockerfile/docker-compose
+  şu an YOK (HEAD'de hiç olmadı); Docker migration yalnızca `remotes/origin/migration/
+  node-docker-v1` dalında kaldı, main'e girmedi (4c90958/f30b857 HEAD'in atası DEĞİL).
+  **Aktif/güncel deployment = Vercel serverless (Node + Nitro react-start runtime):** vercel.json
+  commit'i (`ad93ea5`, 22 Ağu) HEAD'in doğrudan atası; `npm run build` →
+  `vite build && node scripts/postbuild-vercel-spa.mjs` (Vercel SPA, Nitro `.vercel/output`);
+  `src/start.ts`/`src/server.ts` fetch-style server entry; keep-alive cron `/api/keep-alive`.
+  Yani "Node + Nitro + Docker" STATE'in üst kısmındaki vizyon satırıdır; main'in GERÇEĞİ
+  Node + Nitro üzerinde **Vercel**'dir. (Vercel=production aktif; Docker=main dışı, geçmemiş dal.)
+  Kod/config değişmedi — yalnızca kayıt.
+
 ## 📝 NOTLAR
 
 - **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.
@@ -194,5 +226,5 @@ Uygulayan: [AI]
 - **2026-09-13 (Claude, akşam):** Yerel klon eskiydi (75a1589) — `git pull origin main` ile bugünün 4 commit'i geldi (b42e605 merge, 3a97968 mood, 95a9d9c docs, eee319d OpenRouter). Doğrulama: `tsc` 0 hata, vitest 631 passed / 2 skipped. `docs/HANDOFF.md` yenilendi, OpenRouter kararı KARARLAR'a işlendi. Ders: bir işin "yokluğunu" ilan etmeden önce daima fetch/pull — yerel klon yanıltabilir.
 - **2026-09-13 (Claude, akşam #2):** (a) Key rotasyonu tamam ve doğrulandı — eski OpenRouter key iptali (401), yeni key `settings.json`+`.env`'de aktif (200). (b) Debri temizliği yapıldı — 21 untracked kalıntı (`soundtrack-ai/` iç içe klonu, `.next/`, `app/`, Next artıkları, `*.txt`) karantinaya taşındı (`Temp\soundtrack-ai-cleanup-20260913\`); repo kökünde yalnızca `settings.json` untracked (harness config, bilerek). Zombi `eslint .` süreçleri kullanıcının onayıyla kapatıldı — `eslint .`'nin asılı kalma nedeni buydu. (c) `*.tsbuildinfo` .gitignore'a eklendi. (d) UI görsel doğrulama (kural 10) hazırlandı: `.env` dolu, vibe testleri 14/14, dev sunucu ayakta — kullanıcının "Arayüz Onaylandı" demesi bekleniyor.
 
-_Son güncelleme: Claude — 2026-09-13 akşam (pull sonrası doğrulama + HANDOFF/STATE/TASKS senkron; OpenRouter kararı KARARLAR'a işlendi)_
+_Son güncelleme: Hermes — 2026-09-16 (DOCUMENTATION-ONLY: ARCHITECTURE.md + VISUAL_ARCHITECTURE.md oluşturuldu; AYRI VISUAL AI KATMANI + ANA_YASA §9 uzlaştırması + Deployment netleştirmesi (Vercel=Nitro aktif, Docker=main dışı) KARARLAR'a işlendi; kod/test/config/.env/deploy değişmedi, commit/push yok)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._
