@@ -15,17 +15,18 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       17f9141 — "Yaptigim guncellemeler" — origin/main ile eşit (0 ahead / 0 behind)
-            (sonraki commit: 42d52e3 docs: PROJECT_STATUS v0.14 — P0 Music DNA sprint tamamlandı)
-Testler:    631 passed / 2 skipped (633) — 66 dosya (65 passed, 1 skipped)
-            vitest v4.1.11, `npm test` exit 0 (2026-09-15 doğrulaması)
+HEAD:       e6baf2a — "docs: hedef mimari kararlari + ANA_YASA §9 uzlastirmasi + deployment
+            netlestirmesi (DOCUMENTATION-ONLY)" — origin/main'den 1 commit AHEAD (push ONAY BEKLİYOR)
+            (önceki: ef27814 fix(mood): dedupe render-driven 8x mood-inference)
+Testler:    634 passed / 2 skipped (636) — 66 dosya (65 passed, 1 skipped)
+            vitest v4.1.11, `npm test` exit 0 (2026-09-16 doğrulaması)
 tsc:        temiz (`npm run typecheck` = 0 hata)
 Lint:       kod temiz — `npx eslint src scripts --rule 'prettier/prettier: off'`
             = 0 hata, 8 uyarı (react-refresh, pre-existing: ui/* + LanguageContext).
             ⚠️ Ham `npm run lint` CRLF yığını döndürür — çevresel: çalışma kopyası
             Windows CRLF (core.autocrlf=true), repo LF. `eslint .`'yi koşma (untracked debri asıyor).
-Build:      son doğrulama eee319d'de temiz (`npm run build` exit 0, 2026-09-13) —
-            HEAD yalnızca docs/config ekliyor, src/ değişmedi; yeniden doğrulama gerekmez.
+Build:      son doğrulama eee319d'de temiz (`npm run build` exit 0) — sonraki commit'ler
+            yalnızca docs/STATE/ANA_YASA ekledi, src/ değişmedi; yeniden doğrulama gerekmez.
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint src scripts --rule 'prettier/prettier: off'`.
@@ -77,6 +78,19 @@ Sonraki (docs/config-only): `19c84f0` (lint sayıları netleşti, CRLF/debri tuz
 `src/routes/results.tsx`, `src/components/results/*`, `src/types/musicDna.ts`,
 `.env.example`, `TASKS.md`, `STATE.md`.
 
+### 2c. 8× mood fix + Mimari dokümantasyon commit'leri (16 Eylül, HEAD)
+1. **`ef27814`** — fix(mood): results sayfasındaki render sürümlü **8x paralel mood-inference**
+   call storm'u giderildi (content-keyed memo + contextText fingerprint + test izolasyonu).
+   Kod seviyesi; korunur, değiştirilmez.
+2. **`e6baf2a`** — docs: DOCUMENTATION-ONLY commit (bu oturum) — **push ONAY BEKLİYOR (1 ahead)**.
+   - `docs/TECH/ARCHITECTURE.md` (yeni, kanonik): iki sistemli model (Music/Visual), durum etiketleri,
+     karar tablosu, prensipler, target pipeline, target-vs-current.
+   - `docs/TECH/VISUAL_ARCHITECTURE.md` (yeni): Visual DNA/Profile/Resolver/Reference Library/
+     Visual AI/Asset Registry/mood-variation derin tarifi (FUTURE, kod yok).
+   - `STATE.md` → KARARLAR: Ayrı Visual AI katmanı + ANA_YASA §9 uzlaştırması + Deployment netleştirmesi.
+   - `docs/ANA_YASA.md` §9: runtime üretim = CURRENT/IMPLEMENTED **geçici istisna** (cardArtwork),
+     hedef = Visual AI sonrası runtime'da yeni üretim YOK.
+
 ---
 
 ## 3. Kod Tabanı Özeti & Mevcut Durum
@@ -96,9 +110,9 @@ Sonraki (docs/config-only): `19c84f0` (lint sayıları netleşti, CRLF/debri tuz
 
 ---
 
-## 4. Test ve Derleme İstatistikleri (15 Eylül'de HEAD'de doğrulandı)
+## 4. Test ve Derleme İstatistikleri (16 Eylül'de HEAD'de doğrulandı)
 
-- **Vitest:** 66 dosya, 631 passed / 2 skipped (0 failed) — `npm test`.
+- **Vitest:** 66 dosya, 634 passed / 2 skipped (0 failed) — `npm test`.
 - **TypeScript:** `tsc --noEmit` 0 hata.
 - **Lint:** `npx eslint src scripts --rule 'prettier/prettier: off'` = 0 hata, 8 uyarı.
 
@@ -134,14 +148,14 @@ Sonraki (docs/config-only): `19c84f0` (lint sayıları netleşti, CRLF/debri tuz
 
 ## 6. Sıradaki İş Adımları (Next Steps)
 
-1. **Kullanıcı (acil):** `sk-or-v1-e…7c15` anahtarının canlı olduğunu doğrula
-   (OpenRouter /auth/key → 200). Canlıysa: git add settings.json && commit (checkpoint).
-   Canlı değilse yeni key işle (3 dosyaya).
+1. **Kullanıcı (acil — push onayı):** `e6baf2a` (docs commit) bir push onayı bekliyor.
+   Onaylarsan `git push origin main`; aksi halde dokümantasyon commit'i yerel kalır.
 2. **Kullanıcı (kural 10):** `npm run dev` → journey i 8 şarkıyla tamamla → vibe chip
    `{Genre} · {Mood}` gör → "Arayüz Onaylandı". Bu, ARCHITECTURE Phase 2'yi açar.
 3. **Sonraki oturum (resmi):** Phase 2 ön koşulu olarak Rule 10 onayı; ardından
    PROJECT_STATUS'taki ARCHITECTURE Phase 2 (dinamik VisualProfile + Visual Resolver),
-   ya da P1 multiline kaynak genre metadata.
+   ya da P1 multiline kaynak genre metadata. (Visual AI / GPT Image implementasyonu,
+   kullanıcı onayından ÖNCE başlanmaz — yalnızca doküman kararıdır.)
 
 ---
 
@@ -168,7 +182,9 @@ Sonraki (docs/config-only): `19c84f0` (lint sayıları netleşti, CRLF/debri tuz
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
-17f9141 Yaptigim guncellemeler  (HEAD — .env.example + settings.json; settings.json tam anahtar içerir!)
+e6baf2a docs: hedef mimari kararlari + ANA_YASA §9 uzlastirmasi + deployment netlestirmesi (HEAD — push ONAY BEKLİYOR)
+ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page (8× mood fix)
+17f9141 Yaptigim guncellemeler  (settings.json tam anahtar içerir!)
 42d52e3 docs: PROJECT_STATUS v0.14 — P0 Music DNA sprint'i tamamlandı, sıradaki ARCHITECTURE Phase 2
 3c78d52 docs: key rotasyonu doğrulandı (eski 401, yeni 200) + UI görsel doğrulama hazırlığı kaydı
 5a95b88 chore: tsbuildinfo build artigini gitignore'a ekle
@@ -194,8 +210,13 @@ eee319d feat: migrate mood/poetic analyzer from Gemini SDK to OpenRouter (primar
 - **`settings.json` = Claude Code harness config:** OpenRouter endpoint üzerinden
   `~deepseek/deepseek-v4-flash-latest` kullanır. Rotasyon yaparken önce settings.json güncellenmeli
   (artık `.env` ile eşit).
+- **Deployment gerçeği (16 Eylül, git-ata kanıtı):** STATE'in "Node+Nitro+Docker" satırı VİZYON'dur;
+  main'in aktif deployment'ı **Vercel** (Node+Nitro react-start). Docker migration sadece
+  `remotes/origin/migration/node-docker-v1` dalında, main'de değil. KARARLAR'da kayıtlı.
+- **ANA_YASA §9 (16 Eylül):** cardArtwork runtime üretimi = geçici CURRENT istisna; hedef runtime'da
+  yeni üretim YOK. Ayrıntı: docs/TECH/ARCHITECTURE.md + VISUAL_ARCHITECTURE.md.
 
 ---
 
-_Son güncelleme: Hermes — 2026-09-15 (HEAD 17f9141'de typecheck/test/lint doğrulandı; settings.json onarıldı; HANDOFF senkronize edildi)_
+_Son güncelleme: Hermes — 2026-09-16 (HANDOFF HEAD e6baf2a / 634 passed / 2 skipped'a senkronize; push onayı bekliyor)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
