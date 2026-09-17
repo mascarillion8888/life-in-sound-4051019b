@@ -18,6 +18,36 @@
 import type { Mood } from "@/lib/ai/moodInference";
 
 /**
+ * Future resolution contract (Phase 4 — Visual Resolver / Asset Registry).
+ *
+ * Today only the single `mood` axis is declared and consumed; `era`, `genre`
+ * and `culture` are OPTIONAL, UNUSED placeholders for the multi-axis expansion.
+ * They are intentionally left dormant so adding them later cannot break the
+ * current resolver. Per Anal_mimari: mood is an INDEPENDENT axis — genre/era
+ * must never drive the image (no fixed genre->mood mapping), so `genre` here is
+ * explicitly not a backdrop selector.
+ */
+export type VisualSpecInput = {
+  /** The only axis currently resolved by `moodBackdropUrl`. */
+  mood?: Mood | string | null;
+  /** Future axis: historical era (e.g. "1980s"). Unused today. */
+  era?: string | null;
+  /** Future axis: genre/decade family. Unused today — must NOT pick the image. */
+  genre?: string | null;
+  /** Future axis: culture family. Unused today. */
+  culture?: string | null;
+};
+
+/**
+ * The resolution result for a visual spec. Today only `backdropUrl` (derived
+ * from `mood`) is produced; the future resolver will emit a full Asset
+ * Registry entry (approved asset reference, version, etc.).
+ */
+export type VisualResolution = {
+  backdropUrl?: string;
+};
+
+/**
  * The 9 moods, lowercase file slug, same values/order as MOOD_SET. Backdrop files
  * are `mood-backdrop-<slug>.png` (e.g. `mood-backdrop-energetic.png`).
  */
