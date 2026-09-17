@@ -783,7 +783,13 @@ function ResultsPage() {
         {/* Fullscreen Poster Overlay (lazy-loaded on demand) */}
         {posterOpen && (
           <Suspense fallback={null}>
-            <PosterLightbox theme={posterTheme} onClose={() => setPosterOpen(false)} />
+            <PosterLightbox
+              theme={posterTheme}
+              model={profile?.poster ?? null}
+              songs={songs.map((s) => ({ title: s.title, artist: s.artist }))}
+              alt={t.results.posterAlt}
+              onClose={() => setPosterOpen(false)}
+            />
           </Suspense>
         )}
 

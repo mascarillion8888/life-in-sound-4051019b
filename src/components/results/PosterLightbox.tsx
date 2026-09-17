@@ -1,19 +1,32 @@
 import { X } from "lucide-react";
 
-import previewBackdrop from "@/assets/mood-backdrop-dreamy.png";
+import { GeneratedPoster } from "@/components/results/GeneratedPoster";
+import type { PosterModel } from "@/lib/ai/types";
+import type { PosterSong } from "@/lib/ai/posterRenderer";
 import { resolvePosterTheme, type PosterTheme } from "@/lib/soundmap/posterTheme";
 
 /**
  * Fullscreen poster preview. The frame re-casts the palette the poster-theme
  * engine resolved for the journey (metal border, background wash), so the
  * lightbox matches the Master Poster sheet and the high-res PNG export.
+ *
+ * The lightbox shows the REAL generated poster (from the same `ProfileModel`
+ * the in-page GeneratedPoster renders) — never a static placeholder. When no
+ * poster model has been produced yet, it shows a clear "generating" state
+ * instead of silently showing wrong/empty content.
  */
 export default function PosterLightbox({
   onClose,
   theme,
+  model,
+  songs,
+  alt,
 }: {
   onClose: () => void;
   theme?: PosterTheme;
+  model?: PosterModel | null;
+  songs?: PosterSong[];
+  alt?: string;
 }) {
   const resolved = theme ?? resolvePosterTheme({});
   return (
@@ -45,12 +58,22 @@ export default function PosterLightbox({
           boxShadow: `0 0 60px ${resolved.metalColor}40`,
         }}
       >
-        <img
-          src={previewBackdrop}
-          alt="Fullscreen cinematic poster of your personal SoundMap"
-          className="max-h-[82vh] max-w-full rounded-[1.25rem] object-contain"
-          onClick={(e) => e.stopPropagation()}
-        />
+        {model ? (
+          <GeneratedPoster
+            model={model}
+            songs={songs ?? []}
+            alt={alt ?? "Fullscreen cinematic poster of your personal SoundMap"}
+            className="max-h-[82vh] max-w-full rounded-[1.25rem] object-contain"
+          />
+        ) : (
+          <div
+            data-testid="lightbox-generating"
+            className="flex max-h-[82vh] min-h-[40vh] w-[72vw] max-w-[28rem] flex-col items-center justify-center gap-4 rounded-[1.25rem] p-8 text-center"
+          >
+            <span className="h-12 w-12 animate-pulse rounded-full bg-primary/20" />
+            <p className="text-sm font-medium text-foreground/80">Poster is being generated…</p>
+          </div>
+        )}
       </div>
     </div>
   );
