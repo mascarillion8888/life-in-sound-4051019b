@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 
@@ -21,6 +21,7 @@ import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
 import { loadRemoteJourney, saveRemoteJourney } from "@/lib/supabase/journey-remote";
 import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
+import { collectUnverifiedManualSongs, songVerifyKey } from "@/lib/song/enrich-songs";
 import { spotifySuggestSongs } from "@/lib/song/spotify.server";
 import type { Song } from "@/lib/song/types";
 
@@ -260,6 +261,23 @@ function JourneyPage() {
       });
     }
   };
+
+  // Guaranteed per-question verification for committed manual songs — decoupled
+  // from the live debounce (which the navigation cancels). Once a manual song
+  // is committed it is requested ONCE here, and the verification completes in
+  // the background even if the user has already moved to the next question — so
+  // a fast first submission still gets its iTunes match / album art (QA Bug 2).
+  const verifyRequestedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!restored || completed) return;
+    for (const { questionId, song } of collectUnverifiedManualSongs(
+      songs,
+      verifyRequestedRef.current,
+    )) {
+      verifyRequestedRef.current.add(songVerifyKey(questionId, song.title));
+      void runVerification(questionId, song.title);
+    }
+  }, [restored, completed, songs]);
 
   // Debounced live verification: 300ms after the user stops typing, verify the
   // draft in the background (one request per pause, never per keystroke).

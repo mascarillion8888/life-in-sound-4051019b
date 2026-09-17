@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Dna, Film, Sparkles, Clock, Map, Maximize, Radio, RotateCcw, Disc3 } from "lucide-react";
 
@@ -9,6 +9,7 @@ import { resetJourneySession } from "@/lib/reset-session";
 import { useSession } from "@/lib/supabase/use-session";
 import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
 import type { Song } from "@/lib/song/types";
+import { searchSongs } from "@/lib/song/searchSong.server";
 import type { GroundedLifeStory } from "@/types/lifeStory";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -344,6 +345,61 @@ function ResultsPage() {
     [songsFingerprint],
   );
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
+
+  // Results-side telafi (QA Bug 2): if a song still arrives as a manual entry
+  // without artwork (persisted from an old session, or a verification was
+  // missed), re-verify it once and carry ONLY artwork/album/year/preview onto
+  // the SONG — keeping provider identity unchanged so the content fingerprint
+  // (and the grounded mood pipeline) is NOT re-triggered. `artStatus` drives a
+  // loading skeleton / "no match" state per card instead of a silent disc.
+  const [artStatus, setArtStatus] = useState<
+    Record<number, "idle" | "loading" | "ok" | "notfound">
+  >({});
+  const [artPatch, setArtPatch] = useState<
+    Record<
+      number,
+      {
+        artworkUrl?: string | null;
+        album?: string | null;
+        releaseYear?: number | null;
+        previewUrl?: string | null;
+      }
+    >
+  >({});
+  const artVerifyRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (Object.keys(answers).length === 0) return;
+    for (const [i, song] of songs.entries()) {
+      if (song.provider !== "manual" || song.artworkUrl || !song.title.trim()) continue;
+      const qid = i + 1;
+      const key = `${qid}:${song.title.toLowerCase()}`;
+      if (artVerifyRef.current.has(key)) continue;
+      artVerifyRef.current.add(key);
+      setArtStatus((p) => ({ ...p, [qid]: "loading" }));
+      void (async () => {
+        try {
+          const out = await searchSongs({ data: { query: song.title } });
+          const match = out.results[0] ?? null;
+          if (!match) {
+            setArtStatus((p) => ({ ...p, [qid]: "notfound" }));
+            return;
+          }
+          setArtPatch((p) => ({
+            ...p,
+            [qid]: {
+              artworkUrl: match.artworkUrl ?? null,
+              album: match.album ?? null,
+              releaseYear: match.releaseYear ?? null,
+              previewUrl: match.previewUrl ?? null,
+            },
+          }));
+          setArtStatus((p) => ({ ...p, [qid]: "ok" }));
+        } catch {
+          setArtStatus((p) => ({ ...p, [qid]: "notfound" }));
+        }
+      })();
+    }
+  }, [songs, answers]);
   // Grounded P0/P2/P3 analysis — deterministic master-gap engines fed from the
   // journey Song[] selection (not just title strings), upgraded with per-song
   // LLM mood inference. Never blocks the page: the async call falls back to
@@ -555,7 +611,12 @@ function ResultsPage() {
             <SectionHeading icon={Dna} eyebrow={t.results.dnaEyebrow} title="Song Universes" />
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {songs.map((song, i) => (
-                <SongUniverseCard key={`${song.providerId}-${i}`} song={song} index={i} />
+                <SongUniverseCard
+                  key={`${song.providerId}-${i}`}
+                  song={{ ...song, artworkUrl: artPatch[i]?.artworkUrl ?? song.artworkUrl ?? null }}
+                  index={i}
+                  artStatus={artStatus[i] ?? "idle"}
+                />
               ))}
             </div>
           </section>

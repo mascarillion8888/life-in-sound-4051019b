@@ -8,6 +8,8 @@ import { OrganicArtwork } from "./OrganicArtwork";
 interface SongUniverseCardProps {
   song: Song;
   index: number; // 0-7 —— journey position matches the era mount fallback table
+  /** Artwork resolve state (QA Bug 2): drives a skeleton / "no match" state. */
+  artStatus?: "idle" | "loading" | "ok" | "notfound";
 }
 
 /**
@@ -21,7 +23,7 @@ interface SongUniverseCardProps {
 
  * Deterministic: identical Song always renders identically.
  */
-export function SongUniverseCard({ song, index }: SongUniverseCardProps) {
+export function SongUniverseCard({ song, index, artStatus }: SongUniverseCardProps) {
   const style = eraStyleFor(song, index);
   const hasArtwork = Boolean(song.artworkUrl);
 
@@ -36,15 +38,32 @@ export function SongUniverseCard({ song, index }: SongUniverseCardProps) {
       <div className="relative aspect-square overflow-hidden">
         {hasArtwork ? (
           <OrganicArtwork song={song} style={style} />
+        ) : artStatus === "loading" ? (
+          <div
+            data-testid="song-art-loading"
+            aria-hidden
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+            style={{
+              background: `linear-gradient(to bottom, ${style.palette.backdrop[0]}, ${style.palette.backdrop[1]})`,
+            }}
+          >
+            <span className="h-12 w-12 animate-pulse rounded-full bg-primary/20" />
+            <span className="text-xs font-medium text-muted-foreground">Matching album art…</span>
+          </div>
         ) : (
           <div
             aria-hidden
-            className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3"
             style={{
               background: `linear-gradient(to bottom, ${style.palette.backdrop[0]}, ${style.palette.backdrop[1]})`,
             }}
           >
             <Disc3 className="h-16 w-16 text-primary/60" />
+            {artStatus === "notfound" ? (
+              <span className="px-3 text-center text-xs text-muted-foreground">
+                Album art not found
+              </span>
+            ) : null}
           </div>
         )}
 
