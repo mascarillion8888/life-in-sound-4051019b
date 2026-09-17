@@ -22,23 +22,32 @@ function song(overrides: Partial<Song> = {}): Song {
 }
 
 describe("SceneRoom — the fixed global library environment", () => {
-  it("renders the rendered room backdrop image in every theme (no flat DOM vectors)", () => {
+  it("shows the neutral dreamy mood backdrop by default when a song has no mood", () => {
     for (const themeId of Object.keys(SCENE_THEMES)) {
       const { container, unmount } = render(
         <SceneRoom themeId={themeId as keyof typeof SCENE_THEMES} />,
       );
       expect(screen.getByTestId(`scene-room-${themeId}`)).toBeTruthy();
       const backdrop = container.querySelector(
-        `[data-testid='scene-backdrop-${themeId}']`,
+        `[data-testid='scene-backdrop-dreamy']`,
       ) as HTMLElement;
       expect(backdrop).toBeTruthy();
-      // Build-time rendered PNG texture (carved wood + lamp light), cover-fitted.
-      expect(backdrop.style.backgroundImage).toContain(`room-backdrop-${themeId}`);
+      // Backdrop is mood-driven only: dreamy is the neutral default (no genre image).
+      expect(backdrop.style.backgroundImage).toContain("mood-backdrop-dreamy");
       expect(backdrop.style.backgroundSize).toBe("cover");
       // No runtime DOM furniture vector elements are drawn.
       expect(container.querySelectorAll("[aria-hidden]").length).toBeLessThan(5);
       unmount();
     }
+  });
+
+  it("uses the song's mood backdrop when a mood is present (genre never selects the image)", () => {
+    const { container } = render(<SceneRoom themeId="synth" mood="dark" />);
+    const backdrop = container.querySelector(
+      `[data-testid='scene-backdrop-dark']`,
+    ) as HTMLElement;
+    expect(backdrop).toBeTruthy();
+    expect(backdrop.style.backgroundImage).toContain("mood-backdrop-dark");
   });
 
   it("paints the fallback wall gradient from the theme palette", () => {

@@ -1,5 +1,5 @@
 import { AnimatedSection } from "@/components/AnimatedSection";
-import posterPreview from "@/assets/poster-preview.jpg";
+import previewBackdrop from "@/assets/mood-backdrop-dreamy.png";
 
 export default function PreviewSection() {
   return (
@@ -7,7 +7,7 @@ export default function PreviewSection() {
       <AnimatedSection className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/20 shadow-2xl">
         <div className="group relative aspect-square md:aspect-[16/10]">
           <img
-            src={posterPreview}
+            src={previewBackdrop}
             alt="Example SoundMap poster"
             width={1024}
             height={1024}

@@ -1,22 +1,19 @@
 /**
  * Mood-backdrop selection — places the 9 mood wallpapers into SceneRoom.
  *
- * PLACEHOLDER SKELETON (2026-09-16): the actual image files do NOT exist yet.
- * The user is generating 9 mood visuals with ChatGPT (MOOD_SET: Energetic,
- * Euphoric, Playful, Romantic, Melancholic, Dreamy, Nostalgic, Dark, World)
- * to arrive as `src/assets/mood-backdrop-{mood}.png` (lowercase).
+ * Background standard (since 2026-09-17): the 9 mood visuals ship as
+ * `src/assets/mood-backdrop-{slug}.png` (1920x1080) and are the SINGLE
+ * visual backdrop for the room. SceneRoom resolves its image purely from
+ * `song.mood`; a missing mood falls back to the neutral "dreamy" wallpaper
+ * inside SceneRoom, never to a genre image.
  *
- * CRITICAL — missing-file safety: this module uses Vite `import.meta.glob` (NOT a
- * plain static `import ... from`). With plain static imports Vite FAILS the build
- * with "Failed to resolve import" if the file is missing. With glob, a glob that
- * matches NO files simply yields NO keys — no build/dev error, and the caller
- * (SceneRoom) falls back to the existing genre-themed backdrop. Real files dropped
- * into src/assets are picked up automatically with NO further import edits.
+ * Missing-file safety: this module uses Vite `import.meta.glob` (NOT a plain
+ * static `import ... from`). A glob that matches NO files yields NO keys (no
+ * build/dev error); real files dropped into src/assets are picked up
+ * automatically with NO further import edits.
  *
- * Design decision (2b, from the approved plan): mood selects the BACKDROP IMAGE,
- * replacing the genre/decade choice for that layer. Genre still drives palette
- * (ScenePalette) — visual identity preserved; missing mood file keeps the genre
- * backdrop, so nothing regresses while files are still arriving.
+ * Genre never selects the image (mood is an independent axis); genre may only
+ * surface as UI text outside this component.
  */
 import type { Mood } from "@/lib/ai/moodInference";
 

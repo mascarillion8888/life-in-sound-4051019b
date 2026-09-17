@@ -27,7 +27,7 @@ import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
 import { GeneratedPoster } from "@/components/results/GeneratedPoster";
 import { posterToDataUrl } from "@/lib/ai/posterRenderer";
-import posterPreview from "@/assets/poster-preview.jpg";
+import posterBackdrop from "@/assets/mood-backdrop-dreamy.png";
 
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -667,7 +667,7 @@ function ResultsPage() {
                 />
               ) : (
                 <img
-                  src={posterPreview}
+                  src={posterBackdrop}
                   alt={t.results.posterAlt}
                   loading="lazy"
                   className="w-full rounded-[1.5rem] object-cover"

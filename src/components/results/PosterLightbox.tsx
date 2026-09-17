@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 
-import posterPreview from "@/assets/poster-preview.jpg";
+import previewBackdrop from "@/assets/mood-backdrop-dreamy.png";
 import { resolvePosterTheme, type PosterTheme } from "@/lib/soundmap/posterTheme";
 
 /**
@@ -46,7 +46,7 @@ export default function PosterLightbox({
         }}
       >
         <img
-          src={posterPreview}
+          src={previewBackdrop}
           alt="Fullscreen cinematic poster of your personal SoundMap"
           className="max-h-[82vh] max-w-full rounded-[1.25rem] object-contain"
           onClick={(e) => e.stopPropagation()}
