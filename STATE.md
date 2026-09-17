@@ -218,6 +218,13 @@ Uygulayan: [AI]
   Node + Nitro üzerinde **Vercel**'dir. (Vercel=production aktif; Docker=main dışı, geçmemiş dal.)
   Kod/config değişmedi — yalnızca kayıt.
 
+- **MOOD FREEZE kararı (17 Eylül — Hermes, kullanıcı onaylı):** İşlenen per-song mood, journey
+  şarkısının `Song.mood` alanına yazılır ve persist edilir; bir kez hesaplandıktan sonra
+  **yeniden hesaplanmaz** (TTL/version/invalidation yok). Yeniden infer yalnızca o şarkı
+  değiştirilirse (yeni identity key) veya journey silinirse olur. Model/algoritma değişirse
+  gelecekte **manuel invalidation** gerekir (örn. kayıt sürümü veya journey reset). Bilinçli
+  tasarım seçimidir — testim başına bir kez LLM çağrısı yapmak, her render'da tekrar çağırmamak.
+
 ## 📝 NOTLAR
 
 - **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.
