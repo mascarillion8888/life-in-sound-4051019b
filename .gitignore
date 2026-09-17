@@ -53,3 +53,4 @@ __pycache__/
 # Geçici canlı test script'leri (commit edilmez)
 scripts/test-mood-live.ts
 scripts/test-openrouter-live.ts
+.claude/
