@@ -28,26 +28,35 @@ describe("SceneRoom — the fixed global library environment", () => {
         <SceneRoom themeId={themeId as keyof typeof SCENE_THEMES} />,
       );
       expect(screen.getByTestId(`scene-room-${themeId}`)).toBeTruthy();
-      const backdrop = container.querySelector(
+      // Blurred fill layer — covers the whole container.
+      const fill = container.querySelector(
         `[data-testid='scene-backdrop-dreamy']`,
       ) as HTMLElement;
-      expect(backdrop).toBeTruthy();
-      // Backdrop is mood-driven only: dreamy is the neutral default (no genre image).
-      expect(backdrop.style.backgroundImage).toContain("mood-backdrop-dreamy");
-      expect(backdrop.style.backgroundSize).toBe("cover");
+      expect(fill).toBeTruthy();
+      expect(fill.style.backgroundImage).toContain("mood-backdrop-dreamy");
+      expect(fill.style.backgroundSize).toBe("cover");
+      // Sharp main layer — full image visible, contain, never cropped.
+      const main = container.querySelector(
+        `[data-testid='scene-backdrop-main-dreamy']`,
+      ) as HTMLElement;
+      expect(main).toBeTruthy();
+      expect(main.style.backgroundSize).toBe("contain");
       // No runtime DOM furniture vector elements are drawn.
-      expect(container.querySelectorAll("[aria-hidden]").length).toBeLessThan(5);
+      expect(container.querySelectorAll("[aria-hidden]").length).toBeLessThan(6);
       unmount();
     }
   });
 
   it("uses the song's mood backdrop when a mood is present (genre never selects the image)", () => {
     const { container } = render(<SceneRoom themeId="synth" mood="dark" />);
-    const backdrop = container.querySelector(
-      `[data-testid='scene-backdrop-dark']`,
-    ) as HTMLElement;
-    expect(backdrop).toBeTruthy();
-    expect(backdrop.style.backgroundImage).toContain("mood-backdrop-dark");
+    expect(
+      (container.querySelector(`[data-testid='scene-backdrop-dark']`) as HTMLElement)
+        .style.backgroundImage,
+    ).toContain("mood-backdrop-dark");
+    expect(
+      (container.querySelector(`[data-testid='scene-backdrop-main-dark']`) as HTMLElement).style
+        .backgroundSize,
+    ).toBe("contain");
   });
 
   it("paints the fallback wall gradient from the theme palette", () => {

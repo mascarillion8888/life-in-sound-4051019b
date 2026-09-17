@@ -3,12 +3,17 @@
  * whose backdrop image is driven PURELY by the song's mood (Anal_mimari: mood
  * is an independent axis, never a fixed genre->mood mapping).
  *
- * The backdrop IMAGE is resolved from `song.mood` via moodBackdropUrl()
- * (the glob-resolver in `./moodBackdrop`). When the song has no mood yet, or
- * the mood's file is absent, a neutral default ("dreamy") is used so the room
- * never renders with an empty frame. Genre does NOT choose the image — it may
- * only surface as UI text outside this component. The optional theme palette
- * only tints the base wall wash behind the image (identity, not selection).
+ * Backdrop rendering — classic "blurred backdrop fill" (Spotify/Apple Music
+ * style) so a landscape asset never looks cropped in the portrait room:
+ *   - a SHARP `contain` layer shows the whole image, centered, never cropped;
+ *   - a `cover` + heavy-blur fill layer behind it softly fills the whole
+ *     container (blur ~28px + slight darkening + scale so blur edges stay
+ *     covered), so the empty bands around the contain strip never look blank.
+ *
+ * The backdrop image is resolved from `song.mood` via moodBackdropUrl() (the
+ * glob-resolver in `./moodBackdrop`). When the song has no mood yet, or the
+ * mood's file is absent, a neutral default ("dreamy") is used so the room
+ * never renders with an empty frame. Genre does NOT choose the image.
  */
 import type { ReactNode } from "react";
 
@@ -30,14 +35,16 @@ export const SCENE_THEMES = SCENE_PALETTES;
  */
 const FALLBACK_MOOD: Mood = "Dreamy";
 
+/** Blur applied to the fill layer so it reads as soft ambiance, not a crop. */
+const FILL_BLUR_PX = 28;
+
 /**
  * The ambient library room. Children render over the desk zone; the backdrop
- * image is the single visual standard (mood wallpapers, see moodBackdrop.ts).
+ * is the single visual standard (mood wallpapers, see moodBackdrop.ts).
  *
  * `mood` (optional): if a mood-specific wallpaper exists
  * (`src/assets/mood-backdrop-<mood>.png`) its IMAGE is shown; otherwise the
- * neutral `dreamy` image is used. Genre is intentionally never used here to
- * pick the backdrop.
+ * neutral `dreamy` image is used. Genre never picks the backdrop.
  */
 export function SceneRoom({
   themeId,
@@ -50,21 +57,38 @@ export function SceneRoom({
 }) {
   const theme = SCENE_PALETTES[themeId];
   const moodImage = moodBackdropUrl(mood ?? FALLBACK_MOOD);
+  const slug = moodBackdropSlug(mood ?? FALLBACK_MOOD);
   return (
     <div
       data-testid={`scene-room-${themeId}`}
       className="pointer-events-none absolute inset-0 overflow-hidden"
       style={{ background: `linear-gradient(to bottom, ${theme.wall[0]}, ${theme.wall[1]})` }}
     >
-      {/* Mood wallpaper — the sole visual backdrop standard (genre not used). */}
+      {/* Blurred fill layer — covers fully, soft ambiance behind the sharp layer. */}
       <span
         aria-hidden
-        data-testid={`scene-backdrop-${moodBackdropSlug(mood ?? FALLBACK_MOOD)}`}
+        data-testid={`scene-backdrop-${slug}`}
         className="absolute inset-0"
         style={{
           backgroundImage: `url(${moodImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          filter: `blur(${FILL_BLUR_PX}px)`,
+          transform: "scale(1.2)",
+        }}
+      />
+      {/* Slight darkening over the blur so the sharp layer reads clearly. */}
+      <span aria-hidden className="absolute inset-0 bg-black/40" />
+      {/* Sharp main layer — whole image visible, centered, never cropped. */}
+      <span
+        aria-hidden
+        data-testid={`scene-backdrop-main-${slug}`}
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${moodImage})`,
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       />
       {/* Ambient room light — the theme's personality over the texture. */}
