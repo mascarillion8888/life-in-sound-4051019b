@@ -10,6 +10,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MasterPosterModal } from "@/components/results/MasterPosterModal";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { analyzeUserJourney } from "@/lib/ai/pipeline";
+import { resolveSongMood, songMoodKey } from "@/lib/ai/enrichSongMood";
 import { buildPosterModel } from "@/lib/ai/posterModel";
 import type { EmotionProfile, MusicProfile, PersonalityProfile } from "@/lib/ai/types";
 import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
@@ -202,6 +203,28 @@ function JourneyPage() {
       saveJourney({ current, answers, songs });
     }
   }, [restored, completed, current, answers, songs, userId]);
+
+  // Mood enrichment — in the background, at most once per distinct song. When a
+  // committed song arrives without a mood, infer it (client-safe inferMood server
+  // fn) and stamp it onto Song.mood so SceneRoom shows the matching mood wallpaper.
+  // resolveSongMood dedupes per session; persistence rides the existing songs save
+  // above. A later-arriving verified match for the same question is guarded by the
+  // identity key rather than clobbered.
+  useEffect(() => {
+    if (!restored || completed) return;
+    for (const [id, song] of Object.entries(songs)) {
+      void resolveSongMood(song).then((enriched) => {
+        if (enriched.mood === song.mood) return;
+        setSongs((prev) => {
+          const cur = prev[Number(id)];
+          if (!cur || songMoodKey(cur) !== songMoodKey(song)) return prev;
+          return { ...prev, [Number(id)]: enriched };
+        });
+      });
+    }
+    // Deposit inferred moods in the background; resolveSongMood is stable per
+        // session (never re-fires duplicate calls), and `songs` is the only trigger.
+      }, [restored, completed, songs]);
 
   // Background verification pipeline. Fires for the typed draft (debounced)
   // and never blocks the UI: Onayla/Next commit synchronously without waiting
