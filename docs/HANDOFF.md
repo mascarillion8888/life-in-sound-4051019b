@@ -109,6 +109,8 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 - İç içe `soundtrack-ai/` repo'suna yazma / oradan merge etme.
 - **Lint/çizgi sonu tuzağı:** ham `eslint .`'yi koşma (untracked debri asıyor / CRLF yığını); `prettier --write .` / `git add --renormalize`'ı rastgele koşma.
 - Testleri "geçsin diye" değiştirme/zayıflatma.
+- **Git commit kimliği:** Bu repoda atılan commit'ler `mascarillion8888 <67925182+mascarillion8888@users.noreply.github.com>` kimliğiyle olmalı (repo-local `git config user.name/email`; `--global` DEĞİL). Farklı kimlik (örn. `JellyBeanMaster`) Vercel Hobby plan deployment'ını "commit author did not have contributing access" diye bloklar (17 Eylül 2026).
+- **`git commit --allow-empty` tuzağı:** Aslında boş değildir — index'te staged dosya varsa ONLARI da commit'ler. Boş commit (redeploy tetikleyicisi) atmadan ÖNCE `git status` / `git diff --cached --name-only` ile index'in boş olduğunu doğrula.
 
 ---
 
