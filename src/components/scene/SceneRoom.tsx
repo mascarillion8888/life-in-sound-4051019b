@@ -1,7 +1,11 @@
 /**
  * SceneRoom — the application's fixed global environment: a mood-lit room
- * whose backdrop image is driven PURELY by the song's mood (Anal_mimari: mood
- * is an independent axis, never a fixed genre->mood mapping).
+ * whose backdrop image is currently driven by the song's mood. Canonical
+ * resolver input (18 Eylül — STATE KARARLAR) is the INTERACTIVE composite
+ * `Song {mood, genre, decade}` (the axes are not independent filters); code
+ * today resolves only the mood axis, genre/decade declared inputs for the
+ * Visual Resolver (Phase 4) — they never pick an image alone, only together
+ * with mood (no fixed genre->mood mapping).
  *
  * Backdrop rendering — classic "blurred backdrop fill" (Spotify/Apple Music
  * style) so a landscape asset never looks cropped in the portrait room:
@@ -13,7 +17,7 @@
  * The backdrop image is resolved from `song.mood` via moodBackdropUrl() (the
  * glob-resolver in `./moodBackdrop`). When the song has no mood yet, or the
  * mood's file is absent, a neutral default ("dreamy") is used so the room
- * never renders with an empty frame. Genre does NOT choose the image.
+ * never renders with an empty frame.
  */
 import type { ReactNode } from "react";
 
@@ -44,7 +48,8 @@ const FILL_BLUR_PX = 28;
  *
  * `mood` (optional): if a mood-specific wallpaper exists
  * (`src/assets/mood-backdrop-<mood>.png`) its IMAGE is shown; otherwise the
- * neutral `dreamy` image is used. Genre never picks the backdrop.
+ * neutral `dreamy` image is used. Genre/decade are declared resolver inputs
+ * (18 Eylül), not yet in code.
  */
 export function SceneRoom({
   themeId,

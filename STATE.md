@@ -225,6 +225,25 @@ Uygulayan: [AI]
   gelecekte **manuel invalidation** gerekir (örn. kayıt sürümü veya journey reset). Bilinçli
   tasarım seçimidir — testim başına bir kez LLM çağrısı yapmak, her render'da tekrar çağırmamak.
 
+- **Visual Resolver girdi kanonu (18 Eylül — kullanıcı onaylı, LOCKED):** Visual Resolver'ın görsel
+  karar girdisi **tek eksen değil, üç eksenin bileşimidir**: `Song {mood, genre, decade} → Visual
+  Resolver → VisualSpec → Atmosphere / Asset`. Mood, genre ve decade üçü **birlikte ve etkileşimli**
+  olarak nihai görsel çıktıyı belirler. **Mood, genre ve decade bağımsız filtreler DEĞİLDİR** — üç
+  eksen birbirini etkileyerek bileşik bir görsel kimlik oluşturur.
+  **Kanonik karar metni:** "Visual Resolver, Mood, Genre ve Decade değerlerini birlikte değerlendirir.
+  Bu üç eksen bağımsız katkılar olarak değil, etkileşimli girdiler olarak çalışır. Nihai VisualSpec;
+  atmosfer, renk paleti, mekân, ışıklandırma, doku, kompozisyon ve asset seçimini üç eksenin bileşik
+  etkisine göre belirler. Eksik eksenlerde mevcut verilerle deterministik fallback uygulanır; veri
+  uydurulmaz (ANA_YASA §0)."
+  **Sonuçları:** Aynı mood, farklı genre veya decade ile farklı görsel üretebilir (Hüzünlü+Blues+1960s
+  ≠ Hüzünlü+Blues+1970s); Enerjik+Rock+1970s ile Enerjik+Rock+1980s farklı atmosfer/palet/doku/
+  estetik. Genre veya decade **tek başına sabit görsel eşleme yapmaz** — yalnız mood+genre+decade
+  bileşimi Resolver'ın görsel kararını oluşturur. Bu karar, "mood tek eksendir / genre görseli
+  seçmez" varsayımını GEÇERSİZ kılar (moodBackdrop.ts + SceneRoom + 17 Eylül Faz 0 notlarının eski
+  dili kaldırıldı). **Kapsam notu:** bu, üretim koduna mantık EKLEMEZ; Resolver'ın gerçek çoklu-eksen
+  uygulaması Visual Resolver katmanı kurulurken (Phase 4) gelir. Bugün kod yalnız mood'tan çözer;
+  eksik eksenler mevcut verilerle deterministik fallback'e iner — veri uydurulmaz (ANA_YASA §0).
+
 ## 📝 NOTLAR
 
 - **2026-09-13 (Claude):** HEAD'in görsel zenginliği (istatistik kartları, gradient) kaybedildi çünkü uydurma fallback değerleri (Timeless, Eclectic Explorer, diversity??100) içeriyordu — ANA_YASA §0 ihlali. Aynı görsel zenginlik, gerçek veri yokken placeholder/skeleton göstererek ayrı bir görevde geri kazanılabilir.
@@ -234,7 +253,7 @@ Uygulayan: [AI]
 - **2026-09-13 (Claude, akşam #2):** (a) Key rotasyonu tamam ve doğrulandı — eski OpenRouter key iptali (401), yeni key `settings.json`+`.env`'de aktif (200). (b) Debri temizliği yapıldı — 21 untracked kalıntı (`soundtrack-ai/` iç içe klonu, `.next/`, `app/`, Next artıkları, `*.txt`) karantinaya taşındı (`Temp\soundtrack-ai-cleanup-20260913\`); repo kökünde yalnızca `settings.json` untracked (harness config, bilerek). Zombi `eslint .` süreçleri kullanıcının onayıyla kapatıldı — `eslint .`'nin asılı kalma nedeni buydu. (c) `*.tsbuildinfo` .gitignore'a eklendi. (d) UI görsel doğrulama (kural 10) hazırlandı: `.env` dolu, vibe testleri 14/14, dev sunucu ayakta — kullanıcının "Arayüz Onaylandı" demesi bekleniyor.
 
 - **2026-09-16 (Hermes):** mood-backdrop görselleri 1620x941'e güncellendi, push edildi; mood→song veri-yolu bağlaması (journey'de song.mood eksikliği) HENÜZ ÇÖZÜLMEDİ, ayrı görev olarak bekliyor.
-- **2026-09-17 (Hermes):** mood→song veri-yolu bağlandı (Faz 1: journey'de şarkı seçilince inferMood → Song.mood'a yaz → localStorage persist → SceneRoom mood-backdrop gösterir; results'ta ayrı infer devam eder). Visual Resolver / Asset Registry TAM kurulumu Phase 4'e ertelendi (Ana_mimari roadmap, Asset Factory raporu §15). Şu an tek eksen (mood) çalışıyor. Genişleme sırası (Asset Factory §15): 1980s×Rock, 1980s×Soul/Funk/Disco vb. — yalnızca kullanıcı onayıyla, No Uncontrolled Refactoring guardrail'i altında küçük adımlarla.
+- **2026-09-17 (Hermes):** mood→song veri-yolu bağlandı (Faz 1: journey'de şarkı seçilince inferMood → Song.mood'a yaz → localStorage persist → SceneRoom mood-backdrop gösterir; results'ta ayrı infer devam eder). Visual Resolver / Asset Registry TAM kurulumu Phase 4'e ertelendi (Ana_mimari roadmap, Asset Factory raporu §15). Kod bugün yalnız mood eksenini çözüyor; kanonik Resolver giridi mood+genre+decade bileşimidir (18 Eylül kararı — KARARLAR). Genişleme sırası (Asset Factory §15): 1980s×Rock, 1980s×Soul/Funk/Disco vb. — yalnızca kullanıcı onayıyla, No Uncontrolled Refactoring guardrail'i altında küçük adımlarla.
 - **2026-09-17 (Hermes) — GÜVENLİK OLAYI + GIT COMMIT KİMLİK KURALI:** `.claude/settings.local.json`'daki OpenRouter API key kazara commit'lenip push edildi (4493914); tespit edilip git history'den force-with-lease ile purge edildi ve key derhal rotate edildi. Kök neden: `git commit --allow-empty` index'teki staged dosyaları da commit'e dahil ediyor — gerçekten boş commit için önce `git status` / `git diff --cached --name-only` ile index'in boş olduğu doğrulanmalı. `.claude/` artık `.gitignore`'da. **OTOMATİK COMMIT KURALI:** commit'ler `mascarillion8888 <67925182+mascarillion8888@users.noreply.github.com>` kimliğiyle atılmalı (repo-local `git config`), aksi halde Vercel Hobby plan "commit author did not have contributing access" hatasıyla deployment'ı bloklar.
 
 _Son güncelleme: Hermes — 2026-09-16 (mood-backdrop 9 görsel 1620x941 güncellendi + push; mood→song bağlaması açık kaldı; 639/2 test, tsc 0)_

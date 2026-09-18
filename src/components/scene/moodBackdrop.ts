@@ -5,34 +5,44 @@
  * `src/assets/mood-backdrop-{slug}.png` (1920x1080) and are the SINGLE
  * visual backdrop for the room. SceneRoom resolves its image purely from
  * `song.mood`; a missing mood falls back to the neutral "dreamy" wallpaper
- * inside SceneRoom, never to a genre image.
+ * inside SceneRoom.
+ *
+ * Canonical resolver input (18 Eylül 2026 — STATE KARARLAR): the visual
+ * decision input is NOT a single axis — it is the interactive composite
+ * `Song {mood, genre, decade}`. The three axes are NOT independent filters;
+ * they interact to form a composite visual identity (same mood with a different
+ * genre/decade must be able to produce a different visual). Today only the
+ * `mood` axis is implemented in CODE (this module); genre/decade are declared
+ * input axes whose multi-axis resolution arrives with the Visual Resolver
+ * (Phase 4). Genre or decade ALONE never pick an image — only together with
+ * mood. Missing axes degrade deterministically to available data (never
+ * fabricate, ANA_YASA §0).
  *
  * Missing-file safety: this module uses Vite `import.meta.glob` (NOT a plain
  * static `import ... from`). A glob that matches NO files yields NO keys (no
  * build/dev error); real files dropped into src/assets are picked up
  * automatically with NO further import edits.
- *
- * Genre never selects the image (mood is an independent axis); genre may only
- * surface as UI text outside this component.
  */
 import type { Mood } from "@/lib/ai/moodInference";
 
 /**
  * Future resolution contract (Phase 4 — Visual Resolver / Asset Registry).
  *
- * Today only the single `mood` axis is declared and consumed; `era`, `genre`
- * and `culture` are OPTIONAL, UNUSED placeholders for the multi-axis expansion.
- * They are intentionally left dormant so adding them later cannot break the
- * current resolver. Per Anal_mimari: mood is an INDEPENDENT axis — genre/era
- * must never drive the image (no fixed genre->mood mapping), so `genre` here is
- * explicitly not a backdrop selector.
+ * Canonical input (18 Eylül 2026 — STATE KARARLAR): the resolver decision is
+ * driven by the INTERACTIVE composite `Song {mood, genre, decade}` — the three
+ * axes are not independent filters. Today only `mood` is consumed by
+ * `moodBackdropUrl` in code; `era`, `genre` and `culture` are DECLARED input
+ * axes for the multi-axis expansion, intentionally dormant so
+ * enabling them later cannot break the current resolver. Genre or decade
+ * ALONE must never pick an image — they act only as composer inputs together
+ * with mood (no fixed genre->mood mapping).
  */
 export type VisualSpecInput = {
-  /** The only axis currently resolved by `moodBackdropUrl`. */
+  /** The axis currently resolved by `moodBackdropUrl`. */
   mood?: Mood | string | null;
-  /** Future axis: historical era (e.g. "1980s"). Unused today. */
+  /** Canonical input axis: historical era (e.g. "1980s"). Declared, unused in code today. */
   era?: string | null;
-  /** Future axis: genre/decade family. Unused today — must NOT pick the image. */
+  /** Canonical input axis: genre/decade family. Declared, unused in code today. */
   genre?: string | null;
   /** Future axis: culture family. Unused today. */
   culture?: string | null;
@@ -94,7 +104,7 @@ const MOOD_BACKDROP_URLS: Record<string, string> = import.meta.glob<string>(
 
 /**
  * Return the resolved backdrop URL for a mood, or `undefined` if that mood's file
- * does not exist (yet). `undefined` → SceneRoom keeps its genre backdrop.
+ * does not exist (yet). `undefined` → SceneRoom keeps its fallback (dreamy).
  */
 export function moodBackdropUrl(
   mood: Mood | string | null | undefined,

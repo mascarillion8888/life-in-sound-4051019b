@@ -23,7 +23,8 @@ HEAD:       759ab29 — "docs(scene): Visual Resolver contract type on moodBackd
               5c8707b  Faz 1 — journey'de şarkı seçilince inferMood → Song.mood persist (localStorage + mevcut remote yol);
                         enrichSongMood.ts (session-dedup); SceneRoom gerçek mood-backdrop gösterir
               759ab29  Faz 2 — moodBackdrop.ts'e VisualSpecInput/VisualResolution contract type (era/genre/culture atıl);
-                        STATE.md Phase-4 erteleme notu
+                                      STATE.md Phase-4 erteleme notu
+                                      → 18 Eylül KANON DEĞİŞTİ: "genre/decade atıl" iptal; girdi = mood+genre+decade bileşimi (STATE KARARLAR)
 Testler:    68 dosya, 646 passed / 2 skipped (648) — vitest v4.1.11, `npm test` exit 0 (2026-09-17)
 tsc:        temiz (`npm run typecheck` = 0 hata)
 Lint:       0 hata, 9 uyarı (baseline: react-refresh ui/* + LanguageContext + results.tsx:344 exhaustive-deps;
@@ -41,7 +42,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 
 ### 2a. Faz 0 (commit `112d70f`) — P0 build/test kırığı
 - **NEDEN:** 10 asset silinmişti (9 `room-backdrop-*.png` + `poster-preview.jpg`) ama kod hâlâ import ediyordu → build `ENOENT room-backdrop-jazz.png` (exit 1) ve 3 test dosyası `Failed to resolve import` (EraCardReveal / PosterLightbox / SceneRoom).
-- **NASIL:** Kullanıcı kararı — genre room-backdrop kavramı KALKTI, `mood-backdrop-*.png` (9×1920x1080) TEK görsel standart. `SceneRoom.tsx`: 7 static import + genre→görsel `BACKDROPS` objesi kaldırıldı; artık SADECE `moodBackdropUrl(song.mood)`, mood yoksa nötr `Dreamy` fallback. Genre görseli seçmiyor (yalnızca UI metni / palet alt tonu). `PreviewSection` / `PosterLightbox` / `results.tsx`: poster-preview → `mood-backdrop-dreamy.png` placeholder (3'ü de gerçek placeholder gerektiriyordu). `SceneRoom.test.tsx` yeni mood-backdrop davranışını test ediyor. Silinen 10 dosya resmen stage-edildi (targeted `git add`, `git add -A` DEĞİL — HANDOFF §7).
+- **NASIL:** Kullanıcı kararı — genre room-backdrop kavramı KALKTI, `mood-backdrop-*.png` (9×1920x1080) TEK görsel standart. `SceneRoom.tsx`: 7 static import + genre→görsel `BACKDROPS` objesi kaldırıldı; backdrop artık `moodBackdropUrl(song.mood)` ile çözülür, mood yoksa nötr `Dreamy` fallback. **Not (18 Eylül kanonu):** görsel karar girdisi tek eksen değil `mood+genre+decade` bileşimidir (bkz. STATE KARARLAR); kod bugün yalnız mood eksenini uygular, genre/decade çoklu-eksen çözümü Visual Resolver (Phase 4) ile gelir — genre/decade tek başına görsel seçmez. `PreviewSection` / `PosterLightbox` / `results.tsx`: poster-preview → `mood-backdrop-dreamy.png` placeholder (3'ü de gerçek placeholder gerektiriyordu). `SceneRoom.test.tsx` yeni mood-backdrop davranışını test ediyor. Silinen 10 dosya resmen stage-edildi (targeted `git add`, `git add -A` DEĞİL — HANDOFF §7).
 - **Sonuç:** build exit 0, test 66 dosya / 640 pass, tsc 0, lint 9.
 
 ### 2b. Faz 1 (commit `5c8707b`) — mood verisinin persist edilmesi
@@ -59,7 +60,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 
 ## 3. Kod Tabanı Özeti & Mevcut Durum
 
-- **Scene/backdrop:** `SceneRoom` = tek mood-wallpaper görsel standardı (moodBackdrop glob, Dreamy fallback). Genre IMAGE seçmez.
+- **Scene/backdrop:** `SceneRoom` = tek mood-wallpaper görsel standardı (moodBackdrop glob, Dreamy fallback). Kod bugün yalnız mood ekseninden çözer; kanonik Resolver giridi `mood+genre+decade` bileşimidir (18 Eylül — STATE KARARLAR; genre/decade tek başına görsel seçmez).
 - **Motorlar:** `musicDnaEngine.ts` (mood-coverage gate'li vibe), `lifeStoryEngine.ts`, `emotionalTimelineEngine.ts`.
 - **Mood veri yolu:** provider→Song(mood null)→journey şarkı seçimi→`resolveSongMood`(inferMood)→`Song.mood` persist→SceneRoom mood-backdrop. Results'ta pipeline ayrıca infer edip aggregate DNA verir (deterministik, memo'lu).
 - **Pipeline:** `src/lib/ai/pipeline.ts` → `generateGroundedAnalysis` (content-keyed memo + contextText fingerprint; results'taki 8× dedupe korunur).

@@ -47,7 +47,7 @@ describe("SceneRoom — the fixed global library environment", () => {
     }
   });
 
-  it("uses the song's mood backdrop when a mood is present (genre never selects the image)", () => {
+  it("uses the song's mood backdrop when a mood is present (genre/decade do not pick the image alone)", () => {
     const { container } = render(<SceneRoom themeId="synth" mood="dark" />);
     expect(
       (container.querySelector(`[data-testid='scene-backdrop-dark']`) as HTMLElement)

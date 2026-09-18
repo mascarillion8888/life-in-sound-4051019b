@@ -79,6 +79,13 @@ VisualProfile {
 
 ## 3. Visual Resolver (FUTURE — kodda yok; kavramsal)
 
+**Karar girdisi (kanonik — 18 Eylül, STATE KARARLAR):** Resolver görsel kararı, tek eksen
+değil **`Song {mood, genre, decade}` bileşiminin** ürünüdür. Mood, genre ve decade birlikte
+çözümlemeye girer; genre/decade **tek başına görsel seçmez**, yalnız mood ile birlikte
+Resolver'ın görsel kararını oluşturur (örn. *Hüzünlü + Blues + 1960s → 1960'lar blues
+atmosferi*). Eksik eksen (örn. genre null) sessizce mood eksenine iner — uydurma yasak,
+ANA_YASA §0.
+
 **Sorumluluk:** VisualProfile'dan görsel KESİNLİKLERİ belirler → **VisualSpec**:
 
 - visual vocabulary, composition, lighting, atmosphere, palette direction, objects,
