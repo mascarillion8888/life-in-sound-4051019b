@@ -18,7 +18,7 @@ import type { SceneThemeId } from "@/components/scene/SceneRoom";
  * wins. Soul precedes jazz because "soul" is its own room identity now;
  * funk moved out of the synth family (70s warm, not neon).
  */
-const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
+export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
   {
     id: "gothic",
     keywords: [
@@ -120,7 +120,7 @@ const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
 ];
 
 /** Word-ish boundary match — mirrors the server's keywordIn. */
-function keywordIn(haystack: string, keyword: string): boolean {
+export function keywordIn(haystack: string, keyword: string): boolean {
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`).test(haystack);
 }

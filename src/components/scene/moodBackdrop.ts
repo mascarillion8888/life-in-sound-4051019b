@@ -25,37 +25,24 @@
  */
 import type { Mood } from "@/lib/ai/moodInference";
 
-/**
- * Future resolution contract (Phase 4 — Visual Resolver / Asset Registry).
+/*
+ * Canonical visual contract (FAZ 3, 18 Eylül 2026) lives in `src/types/visualSpec.ts`.
+ * `SceneVisualSpecInput` / `SceneVisualResolution` / `SceneVisualSpec` are re-exported from there so any
+ * existing consumer keeps resolving — the resolution logic is `src/lib/visual/visualResolver.ts`.
+ * `moodBackdropUrl` below remains the pure mood→glob helper it always was.
  *
- * Canonical input (18 Eylül 2026 — STATE KARARLAR): the resolver decision is
- * driven by the INTERACTIVE composite `Song {mood, genre, decade}` — the three
- * axes are not independent filters. Today only `mood` is consumed by
- * `moodBackdropUrl` in code; `era`, `genre` and `culture` are DECLARED input
- * axes for the multi-axis expansion, intentionally dormant so
- * enabling them later cannot break the current resolver. Genre or decade
- * ALONE must never pick an image — they act only as composer inputs together
- * with mood (no fixed genre->mood mapping).
+ * Canonical input (18 Eylül 2026 — STATE KARARLAR): the resolver decision is driven by the
+ * INTERACTIVE composite `Song {mood, genre, decade}` — the three axes are not independent
+ * filters. Today only `mood` is consumed by `moodBackdropUrl` in code; genre/decade are input
+ * axes whose multi-axis resolution arrives with the Visual Resolver. Genre or decade ALONE
+ * never pick an image — only together with mood (no fixed genre->mood mapping).
  */
-export type VisualSpecInput = {
-  /** The axis currently resolved by `moodBackdropUrl`. */
-  mood?: Mood | string | null;
-  /** Canonical input axis: historical era (e.g. "1980s"). Declared, unused in code today. */
-  era?: string | null;
-  /** Canonical input axis: genre/decade family. Declared, unused in code today. */
-  genre?: string | null;
-  /** Future axis: culture family. Unused today. */
-  culture?: string | null;
-};
-
-/**
- * The resolution result for a visual spec. Today only `backdropUrl` (derived
- * from `mood`) is produced; the future resolver will emit a full Asset
- * Registry entry (approved asset reference, version, etc.).
- */
-export type VisualResolution = {
-  backdropUrl?: string;
-};
+export type {
+  VisualAxisSource,
+  SceneVisualResolution,
+  SceneVisualSpec,
+  SceneVisualSpecInput,
+} from "@/types/visualSpec";
 
 /**
  * The 9 moods, lowercase file slug, same values/order as MOOD_SET. Backdrop files
