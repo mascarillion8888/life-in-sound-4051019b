@@ -15,9 +15,10 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       ea84a6e — "feat(visual): exact-match asset registry for manually produced combos (FAZ 3.1)"
+HEAD:       12942cb — "feat(scene): backdrop selection now multi-axis (mood+genre+decade)"
             origin/main ile SENKRON (push edildi 2026-09-19; rev-list 0 0)
-            Son commit zinciri (FAZ 0 → 3.1):
+            Son commit zinciri (FAZ 0 → 3.2):
+              12942cb  FAZ 3.2 — multi-axis backdrop entegrasyonu: moodBackdropUrl(mood,genre,decade) fallback zinciri + SceneRoom/EraCardReveal bağlama (push 2026-09-19)
               c886a12  18 Eylül KANONİK — Visual Resolver girdisi = interaktif Song{mood,genre,decade} (LOCKED, STATE KARARLAR)
               2883f9a  FAZ 3 — deterministik scene visual contract: src/types/visualSpec.ts +
                         src/lib/visual/visualResolver.ts + visualSpec.test.ts (10 test)
@@ -50,12 +51,17 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 - **Sonuç:** visualSpec 13/13, suite 664/666, tsc 0.
 
 > ⚠️ Bu commit `src/` değiştirdiği için `docs/HANDOFF.md` güncellenmemişti → `handoff-check` (push) kırmızı. İşte bu dosyanın güncellemesi + checkpoint commit'i bunu giderir.
+### 2c. FAZ 3.2 (commit `12942cb`, 19 Eylül) — multi-axis backdrop entegrasyonu
+- **NEDEN:** Resolver/registry üç ekseni (mood+genre+decade) taşıyordu ama SceneRoom sadece mood'u render ediyordu; genre/decade "declared input" idi (kodda kullanılmıyordu).
+- **NASIL (5 dosya):** `moodBackdrop.ts` — `moodBackdropUrl(mood, genre?, decade?)` + `backdropCandidates` 4-kademeli fallback zinciri; `moodBackdrop.test.ts` — yeni imzaya göre; `visualResolver.ts:128` — genre/decade geçirir; `SceneRoom.tsx` — genre/releaseYear props + `eraThemeForYear` (tek kaynak, YENİ ladder YOK); `EraCardReveal.tsx:49` — props gönderir.
+- **Sonuç:** Testler 4 dosya / 40 test geçti; tsc yeşil. Kapsam dışı kalemler (commit mesajında kayıtlı): resolveSceneVisualSpec hâlâ orphan; HF runtime üretimi hâlâ canlı; assetRegistry assetRef güncellenmedi; üçlü decade-ladder dedup bekliyor.
+
 
 ---
 
 ## 3. Kod Tabanı Özeti & Mevcut Durum
 
-- **Scene/backdrop:** `SceneRoom` = tek mood-wallpaper görsel standardı (moodBackdrop glob, mood yoksa `dreamy`). Resolver kontratı üç eksenli; kod bugün mood-only backdrop + genre/decade tema.
+- **Scene/backdrop:** `SceneRoom` = tek backdrop standardı; backdrop artık `moodBackdropUrl(mood, genre, decade)` ile çok-eksenli çözülür (fallback: dec×gen×mood → dec×mood → gen×mood → mood; mood yoksa `dreamy`). Decade, `releaseYear`'den `eraThemeForYear` ile türetilir (tek kaynak).
 - **Visual katmanı (yeni, FAZ 3/3.1):** `src/types/visualSpec.ts` (kontrat), `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` deterministik, `resolveExactAsset`), `src/lib/visual/assetRegistry.ts` (`SCENE_ASSET_REGISTRY`, pilot pop×1980s×9 mood), `src/lib/visual/visualSpec.test.ts` (13 test).
 - **Motorlar:** `musicDnaEngine.ts` (mood-coverage gate'li vibe), `lifeStoryEngine.ts`, `emotionalTimelineEngine.ts`.
 - **Mood veri yolu:** provider→Song(mood null)→journey şarkı seçimi→`resolveSongMood`(inferMood)→`Song.mood` persist→SceneRoom mood-backdrop.
@@ -81,7 +87,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 1. **Mood-backdrop'u gerçek tarayıcıda gör:** `npm run dev` → journey'i 8 şarkıyla tamamla → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görünmeli (mood yoksa `dreamy`). Kullanıcı "Arayüz Onaylandı" der demez bu görev TAMAMLANDI olur. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
 
 ### FAZ 4 / P2 (sonraki oturumlar)
-2. **FAZ 4 — SceneRoom bağlama:** `resolveSceneVisualSpec`/`SceneVisualSpec` çıktısının SceneRoom'a bağlanması (dosyalarda "FAZ 4 entegrasyonu: SceneRoom bu çıktıyı tüketecek" notu var; şimdi bağlı değil). İlk exact-match kullanım örneği burada olacak.
+2. **FAZ 4 — kalan entegrasyon:** backdrop zaten bağlı (FAZ 3.2); kalan: `resolveSceneVisualSpec` orphan (çözüm fonksiyonu hiçbir UI bileşeni tarafından çağrılmıyor) + exactAssetRef tüketimi.
 3. **Asset Registry genişlemesi:** kullanıcı yeni `genre × decade × mood` kombinasyonu ürettikçe `SCENE_ASSET_REGISTRY`'ye manuel ekleme (yalnız onayla, No Uncontrolled Refactoring).
 4. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli kır), artist metadata, musical characteristics.
 5. **P2:** MusicUniverseHero görsel zenginliği (istatistik kartları, gradient) placeholder/skeleton ile geri kazan; SongUniverseCard'a gerçek `grounded.timeline.nodes` context'i bağla.
@@ -118,6 +124,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+12942cb feat(scene): backdrop selection now multi-axis (mood+genre+decade)
 ea84a6e feat(visual): exact-match asset registry for manually produced combos (FAZ 3.1)
 2883f9a feat(visual): add deterministic scene visual contract (FAZ 3)
 c886a12 feat(arch): canonical Visual Resolver input = interactive Song{mood, genre, decade} (18 Eylül LOCKED)
@@ -143,5 +150,5 @@ ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page
 
 ---
 
-_Artık son güncelleme: Hermes — 2026-09-19 (FAZ 3 + FAZ 3.1 commit'leri push edildi; handoff-check güncellemesiyle yeşile alındı; test 664/666, tsc 0, lint 0e/~9w)._
+_Artık son güncelleme: Hermes — 2026-09-19 (FAZ 3 → 3.2: multi-axis backdrop entegrasyonu push edildi; handoff-check yeşilde; test 4 dosya/40, tsc 0, lint 0e/~9w)._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
