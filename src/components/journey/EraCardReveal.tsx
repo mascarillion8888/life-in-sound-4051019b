@@ -46,7 +46,7 @@ export function EraCardReveal({
                     wallpaper matches the produced asset 1:1 and never depends on
                     viewport height. If the card content exceeds the 3:4 box on
                     short/mobile viewports the wrapper scrolls (never clips). */}
-                <SceneRoom themeId={themeId} mood={song?.mood ?? null} />
+                <SceneRoom themeId={themeId} mood={song?.mood ?? null} genre={song?.genre ?? null} releaseYear={song?.releaseYear ?? null} />
 
           <div className="relative z-10 my-auto flex flex-col items-center gap-6">
             <div className="space-y-2 text-center">

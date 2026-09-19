@@ -125,7 +125,7 @@ export function resolveSceneVisualSpec(input: SceneVisualSpecInput): SceneVisual
   /* --- 1. Backdrop: mood-only (genre/decade backdrop seçmez) --- */
   let backdropUrl: string | undefined;
   if (input.mood?.trim()) {
-    backdropUrl = moodBackdropUrl(input.mood);
+    backdropUrl = moodBackdropUrl(input.mood, input.genre, input.decade);
     trace.push(`backdrop:mood=${input.mood.trim()}`);
     if (sources.mood) trace.push(`backdrop.source=${sources.mood}`);
   } else {

@@ -70,6 +70,35 @@ export function moodBackdropFilename(mood: Mood | string): string {
   return `mood-backdrop-${moodBackdropSlug(mood)}.png`;
 }
 
+/**
+ * A path-safe label segment for decade/genre: lowercase, spaces and dashes
+ * stripped so "hip hop" / "hip-hop" → "hiphop" (one canonical file slug).
+ */
+function labelSegment(s: string | null | undefined): string {
+  return s ? s.toLowerCase().replace(/[\s-]+/g, "") : "";
+}
+
+/**
+ * Backdrop filename fallback chain — most specific first, mood-only last.
+ * 1. <decade>-<genre>-<mood>    2. <decade>-<mood>    3. <genre>-<mood>    4. <mood>
+ * The final mood-only entry is the existing 9-file reference / last resort.
+ */
+export function backdropCandidates(
+  mood: Mood | string,
+  genre?: string | null,
+  decade?: string | null,
+): string[] {
+  const m = moodBackdropSlug(mood);
+  const g = labelSegment(genre);
+  const d = labelSegment(decade);
+  const out: string[] = [];
+  if (d && g) out.push(`mood-backdrop-${d}-${g}-${m}.png`);
+  if (d) out.push(`mood-backdrop-${d}-${m}.png`);
+  if (g) out.push(`mood-backdrop-${g}-${m}.png`);
+  out.push(`mood-backdrop-${m}.png`);
+  return out;
+}
+
 /** The module key portion, e.g. "/src/assets/mood-backdrop-energetic.png". */
 export function moodBackdropKey(mood: Mood | string): string {
   return `/src/assets/mood-backdrop-${moodBackdropSlug(mood)}.png`;
@@ -90,17 +119,27 @@ const MOOD_BACKDROP_URLS: Record<string, string> = import.meta.glob<string>(
 );
 
 /**
- * Return the resolved backdrop URL for a mood, or `undefined` if that mood's file
- * does not exist (yet). `undefined` → SceneRoom keeps its fallback (dreamy).
+ * Return the resolved backdrop URL for a `decade × genre × mood` combination,
+ * or `undefined` if no candidate file exists (yet). `undefined` → SceneRoom
+ * keeps its neutral fallback.
+ *
+ * Fallback chain (most specific first): `<decade>-<genre>-<mood>`, `<decade>-<mood>`,
+ * `<genre>-<mood>`, then plain `<mood>`. Missing decade or genre simply
+ * shorten the chain. The plain mood entry is the existing 9-file reference /
+ * last resort — so a not yet baked combination degrades to the mood backdrop
+ * instead of rendering an empty frame.
  */
 export function moodBackdropUrl(
   mood: Mood | string | null | undefined,
+  genre?: string | null,
+  decade?: string | null,
   map: Record<string, string> = MOOD_BACKDROP_URLS,
 ): string | undefined {
   if (!mood) return undefined;
-  const filename = moodBackdropFilename(mood);
-  const entry = Object.entries(map).find(([moduleKey]) =>
-    moduleKey.endsWith(filename),
-  );
-  return entry ? entry[1] : undefined;
+  const entries = Object.entries(map);
+  for (const filename of backdropCandidates(mood, genre, decade)) {
+    const entry = entries.find(([moduleKey]) => moduleKey.endsWith(filename));
+    if (entry) return entry[1];
+  }
+  return undefined;
 }

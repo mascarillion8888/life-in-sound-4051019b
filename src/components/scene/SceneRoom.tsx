@@ -25,6 +25,7 @@ import type { Mood } from "@/lib/ai/moodInference";
 
 import { SCENE_PALETTES, type ScenePalette, type SceneThemeId } from "./scenePalettes";
 import { moodBackdropSlug, moodBackdropUrl } from "./moodBackdrop";
+import { eraThemeForYear } from "@/lib/visual/eraThemes";
 
 export type { SceneThemeId } from "./scenePalettes";
 export type { ScenePalette as SceneTheme } from "./scenePalettes";
@@ -54,14 +55,19 @@ const FILL_BLUR_PX = 28;
 export function SceneRoom({
   themeId,
   mood,
+  genre,
+  releaseYear,
   children,
 }: {
   themeId: SceneThemeId;
   mood?: Mood | string | null;
+  genre?: string | null;
+  releaseYear?: number | null;
   children?: ReactNode;
 }) {
   const theme = SCENE_PALETTES[themeId];
-  const moodImage = moodBackdropUrl(mood ?? FALLBACK_MOOD);
+  const decade = typeof releaseYear === "number" ? eraThemeForYear(releaseYear).id : null;
+  const moodImage = moodBackdropUrl(mood ?? FALLBACK_MOOD, genre, decade);
   const slug = moodBackdropSlug(mood ?? FALLBACK_MOOD);
   return (
     <div
