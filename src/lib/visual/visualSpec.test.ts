@@ -10,8 +10,16 @@ import { resolveSceneVisualSpec } from "./visualResolver";
 
 describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () => {
   it("same mood + different decade → differentiatable via eraStyle/eraTheme (not identical visuals)", () => {
-    const seventies = resolveSceneVisualSpec({ mood: "Energetic", genre: "Rock", releaseYear: 1975 });
-    const eighties = resolveSceneVisualSpec({ mood: "Energetic", genre: "Rock", releaseYear: 1985 });
+    const seventies = resolveSceneVisualSpec({
+      mood: "Energetic",
+      genre: "Rock",
+      releaseYear: 1975,
+    });
+    const eighties = resolveSceneVisualSpec({
+      mood: "Energetic",
+      genre: "Rock",
+      releaseYear: 1985,
+    });
 
     // backdrop aynı kalabilir (etkileşim yalnız mood'e bağlı), ama görsel kimlik farklılaşmalı:
     expect(seventies.backdropUrl).toBeDefined();
@@ -94,5 +102,28 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
     expect(res.backdropUrl).toContain("mood-backdrop-dark");
     expect(res.sceneThemeId).toBe("gothic"); // metal → gothic keyword
     expect(res.eraTheme).toBeDefined();
+  });
+});
+
+describe("exact-match asset registry (FAZ 3.1)", () => {
+  it("pop + 1980s + Energetic → exactAssetRef dolu + fallbackTrace'te iz", () => {
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1985 });
+    expect(res.exactAssetRef).toBe("mood-backdrop-energetic.png");
+    expect(res.fallbackTrace.join("|")).toContain("exact-match:pop-1980s-energetic");
+    // görsel davranış değişmez — backdrop yine aynı mood dosyasını gösterir:
+    expect(res.backdropUrl).toBeDefined();
+    expect(res.backdropUrl).toContain("mood-backdrop-energetic");
+  });
+
+  it("genre eşleşmezse (Rock-1985) → exactAssetRef undefined, exact-match izi yok", () => {
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "Rock", releaseYear: 1985 });
+    expect(res.exactAssetRef).toBeUndefined();
+    expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
+  });
+
+  it("decade eşleşmezse (pop-1990s) → exactAssetRef undefined", () => {
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1992 });
+    expect(res.exactAssetRef).toBeUndefined();
+    expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
   });
 });

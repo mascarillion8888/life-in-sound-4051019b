@@ -57,6 +57,8 @@ export interface SceneVisualResolution {
   /** releaseYear varsa eraTheme (eraThemes), yoksa undefined. */
   eraTheme?: EraThemeId;
   /** Deterministik düşüş zinciri — debug/test için. */
+  /** Manuel üretilmiş kombinasyondan gelen exact-match assetRef (eşleşme yoksa undefined). */
+  exactAssetRef?: string;
   fallbackTrace: string[];
 }
 

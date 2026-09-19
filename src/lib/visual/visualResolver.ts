@@ -20,7 +20,13 @@ import { moodBackdropUrl } from "@/components/scene/moodBackdrop";
 import { SCENE_KEYWORDS, keywordIn } from "@/lib/art/sceneTheme";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
-import type { SceneVisualResolution, SceneVisualSpecInput, SceneVisualSpec } from "@/types/visualSpec";
+import type { Mood } from "@/lib/ai/moodInference";
+import type {
+  SceneVisualResolution,
+  SceneVisualSpecInput,
+  SceneVisualSpec,
+} from "@/types/visualSpec";
+import { SCENE_ASSET_REGISTRY, type SceneAssetEntry } from "./assetRegistry";
 
 /**
  * Scene theme'ini genre keyword eşleşmesiyle bul. Mevcut SCENE_KEYWORDS matrisini kullanır —
@@ -41,7 +47,10 @@ function themeFromGenreKeyword(genre: string | null): SceneThemeId | undefined {
  * FAZ 3'te belirttiği sıra: <=1969 jazz, <=1979 soul, <=1989 synth, <=1999 grunge, <=2010 hiphop,
  * aksi gothic. `decade` string'i "1980s" ise sayıya çevirilir; ne string ne sayı → gothic.
  */
-export function decadeTheme(releaseYear: number | null | undefined, decade: string | null | undefined): SceneThemeId {
+export function decadeTheme(
+  releaseYear: number | null | undefined,
+  decade: string | null | undefined,
+): SceneThemeId {
   let year = releaseYear;
   if (year === undefined || year === null) {
     if (typeof decade === "string" && /^\d{4}s$/.test(decade)) {
@@ -58,6 +67,42 @@ export function decadeTheme(releaseYear: number | null | undefined, decade: stri
 }
 
 /**
+ * Exact-match asset araması (FAZ 3.1). Registry'de `{genre, decade, mood}`
+ * üçlüsüne TAM eşleşen bir kayıt varsa onu döndürür, yoksa undefined.
+ * - genre: küçük harf normalleştirilir.
+ * - decade: string "1980s" olarak; yoksa releaseYear'den türetilir (1985 → "1980s").
+ * - mood: MOOD_SET değeriyle (case-insensitive) karşılaştırılır.
+ * Eşleşme yoksa mevcut FAZ 3 çözümü aynen devreye girer — hiçbir davranış değişmez.
+ */
+export function resolveExactAsset(
+  mood: Mood | string | null | undefined,
+  genre: string | null | undefined,
+  decade: string | null | undefined,
+  releaseYear?: number | null,
+): SceneAssetEntry | undefined {
+  if (!mood || !genre) return undefined;
+  const moodKey = mood.trim();
+  const genreKey = genre.trim().toLowerCase();
+
+  let decKey = decade?.trim().toLowerCase() ?? "";
+  if (!decKey && typeof releaseYear === "number" && Number.isFinite(releaseYear)) {
+    decKey = `${Math.floor(releaseYear / 10) * 10}s`;
+  }
+  if (!decKey) return undefined;
+
+  for (const entry of SCENE_ASSET_REGISTRY) {
+    if (
+      entry.genre.toLowerCase() === genreKey &&
+      entry.decade.toLowerCase() === decKey &&
+      entry.mood.toLowerCase() === moodKey.toLowerCase()
+    ) {
+      return entry;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Kanonik deterministik VisualResolver. Girdi eksenlerini tek bir çözüme indirir.
  * Hiçbir eksen uydurulmaz; eksik eksen düşüşü `fallbackTrace`'e yazılır.
  *
@@ -68,6 +113,14 @@ export function decadeTheme(releaseYear: number | null | undefined, decade: stri
 export function resolveSceneVisualSpec(input: SceneVisualSpecInput): SceneVisualResolution {
   const trace: string[] = [];
   const sources = input.sources ?? {};
+
+  /* --- 0. Exact-match asset (manuel üretilmiş kombinasyon kaydı) — FAZ 3.1 --- */
+  const exactAsset = resolveExactAsset(input.mood, input.genre, input.decade, input.releaseYear);
+  if (exactAsset) {
+    trace.push(
+      `exact-match:${exactAsset.genre.toLowerCase()}-${exactAsset.decade.toLowerCase()}-${exactAsset.mood.toLowerCase()}`,
+    );
+  }
 
   /* --- 1. Backdrop: mood-only (genre/decade backdrop seçmez) --- */
   let backdropUrl: string | undefined;
@@ -142,6 +195,7 @@ export function resolveSceneVisualSpec(input: SceneVisualSpecInput): SceneVisual
     palette,
     eraStyle: eraStyleId,
     eraTheme,
+    exactAssetRef: exactAsset?.assetRef,
     fallbackTrace: trace,
   };
 }
