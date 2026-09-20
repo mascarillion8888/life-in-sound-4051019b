@@ -143,3 +143,20 @@ export function moodBackdropUrl(
   }
   return undefined;
 }
+
+/**
+ * Resolve a bare backdrop filename (e.g. "mood-backdrop-energetic.png") to its
+ * URL via the same glob map used by `moodBackdropUrl`. This is the bridge the
+ * exact-match Asset Registry (FAZ 3.1) uses: `SceneAssetEntry.assetRef` is a
+ * bare filename, not a URL — the registry points at one of the
+ * `mood-backdrop-*.png` files and this helper turns that name into the actual
+ * asset URL. Returns `undefined` when the glob has no file ending with that
+ * name (not baked yet / out of the glob pattern).
+ */
+export function moodBackdropUrlByFilename(
+  filename: string | null | undefined,
+  map: Record<string, string> = MOOD_BACKDROP_URLS,
+): string | undefined {
+  if (!filename) return undefined;
+  return Object.entries(map).find(([moduleKey]) => moduleKey.endsWith(filename))?.[1];
+}

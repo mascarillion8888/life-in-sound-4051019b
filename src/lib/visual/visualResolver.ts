@@ -16,7 +16,7 @@
  */
 import type { SceneThemeId } from "@/components/scene/scenePalettes";
 import { SCENE_PALETTES } from "@/components/scene/scenePalettes";
-import { moodBackdropUrl } from "@/components/scene/moodBackdrop";
+import { moodBackdropUrl, moodBackdropUrlByFilename } from "@/components/scene/moodBackdrop";
 import { SCENE_KEYWORDS, keywordIn } from "@/lib/art/sceneTheme";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
@@ -122,11 +122,17 @@ export function resolveSceneVisualSpec(input: SceneVisualSpecInput): SceneVisual
     );
   }
 
-  /* --- 1. Backdrop: mood-only (genre/decade backdrop seçmez) --- */
+  /* --- 1. Backdrop: exact-match asset (FAZ 3.1) → mood-only fallback --- */
   let backdropUrl: string | undefined;
   if (input.mood?.trim()) {
-    backdropUrl = moodBackdropUrl(input.mood, input.genre, input.decade);
-    trace.push(`backdrop:mood=${input.mood.trim()}`);
+    const exactAssetUrl = exactAsset ? moodBackdropUrlByFilename(exactAsset.assetRef) : undefined;
+    if (exactAssetUrl) {
+      backdropUrl = exactAssetUrl;
+      trace.push(`backdrop:exact-match=${exactAsset?.assetRef}`);
+    } else {
+      backdropUrl = moodBackdropUrl(input.mood, input.genre, input.decade);
+      trace.push(`backdrop:mood=${input.mood.trim()}`);
+    }
     if (sources.mood) trace.push(`backdrop.source=${sources.mood}`);
   } else {
     trace.push("backdrop:missing-mood->none");
