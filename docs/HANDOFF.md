@@ -84,6 +84,16 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 
 ## 5. Açık / Bekleyen İşler
 
+### Karar (2026-09-19) — Poster/Music Map Life-Stage Sistemi
+Üç paralel yaş/yaşam-evresi sistemi tespit edildi ve çözüldü:
+- **A)** 8'li journey evresi (`data.ts eras[]`, `lifeCards.ts`) — şarkı seçim akışının adımları; yaşam evresi kavramı değil.
+- **B)** 6'lı şiirsel bölüm (`poetic-analyzer.ts CHAPTER_SLOTS`: 9-12, 12-18, 18-24, 24-30, 30-35, 35+) — mevcut Music Map UI ve kullanıcı referans posterleriyle birebir eşleşiyor.
+- **C)** ANA_YASA §5.1 kanonik Life-Stage (Childhood, Adolescence, Young Adult, Adult, Midlife, Later Life) — yalnız tasarım, implemente değil, farklı etiketleme.
+
+**KARAR:** Poster/Music Map görsel illüstrasyon seti **SİSTEM B'yi** temel alacak (6 kademe: 9-12, 12-18, 18-24, 24-30, 30-35, 35+). Gerekçe: zaten mevcut UI'da kullanılıyor, kullanıcının referans görselleriyle örtüşüyor, yeni bir kategorizasyon icat etmiyoruz.
+
+**NOT:** Bu üç sistemin (A/B/C) uzun vadede birleştirilip birleştirilmeyeceği **AYRI bir karar** — şimdilik dokunulmuyor; yalnız B, poster illüstrasyon ekseni olarak seçildi. (i18n doğrulaması: `phaseAgeRanges` tüm dillerde zaten 6/6 içeriyordu — `i18n.test.tsx:27-42` 11/11 yeşil; kod değişikliği gerekmedi.)
+
 ### UI görsel doğrulaması (kural 10 — kullanıcı onayı bekliyor)
 1. **Mood-backdrop'u gerçek tarayıcıda gör:** `npm run dev` → journey'i 8 şarkıyla tamamla → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görünmeli (mood yoksa `dreamy`). Kullanıcı "Arayüz Onaylandı" der demez bu görev TAMAMLANDI olur. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
 
