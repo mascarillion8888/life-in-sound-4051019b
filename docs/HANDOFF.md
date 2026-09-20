@@ -15,9 +15,10 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       12942cb — "feat(scene): backdrop selection now multi-axis (mood+genre+decade)"
-            origin/main ile SENKRON (push edildi 2026-09-19; rev-list 0 0)
+HEAD:       4b0e1cc — "checkpoint: docs(handoff): HF runtime kapatma (P2) açık iş olarak kaydedildi — HANDOFF.md güncellendi (handoff-check green)"
+            origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
             Son commit zinciri (FAZ 0 → 3.2):
+              4b0e1cc  docs(handoff): HF runtime kapatma (P2) açık iş olarak kaydedildi (§5 madde 8; push 2026-09-20)
               12942cb  FAZ 3.2 — multi-axis backdrop entegrasyonu: moodBackdropUrl(mood,genre,decade) fallback zinciri + SceneRoom/EraCardReveal bağlama (push 2026-09-19)
               c886a12  18 Eylül KANONİK — Visual Resolver girdisi = interaktif Song{mood,genre,decade} (LOCKED, STATE KARARLAR)
               2883f9a  FAZ 3 — deterministik scene visual contract: src/types/visualSpec.ts +
