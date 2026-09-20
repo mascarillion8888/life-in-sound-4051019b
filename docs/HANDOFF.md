@@ -15,10 +15,12 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       e07b87f — "feat(visual): resolve exactAssetRef to backdrop URL in resolver (FAZ 4b)"
+HEAD:       88f6648 — "chore(scene): remove orphan generate-room-backdrop.mjs generator + gen:room script"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
-            Son commit zinciri (FAZ 0 → 4b):
+            Son commit zinciri (FAZ 0 → 4b + cleanups):
+              88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
               e07b87f  FAZ 4b — exactAssetRef→URL çözümü resolver backdrop adımında; palette wiring FAZ 4c'ye ertelendi (push 2026-09-20)
+              6413994  checkpoint: FAZ 4b exactAssetRef çözümü kaydı — HANDOFF.md güncellendi (handoff-check green)
               c201413  checkpoint: FAZ 4a resolver bağlama kaydı — HANDOFF.md güncellendi (handoff-check green)
               94e4d57  FAZ 4a — SceneRoom → resolveSceneVisualSpec bağlandı; resolver artık orphan değil (push 2026-09-20)
               8d62d24  docs(handoff): Poster/Music Map life-stage sistem kararı (System B) kaydı
