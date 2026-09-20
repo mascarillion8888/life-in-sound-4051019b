@@ -14,18 +14,21 @@
  *     container (blur ~28px + slight darkening + scale so blur edges stay
  *     covered), so the empty bands around the contain strip never look blank.
  *
- * The backdrop image is resolved from `song.mood` via moodBackdropUrl() (the
- * glob-resolver in `./moodBackdrop`). When the song has no mood yet, or the
- * mood's file is absent, a neutral default ("dreamy") is used so the room
- * never renders with an empty frame.
+ * The backdrop image is resolved via the canonical Visual Resolver
+ * (`resolveSceneVisualSpec`), which runs the exact-match asset registry
+ * (FAZ 3.1) and then the multi-axis `moodBackdropUrl` fallback chain
+ * (mood+genre+decade → mood). When the song has no mood yet, or the mood's
+ * file is absent, a neutral default ("dreamy") is used so the room never
+ * renders with an empty frame.
  */
 import type { ReactNode } from "react";
 
 import type { Mood } from "@/lib/ai/moodInference";
 
 import { SCENE_PALETTES, type ScenePalette, type SceneThemeId } from "./scenePalettes";
-import { moodBackdropSlug, moodBackdropUrl } from "./moodBackdrop";
+import { moodBackdropSlug } from "./moodBackdrop";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
+import { resolveSceneVisualSpec } from "@/lib/visual/visualResolver";
 
 export type { SceneThemeId } from "./scenePalettes";
 export type { ScenePalette as SceneTheme } from "./scenePalettes";
@@ -67,7 +70,13 @@ export function SceneRoom({
 }) {
   const theme = SCENE_PALETTES[themeId];
   const decade = typeof releaseYear === "number" ? eraThemeForYear(releaseYear).id : null;
-  const moodImage = moodBackdropUrl(mood ?? FALLBACK_MOOD, genre, decade);
+  const resolution = resolveSceneVisualSpec({
+    mood: mood ?? FALLBACK_MOOD,
+    genre,
+    decade,
+    releaseYear,
+  });
+  const moodImage = resolution.backdropUrl;
   const slug = moodBackdropSlug(mood ?? FALLBACK_MOOD);
   return (
     <div
