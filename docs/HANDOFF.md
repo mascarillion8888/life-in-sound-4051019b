@@ -116,6 +116,22 @@ Bu düzelene kadar FAZ 4c **"B" kalır**: SceneRoom, kendi `sceneThemeFor` kayna
 
 **Yeni açık iş (büyük, planlama gerekir):** "SCENE_KEYWORDS taksonomi yeniden tasarımı — gothic ailesini böl (dark/aggressive vs acoustic/roots/classical), decadeTheme'in yıldan-tür-tahmini mantığını gözden geçir (muhtemelen nötr/default fallback'e geç), FAZ 4c kararını bu iş bitince yeniden değerlendir."
 
+### NOT (2026-09-20) — eraThemeFor'da AYNI kırık mantık yaşıyor
+
+`decadeTheme` (resolver, render edilmiyor — FAZ 4c KARAR B) nötrleştirildi.
+Ama `sceneThemeFor`'un fallback'i olan `eraThemeFor` (`sceneTheme.ts`) BİREBİR
+aynı "yıldan tür tahmini" mantığını taşıyor VE bu, gerçekte RENDER
+EDİLEN kaynak. Bunu nötrleştirmek:
+- Gerçek görsel değişiklik yaratır (nostaljik dönem-atmosferi kalkar)
+- `eraTheme` differ testini kırar
+- kural-10'u TEKRAR AÇAR
+
+Bu yüzden BİLEREK yapılmadı. Taksonomi yeniden tasarımı işiyle birlikte
+ele alınacak (gothic bölme kararıyla aynı ADIM'da) — o zaman zaten
+kural-10 tekrar açılacağı için, iki değişikliği (`eraThemeFor`
+nötrleştirme + gothic bölme) birlikte yapıp TEK bir kural-10
+doğrulamasıyla kapatmak daha verimli.
+
 ### UI görsel doğrulaması (kural 10) — TAMAMLANDI (2026-09-20)
 1. **Mood-backdrop doğrulaması — ✅ TAMAMLANDI (kullanıcı onayı, 2026-09-20):** `npm run dev` → journey 8 şarkıyla tamamlandı → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görüldü, kullanıcı "Arayüz Onaylandı" dedi. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
    **Koşullu yeniden-açma:** Taksonomi yeniden tasarımı (gothic bölme / decadeTheme sadeleştirme, bkz. aşağı "Karar FAZ 4c"), FAZ 4c palette kaynağı değişimi, veya registry'ye `mood-backdrop-*.png`'den FARKLI bir exact asset eklenmesi gibi görsel-üretim değişiklikleri yapılırsa kural-10 **YENİDEN açılır** (kullanıcı göz doğrulaması gerekir). Bu, "bekliyor" statüsü değil — tamamlanmış ama koşullu.
