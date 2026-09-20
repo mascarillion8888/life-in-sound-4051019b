@@ -49,11 +49,11 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
     expect(sceneThemeId).toBe("jazz");
   });
 
-  it("missing genre + releaseYear present → decade ladder", () => {
+  it("missing genre → neutral gothic regardless of releaseYear (year no longer guesses a genre)", () => {
     const seventies = resolveSceneVisualSpec({ mood: null, genre: null, releaseYear: 1975 });
     const eighties = resolveSceneVisualSpec({ mood: null, genre: null, releaseYear: 1986 });
-    expect(seventies.sceneThemeId).toBe("soul");
-    expect(eighties.sceneThemeId).toBe("synth");
+    expect(seventies.sceneThemeId).toBe("gothic");
+    expect(eighties.sceneThemeId).toBe("gothic");
   });
 
   it("missing genre + missing releaseYear → gothic", () => {

@@ -43,26 +43,18 @@ function themeFromGenreKeyword(genre: string | null): SceneThemeId | undefined {
 }
 
 /**
- * ReleaseYear yoksa (veya eksik sapma cümlesi) kullanılacak decade ladder — kullanıcının
- * FAZ 3'te belirttiği sıra: <=1969 jazz, <=1979 soul, <=1989 synth, <=1999 grunge, <=2010 hiphop,
- * aksi gothic. `decade` string'i "1980s" ise sayıya çevirilir; ne string ne sayı → gothic.
+ * Nötr fallback teması. Eski "yıldan tür tahmini" merdiveni (≤1969 jazz, ≤1979 soul,
+ * ≤1989 synth, ≤1999 grunge, ≤2010 hiphop, aksi gothic) CALDIRILDI — bir yıl bir tür
+ * tahmin edemez (1960s'ta country/rock/soul hepsi var; 2010+ "sadece gothic" değil).
+ * Genre keyword eşleşmesi olmadığında her yıl için aynı nötr default'a (gothic) inilir.
+ * Not: AYNI kırık mantık `sceneThemeFor`'un fallback'i `eraThemeFor`'da (sceneTheme.ts)
+ * yaşıyor ve O render edilen kaynak (FAZ 4c KARAR B) — o ayrı, taksonomi işiyle birlikte
+ * ele alınacak (bkz. HANDOFF). Parametreler çağrı uyumu için korunur.
  */
 export function decadeTheme(
-  releaseYear: number | null | undefined,
-  decade: string | null | undefined,
+  _releaseYear: number | null | undefined,
+  _decade: string | null | undefined,
 ): SceneThemeId {
-  let year = releaseYear;
-  if (year === undefined || year === null) {
-    if (typeof decade === "string" && /^\d{4}s$/.test(decade)) {
-      year = Number(decade.slice(0, 4));
-    }
-  }
-  if (year === undefined || year === null || Number.isNaN(year)) return "gothic";
-  if (year <= 1969) return "jazz";
-  if (year <= 1979) return "soul";
-  if (year <= 1989) return "synth";
-  if (year <= 1999) return "grunge";
-  if (year <= 2010) return "hiphop";
   return "gothic";
 }
 
