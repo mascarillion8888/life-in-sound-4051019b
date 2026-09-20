@@ -15,9 +15,12 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       4b0e1cc — "checkpoint: docs(handoff): HF runtime kapatma (P2) açık iş olarak kaydedildi — HANDOFF.md güncellendi (handoff-check green)"
+HEAD:       94e4d57 — "feat(scene): wire resolveSceneVisualSpec into SceneRoom (FAZ 4a)"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
-            Son commit zinciri (FAZ 0 → 3.2):
+            Son commit zinciri (FAZ 0 → 4a):
+              94e4d57  FAZ 4a — SceneRoom → resolveSceneVisualSpec bağlandı; resolver artık orphan değil (push 2026-09-20)
+              8d62d24  docs(handoff): Poster/Music Map life-stage sistem kararı (System B) kaydı
+              704200e  docs(handoff): §1 HEAD 4b0e1cc'ye güncellendi
               4b0e1cc  docs(handoff): HF runtime kapatma (P2) açık iş olarak kaydedildi (§5 madde 8; push 2026-09-20)
               12942cb  FAZ 3.2 — multi-axis backdrop entegrasyonu: moodBackdropUrl(mood,genre,decade) fallback zinciri + SceneRoom/EraCardReveal bağlama (push 2026-09-19)
               c886a12  18 Eylül KANONİK — Visual Resolver girdisi = interaktif Song{mood,genre,decade} (LOCKED, STATE KARARLAR)
@@ -98,7 +101,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 1. **Mood-backdrop'u gerçek tarayıcıda gör:** `npm run dev` → journey'i 8 şarkıyla tamamla → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görünmeli (mood yoksa `dreamy`). Kullanıcı "Arayüz Onaylandı" der demez bu görev TAMAMLANDI olur. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
 
 ### FAZ 4 / P2 (sonraki oturumlar)
-2. **FAZ 4 — kalan entegrasyon:** backdrop zaten bağlı (FAZ 3.2); kalan: `resolveSceneVisualSpec` orphan (çözüm fonksiyonu hiçbir UI bileşeni tarafından çağrılmıyor) + exactAssetRef tüketimi.
+2. **FAZ 4b — exactAssetRef tüketimi (4a tamamlandı):** SceneRoom artık `resolveSceneVisualSpec`'i çağırıyor (orphan değil; FAZ 4a, pass-through doğrulandı — 40/40, tsc temiz). Kalan: exactAssetRef'i gerçek görsel URL'ye bağla (pilot registry == mood dosyaları, bugün no-op; dosya adı→URL çözümü gerek), palette/eraStyle/eraTheme wiring, orphan script temizliği.
 3. **Asset Registry genişlemesi:** kullanıcı yeni `genre × decade × mood` kombinasyonu ürettikçe `SCENE_ASSET_REGISTRY`'ye manuel ekleme (yalnız onayla, No Uncontrolled Refactoring).
 4. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli kır), artist metadata, musical characteristics.
 5. **P2:** MusicUniverseHero görsel zenginliği (istatistik kartları, gradient) placeholder/skeleton ile geri kazan; SongUniverseCard'a gerçek `grounded.timeline.nodes` context'i bağla.
@@ -113,7 +116,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 ## 6. Sıradaki İş Adımları (Next Steps)
 
 1. **Kullanıcı (acil, kural 10):** `npm run dev` → journey'i 8 şarkıyla bitir → mood-backdrop'u gör → "Arayüz Onaylandı".
-2. **Kullanıcı (görsel onay sonrası):** FAZ 4 (SceneRoom'a resolver bağlama) VEYA yeni asset kombinasyonu ekleme — yalnızca onayla, küçük adımlarla.
+2. **FAZ 4a tamamlandı:** SceneRoom → `resolveSceneVisualSpec` bağlandı, pass-through doğrulandı (40/40, tsc temiz). FAZ 4b (exactAssetRef tüketimi), palette/eraStyle/eraTheme wiring ve orphan script temizliği (`generate-room-backdrop.mjs`) hâlâ açık/ertelenmiş.
 3. **İstenirse:** orphan `generate-room-backdrop.mjs` + `gen:room` silinmesi.
 
 ---
