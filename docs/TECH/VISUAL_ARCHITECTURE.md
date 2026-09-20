@@ -306,7 +306,7 @@ KISMİ öncülleridir; bunları "tamamlanmış hedef mimari" sanmayın.
 | `src/lib/soundmap/posterTheme.ts` | genre/era/duygu→metal/atmosfer/arka plan | CURRENT |
 | `src/components/results/OrganicArtwork.tsx` | composition render dili | CURRENT |
 | `src/lib/art/{hfImage,useCardArtwork}.ts` | runtime üretim (tag Imagen→Gemini→HF) + cache (server/localStorage) | CURRENT |
-| `src/assets/room-backdrop-*.png` + `scripts/generate-room-backdrop.mjs` | statik background asset'ler | CURRENT |
+| `src/assets/mood-backdrop-*.png` (9) | CANLI scene backdrop asset'ler (SceneRoom mood-backdrop) | CURRENT |
 
 > **Açık mimari not:** `cardArtwork` şu an **runtime görsel ÜRETİMİ** yapıyor.
 > Hedef mimari, daha kontrollü bir Visual AI / üretim sınırı (adapter + Asset Registry +

@@ -227,7 +227,7 @@ Mevcut repoda görselle ilgili PARÇALAR vardır:
 - `src/lib/soundmap/posterTheme.ts` (genre/era/duygu→metal/atmosfer)
 - `src/components/results/OrganicArtwork.tsx` (composition)
 - `src/lib/art/{hfImage,useCardArtwork}.ts` (runtime üretim + cache)
-- `src/assets/room-backdrop-*.png` + `scripts/generate-room-backdrop.mjs` (statik background asset)
+- `src/assets/mood-backdrop-*.png` (9 mood wallpaper — CANLI scene backdrop asset; eski prosedürel `scripts/generate-room-backdrop.mjs` + `room-backdrop-*.png` 2026-09-20 KALDIRILDI)
 
 Ancak bunlar **dağınık mekanizmalardır, henüz birleşik Visual DNA / Visual Resolver mimarisi DEĞİLDİR**.
 Ayrıca **`cardArtwork` şu an runtime görsel üretimi YAPIYOR** (Imagen→Gemini→HF); hedef mimari ise daha

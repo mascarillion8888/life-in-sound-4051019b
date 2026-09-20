@@ -107,7 +107,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 3. **Asset Registry genişlemesi:** kullanıcı yeni `genre × decade × mood` kombinasyonu ürettikçe `SCENE_ASSET_REGISTRY`'ye manuel ekleme (yalnız onayla, No Uncontrolled Refactoring).
 4. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli kır), artist metadata, musical characteristics.
 5. **P2:** MusicUniverseHero görsel zenginliği (istatistik kartları, gradient) placeholder/skeleton ile geri kazan; SongUniverseCard'a gerçek `grounded.timeline.nodes` context'i bağla.
-6. **Orphan araç:** `scripts/generate-room-backdrop.mjs` + `package.json` `gen:room` artık üretilen görsel kullanılmıyor (room-backdrop kaldırıldı). Kullanıcı bilinçli olarak şimdilik dokunulmamasını istedi; ayrı faz isterse silinir.
+6. **Orphan araç — SİLİNDİ (2026-09-20):** `scripts/generate-room-backdrop.mjs` + `package.json` `gen:room` kaldırıldı (ürettiği `room-backdrop-*.png` zaten kullanılmıyordu; canlı asset = `mood-backdrop-*.png`). İlişkili doc referansları güncellendi.
 
 ### Güvenlik / house-keeping (yeni: HF kapatma eklendi)
 7. **OpenRouter key rotasyonu:** yeni key `.env`/`.env.example`'ta; canlılık (HTTP 200) hâlâ test edilmedi. HEAD `17f9141` eski `settings.json` key'ini git history'de commit'lemiştir — kalıcıdır (purge = force-push, repoda yasak).
@@ -118,8 +118,8 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 ## 6. Sıradaki İş Adımları (Next Steps)
 
 1. **Kullanıcı (acil, kural 10):** `npm run dev` → journey'i 8 şarkıyla bitir → mood-backdrop'u gör → "Arayüz Onaylandı".
-2. **FAZ 4b tamamlandı:** exactAssetRef → gerçek URL çözülüp resolver backdrop'unda önceliklendirildi (pass-through: pilot exact asset'ler == mood dosyaları; 40/40, tsc temiz). Kalan: FAZ 4c (palette/eraStyle/eraTheme wiring) ayrı kanonik-kaynak kararı (sceneThemeFor vs resolver sceneThemeId — 2010-sonrası farklı sonuç, bilinen risk); orphan script temizliği (`generate-room-backdrop.mjs`) ertelendi. ⚠️ mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
-3. **İstenirse:** orphan `generate-room-backdrop.mjs` + `gen:room` silinmesi.
+2. **FAZ 4b tamamlandı:** exactAssetRef → gerçek URL çözülüp resolver backdrop'unda önceliklendirildi (pass-through: pilot exact asset'ler == mood dosyaları; 40/40, tsc temiz). Kalan: FAZ 4c (palette/eraStyle/eraTheme wiring) ayrı kanonik-kaynak kararı (sceneThemeFor vs resolver sceneThemeId — 2010-sonrası farklı sonuç, bilinen risk); orphan script temizliği (`generate-room-backdrop.mjs`) tamamlandı (silindi 2026-09-20). ⚠️ mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
+3. **Sırada (onayla):** user yetkisi — yeni asset kombinasyonu ekleme, FAZ 4c (palette kanonik-kaynak kararı), HF runtime kapanışı.
 
 ---
 

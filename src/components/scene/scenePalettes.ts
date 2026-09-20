@@ -1,7 +1,6 @@
 /**
  * Scene palettes — the raw color vocabulary of the fixed library room.
- * React-free so both the component layer (`SceneRoom`) and the build-time
- * backdrop generator (`scripts/generate-room-backdrop.mjs`) can import it.
+ * React-free so the component layer (`SceneRoom`) can import it.
  */
 export type SceneThemeId = "gothic" | "reggae" | "synth" | "jazz" | "soul" | "grunge" | "hiphop";
 
