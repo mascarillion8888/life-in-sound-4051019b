@@ -132,6 +132,24 @@ kural-10 tekrar açılacağı için, iki değişikliği (`eraThemeFor`
 nötrleştirme + gothic bölme) birlikte yapıp TEK bir kural-10
 doğrulamasıyla kapatmak daha verimli.
 
+### Karar (2026-09-20) — HF Runtime Kapatma
+
+Server-side HF kademesi kaldırıldı (`cardArtwork.server.ts`, `hfImage.server.ts`).
+Gerekçe: config-by-dead (`HUGGINGFACE_API_KEY` hiç set değildi, sıfır
+görsel etki), ANA_YASA §9'un "geçici istisna" niyetiyle tutarlı,
+Visual Resolver/Asset Registry (FAZ 3-4b) olgunlaştığı için artık
+gerekli değil.
+
+Kaybedilen: Gemini/Imagen ikisi de başarısız olursa üçüncü fallback
+yoktu, artık hiç yok. Bu risk ölçülemedi (kullanım sıklığı verisi
+yoktu) ama bilerek kabul edildi.
+
+AYRI, henüz yapılmayan iş: Client-side dead code (`VITE_HF_TOKEN`,
+`huggingFaceService.ts:generateGothicArt` — hiç çağrılmıyor, ama
+`CardGallery.tsx`/`gothicArt.tsx` hata tiplerini import ediyor). Bu,
+CardGallery'nin error-retry mantığına dokunacağı için ayrı, daha
+dikkatli bir P2 temizliği olarak kalıyor.
+
 ### UI görsel doğrulaması (kural 10) — TAMAMLANDI (2026-09-20)
 1. **Mood-backdrop doğrulaması — ✅ TAMAMLANDI (kullanıcı onayı, 2026-09-20):** `npm run dev` → journey 8 şarkıyla tamamlandı → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görüldü, kullanıcı "Arayüz Onaylandı" dedi. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
    **Koşullu yeniden-açma:** Taksonomi yeniden tasarımı (gothic bölme / decadeTheme sadeleştirme, bkz. aşağı "Karar FAZ 4c"), FAZ 4c palette kaynağı değişimi, veya registry'ye `mood-backdrop-*.png`'den FARKLI bir exact asset eklenmesi gibi görsel-üretim değişiklikleri yapılırsa kural-10 **YENİDEN açılır** (kullanıcı göz doğrulaması gerekir). Bu, "bekliyor" statüsü değil — tamamlanmış ama koşullu.
@@ -145,7 +163,7 @@ doğrulamasıyla kapatmak daha verimli.
 
 ### Güvenlik / house-keeping (yeni: HF kapatma eklendi)
 7. **OpenRouter key rotasyonu:** yeni key `.env`/`.env.example`'ta; canlılık (HTTP 200) hâlâ test edilmedi. HEAD `17f9141` eski `settings.json` key'ini git history'de commit'lemiştir — kalıcıdır (purge = force-push, repoda yasak).
-8. **HF runtime üretimi kapatma (P2):** `cardArtwork.server.ts` içindeki Imagen→Gemini→HF zincirinin HF ayağı, ANA_YASA §9'da "CURRENT geçici istisna" olarak tanımlı ama kapatılması hiçbir açık iş listesinde yoktu (yalnız betimleyici notlar: §2c satır ~57, §3 satır ~69, §7 satır ~112, §9 satır ~147). Bu madde o boşluğu kapatır: HF ayağının ne zaman/nasıl kaldırılacağı (veya kalıcı hale getirilip getirilmeyeceği) ayrı bir kararla netleştirilmeli — "geçici istisna" süresiz kalmasın. Ölü client anahtar kodu (`VITE_HF_TOKEN`, §7 satır ~112) bu kararla birlikte temizlenebilir.
+8. **HF runtime üretimi — SERVER-side SİLİNDİ (2026-09-20); client-side AYRI P2:** `cardArtwork.server.ts` zincirinden HF kademesi kaldırıldı (`hfImage.server.ts` silindi) — artık Imagen→Gemini. Gerekçe + kabul edilen risk + ayrı client işi: §5 "Karar (2026-09-20) — HF Runtime Kapatma". Client dead code (`VITE_HF_TOKEN` / `generateGothicArt`) CardGallery error-retry mantığına dokunduğu için AYRI, dikkatli P2 olarak duruyor.
 
 ---
 
