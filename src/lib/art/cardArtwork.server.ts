@@ -6,14 +6,14 @@
  * on an Era Card face is a purpose-made gothic oil painting generated from
  * the song's artist + title — never the provider's square album cover.
  *
- * Provider chain (first success wins): Imagen → Gemini native image →
- * Hugging Face Inference (`hfImage.server.ts`). Any subset of keys works;
- * with no key at all the UI keeps its dark gothic placeholder.
+ * Provider chain (first success wins): Imagen → Gemini native image.
+ * Both tiers need `GEMINI_API_KEY`; with no key at all the UI keeps its
+ * dark gothic placeholder. (Former Hugging Face Inference third tier was
+ * removed — see HANDOFF "HF Runtime Kapatma".)
  *
  * SECURITY:
- *   - Keys are read from `GEMINI_API_KEY` / `HUGGINGFACE_API_KEY` —
- *     server-only env vars, NEVER `VITE_`-prefixed. This file must only be
- *     imported from server code.
+ *   - Key is read from `GEMINI_API_KEY` — a server-only env var, NEVER
+ *     `VITE_`-prefixed. This file must only be imported from server code.
  *   - No key is ever returned; failures map to `{ image: null }` so the UI
  *     keeps its dark gothic placeholder — never a fabricated image.
  *
@@ -22,8 +22,6 @@
  * a second, persistent tier (localStorage) so a reload does not re-generate.
  */
 import { createServerFn } from "@tanstack/react-start";
-
-import { generateHfImage } from "./hfImage.server";
 
 const IMAGEN_MODEL = () =>
   (typeof process !== "undefined" && process.env?.GEMINI_IMAGE_MODEL?.trim()) ||
@@ -416,21 +414,15 @@ export async function generateCardArtworkCore(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   try {
-    // Provider chain: Imagen → Gemini native image → HF Inference. Each tier
-    // returns null on failure; the first painting wins. Gemini tiers are
-    // skipped without GEMINI_API_KEY; HF reads its own HUGGINGFACE_API_KEY
-    // and stays silent without it — either key alone is enough to serve.
+    // Provider chain: Imagen → Gemini native image. Each tier returns null on
+    // failure; the first painting wins. Both tiers need GEMINI_API_KEY.
     const image =
       (apiKey
         ? await tryImagen(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
         : null) ??
       (apiKey
         ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
-        : null) ??
-      (await generateHfImage(prompt, {
-        fetchImpl,
-        signal: controller.signal,
-      }).catch(() => null));
+        : null);
     if (image) SERVER_ART_CACHE.set(cacheKey, image);
     return image;
   } catch {
