@@ -93,8 +93,9 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 5. **P2:** MusicUniverseHero görsel zenginliği (istatistik kartları, gradient) placeholder/skeleton ile geri kazan; SongUniverseCard'a gerçek `grounded.timeline.nodes` context'i bağla.
 6. **Orphan araç:** `scripts/generate-room-backdrop.mjs` + `package.json` `gen:room` artık üretilen görsel kullanılmıyor (room-backdrop kaldırıldı). Kullanıcı bilinçli olarak şimdilik dokunulmamasını istedi; ayrı faz isterse silinir.
 
-### Güvenlik / house-keeping (kayıtlı, yeni yok)
+### Güvenlik / house-keeping (yeni: HF kapatma eklendi)
 7. **OpenRouter key rotasyonu:** yeni key `.env`/`.env.example`'ta; canlılık (HTTP 200) hâlâ test edilmedi. HEAD `17f9141` eski `settings.json` key'ini git history'de commit'lemiştir — kalıcıdır (purge = force-push, repoda yasak).
+8. **HF runtime üretimi kapatma (P2):** `cardArtwork.server.ts` içindeki Imagen→Gemini→HF zincirinin HF ayağı, ANA_YASA §9'da "CURRENT geçici istisna" olarak tanımlı ama kapatılması hiçbir açık iş listesinde yoktu (yalnız betimleyici notlar: §2c satır ~57, §3 satır ~69, §7 satır ~112, §9 satır ~147). Bu madde o boşluğu kapatır: HF ayağının ne zaman/nasıl kaldırılacağı (veya kalıcı hale getirilip getirilmeyeceği) ayrı bir kararla netleştirilmeli — "geçici istisna" süresiz kalmasın. Ölü client anahtar kodu (`VITE_HF_TOKEN`, §7 satır ~112) bu kararla birlikte temizlenebilir.
 
 ---
 
