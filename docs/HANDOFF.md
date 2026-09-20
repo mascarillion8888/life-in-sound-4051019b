@@ -101,11 +101,26 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 
 **NOT:** Bu üç sistemin (A/B/C) uzun vadede birleştirilip birleştirilmeyeceği **AYRI bir karar** — şimdilik dokunulmuyor; yalnız B, poster illüstrasyon ekseni olarak seçildi. (i18n doğrulaması: `phaseAgeRanges` tüm dillerde zaten 6/6 içeriyordu — `i18n.test.tsx:27-42` 11/11 yeşil; kod değişikliği gerekmedi.)
 
+### Karar (2026-09-20) — FAZ 4c: Palette Kaynağı [B]
+
+FAZ 4c **ertelendi**. Etki analizi (33 şarkı simülasyonu) ~%15-25 şarkı bazında ayrışma gösterdi, ama kök neden tek bir kararla çözülecek kadar basit değildi — **iki iç içe geçmiş sorun** bulundu:
+
+1. **`decadeTheme`'in "yıldan tür tahmin etme" mantığı temelden kırılgan** (tür, döneme bağlı değil — 1960s'ta country/rock/soul hepsi var, sadece jazz değil; 2010+ için "else→gothic" bu sorunun görünür ucu, kökü değil).
+2. **`SCENE_KEYWORDS`'te "gothic" ailesi taksonomi hatası içeriyor** — gerçek gothic/metal/punk kümesiyle alakasız country/klasik/akustik türlerini de aynı şemsiyede topluyor (19 keyword, 3 farklı aileye ayrılmalı: dark/aggressive, acoustic/roots, classical/chamber).
+
+**KARAR:** Bu iki sorun **AYRI, büyük bir ADIM**'da ele alınacak (taksonomi yeniden tasarımı: yeni palet tasarımı + fallback mantığı + ~20-30 test + ürün kararı gerektiren B/C birleştirme sorusu). Bugün yapılmadı.
+
+Bu düzelene kadar FAZ 4c **"B" kalır**: SceneRoom, kendi `sceneThemeFor` kaynağını kullanmaya devam eder; resolver'ın `sceneThemeId`/`palette` çıktısı SceneRoom render'ında **tüketilmez** (backdrop/exactAssetRef için resolver zaten canlı — bu, YALNIZCA palette/tema rengi kaynağıyla ilgili).
+
+**Blast radius (ölçülü, ileride referans):** `SceneThemeId` union genişlerse ~5 kaynak dosya (`scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx`) + 2-3 test dosyası etkilenir. gothic'e ait 50+ kod-tabanı eşleşmesinin çoğu (`gothicArt` UI, `huggingFaceService`, `cardThemes.css`, `DynamicMusicCard`) SCENE theme sisteminden bağımsız — dokunulmaz.
+
+**Yeni açık iş (büyük, planlama gerekir):** "SCENE_KEYWORDS taksonomi yeniden tasarımı — gothic ailesini böl (dark/aggressive vs acoustic/roots/classical), decadeTheme'in yıldan-tür-tahmini mantığını gözden geçir (muhtemelen nötr/default fallback'e geç), FAZ 4c kararını bu iş bitince yeniden değerlendir."
+
 ### UI görsel doğrulaması (kural 10 — kullanıcı onayı bekliyor)
 1. **Mood-backdrop'u gerçek tarayıcıda gör:** `npm run dev` → journey'i 8 şarkıyla tamamla → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görünmeli (mood yoksa `dreamy`). Kullanıcı "Arayüz Onaylandı" der demez bu görev TAMAMLANDI olur. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
 
 ### FAZ 4 / P2 (sonraki oturumlar)
-2. **FAZ 4c — palette/eraStyle/eraTheme wiring (4b tamamlandı):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b, pass-through doğrulandı — 40/40, tsc temiz). Kalan: palette/eraStyle/eraTheme bağlama — **AYRI kanonik-kaynak kararı** (sceneThemeFor vs resolver sceneThemeId; 2010-sonrası şarkılarda farklı sonuç üretebilir, bilinen risk). Orphan script temizliği ayrı. ⚠️ Registry'ye mood-dosyasından farklı bir exact asset eklendiğinde kural-10 tekrar açılmalı.
+2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
 3. **Asset Registry genişlemesi:** kullanıcı yeni `genre × decade × mood` kombinasyonu ürettikçe `SCENE_ASSET_REGISTRY`'ye manuel ekleme (yalnız onayla, No Uncontrolled Refactoring).
 4. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli kır), artist metadata, musical characteristics.
 5. **P2:** MusicUniverseHero görsel zenginliği (istatistik kartları, gradient) placeholder/skeleton ile geri kazan; SongUniverseCard'a gerçek `grounded.timeline.nodes` context'i bağla.
