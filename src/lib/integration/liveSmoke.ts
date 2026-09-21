@@ -14,9 +14,9 @@
  * HTTP status numbers so a smoke report can never leak a token.
  *
  * The detection reads `import.meta.env` for the VITE_-prefixed browser vars
- * (Supabase anon pair, HF inference token) and `process.env` for the server
- * secret (GROQ). Any of these may be absent in a credential-less sandbox —
- * that is a *skip*, not a failure.
+ * (Supabase anon pair) and `process.env` for the server secret (GROQ). Any of
+ * these may be absent in a credential-less sandbox — that is a *skip*, not a
+ * failure.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -30,11 +30,9 @@ export type SmokeReport = {
   probes: {
     supabase: ProbeStatus;
     groq: ProbeStatus;
-    huggingFace: ProbeStatus;
   };
 };
 
-const HF_AUTH_ENDPOINT = "https://huggingface.co/api/whoami-v2";
 const GROQ_MODELS_ENDPOINT = "https://api.groq.com/openai/v1/models";
 
 function envUrl(name: string): string | null {
@@ -96,20 +94,9 @@ async function probeSupabase(
 async function probeGroq(fetchImpl: typeof fetch): Promise<ProbeStatus> {
   const key = processSecret("GROQ_API_KEY");
   if (!key) return { status: "skipped", detail: "GROQ_API_KEY unset" };
-  const { ok, status, detail } = await ping(
+  const { ok, detail } = await ping(
     GROQ_MODELS_ENDPOINT,
     { Authorization: `Bearer ${key}` },
-    fetchImpl,
-  );
-  return { status: ok ? "passed" : "failed", detail };
-}
-
-async function probeHuggingFace(fetchImpl: typeof fetch): Promise<ProbeStatus> {
-  const token = envUrl("VITE_HF_TOKEN") ?? processSecret("HF_TOKEN");
-  if (!token) return { status: "skipped", detail: "VITE_HF_TOKEN / HF_TOKEN unset" };
-  const { ok, status, detail } = await ping(
-    HF_AUTH_ENDPOINT,
-    { Authorization: `Bearer ${token}` },
     fetchImpl,
   );
   return { status: ok ? "passed" : "failed", detail };
@@ -139,15 +126,14 @@ export async function runLiveSmoke(
   const now = options.now ?? (() => new Date().toISOString());
   const client = options.supabaseClient === undefined ? null : options.supabaseClient;
 
-  const [supabase, groq, huggingFace] = await Promise.all([
+  const [supabase, groq] = await Promise.all([
     probeSupabase(client, fetchImpl),
     probeGroq(fetchImpl),
-    probeHuggingFace(fetchImpl),
   ]);
 
   return {
     generatedAt: now(),
-    probes: { supabase, groq, huggingFace },
+    probes: { supabase, groq },
   };
 }
 

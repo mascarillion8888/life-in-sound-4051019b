@@ -15,7 +15,20 @@ import type { ReactNode } from "react";
 import { Loader2, RotateCw, Skull } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { GothicArtErrorKind } from "@/services/huggingFaceService";
+
+/**
+ * Classified failure kinds for the fallback panel — kept local to this
+ * generic gallery UI. (The former HuggingFace-specific classification was
+ * removed with the HF client service; the gallery's loading/error language
+ * is a generic "couldn't paint" surface, not an HF-coupled one.)
+ */
+export type GothicArtErrorKind =
+  | "missing-token"
+  | "rate-limit"
+  | "auth"
+  | "network"
+  | "provider"
+  | "unknown";
 
 /** Resolve a classified HF error into localized fallback copy + retry flag. */
 export function gothicArtFallbackContent(

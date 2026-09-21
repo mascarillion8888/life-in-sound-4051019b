@@ -22,7 +22,6 @@ import { loadGalleryCards, type CardRow } from "@/lib/supabase/cards-remote";
 import { useSession } from "@/lib/supabase/use-session";
 import { mapCardRowToGrounded, type SupabaseCardRow } from "@/adapters/supabaseCardAdapter";
 import type { GalleryCardData } from "@/types/gallery";
-import { GothicArtError, isRetryableHfError } from "@/services/huggingFaceService";
 
 import {
   applyGalleryView,
@@ -226,16 +225,15 @@ export function CardGallery() {
 
   return (
     <ErrorBoundary
-      fallback={({ error, reset }) => {
-        const kind = error instanceof GothicArtError ? error.kind : undefined;
-        const content = gothicArtFallbackContent(kind, t.gothicArt);
+      fallback={({ reset }) => {
+        const content = gothicArtFallbackContent(undefined, t.gothicArt);
         return (
           <div className="mx-auto w-full max-w-6xl px-4 py-20">
             <div className="aspect-[4/5] w-full max-w-sm">
               <GothicArtFallback
                 title={content.title}
                 message={`${content.message} ${t.gothicArt.sectionError}`}
-                onRetry={isRetryableHfError(error) ? reset : undefined}
+                onRetry={reset}
               />
             </div>
           </div>

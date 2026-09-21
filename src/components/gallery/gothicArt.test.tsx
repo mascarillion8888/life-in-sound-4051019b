@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { GothicArtError } from "@/services/huggingFaceService";
 import { GothicArtFallback, GothicArtSkeleton, gothicArtFallbackContent } from "./gothicArt";
 
 const t = {
@@ -91,8 +90,7 @@ describe("gothicArtFallbackContent", () => {
     expect(gothicArtFallbackContent(undefined, t)).toMatchObject({ title: t.genericTitle });
   });
 
-  it("resolves a classification from a GothicArtError", () => {
-    const err = new GothicArtError("rate-limit", "too many");
-    expect(gothicArtFallbackContent(err.kind, t).title).toBe(t.rateLimitTitle);
+  it("maps a classified kind literal to the retryable copy", () => {
+    expect(gothicArtFallbackContent("rate-limit", t).title).toBe(t.rateLimitTitle);
   });
 });

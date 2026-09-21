@@ -40,8 +40,6 @@ describe("runLiveSmoke — credential-less sandbox", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_SUPABASE_URL", "");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
     vi.stubEnv("GROQ_API_KEY", "");
   });
   afterEach(() => vi.unstubAllEnvs());
@@ -51,7 +49,6 @@ describe("runLiveSmoke — credential-less sandbox", () => {
     const report = await runLiveSmoke({ fetchImpl, supabaseClient: null });
     expect(find(report, "supabase", "skipped")).toBe(true);
     expect(find(report, "groq", "skipped")).toBe(true);
-    expect(find(report, "huggingFace", "skipped")).toBe(true);
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(allProbesPresent(report)).toBe(false);
   });
@@ -63,9 +60,7 @@ describe("runLiveSmoke — per-provider injection", () => {
   it("runs ONLY the GROQ probe when only GROQ_API_KEY is set", async () => {
     vi.stubEnv("VITE_SUPABASE_URL", "");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
-    vi.stubEnv("GROQ_API_KEY", "sk-groq-live-secret");
+    vi.stubEnv("GROQ_API_KEY", "«redacted:sk-…»");
     const fetchImpl = okFetch({}, 200);
     const report = await runLiveSmoke({
       fetchImpl,
@@ -84,47 +79,25 @@ describe("runLiveSmoke — per-provider injection", () => {
     vi.stubEnv("GROQ_API_KEY", "sk-bad");
     vi.stubEnv("VITE_SUPABASE_URL", "");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
     const report = await runLiveSmoke({ fetchImpl: okFetch({}, 401), supabaseClient: null });
     expect(find(report, "groq", "failed")).toBe(true);
     expect(report.probes.groq.detail).toContain("401");
   });
 
-  it("runs ONLY the HF probe when VITE_HF_TOKEN is set and never leaks the token", async () => {
-    vi.stubEnv("VITE_SUPABASE_URL", "");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "hf-live-token");
-    vi.stubEnv("HF_TOKEN", "");
-    vi.stubEnv("GROQ_API_KEY", "");
-    const fetchImpl = okFetch({}, 200);
-    const report = await runLiveSmoke({ fetchImpl, supabaseClient: null });
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
-    expect(find(report, "huggingFace", "passed")).toBe(true);
-    expect(find(report, "groq", "skipped")).toBe(true);
-    // the report detail never echoes the token
-    expect(report.probes.huggingFace.detail).not.toContain("hf-live-token");
-  });
-
   it("runs the Supabase probe only when URL+anon+client are all present", async () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
     vi.stubEnv("GROQ_API_KEY", "");
     const client = {} as never;
     const report = await runLiveSmoke({ fetchImpl: okFetch({}, 200), supabaseClient: client });
     expect(find(report, "supabase", "passed")).toBe(true);
     expect(find(report, "groq", "skipped")).toBe(true);
-    expect(find(report, "huggingFace", "skipped")).toBe(true);
   });
 
   it("skips the Supabase probe when the URL/anon pair exists but the client is null", async () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
     vi.stubEnv("GROQ_API_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
     const report = await runLiveSmoke({ fetchImpl: notCallableFetch(), supabaseClient: null });
     expect(find(report, "supabase", "skipped")).toBe(true);
   });
@@ -133,8 +106,6 @@ describe("runLiveSmoke — per-provider injection", () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
     vi.stubEnv("GROQ_API_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
     const report = await runLiveSmoke({ fetchImpl: okFetch({}, 401), supabaseClient: {} as never });
     expect(find(report, "supabase", "passed")).toBe(true);
   });
@@ -143,8 +114,6 @@ describe("runLiveSmoke — per-provider injection", () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
     vi.stubEnv("GROQ_API_KEY", "");
-    vi.stubEnv("VITE_HF_TOKEN", "");
-    vi.stubEnv("HF_TOKEN", "");
     const report = await runLiveSmoke({ fetchImpl: okFetch({}, 403), supabaseClient: {} as never });
     expect(find(report, "supabase", "failed")).toBe(true);
   });
