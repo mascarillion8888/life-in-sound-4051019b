@@ -110,7 +110,7 @@ function CardArtSkeleton({ generating, caption }: { generating: boolean; caption
   );
 }
 
-/** Soft inner vignette melting any image into the card frame. */
+/** Soft inner vignette melting any image into the frame — legacy layer kept. */
 function InnerVignette() {
   return (
     <span
@@ -238,10 +238,15 @@ export function QuizCard({
       <FrameCorner v="bottom" h="left" />
       <FrameCorner v="bottom" h="right" />
 
-      {/* 1 · Header — centered uppercase gold line: AGE | TITLE | ERA NAME. */}
+      {/* 1 · Header — centered uppercase gold line: AGE | TITLE | ERA NAME.
+             Readability layer (Adım 4/Q2): safe-area padding + a subtle top
+             gradient scrim + a soft text shadow lift the title off the dark
+             frame. Text lives on the card body — never baked into the bitmap
+             (the art window has its own vignette). */}
       <header
         data-testid="card-header"
-        className="mb-2 text-center text-[11px] font-bold uppercase tracking-widest text-[#c8aa6e]"
+        className="relative mb-2 rounded px-2 py-0.5 bg-gradient-to-t from-transparent via-[#0b0906]/30 to-[#0b0906]/60 text-center text-[11px] font-bold uppercase tracking-widest text-[#c8aa6e]"
+        style={{ textShadow: "0 1px rgba(0,0,0,0.6), 0 0 6px rgba(0,0,0,0.35)" }}
       >
         {card.ageRange} | {copy?.title ?? card.tag.toUpperCase()} | {card.eraTitle}
       </header>
@@ -313,18 +318,26 @@ export function QuizCard({
         </button>
       </div>
 
-      {/* 3 · Lore box — dark inset panel with serif italic lore. */}
+      {/* 3 · Lore box — dark inset panel with serif italic lore. The pane is
+             slightly translucent + backdrop-blur so the card's gothic texture
+             faintly shows through, while a soft text shadow keeps the italic
+             serif legible and the padded pane doubles as safe-area. */}
       <div
         data-testid="card-lore-box"
-        className="mt-4 rounded border border-[#c8aa6e]/30 bg-[#161920] p-3 text-[11px] italic text-gray-300"
+        className="relative mt-4 rounded border border-[#c8aa6e]/30 bg-[#161920]/90 p-3 text-[11px] italic leading-relaxed text-gray-300 backdrop-blur-[2px]"
+        style={{ textShadow: "0 1px rgba(0,0,0,0.7), 0 0 5px rgba(0,0,0,0.4)" }}
       >
         {lore ?? copy?.body ?? card.narrative}
       </div>
 
       {/* 4 · Footer — track signature (Music icon + Artist — Title (Year))
               and the collect toggle. Only real track data — the fabricated
-              hash-score chip was removed. */}
-      <footer className="mt-3 flex items-center justify-between text-[11px] font-semibold text-[#c8aa6e]">
+              hash-score chip was removed. A soft text shadow + safe-area
+              padding keep the small gold type readable on the frame. */}
+      <footer
+        className="relative mt-3 flex items-center justify-between rounded px-2 py-1 text-[11px] font-semibold text-[#c8aa6e]"
+        style={{ textShadow: "0 1px rgba(0,0,0,0.65), 0 0 5px rgba(0,0,0,0.35)" }}
+      >
         {song ? (
           <span className="flex items-center gap-1.5 truncate">
             <Music className="h-3 w-3 shrink-0" aria-hidden />
