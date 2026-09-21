@@ -126,4 +126,32 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
   });
+
+  it("soul (decade-free) herhangi bir yılda eşleşir — decade koşulu yoksayılır", () => {
+    const seventies = resolveSceneVisualSpec({ mood: "Energetic", genre: "soul", releaseYear: 1975 });
+    const nineties = resolveSceneVisualSpec({ mood: "Energetic", genre: "soul", releaseYear: 1994 });
+    expect(seventies.exactAssetRef).toBe("backdrop-soul-energetic.png");
+    expect(nineties.exactAssetRef).toBe("backdrop-soul-energetic.png");
+    // dönemsiz kayıt trace'i genre-mood şeklindedir (decade yok).
+    expect(seventies.fallbackTrace.join("|")).toContain("exact-match:soul-energetic");
+    // backdrop, soul dosyasının gerçek URL'sini gösterir (glob'da çözülür).
+    expect(seventies.backdropUrl).toContain("backdrop-soul-energetic");
+  });
+
+  it("regresyon: pop-1980s dönemsel kayıt yine tam decade eşleşmesiyle seçilir", () => {
+    // 1980s → pop kaydı; 1990s → pop kaydı yok (decade opsiyonel olsa da
+    // pop kayıtlarının decade'i DOLU — free yok).
+    const eighties = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1985 });
+    const nineties = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1995 });
+    expect(eighties.exactAssetRef).toBe("mood-backdrop-energetic.png");
+    expect(nineties.exactAssetRef).toBeUndefined();
+    expect(eighties.fallbackTrace.join("|")).toContain("exact-match:pop-1980s-energetic");
+  });
+
+  it("genre=soul ama mood eşleşmiyorsa → hâlâ undefined (exact asset seçilmez)", () => {
+    // soul registry'de yalnızca Energetic/Euphoric/Playful var — Romantic hiç yok.
+    const res = resolveSceneVisualSpec({ mood: "Romantic", genre: "soul", releaseYear: 1970 });
+    expect(res.exactAssetRef).toBeUndefined();
+    expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
+  });
 });

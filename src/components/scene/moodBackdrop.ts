@@ -113,8 +113,14 @@ export function moodBackdropKey(mood: Mood | string): string {
  * normalization (alias vs relative, leading `/src/` vs `../../`) is not stable to
  * reason about, so we match by the module key ending with the exact filename.
  */
+/**
+ * Vite build-time glob: `mood-backdrop-*.png` (mood standardı) + `backdrop-soul-*.png`
+ * (genre-spesifik exact-match asset'ler) → resolved URL via `?url`.
+ * Birden çok pattern: dönemsiz risk-free; exact-asset dosyaları da burada
+ * çözülür ki `moodBackdropUrlByFilename` onları bulabilsin.
+ */
 const MOOD_BACKDROP_URLS: Record<string, string> = import.meta.glob<string>(
-  "../../assets/mood-backdrop-*.png",
+  ["../../assets/mood-backdrop-*.png", "../../assets/backdrop-soul-*.png"],
   { eager: true, import: "default", query: "?url" },
 );
 
@@ -160,3 +166,4 @@ export function moodBackdropUrlByFilename(
   if (!filename) return undefined;
   return Object.entries(map).find(([moduleKey]) => moduleKey.endsWith(filename))?.[1];
 }
+

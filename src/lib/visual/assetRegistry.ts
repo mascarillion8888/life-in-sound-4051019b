@@ -26,8 +26,13 @@ export type GenreId =
 /** Manuel üretilmiş bir kombinasyonun kaydı. */
 export interface SceneAssetEntry {
   genre: GenreId;
-  /** Decade etiketi, örn. "1980s" (küçük-cas duyarlı değil, normalleştirilebilir). */
-  decade: string;
+  /**
+   * Decade etiketi, örn. "1980s". OPSİYONEL: yoksa kayıt dönemsizdir (tür+mood
+   * tüm dönemlerde geçerli) — `resolveExactAsset` decade koşulunu yoksayar.
+   * (pop-1980s pilotu gibi dönemsel kayıtlar belirtir; soul gibi dönemsiz
+   * kayıtlar hiç yazmaz.)
+   */
+  decade?: string;
   mood: Mood;
   /** Görsel dosya referansı — src/assets altındaki dosya adı, örn. "mood-backdrop-energetic.png". */
   assetRef: string;
@@ -35,8 +40,10 @@ export interface SceneAssetEntry {
 
 /**
  * Kayıtlı (üretilmiş) kombinasyonlar.
- * Bugün yalnız pilot `1980s × Pop × 9 mood`. Boş kalan eksenlerde
- * `resolveExactAsset` eşleşme bulamaz → mevcut FAZ 3 davranışı aynen korunur.
+ * Pilot `1980s × Pop × 9 mood` (dönemsel) + dönemsiz `Soul × 3 mood` (tüm
+ * dönemlerde geçerli — `decade` opsiyonel olduğundan atlanır). Boş kalan
+ * eksenlerde `resolveExactAsset` eşleşme bulamaz → mevcut FAZ 3 davranışı
+ * aynen korunur.
  */
 export const SCENE_ASSET_REGISTRY: SceneAssetEntry[] = [
   { genre: "pop", decade: "1980s", mood: "Energetic", assetRef: "mood-backdrop-energetic.png" },
@@ -48,4 +55,7 @@ export const SCENE_ASSET_REGISTRY: SceneAssetEntry[] = [
   { genre: "pop", decade: "1980s", mood: "Nostalgic", assetRef: "mood-backdrop-nostalgic.png" },
   { genre: "pop", decade: "1980s", mood: "Dark", assetRef: "mood-backdrop-dark.png" },
   { genre: "pop", decade: "1980s", mood: "World", assetRef: "mood-backdrop-world.png" },
+  { genre: "soul", mood: "Energetic", assetRef: "backdrop-soul-energetic.png" },
+  { genre: "soul", mood: "Euphoric", assetRef: "backdrop-soul-euphoric.png" },
+  { genre: "soul", mood: "Playful", assetRef: "backdrop-soul-playful.png" },
 ];

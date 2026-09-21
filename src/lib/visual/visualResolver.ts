@@ -80,12 +80,15 @@ export function resolveExactAsset(
   if (!decKey && typeof releaseYear === "number" && Number.isFinite(releaseYear)) {
     decKey = `${Math.floor(releaseYear / 10) * 10}s`;
   }
-  if (!decKey) return undefined;
 
   for (const entry of SCENE_ASSET_REGISTRY) {
+    // Dönemsiz kayıt (decade yok) her decade'de eşleşir; dönemsel kayıt ise
+    // yalnız tam decade eşleşmesiyle (ya da decKey bilinmiyorsa seçilmez).
+    const decadeFree = !entry.decade;
+    const decadeMatch = decadeFree || (decKey && entry.decade?.toLowerCase() === decKey);
     if (
       entry.genre.toLowerCase() === genreKey &&
-      entry.decade.toLowerCase() === decKey &&
+      decadeMatch &&
       entry.mood.toLowerCase() === moodKey.toLowerCase()
     ) {
       return entry;
@@ -109,8 +112,10 @@ export function resolveSceneVisualSpec(input: SceneVisualSpecInput): SceneVisual
   /* --- 0. Exact-match asset (manuel üretilmiş kombinasyon kaydı) — FAZ 3.1 --- */
   const exactAsset = resolveExactAsset(input.mood, input.genre, input.decade, input.releaseYear);
   if (exactAsset) {
+    // Dönemsiz kayıt (decade yok) → trace "genre-mood"; dönemsel → "genre-decade-mood".
+    const decPart = exactAsset.decade ? `-${exactAsset.decade.toLowerCase()}` : "";
     trace.push(
-      `exact-match:${exactAsset.genre.toLowerCase()}-${exactAsset.decade.toLowerCase()}-${exactAsset.mood.toLowerCase()}`,
+      `exact-match:${exactAsset.genre.toLowerCase()}${decPart}-${exactAsset.mood.toLowerCase()}`,
     );
   }
 
