@@ -35,7 +35,7 @@ describe("QuizCard", () => {
     window.localStorage.clear();
   });
 
-  it("locks the simplified template: centered header, square art window, dark lore box, footer with score chip", () => {
+  it("locks the simplified template: centered header, square art window, dark lore box, footer with track signature (no score chip)", () => {
     render(<QuizCard card={cards[0]} song={song()} />);
     // 1 · Centered gold header: AGE | dynamic TITLE | ERA NAME.
     const header = screen.getByTestId("card-header");
@@ -52,11 +52,8 @@ describe("QuizCard", () => {
     expect(loreBox.textContent).toMatch(/vast and soft/);
     expect(loreBox.textContent).toMatch(/carried by Fragile by Sting/);
     expect(loreBox.className).toContain("bg-[#161920]");
-    // 4 · Flat score chip in the footer (no octagon clip-path).
-    const badge = screen.getByTestId("card-score-badge");
-    expect(badge.textContent).toMatch(/\/10/);
-    expect(badge.className).toContain("bg-[#c8aa6e]/20");
-    expect(badge.style.clipPath).toBe("");
+    // The fabricated hash-score chip was removed — no score badge is rendered.
+    expect(screen.queryByTestId("card-score-badge")).toBeNull();
   });
 
   it("embeds the iTunes cover inside the black window — no skeleton when a cover exists", () => {

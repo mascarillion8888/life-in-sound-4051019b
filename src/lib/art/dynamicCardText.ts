@@ -4,8 +4,8 @@
  * Every string on the card is derived from the song's identity + the era's
  * emotion, never static filler: the era title pairs the life-stage noun with
  * a track-seeded companion word, the body line weaves the era's narrative
- * with the track's own metadata, the collector number and the score shield
- * are computed from a stable hash of the track key.
+ * with the track's own metadata, and the collector number is computed from a
+ * stable hash of the track key.
  *
  * Pure and deterministic — the same track always reads the same card.
  */
@@ -17,10 +17,6 @@ export type DynamicCardText = {
   body: string;
   /** Collector sequence, e.g. "37/100". */
   sequence: string;
-  /** Shield score 1..10, e.g. 9. */
-  score: number;
-  /** Shield label — the era's emotion, UPPERCASE (e.g. "INNOCENCE"). */
-  scoreLabel: string;
 };
 
 /** Per-era (life-stage) title nouns — journey position = user's age stage. */
@@ -93,7 +89,6 @@ export function dynamicCardText(args: {
   const noun = ERA_NOUNS[args.cardIndex % ERA_NOUNS.length];
   const companion = COMPANIONS[hash % COMPANIONS.length];
   const sequenceNumber = (hash % 100) + 1;
-  const score = (Math.floor(hash / 100) % 9) + 2; // 2..10
 
   // Body: the era's narrative + the track's own metadata clause.
   const meta = metadataFor(args.trackKey, args.title, args.artist, args.album);
@@ -103,7 +98,5 @@ export function dynamicCardText(args: {
     title: `${noun} & ${companion}`,
     body,
     sequence: `${sequenceNumber}/100`,
-    score,
-    scoreLabel: args.eraTag.toUpperCase(),
   };
 }

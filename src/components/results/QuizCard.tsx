@@ -12,8 +12,8 @@
  *      painting cross-fades over when ready, a coverless song gets the
  *      gothic woodcut skeleton (with spinner while generating).
  *   3. Lore box      — dark inset panel with serif italic lore.
- *   4. Footer        — track signature (Music icon + Artist — Title (Year))
- *      and the dynamic score chip (n/10).
+ *   4. Footer        — track signature (Music icon + Artist — Title (Year)).
+ *      (The fabricated hash-score chip was removed; only real track data.)
  */
 import { Loader2, Music, Volume2, VolumeX } from "lucide-react";
 
@@ -233,7 +233,7 @@ export function QuizCard({
 
       {/* 2 · Art window — square black frame with a gold hairline border. The
               iTunes cover sits inside it; the AI painting cross-fades over
-      		when ready; coverless songs keep the woodcut skeleton. */}
+     		when ready; coverless songs keep the woodcut skeleton. */}
       <div
         data-testid="card-art-window"
         className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-[#c8aa6e]/50 bg-[#060504]"
@@ -297,8 +297,9 @@ export function QuizCard({
         {lore ?? copy?.body ?? card.narrative}
       </div>
 
-      {/* 4 · Footer — track signature (Music icon + Artist — Title (Year))
-              and the dynamic score chip (n/10). */}
+      {/* 4 · Footer — track signature (Music icon + Artist — Title (Year)).
+              The fabricated hash-score chip was removed; only the real
+              track signature remains. */}
       <footer className="mt-3 flex items-center justify-between text-[11px] font-semibold text-[#c8aa6e]">
         {song ? (
           <span className="flex items-center gap-1.5 truncate">
@@ -312,12 +313,6 @@ export function QuizCard({
         ) : (
           <span className="truncate text-[10px] uppercase tracking-wider">{card.tag}</span>
         )}
-        <span
-          data-testid="card-score-badge"
-          className="shrink-0 rounded border border-[#c8aa6e]/40 bg-[#c8aa6e]/20 px-2 py-0.5"
-        >
-          {copy ? `${copy.score}/10` : `${Math.round(card.intensity * 10)}/10`}
-        </span>
       </footer>
     </article>
   );

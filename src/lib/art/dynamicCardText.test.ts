@@ -24,12 +24,9 @@ describe("dynamicCardText — every string derived from the track", () => {
     expect(copy.body).toContain("Jammin' by Bob Marley, from Exodus");
   });
 
-  it("computes the collector sequence and score from the track identity", () => {
+  it("computes the collector sequence from the track identity", () => {
     const copy = dynamicCardText(base);
     expect(copy.sequence).toMatch(/^[1-9][0-9]?\/100$|^100\/100$/);
-    expect(copy.score).toBeGreaterThanOrEqual(2);
-    expect(copy.score).toBeLessThanOrEqual(10);
-    expect(copy.scoreLabel).toBe("INNOCENCE");
   });
 
   it("is deterministic — same track, same card", () => {
