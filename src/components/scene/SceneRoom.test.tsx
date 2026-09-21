@@ -94,31 +94,54 @@ describe("sceneThemeFor — DOM-side mirror of the server scene vocabulary", () 
     ).toBe("soul");
   });
 
-  it("falls back to the decade ladder — every era bucket has its own room", () => {
+  it("falls back to the neutral era default — a year no longer guesses a genre family", () => {
     expect(sceneThemeFor(song({ title: "x", artist: "y", album: null, releaseYear: 1985 }))).toBe(
-      "synth",
+      "gothic",
     );
     expect(sceneThemeFor(song({ title: "x", artist: "y", album: null, releaseYear: 2001 }))).toBe(
-      "hiphop",
+      "gothic",
     );
     expect(sceneThemeFor(null)).toBe("gothic");
   });
 
-  it("eraThemeFor maps every decade to its atmospheric time capsule", () => {
-    expect(eraThemeFor(1959)).toBe("jazz");
-    expect(eraThemeFor(1972)).toBe("soul");
-    expect(eraThemeFor(1984)).toBe("synth");
-    expect(eraThemeFor(1994)).toBe("grunge");
-    expect(eraThemeFor(2003)).toBe("hiphop");
+  it("eraThemeFor returns the neutral gothic default for every year (year → genre guess removed)", () => {
+    expect(eraThemeFor(1959)).toBe("gothic");
+    expect(eraThemeFor(1972)).toBe("gothic");
+    expect(eraThemeFor(1984)).toBe("gothic");
+    expect(eraThemeFor(1994)).toBe("gothic");
+    expect(eraThemeFor(2003)).toBe("gothic");
     expect(eraThemeFor(null)).toBe("gothic");
   });
 
   it("does not let keyword collisions fabricate a culture", () => {
-    // "dub" must not eat "Double Fantasy".
+    // "dub" must not eat "Double Fantasy" — and with the neutral era default
+    // a year alone no longer invents a synth atmosphere: no genre keyword hit
+    // resolves to the gothic default.
     expect(
       sceneThemeFor(
         song({ title: "Double Fantasy", artist: "John Lennon", album: null, releaseYear: 1980 }),
       ),
-    ).toBe("synth");
+    ).toBe("gothic");
+  });
+
+  it("routes acoustic/roots and classical/chamber keywords to the acoustic room", () => {
+    expect(
+      sceneThemeFor(song({ title: "Take Me Home Country Roads", artist: "John Denver", releaseYear: 1971 })),
+    ).toBe("acoustic");
+    expect(
+      sceneThemeFor(song({ title: "Clair de Lune", artist: "Debussy classical piano", releaseYear: 1905 })),
+    ).toBe("acoustic");
+    expect(sceneThemeFor(song({ title: "Only Love Can Hurt Like This", artist: "Paloma Faith folk" }))).toBe(
+      "acoustic",
+    );
+  });
+
+  it("keeps metal/punk/doom in the dark gothic room after the split", () => {
+    expect(
+      sceneThemeFor(song({ title: "Painkiller", artist: "Judas Priest", releaseYear: 1990 })),
+    ).toBe("gothic");
+    expect(
+      sceneThemeFor(song({ title: "Anarchy in the UK", artist: "Sex Pistols", releaseYear: 1977 })),
+    ).toBe("gothic");
   });
 });

@@ -5,18 +5,21 @@
  * without importing the server module into the client bundle.
  *
  * Dynamic atmosphere matrix: genre families resolve to a room family
- * (soul / grunge / hiphop / synth / jazz / reggae / gothic) and the
- * decade ladder breaks ties when no genre signal exists — a '70s
- * childhood becomes a soul-vinyl time capsule, a '90s adolescence a
- * grunge room, a contemporary era a plum-gold studio glow.
+ * (gothic / reggae / synth / jazz / soul / grunge / hiphop / acoustic)
+ * and the era fallback is a single neutral default — a year alone no
+ * longer guesses a genre (1960s had country/rock/soul, not just jazz).
  */
 import type { Song } from "@/lib/song/types";
 import type { SceneThemeId } from "@/components/scene/SceneRoom";
 
 /**
  * Genre keyword families, checked in order — the first matching family
- * wins. Soul precedes jazz because "soul" is its own room identity now;
- * funk moved out of the synth family (70s warm, not neon).
+ * wins. In 2026-09 the former single "gothic" family (19 keywords spanning
+ * 3 unrelated genres) was split: gothic now holds only dark/aggressive
+ * (9), while the warm/roots + classical/chamber keywords moved into a new
+ * "acoustic" family (10). Soul precedes jazz because "soul" is its own
+ * room identity now; funk moved out of the synth family (70s warm, not
+ * neon).
  */
 export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
   {
@@ -24,7 +27,6 @@ export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
     keywords: [
       "goth",
       "doom",
-      "folk",
       "metal",
       "thrash",
       "slayer",
@@ -32,15 +34,6 @@ export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
       "priest",
       "maiden",
       "punk",
-      "acoustic",
-      "country",
-      "americana",
-      "bluegrass",
-      "classical",
-      "orchestra",
-      "piano",
-      "symphony",
-      "sonata",
     ],
   },
   {
@@ -117,6 +110,21 @@ export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
       "eurodance",
     ],
   },
+  {
+    id: "acoustic",
+    keywords: [
+      "acoustic",
+      "country",
+      "americana",
+      "bluegrass",
+      "folk",
+      "classical",
+      "orchestra",
+      "piano",
+      "symphony",
+      "sonata",
+    ],
+  },
 ];
 
 /** Word-ish boundary match — mirrors the server's keywordIn. */
@@ -126,18 +134,14 @@ export function keywordIn(haystack: string, keyword: string): boolean {
 }
 
 /**
- * Decade ladder — the tiebreaker when no genre signal exists. Every
- * bucket now carries its own visual identity (previously only the 80s
- * did); null year keeps the gothic fine-art base rather than fabricating
- * a culture the song never declared.
+ * Era fallback for a song with no genre keyword signal. Neutralized
+ * 2026-09 (same change as `decadeTheme` in the resolver): a release year
+ * no longer guesses a genre family, because genre is not a function of
+ * decade. One neutral default id (gothic) is returned regardless of year;
+ * the old "year → jazz/soul/synth/grunge/hiphop" ladder was removed.
  */
-export function eraThemeFor(releaseYear: number | null): SceneThemeId {
-  if (releaseYear === null) return "gothic";
-  if (releaseYear <= 1969) return "jazz";
-  if (releaseYear <= 1979) return "soul";
-  if (releaseYear <= 1989) return "synth";
-  if (releaseYear <= 1999) return "grunge";
-  return "hiphop";
+export function eraThemeFor(_releaseYear: number | null): SceneThemeId {
+  return "gothic";
 }
 
 function releaseYearOf(song: Song | null | undefined): number | null {
@@ -147,8 +151,9 @@ function releaseYearOf(song: Song | null | undefined): number | null {
 
 /**
  * Resolve the room theme for a song: genre keywords first (strongest
- * atmospheric signal), then the decade ladder; gothic is the null-default.
- * Mirrors `cardArtworkScene` on the server (minus the preference channel).
+ * atmospheric signal), then the neutral era fallback (gothic). No year
+ * guess, no fabricated culture. Mirrors `cardArtworkScene` on the server
+ * (minus the preference channel).
  */
 export function sceneThemeFor(song: Song | null | undefined): SceneThemeId {
   const haystack = song ? `${song.title} ${song.artist} ${song.album ?? ""}`.toLowerCase() : "";

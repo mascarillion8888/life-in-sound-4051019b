@@ -2,7 +2,15 @@
  * Scene palettes — the raw color vocabulary of the fixed library room.
  * React-free so the component layer (`SceneRoom`) can import it.
  */
-export type SceneThemeId = "gothic" | "reggae" | "synth" | "jazz" | "soul" | "grunge" | "hiphop";
+export type SceneThemeId =
+  | "gothic"
+  | "reggae"
+  | "synth"
+  | "jazz"
+  | "soul"
+  | "grunge"
+  | "hiphop"
+  | "acoustic";
 
 export type ScenePalette = {
   /** Back wall wash (behind the shelves). */
@@ -75,6 +83,15 @@ export const SCENE_PALETTES: Record<SceneThemeId, ScenePalette> = {
     desk: ["#2a1a38", "#120a1a"],
     glow: "#a78bfa",
     artifact: "#d4af37",
+  },
+  acoustic: {
+    // Warm earth / roots / chamber: sıcak, ahşap, toprak, mum ışığı.
+    wall: ["#22160c", "#0d0905"],
+    wood: "#3a2a18",
+    books: ["#5a3f1e", "#6b4a26", "#452f17", "#7a5a2e", "#4f381e"],
+    desk: ["#332414", "#150f07"],
+    glow: "#f59e0b",
+    artifact: "#6b8e23",
   },
 };
 
