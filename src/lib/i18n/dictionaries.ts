@@ -32,7 +32,6 @@ export type Dictionary = {
     recognizedAria: string;
   };
   quizCard: {
-      intensityLabel: string;
       playPreviewAria: string;
       mutePreviewAria: string;
       previewUnavailableAria: string;
@@ -132,7 +131,6 @@ const en: Dictionary = {
     recognizedAria: "recognized",
   },
   quizCard: {
-    intensityLabel: "Intensity",
     playPreviewAria: "Play preview",
     mutePreviewAria: "Mute preview",
     previewUnavailableAria: "Preview unavailable",
@@ -251,7 +249,6 @@ const tr: Dictionary = {
     recognizedAria: "tanındı",
   },
   quizCard: {
-    intensityLabel: "Yoğunluk",
     playPreviewAria: "Önizlemeyi çal",
     mutePreviewAria: "Önizlemeyi sustur",
     previewUnavailableAria: "Önizleme yok",
@@ -370,7 +367,6 @@ const es: Dictionary = {
     recognizedAria: "reconocida",
   },
   quizCard: {
-    intensityLabel: "Intensidad",
     playPreviewAria: "Reproducir vista previa",
     mutePreviewAria: "Silenciar vista previa",
     previewUnavailableAria: "Vista previa no disponible",
@@ -490,7 +486,6 @@ const de: Dictionary = {
     recognizedAria: "erkannt",
   },
   quizCard: {
-    intensityLabel: "Intensität",
     playPreviewAria: "Vorschau abspielen",
     mutePreviewAria: "Vorschau stummschalten",
     previewUnavailableAria: "Vorschau nicht verfügbar",
@@ -610,7 +605,6 @@ const fr: Dictionary = {
     recognizedAria: "reconnue",
   },
   quizCard: {
-    intensityLabel: "Intensité",
     playPreviewAria: "Lire l'extrait",
     mutePreviewAria: "Couper le son de l'extrait",
     previewUnavailableAria: "Extrait indisponible",
