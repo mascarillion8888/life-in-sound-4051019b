@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       88f6648 — "chore(scene): remove orphan generate-room-backdrop.mjs generator + gen:room script"
+HEAD:       25fdcb6 — "docs(handoff): record HF runtime shutdown (server removed, client dead-code = separate P2)"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
             Son commit zinciri (FAZ 0 → 4b + cleanups):
               88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
@@ -150,9 +150,33 @@ AYRI, henüz yapılmayan iş: Client-side dead code (`VITE_HF_TOKEN`,
 CardGallery'nin error-retry mantığına dokunacağı için ayrı, daha
 dikkatli bir P2 temizliği olarak kalıyor.
 
+### Karar (2026-09-20) — KARAR REVİZYONU: Kart/Poster Metin Stratejisi
+
+**ÖNCEKİ KARAR (oturum başı):** "9 mood-backdrop görseli nihai tasarım,
+üstüne ayrıca metin bindirilmeyecek."
+
+**YENİ KARAR:** Arka planlar TEMİZ üretilecek (metinsiz), gerçek metin
+(şarkı adı, sanatçı, dönem etiketi vb.) **CSS/HTML tipografi** ile bindirilecek.
+
+**Gerekçe:** (1) AI modelleri metni güvenilir yazamıyor — üretim/tekrar
+deneme maliyetini artırıyor; (2) metin CSS'te olursa yazım hatası/çeviri
+güncellemesi görsel yeniden üretimi gerektirmiyor; (3) tipografi tutarlılığı
+garanti oluyor (AI her seferinde farklı çiziyor).
+
+Bu, önceki kararın **BİLİNÇLİ tersine çevrilmesidir** — sessiz üzerine yazma
+değil. Mevcut kod çizgisiyle uyumludur: `cardArtwork.server.ts`
+`buildCardArtworkPrompt` zaten "...never draw card titles, headings or any
+readable text into the image" der; QuizCard metinleri (`copy.title`, `copy.body`,
+footer skoru) HTML katmanında render eder. Yani sunucu çizgisi metinsiz üretir;
+metin zaten DOM'dan gelir — bu karar bunu doğrular, rastgele görsel metin
+bindirilmez. NOT: "9 mood-backdrop" asset'i SceneRoom duvar kağıdıdır; kart
+yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
+
 ### UI görsel doğrulaması (kural 10) — TAMAMLANDI (2026-09-20)
 1. **Mood-backdrop doğrulaması — ✅ TAMAMLANDI (kullanıcı onayı, 2026-09-20):** `npm run dev` → journey 8 şarkıyla tamamlandı → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görüldü, kullanıcı "Arayüz Onaylandı" dedi. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
    **Koşullu yeniden-açma:** Taksonomi yeniden tasarımı (gothic bölme / decadeTheme sadeleştirme, bkz. aşağı "Karar FAZ 4c"), FAZ 4c palette kaynağı değişimi, veya registry'ye `mood-backdrop-*.png`'den FARKLI bir exact asset eklenmesi gibi görsel-üretim değişiklikleri yapılırsa kural-10 **YENİDEN açılır** (kullanıcı göz doğrulaması gerekir). Bu, "bekliyor" statüsü değil — tamamlanmış ama koşullu.
+
+   **UYARI (2026-09-20):** **QuizCard.tsx redesign implementasyonu başladığında kural-10 TEKRAR AÇILACAK** (kart render davranışı değişecek — buton ekleme, puan/fiyat kaldırma, "ADD TO COLLECTION" state'i). Bu, taksonomi yeniden tasarımından **BAĞIMSIZ** bir kural-10 açılış nedeni — ikisi aynı anda yapılırsa **TEK** doğrulama turunda birleştirilebilir; ayrı yapılırsa **iki ayrı** doğrulama gerekir.
 
 ### FAZ 4 / P2 (sonraki oturumlar)
 2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
