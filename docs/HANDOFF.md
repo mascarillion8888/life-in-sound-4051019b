@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       d5c2131 — "refactor(hf): remove dead client-side HuggingFace service (generateGothicArt + types + gallery zombie retry + liveSmoke probe + env)"
+HEAD:       26cce0b — "docs(handoff): record client-side HF dead-code removal closure (d5c2131)"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
             Son commit zinciri (FAZ 0 → 4b + cleanups):
               88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
@@ -189,7 +189,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 
 ### Güvenlik / house-keeping (yeni: HF kapatma eklendi)
 7. **OpenRouter key rotasyonu:** yeni key `.env`/`.env.example`'ta; canlılık (HTTP 200) hâlâ test edilmedi. HEAD `17f9141` eski `settings.json` key'ini git history'de commit'lemiştir — kalıcıdır (purge = force-push, repoda yasak).
-8. **HF — server-side SİLİNDİ (2026-09-20) + client-side DEAD-CODE KALDIRILDI (2026-09-20, d5c2131):** `cardArtwork.server.ts` HF kademesi (`hfImage.server.ts`) çoktan kaldırılmıştı (Imagen→Gemini). Şimdi client-side HF tamamen temizlendi: `huggingFaceService.ts` + `generateGothicArt` + `huggingFaceService.test.ts` silindi; CardGallery'deki zombi error-retry dalları (asla tetiklenemeyen `GothicArtError`/`isRetryableHfError`) genel bozulma paneline indirildi; `gothicArt.tsx`'te `GothicArtErrorKind` dosya-lokal oldu; `liveSmoke.ts` HF probe'u kaldırıldı; `.env.example`'dan `VITE_HF_TOKEN=` çıkarıldı. `GothicArtSkeleton`/`GothicArtFallback` genel UI olarak korundu (rename ayrı isteğe bağlı). Kapsam: d5c2131, 8 dosya +26/-242.
+8. **HF — server-side SİLİNDİ (2026-09-20) + client-side DEAD-CODE KALDIRILDI (2026-09-20, d5c2131) — ✅ TAMAMLANDI:** `cardArtwork.server.ts` HF kademesi (`hfImage.server.ts`) çoktan kaldırılmıştı (Imagen→Gemini). Şimdi client-side HF tamamen temizlendi: `huggingFaceService.ts` + `generateGothicArt` + `huggingFaceService.test.ts` silindi; CardGallery'deki zombi error-retry dalları (asla tetiklenemeyen `GothicArtError`/`isRetryableHfError`) genel bozulma paneline indirildi; `gothicArt.tsx`'te `GothicArtErrorKind` dosya-lokal oldu; `liveSmoke.ts` HF probe'u kaldırıldı; `.env.example`'dan `VITE_HF_TOKEN=` çıkarıldı. `GothicArtSkeleton`/`GothicArtFallback` genel UI olarak korundu (rename ayrı isteğe bağlı). Kapsam: d5c2131, 8 dosya +26/-242. Bu madde kapanmıştır.
 9. **Küçük, ayrı temizlik — Adım 1'den kalan ölü i18n alanı (`intensityLabel`):** QuizCard skor rozeti kaldırılınca `quizCard.intensityLabel` tip'te + 5 dilde (en/tr/es/de/fr) hâlâ duruyor, kullanan YOK. QuizCard redesign'ın Adım 1-3'ü sırasında BİLEREK dokunulmadı (kapsam dışı). Adım 4 ile KARIŞTIRILMAMALI — ayrı, küçük bir temizlik olarak ele alınacak (dictionaries.ts tip + 5 dil bloğundan `intensityLabel` silinmeli).
 
 ---
