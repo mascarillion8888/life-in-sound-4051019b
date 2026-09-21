@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { __clearCardArtworkMemoryCache } from "@/lib/art/useCardArtwork";
+import { isInCollection, loadCollection } from "@/lib/collection";
 import type { Song } from "@/lib/song/types";
 
 import { QuizCard } from "./QuizCard";
@@ -166,5 +167,26 @@ describe("QuizCard", () => {
     const disabled = screen.getByRole("button", { name: /preview unavailable/i });
     expect((disabled as HTMLButtonElement).disabled).toBe(true);
     expect(disabled.textContent).toMatch(/preview unavailable/i);
+  });
+
+  it("toggles the song into the personal collection (journey-independent) and back", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const toggle = screen.getByRole("button", { name: /add to collection/i });
+    expect((toggle as HTMLButtonElement).getAttribute("aria-pressed")).toBe("false");
+    expect(isInCollection(loadCollection(), "itunes:42")).toBe(false);
+
+    fireEvent.click(toggle);
+    // The button flips to "In Collection" and the track persists to localStorage.
+    expect(screen.getByRole("button", { name: /in collection/i })).toBeTruthy();
+    expect(isInCollection(loadCollection(), "itunes:42")).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: /in collection/i }));
+    expect(screen.getByRole("button", { name: /add to collection/i })).toBeTruthy();
+    expect(isInCollection(loadCollection(), "itunes:42")).toBe(false);
+  });
+
+  it("does not render a collect button when the song is missing", () => {
+    render(<QuizCard card={cards[1]} song={null} />);
+    expect(screen.queryByRole("button", { name: /collection/i })).toBeNull();
   });
 });

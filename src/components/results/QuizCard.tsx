@@ -15,11 +15,13 @@
  *   4. Footer        — track signature (Music icon + Artist — Title (Year)).
  *      (The fabricated hash-score chip was removed; only real track data.)
  */
-import { Loader2, Music, Volume2, VolumeX } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Music, Star, Volume2, VolumeX } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
+import { isInCollection, loadCollection, saveCollection, toggleInCollection } from "@/lib/collection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import type { LifeCard } from "@/lib/soundmap/lifeCards";
@@ -168,6 +170,19 @@ export function QuizCard({
 }) {
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
+  // Personal collection — journey-independent saved tracks. The key is the
+  // track's stable identity (`provider:trackId` / `manual:artist:title`) so
+  // an already-saved song is recognised across any journey. State is loaded
+  // on mount and bumped on toggle; the card mounts one at a time in
+  // EraCardReveal, so a simple useState is sufficient (no cross-card sync).
+  const collectionKey = song ? cardArtworkKey(song) : "";
+  const [saved, setSaved] = useState(song ? isInCollection(loadCollection(), collectionKey) : false);
+  const toggleSaved = () => {
+    if (!song) return;
+    const next = toggleInCollection(loadCollection(), collectionKey, song);
+    saveCollection(next);
+    setSaved(isInCollection(next, collectionKey));
+  };
   const era = eraStyleFor(song, card.index);
   const art = useCardArtwork(song, { cardIndex: card.index });
   // Poetic lore (LLM or deterministic server-side) — replaces the static
@@ -306,9 +321,9 @@ export function QuizCard({
         {lore ?? copy?.body ?? card.narrative}
       </div>
 
-      {/* 4 · Footer — track signature (Music icon + Artist — Title (Year)).
-              The fabricated hash-score chip was removed; only the real
-              track signature remains. */}
+      {/* 4 · Footer — track signature (Music icon + Artist — Title (Year))
+              and the collect toggle. Only real track data — the fabricated
+              hash-score chip was removed. */}
       <footer className="mt-3 flex items-center justify-between text-[11px] font-semibold text-[#c8aa6e]">
         {song ? (
           <span className="flex items-center gap-1.5 truncate">
@@ -322,6 +337,27 @@ export function QuizCard({
         ) : (
           <span className="truncate text-[10px] uppercase tracking-wider">{card.tag}</span>
         )}
+        {song ? (
+          <button
+            type="button"
+            onClick={toggleSaved}
+            aria-pressed={saved}
+            aria-label={saved ? t.quizCard.inCollection : t.quizCard.addToCollection}
+            className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+              saved
+                ? "border-[#c8aa6e]/70 bg-[#c8aa6e]/25 text-[#e5c98f]"
+                : "border-[#c8aa6e]/40 text-[#d4c3a3] hover:border-[#c8aa6e]/70"
+            }`}
+          >
+            <Star
+              className="h-3 w-3 shrink-0"
+              fill={saved ? "currentColor" : "none"}
+              stroke="currentColor"
+              aria-hidden
+            />
+            <span>{saved ? t.quizCard.inCollection : t.quizCard.addToCollection}</span>
+          </button>
+        ) : null}
       </footer>
     </article>
   );

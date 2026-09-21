@@ -32,12 +32,14 @@ export type Dictionary = {
     recognizedAria: string;
   };
   quizCard: {
-    intensityLabel: string;
-    playPreviewAria: string;
-    mutePreviewAria: string;
-    previewUnavailableAria: string;
-    artGenerating: string;
-  };
+      intensityLabel: string;
+      playPreviewAria: string;
+      mutePreviewAria: string;
+      previewUnavailableAria: string;
+      artGenerating: string;
+      addToCollection: string;
+      inCollection: string;
+    };
   gothicArt: {
     generating: string;
     rateLimitTitle: string;
@@ -135,7 +137,9 @@ const en: Dictionary = {
     mutePreviewAria: "Mute preview",
     previewUnavailableAria: "Preview unavailable",
     artGenerating: "Etched ink art generating…",
-  },
+        addToCollection: "Add to Collection",
+        inCollection: "In Collection ✓",
+      },
   gothicArt: {
     generating: "Etching your gothic art…",
     rateLimitTitle: "Ink Supply Exhausted",
@@ -252,7 +256,9 @@ const tr: Dictionary = {
     mutePreviewAria: "Önizlemeyi sustur",
     previewUnavailableAria: "Önizleme yok",
     artGenerating: "Gravür çizim üretiliyor…",
-  },
+        addToCollection: "Koleksiyona Ekle",
+        inCollection: "Koleksiyonda ✓",
+      },
   gothicArt: {
     generating: "Gotik sanatın kazınıyor…",
     rateLimitTitle: "Mürekkep Tükendi",
@@ -369,7 +375,9 @@ const es: Dictionary = {
     mutePreviewAria: "Silenciar vista previa",
     previewUnavailableAria: "Vista previa no disponible",
     artGenerating: "Generando grabado a tinta…",
-  },
+        addToCollection: "Añadir a la colección",
+        inCollection: "En la colección ✓",
+      },
   gothicArt: {
     generating: "Grabando tu arte gótico…",
     rateLimitTitle: "Tinta Agotada",
@@ -487,7 +495,9 @@ const de: Dictionary = {
     mutePreviewAria: "Vorschau stummschalten",
     previewUnavailableAria: "Vorschau nicht verfügbar",
     artGenerating: "Tuschradierung wird erstellt…",
-  },
+        addToCollection: "Zur Sammlung hinzufügen",
+        inCollection: "In Sammlung ✓",
+      },
   gothicArt: {
     generating: "Deine gotische Kunst wird geätzt…",
     rateLimitTitle: "Tinte Erschöpft",
@@ -605,7 +615,9 @@ const fr: Dictionary = {
     mutePreviewAria: "Couper le son de l'extrait",
     previewUnavailableAria: "Extrait indisponible",
     artGenerating: "Gravure à l'encre en cours…",
-  },
+        addToCollection: "Ajouter à la collection",
+        inCollection: "Dans la collection ✓",
+      },
   gothicArt: {
     generating: "Gravure de votre art gothique…",
     rateLimitTitle: "Encre Épuisée",
