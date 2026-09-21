@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       be79f9c — "feat(card): add readability layer to QuizCard text (scrim + text-shadow + backdrop-blur + safe-area)"
+HEAD:       3892330 — "refactor(visual): split gothic into dark + acoustic families (roots/classical), neutralize eraThemeFor year-guess"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
             Son commit zinciri (FAZ 0 → 4b + cleanups):
               88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
@@ -177,6 +177,8 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
    **Koşullu yeniden-açma:** Taksonomi yeniden tasarımı (gothic bölme / decadeTheme sadeleştirme, bkz. aşağı "Karar FAZ 4c"), FAZ 4c palette kaynağı değişimi, veya registry'ye `mood-backdrop-*.png`'den FARKLI bir exact asset eklenmesi gibi görsel-üretim değişiklikleri yapılırsa kural-10 **YENİDEN açılır** (kullanıcı göz doğrulaması gerekir). Bu, "bekliyor" statüsü değil — tamamlanmış ama koşullu.
 
    **UYARI (2026-09-20) — ✅ KAPANDI (onay 2026-09-20):** QuizCard.tsx redesign implementasyonu başladığında kural-10 **TEKRAR AÇILACAKTI** (kart render davranışı değişecekti — buton ekleme, puan/fiyat kaldırma, "ADD TO COLLECTION" state'i). Koşul gerçekleşti: implementasyon (Adım 1-4) bitti, uçtan uca gözle doğrulandı, "Arayüz Onaylandı" alındı → **bu uyarı kapanma koşulunu tamamladı**. Taksonomi yeniden tasarımından **bağımsızdı**; artık kapalı. Kural-10 yalnızca yeni görsel-üretim işlerinde (taksonomi / FAZ 4c / yeni exact asset) yeniden açılır.
+
+   **PALET GÖRÜNÜRLÜĞÜ NOTU (2026-09-20):** Taksonomi yeniden tasarımı (gothic split + acoustic + eraThemeFor nötralizasyonu) kod + test düzeyinde doğru ve 682/684 yeşil. Ancak `SCENE_PALETTES[themeId]`'nin kullanıcıya görünür etkisi yok: wall gradient kök div'de, backdrop blur-cover katmanı onu TAMAMEN örtüyor (moodImage her zaman dolu URL — dreamy fallback); glow yalnızca çok hafif bir screen-blend üst parlaması. Dolayısıyla bu değişiklik için kural-10'un "gözle doğrulama" standardı UYGULANABİLİR DEĞİL — görsel olarak doğrulanacak bir fark yok. Paletler ileride prosedürel masa/raf/kitap render'ına bağlandığında görünür olur ve kural-10 o noktada yeniden açılmalıdır.
 
 ### FAZ 4 / P2 (sonraki oturumlar)
 2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
