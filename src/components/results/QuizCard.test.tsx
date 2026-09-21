@@ -155,13 +155,16 @@ describe("QuizCard", () => {
     }
   });
 
-  it("enables the preview toggle only when the song carries a real preview URL", () => {
+  it("enables the preview button only when the song carries a real preview URL, with a visible localized label", () => {
     const { rerender } = render(<QuizCard card={cards[0]} song={song()} />);
     const toggle = screen.getByRole("button", { name: /play preview/i });
     expect((toggle as HTMLButtonElement).disabled).toBe(false);
+    // The affordance is explicit: the icon is paired with visible localized text.
+    expect(toggle.textContent).toMatch(/Play preview/i);
 
     rerender(<QuizCard card={cards[0]} song={song({ previewUrl: null })} />);
     const disabled = screen.getByRole("button", { name: /preview unavailable/i });
     expect((disabled as HTMLButtonElement).disabled).toBe(true);
+    expect(disabled.textContent).toMatch(/preview unavailable/i);
   });
 });

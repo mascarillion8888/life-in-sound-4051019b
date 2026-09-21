@@ -267,7 +267,9 @@ export function QuizCard({
         ) : null}
         <InnerVignette />
         {/* Corner scrollwork ovals — engraved guards over the image. */}
-        {/* Preview toggle — the 30s iTunes stream, singleton-faded. */}
+        {/* Preview button — the 30s iTunes stream, singleton-faded. A visible
+              labelled control (icon + localized text) so the card's listening
+              affordance is explicit; disabled when the track has no preview. */}
         <button
           type="button"
           onClick={preview.toggle}
@@ -279,13 +281,20 @@ export function QuizCard({
                 : t.quizCard.playPreviewAria
               : t.quizCard.previewUnavailableAria
           }
-          className="absolute bottom-2 right-2 z-20 rounded-full border border-[#d8c9a8]/40 bg-[#0b0a08]/80 p-1.5 text-[#d8c9a8] transition-colors hover:border-[#d8c9a8] disabled:cursor-not-allowed disabled:opacity-30"
+          className="absolute bottom-2 right-2 z-20 inline-flex items-center gap-1.5 rounded-full border border-[#d8c9a8]/40 bg-[#0b0a08]/80 px-2.5 py-1 text-[11px] font-semibold text-[#d8c9a8] transition-colors hover:border-[#d8c9a8] disabled:cursor-not-allowed disabled:opacity-30"
         >
           {preview.playing ? (
-            <VolumeX className="h-4 w-4" aria-hidden />
+            <VolumeX className="h-3.5 w-3.5 shrink-0" aria-hidden />
           ) : (
-            <Volume2 className="h-4 w-4" aria-hidden />
+            <Volume2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           )}
+          <span>
+            {preview.available
+              ? preview.playing
+                ? t.quizCard.mutePreviewAria
+                : t.quizCard.playPreviewAria
+              : t.quizCard.previewUnavailableAria}
+          </span>
         </button>
       </div>
 
