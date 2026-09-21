@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       25fdcb6 — "docs(handoff): record HF runtime shutdown (server removed, client dead-code = separate P2)"
+HEAD:       4079afd — "feat(card): journey-independent \"Add to Collection\" (localStorage cap-50, idempotent toggle)"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
             Son commit zinciri (FAZ 0 → 4b + cleanups):
               88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
@@ -188,6 +188,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 ### Güvenlik / house-keeping (yeni: HF kapatma eklendi)
 7. **OpenRouter key rotasyonu:** yeni key `.env`/`.env.example`'ta; canlılık (HTTP 200) hâlâ test edilmedi. HEAD `17f9141` eski `settings.json` key'ini git history'de commit'lemiştir — kalıcıdır (purge = force-push, repoda yasak).
 8. **HF runtime üretimi — SERVER-side SİLİNDİ (2026-09-20); client-side AYRI P2:** `cardArtwork.server.ts` zincirinden HF kademesi kaldırıldı (`hfImage.server.ts` silindi) — artık Imagen→Gemini. Gerekçe + kabul edilen risk + ayrı client işi: §5 "Karar (2026-09-20) — HF Runtime Kapatma". Client dead code (`VITE_HF_TOKEN` / `generateGothicArt`) CardGallery error-retry mantığına dokunduğu için AYRI, dikkatli P2 olarak duruyor.
+9. **Küçük, ayrı temizlik — Adım 1'den kalan ölü i18n alanı (`intensityLabel`):** QuizCard skor rozeti kaldırılınca `quizCard.intensityLabel` tip'te + 5 dilde (en/tr/es/de/fr) hâlâ duruyor, kullanan YOK. QuizCard redesign'ın Adım 1-3'ü sırasında BİLEREK dokunulmadı (kapsam dışı). Adım 4 ile KARIŞTIRILMAMALI — ayrı, küçük bir temizlik olarak ele alınacak (dictionaries.ts tip + 5 dil bloğundan `intensityLabel` silinmeli).
 
 ---
 
@@ -196,6 +197,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 1. **✅ Kural-10 tamamlandı (2026-09-20):** mood-backdrop doğrulaması onaylandı — "Arayüz Onaylandı". Sıradaki görsel doğrulama yalnızca koşullu yeniden-açma durumlarında (taksonomi / FAZ 4c / yeni exact asset).
 2. **FAZ 4b tamamlandı:** exactAssetRef → gerçek URL çözülüp resolver backdrop'unda önceliklendirildi (pass-through: pilot exact asset'ler == mood dosyaları; 40/40, tsc temiz). Kalan: FAZ 4c (palette/eraStyle/eraTheme wiring) ayrı kanonik-kaynak kararı (sceneThemeFor vs resolver sceneThemeId — 2010-sonrası farklı sonuç, bilinen risk); orphan script temizliği (`generate-room-backdrop.mjs`) tamamlandı (silindi 2026-09-20). ⚠️ mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
 3. **Sırada (onayla):** user yetkisi — yeni asset kombinasyonu ekleme, FAZ 4c (palette kanonik-kaynak kararı), HF runtime kapanışı.
+4. **QuizCard redesign (Adım 1-3 TAMAMLANDI, Adım 4 bekliyor):** (1) hash-skoru + score/scoreLabel kaldırıldı; (2) preview toggle görünür "Play/Mute" butonuna çevrildi; (3) journey-bağımsız "Add to Collection" (localStorage cap-50, idempotent toggle) eklendi. Kalan Adım 4 = dil seçici entegrasyonu + genel tipografi/çerçeve düzeni (CSS overlay). Kural-10: bu redesign bittiğinde TEKRAR AÇILACAK (bkz. §5 UYARI). Sıradaki push: Adım 1-3 (d7b5f83, e364361, 4079afd) kullanıcı onayıyla push edilebilir.
 
 ---
 
