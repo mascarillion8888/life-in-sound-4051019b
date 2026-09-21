@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       4079afd — "feat(card): journey-independent \"Add to Collection\" (localStorage cap-50, idempotent toggle)"
+HEAD:       be79f9c — "feat(card): add readability layer to QuizCard text (scrim + text-shadow + backdrop-blur + safe-area)"
             origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
             Son commit zinciri (FAZ 0 → 4b + cleanups):
               88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
@@ -176,7 +176,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 1. **Mood-backdrop doğrulaması — ✅ TAMAMLANDI (kullanıcı onayı, 2026-09-20):** `npm run dev` → journey 8 şarkıyla tamamlandı → her EraCardReveal'da şarkının mood'uyla eşleşen wallpaper görüldü, kullanıcı "Arayüz Onaylandı" dedi. ⚠️ Mood inference gerçek OpenRouter key ister (`.env`'de `OPENROUTER_API_KEY`).
    **Koşullu yeniden-açma:** Taksonomi yeniden tasarımı (gothic bölme / decadeTheme sadeleştirme, bkz. aşağı "Karar FAZ 4c"), FAZ 4c palette kaynağı değişimi, veya registry'ye `mood-backdrop-*.png`'den FARKLI bir exact asset eklenmesi gibi görsel-üretim değişiklikleri yapılırsa kural-10 **YENİDEN açılır** (kullanıcı göz doğrulaması gerekir). Bu, "bekliyor" statüsü değil — tamamlanmış ama koşullu.
 
-   **UYARI (2026-09-20):** **QuizCard.tsx redesign implementasyonu başladığında kural-10 TEKRAR AÇILACAK** (kart render davranışı değişecek — buton ekleme, puan/fiyat kaldırma, "ADD TO COLLECTION" state'i). Bu, taksonomi yeniden tasarımından **BAĞIMSIZ** bir kural-10 açılış nedeni — ikisi aynı anda yapılırsa **TEK** doğrulama turunda birleştirilebilir; ayrı yapılırsa **iki ayrı** doğrulama gerekir.
+   **UYARI (2026-09-20) — ✅ KAPANDI (onay 2026-09-20):** QuizCard.tsx redesign implementasyonu başladığında kural-10 **TEKRAR AÇILACAKTI** (kart render davranışı değişecekti — buton ekleme, puan/fiyat kaldırma, "ADD TO COLLECTION" state'i). Koşul gerçekleşti: implementasyon (Adım 1-4) bitti, uçtan uca gözle doğrulandı, "Arayüz Onaylandı" alındı → **bu uyarı kapanma koşulunu tamamladı**. Taksonomi yeniden tasarımından **bağımsızdı**; artık kapalı. Kural-10 yalnızca yeni görsel-üretim işlerinde (taksonomi / FAZ 4c / yeni exact asset) yeniden açılır.
 
 ### FAZ 4 / P2 (sonraki oturumlar)
 2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
@@ -197,7 +197,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 1. **✅ Kural-10 tamamlandı (2026-09-20):** mood-backdrop doğrulaması onaylandı — "Arayüz Onaylandı". Sıradaki görsel doğrulama yalnızca koşullu yeniden-açma durumlarında (taksonomi / FAZ 4c / yeni exact asset).
 2. **FAZ 4b tamamlandı:** exactAssetRef → gerçek URL çözülüp resolver backdrop'unda önceliklendirildi (pass-through: pilot exact asset'ler == mood dosyaları; 40/40, tsc temiz). Kalan: FAZ 4c (palette/eraStyle/eraTheme wiring) ayrı kanonik-kaynak kararı (sceneThemeFor vs resolver sceneThemeId — 2010-sonrası farklı sonuç, bilinen risk); orphan script temizliği (`generate-room-backdrop.mjs`) tamamlandı (silindi 2026-09-20). ⚠️ mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
 3. **Sırada (onayla):** user yetkisi — yeni asset kombinasyonu ekleme, FAZ 4c (palette kanonik-kaynak kararı), HF runtime kapanışı.
-4. **QuizCard redesign (Adım 1-3 TAMAMLANDI, Adım 4 bekliyor):** (1) hash-skoru + score/scoreLabel kaldırıldı; (2) preview toggle görünür "Play/Mute" butonuna çevrildi; (3) journey-bağımsız "Add to Collection" (localStorage cap-50, idempotent toggle) eklendi. Kalan Adım 4 = dil seçici entegrasyonu + genel tipografi/çerçeve düzeni (CSS overlay). Kural-10: bu redesign bittiğinde TEKRAR AÇILACAK (bkz. §5 UYARI). Sıradaki push: Adım 1-3 (d7b5f83, e364361, 4079afd) kullanıcı onayıyla push edilebilir.
+4. **QuizCard redesign (Adım 1-4 TAMAMLANDI — onay 2026-09-20):** (1) hash-skoru + score/scoreLabel kaldırıldı; (2) preview toggle görünür "Play/Mute" butonuna çevrildi; (3) journey-bağımsız "Add to Collection" (localStorage cap-50, idempotent toggle) eklendi; (4) okunurluk katmanı (gradient scrim + text-shadow + backdrop-blur + safe-area) eklendi. Dil seçici UI eklenmedi (Q1=B — mevcut LanguageSwitcher journey header'ında erişilebilir kalıyor, EraCardReveal modal değil). **Kural-10: "Arayüz Onaylandı" (2026-09-20)** — uçtan uca gözle doğrulandı; önceki §5 UYARI'sı kapanma koşulu gerçekleşti (implementasyon bitti + onaylandı). Kanalı kapanan kural-10, yalnızca yeni görsel-üretim değişikliği (taksonomi / FAZ 4c / yeni exact asset) olursa yeniden açılır.
 
 ---
 
