@@ -138,6 +138,17 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(seventies.backdropUrl).toContain("backdrop-soul-energetic");
   });
 
+  it("soul'un yeni decade-free kayıtları (Dark gibi) her yılda exact-match eder", () => {
+    const seventies = resolveSceneVisualSpec({ mood: "Dark", genre: "soul", releaseYear: 1972 });
+    const nineties = resolveSceneVisualSpec({ mood: "Dark", genre: "soul", releaseYear: 1998 });
+    expect(seventies.exactAssetRef).toBe("backdrop-soul-dark.png");
+    expect(nineties.exactAssetRef).toBe("backdrop-soul-dark.png");
+    // dönemsiz kayıt trace'i genre-mood şeklindedir (decade yok).
+    expect(seventies.fallbackTrace.join("|")).toContain("exact-match:soul-dark");
+    // backdrop, soul dosyasının gerçek URL'sini gösterir (glob'da çözülür).
+    expect(seventies.backdropUrl).toContain("backdrop-soul-dark");
+  });
+
   it("regresyon: pop-1980s dönemsel kayıt yine tam decade eşleşmesiyle seçilir", () => {
     // 1980s → pop kaydı; 1990s → pop kaydı yok (decade opsiyonel olsa da
     // pop kayıtlarının decade'i DOLU — free yok).
@@ -148,9 +159,9 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(eighties.fallbackTrace.join("|")).toContain("exact-match:pop-1980s-energetic");
   });
 
-  it("genre=soul ama mood eşleşmiyorsa → hâlâ undefined (exact asset seçilmez)", () => {
-    // soul registry'de yalnızca Energetic/Euphoric/Playful var — Romantic hiç yok.
-    const res = resolveSceneVisualSpec({ mood: "Romantic", genre: "soul", releaseYear: 1970 });
+  it("9'lu soul seti kapalı — set dışı genre'de exact asset seçilmez", () => {
+    // soul'un 9 mood'unun tamamı registry'de; eşleşmeme senaryosu genre≠soul ile gösterilir.
+    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "rock", releaseYear: 1970 });
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
   });

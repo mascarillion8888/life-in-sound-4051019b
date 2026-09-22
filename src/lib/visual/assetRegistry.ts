@@ -40,7 +40,7 @@ export interface SceneAssetEntry {
 
 /**
  * Kayıtlı (üretilmiş) kombinasyonlar.
- * Pilot `1980s × Pop × 9 mood` (dönemsel) + dönemsiz `Soul × 3 mood` (tüm
+ * Pilot `1980s × Pop × 9 mood` (dönemsel) + dönemsiz `Soul × 9 mood` (tüm
  * dönemlerde geçerli — `decade` opsiyonel olduğundan atlanır). Boş kalan
  * eksenlerde `resolveExactAsset` eşleşme bulamaz → mevcut FAZ 3 davranışı
  * aynen korunur.
@@ -58,4 +58,10 @@ export const SCENE_ASSET_REGISTRY: SceneAssetEntry[] = [
   { genre: "soul", mood: "Energetic", assetRef: "backdrop-soul-energetic.png" },
   { genre: "soul", mood: "Euphoric", assetRef: "backdrop-soul-euphoric.png" },
   { genre: "soul", mood: "Playful", assetRef: "backdrop-soul-playful.png" },
+  { genre: "soul", mood: "Romantic", assetRef: "backdrop-soul-romantic.png" },
+  { genre: "soul", mood: "Melancholic", assetRef: "backdrop-soul-melancholic.png" },
+  { genre: "soul", mood: "Dreamy", assetRef: "backdrop-soul-dreamy.png" },
+  { genre: "soul", mood: "Nostalgic", assetRef: "backdrop-soul-nostalgic.png" },
+  { genre: "soul", mood: "Dark", assetRef: "backdrop-soul-dark.png" },
+  { genre: "soul", mood: "World", assetRef: "backdrop-soul-world.png" },
 ];
