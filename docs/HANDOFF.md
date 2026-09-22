@@ -15,35 +15,24 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       b5257a1 — "fix(visual): normalize genre aliases so iTunes 'R&B/Soul' matches soul exact-assets"
-            origin/main 3 adım geride (3f970ff, 397ac09, b5257a1 push bekliyor — rev-list)
-            Son commit zinciri:
-              b995ce2  feat(visual): add decade-free soul exact-assets (3 moods) to Asset Registry
-              0075e1c chore(i18n): remove dead intensityLabel field (type + 5 locales)
-              471128e  checkpoint: HF client dead-code kapanışı TAMAMLANDI işaretlendi + §1 HEAD senkron — HANDOFF.md güncellendi
-              26cce0b  docs(handoff): record client-side HF dead-code removal closure (d5c2131)
-              88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi
-              e07b87f  FAZ 4b — exactAssetRef→URL çözümü resolver backdrop adımında; palette wiring FAZ 4c'ye ertelendi (push 2026-09-20)
-              6413994  checkpoint: FAZ 4b exactAssetRef çözümü kaydı — HANDOFF.md güncellendi (handoff-check green)
-              c201413  checkpoint: FAZ 4a resolver bağlama kaydı — HANDOFF.md güncellendi (handoff-check green)
-              94e4d57  FAZ 4a — SceneRoom → resolveSceneVisualSpec bağlandı; resolver artık orphan değil (push 2026-09-20)
-              8d62d24  docs(handoff): Poster/Music Map life-stage sistem kararı (System B) kaydı
-              704200e  docs(handoff): §1 HEAD 4b0e1cc'ye güncellendi
-              4b0e1cc  docs(handoff): HF runtime kapatma (P2) açık iş olarak kaydedildi (§5 madde 8; push 2026-09-20)
-              12942cb  FAZ 3.2 — multi-axis backdrop entegrasyonu: moodBackdropUrl(mood,genre,decade) fallback zinciri + SceneRoom/EraCardReveal bağlama (push 2026-09-19)
-              c886a12  18 Eylül KANONİK — Visual Resolver girdisi = interaktif Song{mood,genre,decade} (LOCKED, STATE KARARLAR)
-              2883f9a  FAZ 3 — deterministik scene visual contract: src/types/visualSpec.ts +
-                        src/lib/visual/visualResolver.ts + visualSpec.test.ts (10 test)
-              ea84a6e  FAZ 3.1 — exact-match asset registry: SCENE_ASSET_REGISTRY + resolveExactAsset
-                        (pilot 1980s×Pop×9 mood) + SceneVisualResolution.exactAssetRef + 3 test
-Testler:    68 dosya, 670 passed / 2 skipped (672) — vitest v4.1.11, `npm test` exit 0 (2026-09-21)
-            visualSpec testleri 17/17 (10 FAZ 3 + 7 exact-match/regresyon)
+HEAD:       d7045eb — "feat: add optional card template overlay"
+            origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-22)
+            Uzak 19 commit (b5257a1..6985aeb) rebase ile entegre edildi; bizim 1 commit d7045eb onlara bindirildi
+            Son zincir (kritik):
+              d7045eb  feat(card): optional card-frame template overlay (QuizCard templateFile + cardTemplates.ts + EraCardReveal default-null) — 4 dosya
+              6985aeb  docs(handoff): genre-normalize fix + BUG 2 açık iş
+              b5257a1  fix(visual): genre alias normalize (R&B/Soul→soul) — soul exact-assets eşleşiyor
+              397ac09  checkpoint: soul 6 yeni exact-asset + kural-10 Test B 9 mood
+              3892330  refactor(visual): gothic → dark/acoustic ayrımı + eraThemeFor year-guess nötralize
+              d5c2131  refactor(hf): client-side HF dead-code TAMAMEN kaldırıldı (huggingFaceService.* silindi)
+              be79f9c  feat(card): QuizCard redesign Adım 1-4 + okunurluk katmanı
+Testler:    69 dosya, 674 passed / 2 skipped (676) — vitest v4.1.10, `npm test` exit 0 (2026-09-22)
+            visualSpec exact-match/genre-normalize dahil 17/17 yeşil
 tsc:        temiz (`npm run typecheck` = 0 hata)
-Lint:       0 hata, ~9 uyarı (baseline: react-refresh ui/* + LanguageContext + bir exhaustive-deps;
-            yeni uyarı YOK). `npx eslint src scripts --rule 'prettier/prettier: off'`.
-Build:      `npm run build` exit 0 (Vercel SPA path; Nitro .output). Doğrulandı 2026-09-17.
-Worktree:   temiz (staging sonrası) — yalnızca `.claude/` untracked (Claude Code yerel config;
-            bilerek commit'lenmedi). Asset'ler: 9× `mood-backdrop-*.png` (mood standardı).
+Lint:       1 error (prefer-const 'palette') + 9 uyarı (baseline, pre-existing — bu oturum dokunmadı)
+Build:      `npm run build` exit 0 (doğrulandı 2026-09-22).
+Worktree:   temiz. stash@{0}=HF WIP backup (superseded — onaysız drop YOK). Asset 18 PNG
+            (9× mood-backdrop-*.png + 9× backdrop-soul-*.png). .claude/ YOK.
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint src scripts --rule 'prettier/prettier: off'`.
@@ -67,6 +56,13 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 - **NEDEN:** Resolver/registry üç ekseni (mood+genre+decade) taşıyordu ama SceneRoom sadece mood'u render ediyordu; genre/decade "declared input" idi (kodda kullanılmıyordu).
 - **NASIL (5 dosya):** `moodBackdrop.ts` — `moodBackdropUrl(mood, genre?, decade?)` + `backdropCandidates` 4-kademeli fallback zinciri; `moodBackdrop.test.ts` — yeni imzaya göre; `visualResolver.ts:128` — genre/decade geçirir; `SceneRoom.tsx` — genre/releaseYear props + `eraThemeForYear` (tek kaynak, YENİ ladder YOK); `EraCardReveal.tsx:49` — props gönderir.
 - **Sonuç:** Testler 4 dosya / 40 test geçti; tsc yeşil. Kapsam dışı kalemler (commit mesajında kayıtlı): resolveSceneVisualSpec hâlâ orphan; HF runtime üretimi hâlâ canlı; assetRegistry assetRef güncellenmedi; üçlü decade-ladder dedup bekliyor.
+
+### 2d. Manual kart çerçevesi OVERLAY — v1 (commit `d7045eb`, 2026-09-22)
+- **NEDEN:** Kullanıcının kartın tasarımını (çerçeve) şarkıya özel AI artwork'ünden AYRI yönetebilmesi: ham yazısız AI sahnesi + manuel kart modeli + HTML/CSS metin.
+- **NASIL (4 dosya, geri alınabilir):** `src/lib/card/cardTemplates.ts` (yeni — Vite glob `../../assets/card-templates/*.png` + `cardTemplateUrl(file)` + `CARD_TEMPLATES` registry; V1 BOŞ = opt-in, PNG yok); `QuizCard.tsx` — opsiyonel `templateFile` prop, art penceresine `card-art-template` overlay `<img>` (yalnız dosya çözülürse; default null = görünüm değişmez); `EraCardReveal.tsx` — `templateFile={null}` (wiring yerinde, default kapalı); `QuizCard.test.tsx` — +2 test (open/off).
+- **Sonuç:** Rebase sonrası tsc 0, build 0, suite 69 dosya/674 pass/2 skip. Overlay yalnız journey QuizCard yüzeyinde; share/gallery/poster'dan bağımsız (bilinçli).
+- **Kapsam dışı (v2):** gerçek PNG asset yüklemek (`src/assets/card-templates/`), `CARD_TEMPLATES` registry eşlemesi + `scene→file` resolver.
+- **Sync notu:** Bu push `src/` dokundu; HANDOFF güncellemesi AYRI docs push'u (bu commit 03dccb9-sonrası zincirde). Kural-10: overlay default OFF olduğu için görsel değişiklik YOK — açılmadı. Bir asset eklendiğinde/template aktifleştiğinde kural-10 yeniden açılmalı.
 
 
 ---
@@ -240,6 +236,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 2. **FAZ 4b tamamlandı:** exactAssetRef → gerçek URL çözülüp resolver backdrop'unda önceliklendirildi (pass-through: pilot exact asset'ler == mood dosyaları; 40/40, tsc temiz). Kalan: FAZ 4c (palette/eraStyle/eraTheme wiring) ayrı kanonik-kaynak kararı (sceneThemeFor vs resolver sceneThemeId — 2010-sonrası farklı sonuç, bilinen risk); orphan script temizliği (`generate-room-backdrop.mjs`) tamamlandı (silindi 2026-09-20). ⚠️ mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
 3. **Sırada (onayla):** user yetkisi — yeni asset kombinasyonu ekleme, FAZ 4c (palette kanonik-kaynak kararı), HF runtime kapanışı.
 4. **QuizCard redesign (Adım 1-4 TAMAMLANDI — onay 2026-09-20):** (1) hash-skoru + score/scoreLabel kaldırıldı; (2) preview toggle görünür "Play/Mute" butonuna çevrildi; (3) journey-bağımsız "Add to Collection" (localStorage cap-50, idempotent toggle) eklendi; (4) okunurluk katmanı (gradient scrim + text-shadow + backdrop-blur + safe-area) eklendi. Dil seçici UI eklenmedi (Q1=B — mevcut LanguageSwitcher journey header'ında erişilebilir kalıyor, EraCardReveal modal değil). **Kural-10: "Arayüz Onaylandı" (2026-09-20)** — uçtan uca gözle doğrulandı; önceki §5 UYARI'sı kapanma koşulu gerçekleşti (implementasyon bitti + onaylandı). Kanalı kapanan kural-10, yalnızca yeni görsel-üretim değişikliği (taksonomi / FAZ 4c / yeni exact asset) olursa yeniden açılır.
+5. **Kart çerçevesi OVERLAY v1 TAMAMLANDI (2026-09-22, d7045eb):** default kapalı (null). Sırada (onayla): gerçek `card-templates/*.png` asset'ini yükle + `templateFile` bağla / `CARD_TEMPLATES` registry eşlemesi; overlay aktifleşince kural-10 aç.
 
 ---
 
@@ -261,6 +258,11 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+d7045eb feat(card): optional card-frame template overlay (QuizCard templateFile + cardTemplates.ts)
+6985aeb docs(handoff): genre-normalize fix (b5257a1) + BUG 2 eski metin-işlenmiş mood-backdrop açar iş
+b5257a1 fix(visual): normalize genre aliases so iTunes 'R&B/Soul' matches soul exact-assets
+d5c2131 refactor(hf): remove dead client-side HuggingFace service (generateGothicArt + types + gallery zombie retry)
+25fdcb6 docs(handoff): record HF runtime shutdown (server removed, client dead-code = separate P2)
 12942cb feat(scene): backdrop selection now multi-axis (mood+genre+decade)
 ea84a6e feat(visual): exact-match asset registry for manually produced combos (FAZ 3.1)
 2883f9a feat(visual): add deterministic scene visual contract (FAZ 3)
@@ -287,5 +289,5 @@ ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page
 
 ---
 
-_Artık son güncelleme: Hermes — 2026-09-19 (FAZ 3 → 3.2: multi-axis backdrop entegrasyonu push edildi; handoff-check yeşilde; test 4 dosya/40, tsc 0, lint 0e/~9w)._
+_Artık son güncelleme: Hermes — 2026-09-22 (overlay v1 push d7045eb + uzak 19-commit rebase entegrasyonu; test 69/674+2skip, tsc 0, build 0). HANDOFF bu commit'le güncellendi; handoff-check yeşile hedefleniyor._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
