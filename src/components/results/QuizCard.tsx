@@ -26,6 +26,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import type { LifeCard } from "@/lib/soundmap/lifeCards";
 import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
+import { cardTemplateUrl } from "@/lib/card/cardTemplates";
 import type { Song } from "@/lib/song/types";
 
 /**
@@ -161,12 +162,15 @@ export function QuizCard({
   card,
   song,
   autoPlayPreview = false,
+  templateFile,
 }: {
   card: LifeCard;
   /** The era's song when one exists — artwork + preview come only from here. */
   song: Song | null;
   /** Attempt fade-in playback on mount (browser gesture policy may block it). */
   autoPlayPreview?: boolean;
+  /** Optional 1:1 card-frame template (frame-gothic.png ...) drawn over the artwork window. */
+  templateFile?: string | null;
 }) {
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
@@ -185,6 +189,8 @@ export function QuizCard({
   };
   const era = eraStyleFor(song, card.index);
   const art = useCardArtwork(song, { cardIndex: card.index });
+  // Manual frame overlay - rendered only when an uploaded template resolves.
+  const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   // Poetic lore (LLM or deterministic server-side) — replaces the static
   // narrative when ready; the card also persists server-side on this call.
   const lore = useCardLore(song, {
@@ -283,6 +289,16 @@ export function QuizCard({
             loading="lazy"
             className="absolute inset-0 h-full w-full animate-in fade-in object-cover duration-1000"
             style={{ filter: "sepia(0.12) contrast(1.04) brightness(0.97)" }}
+          />
+        ) : null}
+        {templateUrl ? (
+          <img
+            data-testid="card-art-template"
+            src={templateUrl}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover pointer-events-none"
           />
         ) : null}
         <InnerVignette />

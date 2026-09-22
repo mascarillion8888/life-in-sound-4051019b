@@ -65,7 +65,7 @@ export function EraCardReveal({
           {eraTheme.overlayClasses && (
             <div aria-hidden="true" className={eraTheme.overlayClasses} />
           )}
-          <QuizCard card={card} song={song} autoPlayPreview />
+          <QuizCard card={card} song={song} autoPlayPreview templateFile={null} />
         </div>
 
         <Button

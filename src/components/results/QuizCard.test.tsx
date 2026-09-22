@@ -9,6 +9,12 @@ import type { Song } from "@/lib/song/types";
 
 import { QuizCard } from "./QuizCard";
 
+vi.mock("@/lib/card/cardTemplates", () => ({
+  cardTemplateUrl: (file: string) =>
+    file === "frame-gothic.png" ? "data:image/png;base64,AA==" : undefined,
+  CARD_TEMPLATES: [],
+}));
+
 // Audio playback is stubbed — jsdom cannot play media.
 vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
 vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
@@ -188,5 +194,21 @@ describe("QuizCard", () => {
   it("does not render a collect button when the song is missing", () => {
     render(<QuizCard card={cards[1]} song={null} />);
     expect(screen.queryByRole("button", { name: /collection/i })).toBeNull();
+  });
+
+  it("renders no frame template by default (opt-in - current look unchanged)", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    expect(screen.queryByTestId("card-art-template")).toBeNull();
+    // Existing imagery is untouched - the cover stays the window base.
+    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
+  });
+
+  it("draws an uploaded frame template over the artwork window when one is set", () => {
+    render(
+      <QuizCard card={cards[0]} song={song()} templateFile="frame-gothic.png" />,
+    );
+    const tpl = screen.getByTestId("card-art-template") as HTMLImageElement;
+    expect(tpl.src).toContain("data:image/png;base64");
+    expect(tpl.className).toContain("pointer-events-none");
   });
 });
