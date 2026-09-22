@@ -15,10 +15,14 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       b995ce2 — "feat(visual): add decade-free soul exact-assets (3 moods) to Asset Registry"
-            origin/main ile SENKRON (push edildi 2026-09-20; rev-list 0 0)
-            Son commit zinciri (FAZ 0 → 4b + cleanups):
-              88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi (push 2026-09-20)
+HEAD:       0af5485 — "checkpoint: soul exact-asset registry (decade-free) + kural-10 Test B açık — HANDOFF.md güncellendi"
+            origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-21)
+            Son commit zinciri:
+              b995ce2  feat(visual): add decade-free soul exact-assets (3 moods) to Asset Registry
+              0075e1c chore(i18n): remove dead intensityLabel field (type + 5 locales)
+              471128e  checkpoint: HF client dead-code kapanışı TAMAMLANDI işaretlendi + §1 HEAD senkron — HANDOFF.md güncellendi
+              26cce0b  docs(handoff): record client-side HF dead-code removal closure (d5c2131)
+              88f6648  chore(scene): orphan generate-room-backdrop.mjs + gen:room silindi; stale doc iddiaları düzeltildi
               e07b87f  FAZ 4b — exactAssetRef→URL çözümü resolver backdrop adımında; palette wiring FAZ 4c'ye ertelendi (push 2026-09-20)
               6413994  checkpoint: FAZ 4b exactAssetRef çözümü kaydı — HANDOFF.md güncellendi (handoff-check green)
               c201413  checkpoint: FAZ 4a resolver bağlama kaydı — HANDOFF.md güncellendi (handoff-check green)
@@ -32,8 +36,8 @@ HEAD:       b995ce2 — "feat(visual): add decade-free soul exact-assets (3 mood
                         src/lib/visual/visualResolver.ts + visualSpec.test.ts (10 test)
               ea84a6e  FAZ 3.1 — exact-match asset registry: SCENE_ASSET_REGISTRY + resolveExactAsset
                         (pilot 1980s×Pop×9 mood) + SceneVisualResolution.exactAssetRef + 3 test
-Testler:    70 dosya, 664 passed / 2 skipped (666) — vitest v4.1.11, `npm test` exit 0 (2026-09-19)
-            visualSpec testleri 13/13 (10 önceki + 3 exact-match)
+Testler:    68 dosya, 670 passed / 2 skipped (672) — vitest v4.1.11, `npm test` exit 0 (2026-09-21)
+            visualSpec testleri 17/17 (10 FAZ 3 + 7 exact-match/regresyon)
 tsc:        temiz (`npm run typecheck` = 0 hata)
 Lint:       0 hata, ~9 uyarı (baseline: react-refresh ui/* + LanguageContext + bir exhaustive-deps;
             yeni uyarı YOK). `npx eslint src scripts --rule 'prettier/prettier: off'`.
@@ -180,7 +184,25 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 
    **PALET GÖRÜNÜRLÜĞÜ NOTU (2026-09-20):** Taksonomi yeniden tasarımı (gothic split + acoustic + eraThemeFor nötralizasyonu) kod + test düzeyinde doğru ve 682/684 yeşil. Ancak `SCENE_PALETTES[themeId]`'nin kullanıcıya görünür etkisi yok: wall gradient kök div'de, backdrop blur-cover katmanı onu TAMAMEN örtüyor (moodImage her zaman dolu URL — dreamy fallback); glow yalnızca çok hafif bir screen-blend üst parlaması. Dolayısıyla bu değişiklik için kural-10'un "gözle doğrulama" standardı UYGULANABİLİR DEĞİL — görsel olarak doğrulanacak bir fark yok. Paletler ileride prosedürel masa/raf/kitap render'ına bağlandığında görünür olur ve kural-10 o noktada yeniden açılmalıdır.
 
-      **SOUL EXACT-ASSET KAYDI (2026-09-20, b995ce2) + KURAL-10 TEST B AÇIK:** Asset Registry'ye ilk decade-free tür kaydı eklendi (genre="soul", mood=Energetic/Euphoric/Playful, `backdrop-soul-*.png`, dönemsiz). `SceneAssetEntry.decade` artık opsiyonel (`decade?: string`); decade taşımayan kayıt her yılda eşleşir, pop-1980s pilotu hâlâ tam-eşleşme (regresyon testi). Kritik fix'ler: fallbackTrace decade-undefined crash + `moodBackdrop.ts` glob'unun `backdrop-soul-*.png`'i çözmesi (iki pattern'a). Bilinen kabul edilen kusur: soul 2:3, mevcut 3:4 (contain ile letterbox olası). **KURAL-10:** Test A (soul + eşleşmeyen mood → mood-fallback) ✅ PASS (kod testi + gözle); **Test B (soul + Energetic/Euphoric/Playful → gerçek backdrop + letterbox değerlendirmesi) ⏳ AÇIK / BEKLİYOR** — doğru genre="soul" + eşleşen-mood kombinasyonu tarayıcıda henüz yakalanmadı. Kural-10 TAMAMLANDI değil; sıradaki oturumda soul şarkısı (genre="soul") + enerjik mood ile Test B devam edilecek.
+      **SOUL EXACT-ASSET KAYDI (2026-09-20, b995ce2; 6 yeni mood 2026-09-22) — KURAL-10 DURUMU GÜNCELLENDİ:**
+      Asset Registry'ye iki dalgada decade-free soul kayıtları eklendi: ilk 3 mood (Energetic/Euphoric/Playful, b995ce2)
+      ve **6 yeni mood (Romantic/Melancholic/Dreamy/Nostalgic/Dark/World)** → soul artık **9/9 mood'un tamamı** `backdrop-soul-*.png` ile exact-match.
+      `SceneAssetEntry.decade` opsiyonel (`decade?: string`); decade taşımayan kayıt her yılda eşleşir, pop-1980s pilotu hâlâ tam-eşleşme (regresyon testi).
+      Kritik fix'ler: fallbackTrace decade-undefined crash + `moodBackdrop.ts` glob'unun `backdrop-soul-*.png`'i çözmesi (iki pattern).
+      Bilinen kabul edilen kusur: soul dosyaları 3:4 (1086×1448), eski `mood-backdrop-*.png` 2:3 — contain ile letterbox olası.
+
+      **KURAL-10 (2026-09-22, DÜZELTİLDİ — önceki "değişiklik yok" değerlendirmesi HATALIYDI):**
+      Bu 6 yeni exact-match kaydı, soul + {Romantic, Melancholic, Dreamy, Nostalgic, Dark, World} seçildiğinde ARTIK genel
+      mood-fallback yerine özel `backdrop-soul-*.png` gösterilmesi demektir — **GERÇEK bir görsel değişiklik.** (Önceki HANDOFF
+      notundaki "görsel değişiklik YOK / passthrough" değerlendirmesi yalnızca pop-1980s pilotu için doğruydu — orada exact asset == mood dosyasıydı.
+      Soul'da dosya FARKLI olduğu için bu gerekçe geçerli değil.)
+
+      **Kural-10 Test B kapsamı GENİŞLEDİ:** artık yalnızca 3 değil, **9 soul mood'unun tamamı için gözle doğrulama** gerekiyor
+      (ilk 3'ü zaten bekliyordu — energetic/euphoric/playful — şimdi 6'sı daha eklendi).
+      Test A (soul + eşleşmeyen mood → mood-fallback) ✅ PASS (kod testi + gözle).
+
+      **DURUM: TAMAMLANDI DEĞİL.** Kod push edilecek (2026-09-22), ama gözle doğrulama (soul + herhangi bir mood'un doğru
+      `backdrop-soul-*.png` göstermesi) hâlâ bekliyor — sıradaki oturumda soul şarkısı (genre="soul") ile son 6 mood dahil doğrulanacak.
 
    ### FAZ 4 / P2 (sonraki oturumlar)
 2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
