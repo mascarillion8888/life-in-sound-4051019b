@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 
 import { resolveSceneVisualSpec } from "./visualResolver";
+import { normalizeGenre } from "./assetRegistry";
 
 describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () => {
   it("same mood + different decade → differentiatable via eraStyle/eraTheme (not identical visuals)", () => {
@@ -165,4 +166,37 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
   });
-});
+
+  it("provider genre'si normalize edilir — iTunes 'R&B/Soul' → soul exact asset", () => {
+    // Gerçek provider değeri registry anahtarıyla birebir aynı değildir:
+    // iTunes "R&B/Soul" verir, registry anahtarı "soul". normalizeGenre bunu eşler.
+    const itunesRnb = resolveSceneVisualSpec({
+      mood: "Romantic",
+      genre: "R&B/Soul",
+      releaseYear: 1967,
+    });
+    expect(itunesRnb.exactAssetRef).toBe("backdrop-soul-romantic.png");
+    expect(itunesRnb.fallbackTrace.join("|")).toContain("exact-match:soul-romantic");
+    // backdrop, soul dosyasının gerçek URL'sini gösterir (glob'da çözülür).
+    expect(itunesRnb.backdropUrl).toContain("backdrop-soul-romantic");
+  });
+
+  it("normalizeGenre — bilinen eşanlamlılar tek kimliğe iner, bilinmeyen aynen kalır", () => {
+    const cases: [string, string][] = [
+      ["R&B/Soul", "soul"],
+      ["rhythm and blues", "soul"],
+      ["soul/funk", "soul"],
+      ["R&B", "soul"],
+      ["Hip-Hop", "hiphop"],
+      ["New Wave", "synth"],
+      ["Metal", "metal"], // eşleşme yok → küçük-harfli orijinal
+    ];
+    for (const [input, expected] of cases) {
+      expect(normalizeGenre(input)).toBe(expected);
+    }
+    expect(normalizeGenre(null)).toBeNull();
+    expect(normalizeGenre("  ")).toBeNull();
+  });
+  });
+
+

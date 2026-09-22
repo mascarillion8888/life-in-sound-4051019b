@@ -26,7 +26,7 @@ import type {
   SceneVisualSpecInput,
   SceneVisualSpec,
 } from "@/types/visualSpec";
-import { SCENE_ASSET_REGISTRY, type SceneAssetEntry } from "./assetRegistry";
+import { SCENE_ASSET_REGISTRY, normalizeGenre, type SceneAssetEntry } from "./assetRegistry";
 
 /**
  * Scene theme'ini genre keyword eşleşmesiyle bul. Mevcut SCENE_KEYWORDS matrisini kullanır —
@@ -74,7 +74,9 @@ export function resolveExactAsset(
 ): SceneAssetEntry | undefined {
   if (!mood || !genre) return undefined;
   const moodKey = mood.trim();
-  const genreKey = genre.trim().toLowerCase();
+  // Provider genre'sini kanonik kimliğe indir (iTunes "R&B/Soul" → "soul")
+  // ki registry anahtarıyla eşleşebilsin. Eşleşme yoksa ham değer kalır.
+  const genreKey = normalizeGenre(genre);
 
   let decKey = decade?.trim().toLowerCase() ?? "";
   if (!decKey && typeof releaseYear === "number" && Number.isFinite(releaseYear)) {

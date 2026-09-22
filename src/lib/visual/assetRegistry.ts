@@ -23,6 +23,41 @@ import type { Mood } from "@/lib/ai/moodInference";
 export type GenreId =
   "pop" | "metal" | "rock" | "hiphop" | "jazz" | "reggae" | "soul" | "synth" | "gothic" | "grunge";
 
+/**
+ * Genre etiketlerini kanonik `GenreId`'ye indirger (recorded provider'lar tek
+ * isim üzerinde anlaşmaz: iTunes "R&B/Soul", "rhythm and blues" verirken
+ * registry anahtarı "soul"dur). Bu normalizasyon exact-match'in gerçek
+ * provider genre'sini kanonik kimlikle eşleyebilmesi içindir — yeni veri
+ * UYDURMAZ, bilinen eşanlamlıları tek kimliğe götürür (ANA_YASA §0).
+ *
+ * Bilinmeyen/boş girdi aynen döner (küçük harf) — hiçbir değer uydurulmaz.
+ */
+export const GENRE_ALIASES: Record<string, GenreId> = {
+  "r&b": "soul",
+  "r&b/soul": "soul",
+  "soul/r&b": "soul",
+  "rb": "soul",
+  "rhythm and blues": "soul",
+  "rhythm & blues": "soul",
+  "soul/funk": "soul",
+  "motown": "soul",
+  "stax": "soul",
+  "hip-hop": "hiphop",
+  "hip hop": "hiphop",
+  "rap": "hiphop",
+  "synth-pop": "synth",
+  "synth pop": "synth",
+  "new wave": "synth",
+};
+
+/** null/boş'a güvenli kanonik genre kimliği. Eşleşme yoksa küçük-harfli orijinal. */
+export function normalizeGenre(genre: string | null | undefined): string | null {
+  if (!genre || typeof genre !== "string") return null;
+  const key = genre.trim().toLowerCase();
+  if (key.length === 0) return null;
+  return GENRE_ALIASES[key] ?? key;
+}
+
 /** Manuel üretilmiş bir kombinasyonun kaydı. */
 export interface SceneAssetEntry {
   genre: GenreId;
