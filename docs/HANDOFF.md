@@ -15,8 +15,8 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       0af5485 — "checkpoint: soul exact-asset registry (decade-free) + kural-10 Test B açık — HANDOFF.md güncellendi"
-            origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-21)
+HEAD:       b5257a1 — "fix(visual): normalize genre aliases so iTunes 'R&B/Soul' matches soul exact-assets"
+            origin/main 3 adım geride (3f970ff, 397ac09, b5257a1 push bekliyor — rev-list)
             Son commit zinciri:
               b995ce2  feat(visual): add decade-free soul exact-assets (3 moods) to Asset Registry
               0075e1c chore(i18n): remove dead intensityLabel field (type + 5 locales)
@@ -202,7 +202,23 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
       Test A (soul + eşleşmeyen mood → mood-fallback) ✅ PASS (kod testi + gözle).
 
       **DURUM: TAMAMLANDI DEĞİL.** Kod push edilecek (2026-09-22), ama gözle doğrulama (soul + herhangi bir mood'un doğru
-      `backdrop-soul-*.png` göstermesi) hâlâ bekliyor — sıradaki oturumda soul şarkısı (genre="soul") ile son 6 mood dahil doğrulanacak.
+            `backdrop-soul-*.png` göstermesi) hâlâ bekliyor — sıradaki oturumda soul şarkısı (genre="soul") ile son 6 mood dahil doğrulanacak.
+
+      **KARAR (2026-09-22) — Genre normalize fix (b5257a1) + AÇIK görsel iş (BUG 2):**
+      **DÜZELTİLDİ (b5257a1, fix):** exact-match genre eşleşmesi artık `normalizeGenre` kullanıyor
+      (`assetRegistry.ts` `GENRE_ALIASES`): iTunes "R&B/Soul" → "soul", "Hip-Hop" → "hiphop", "New Wave" → "synth"
+      vb. Kök neden: soul exact-asset'lerin (9× `backdrop-soul-*.png`) **HİÇ gösterilmediği** bulundu — iTunes genre
+      "R&B/Soul" veriyordu, registry anahtarı "soul" olduğu için `===` eşleşmesi başarısızdı ve sistem eski
+      `mood-backdrop-*.png`'e düşüyordu. Bu yüzden Aretha/Otis gibi soul efsaneleri ("R&B/Soul") hep aynı eski
+      mood-backdrop'u gösteriyordu (kullanıcı "hep POP" gözleminin kaynağı). Fix sonrası soul + mood → `backdrop-soul-*.png`.
+
+      **BUG 2 — AÇIK GÖRSEL İŞ (görsel yeniden-üretim, kullanıcı onayı + ayrı task):**
+      Eski `mood-backdrop-*.png` dosyaları (FAZ 3 öncesi 9'luk set) **İÇLERİNDE METİN TAŞIYOR** (Vision ile doğrulandı):
+      örn. `mood-backdrop-romantic.png` sol üstte "1980s • POP" + "ROMANTIC", ayrıca duvar/rafta DURAN DURAN,
+      MADONNA, THE CURE, A-HA, DEPECHE MODE etiketleri. Bu, **KARAR REVİZYONU'nun ihlalidir** (2026-09-20: görseller
+      metinsiz üretilir, metin CSS/DOM'dan gelir). Programatik düzeltilemez — 9+ dosyanın metinsiz olarak YENİDEN
+      ÜRETİLMESİ gerekir (kullanıcının asset üretim işi). Soul şarkılarında artık yeni soul dosyaları gösterildiği için
+      bu kusur soul'da görünmez; diğer tür/decade kombinasyonlarında eski dosyalar hâlâ kullanılır.
 
    ### FAZ 4 / P2 (sonraki oturumlar)
 2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
