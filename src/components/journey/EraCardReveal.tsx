@@ -20,6 +20,25 @@ import { sceneThemeFor } from "@/lib/art/sceneTheme";
 import { LIFE_CARD_COUNT, type LifeCard } from "@/lib/soundmap/lifeCards";
 import type { Song } from "@/lib/song/types";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
+
+/**
+ * Position-indexed poetic chapter lines (English-only reveal). These replace
+ * the clinical age-range string as the card header's secondary line — the
+ * chapter reads as a life-transition phrase, not a mood declaration. The
+ * numeric `ageRange` stays on the card face / poster (QuizCard, MasterPoster,
+ * poeticPoster still consume it). Approved 2026-09-23 (Variant 1).
+ */
+const ERA_CHAPTER_LINES: string[] = [
+  "Where the world still felt soft and vast…",
+  "When taste first became a mirror…",
+  "When volume ran louder than feeling…",
+  "The years that gathered more questions than answers…",
+  "Where softness learned to armor itself…",
+  "Where sound arrived before light…",
+  "When loss became portable through music…",
+  "Where inquiry and peace met in a single melody…",
+];
+
 export function EraCardReveal({
   card,
   song,
@@ -54,10 +73,13 @@ export function EraCardReveal({
             <Sparkles className="h-4 w-4" />
             Era {card.songIndex} of {LIFE_CARD_COUNT}
           </span>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/70">
+            Life Chapter
+          </p>
           <h2 className="text-2xl font-bold uppercase tracking-wide text-foreground sm:text-3xl">
             {card.eraTitle}
           </h2>
-          <p className="text-sm uppercase tracking-wider text-muted-foreground">{card.ageRange}</p>
+          <p className="text-sm uppercase tracking-wider text-muted-foreground">{ERA_CHAPTER_LINES[card.index] ?? card.ageRange}</p>
         </div>
 
         {/* The card stands on the desk. */}
