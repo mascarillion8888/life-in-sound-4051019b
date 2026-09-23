@@ -15,10 +15,15 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       d7045eb — "feat: add optional card template overlay"
+HEAD:       e9a012c — "checkpoint: card overlay v1 + rebase senkronu — HANDOFF.md güncellendi"
             origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-22)
-            Uzak 19 commit (b5257a1..6985aeb) rebase ile entegre edildi; bizim 1 commit d7045eb onlara bindirildi
+            DÜZELTME (2026-09-23): 397ac09..e9a012c aralığı YALNIZCA 4 commit'tir — b5257a1, 6985aeb,
+            d7045eb, e9a012c. "Uzak 19-commit rebase" iddiası YANLIŞTIR: bu klonun reflog'unda rebase
+            yok, d7045eb/e9a012c LOCAL reflog'da hiç geçmiyor (başka — dün akşamki Hermes — oturumda
+            üretilip origin'e push edilmiş, bu klon sabah 07:35 "pull fast-forward" ile çekti). Hash
+            değişimi YOK, force-push YOK — güvenli; eski commit numaralarımız geçerli.
             Son zincir (kritik):
+              e9a012c  checkpoint: card overlay v1 + rebase senkronu — HANDOFF güncellendi
               d7045eb  feat(card): optional card-frame template overlay (QuizCard templateFile + cardTemplates.ts + EraCardReveal default-null) — 4 dosya
               6985aeb  docs(handoff): genre-normalize fix + BUG 2 açık iş
               b5257a1  fix(visual): genre alias normalize (R&B/Soul→soul) — soul exact-assets eşleşiyor
@@ -27,7 +32,7 @@ HEAD:       d7045eb — "feat: add optional card template overlay"
               d5c2131  refactor(hf): client-side HF dead-code TAMAMEN kaldırıldı (huggingFaceService.* silindi)
               be79f9c  feat(card): QuizCard redesign Adım 1-4 + okunurluk katmanı
 Testler:    69 dosya, 674 passed / 2 skipped (676) — vitest v4.1.10, `npm test` exit 0 (2026-09-22)
-            visualSpec exact-match/genre-normalize dahil 17/17 yeşil
+            visualSpec exact-match/genre-normalize dahil 19/19 yeşil (doğrulandı 2026-09-23)
 tsc:        temiz (`npm run typecheck` = 0 hata)
 Lint:       1 error (prefer-const 'palette') + 9 uyarı (baseline, pre-existing — bu oturum dokunmadı)
 Build:      `npm run build` exit 0 (doğrulandı 2026-09-22).
@@ -80,11 +85,11 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 
 ---
 
-## 4. Test / Derleme İstatistikleri (2026-09-19 doğrulandı)
+## 4. Test / Derleme İstatistikleri (2026-09-23 doğrulandı)
 
-- **Vitest:** 70 dosya, 664 passed / 2 skipped (0 failed) — `npm test`. visualSpec 13/13.
+- **Vitest:** 69 dosya, 674 passed / 2 skipped (0 failed) — `npm test` exit 0 (doğrulandı 2026-09-23). visualSpec 19/19.
 - **TypeScript:** `tsc --noEmit` 0 hata.
-- **Lint:** `npx eslint src scripts --rule 'prettier/prettier: off'` = 0 hata, ~9 uyarı (baseline).
+- **Lint:** `npx eslint src scripts --rule 'prettier/prettier: off'` = 1 error (baseline `prefer-const 'palette'` visualResolver.ts:171) + ~9 uyarı (pre-existing).
 - **Build:** `npm run build` exit 0.
 
 ---
@@ -108,29 +113,15 @@ FAZ 4c **ertelendi**. Etki analizi (33 şarkı simülasyonu) ~%15-25 şarkı baz
 1. **`decadeTheme`'in "yıldan tür tahmin etme" mantığı temelden kırılgan** (tür, döneme bağlı değil — 1960s'ta country/rock/soul hepsi var, sadece jazz değil; 2010+ için "else→gothic" bu sorunun görünür ucu, kökü değil).
 2. **`SCENE_KEYWORDS`'te "gothic" ailesi taksonomi hatası içeriyor** — gerçek gothic/metal/punk kümesiyle alakasız country/klasik/akustik türlerini de aynı şemsiyede topluyor (19 keyword, 3 farklı aileye ayrılmalı: dark/aggressive, acoustic/roots, classical/chamber).
 
-**KARAR:** Bu iki sorun **AYRI, büyük bir ADIM**'da ele alınacak (taksonomi yeniden tasarımı: yeni palet tasarımı + fallback mantığı + ~20-30 test + ürün kararı gerektiren B/C birleştirme sorusu). Bugün yapılmadı.
+**DURUM (güncellendi 2026-09-23): taksonomi bölmesi ve eraThemeFor nötralizasyonu EXECUTE edildi (3892330, 2026-09-21).** Bu bloktaki "Bugün yapılmadı / Yeni açık iş: planlama gerekir" ifadeleri artık GEÇERSİZ. Gerçekte:
+- `decadeTheme` ve `eraThemeFor` ikisi de nötrleştirildi → yalnız `return "gothic"` (yıldan-tür tahmini kaldırıldı).
+- gothic keyword ailesi 19→9'a düşürüldü (dark/aggressive: goth, doom, metal, thrash, slayer, sabbath, priest, maiden, punk); yeni `acoustic` ailesi (10: acoustic, country, americana, bluegrass, folk, classical, orchestra, piano, symphony, sonata); `SceneThemeId` +"acoustic"; `SCENE_PALETTES.acoustic` eklendi.
+- Bu, GERÇEK bir görsel değişiklikti (nostaljik dönem-atmosferi kalktı) → kural-10 bir kez daha açıldı ve doğrulandı.
+Tam kayıt: skill `references/faz-4c-and-taxonomy.md`.
 
-Bu düzelene kadar FAZ 4c **"B" kalır**: SceneRoom, kendi `sceneThemeFor` kaynağını kullanmaya devam eder; resolver'ın `sceneThemeId`/`palette` çıktısı SceneRoom render'ında **tüketilmez** (backdrop/exactAssetRef için resolver zaten canlı — bu, YALNIZCA palette/tema rengi kaynağıyla ilgili).
+**Kalan FAZ 4c (hâlâ açık, KARAR "B"):** yukarıdaki taksonomi işi BİTmiştir, ama palette/tema rengi KAYNAĞI kararı değişmedi. SceneRoom, kendi `sceneThemeFor` kaynağını kullanmaya devam eder; resolver'ın `sceneThemeId`/`palette` çıktısı SceneRoom render'ında **tüketilmez** (backdrop/exactAssetRef için resolver zaten canlı — bu, YALNIZCA palette/tema rengi kaynağıyla ilgili). `sceneThemeFor` ve resolver iki ayrı kaynaktan türetir (farklı sonuç verebilir, bilinen risk).
 
-**Blast radius (ölçülü, ileride referans):** `SceneThemeId` union genişlerse ~5 kaynak dosya (`scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx`) + 2-3 test dosyası etkilenir. gothic'e ait 50+ kod-tabanı eşleşmesinin çoğu (`gothicArt` UI, `huggingFaceService`, `cardThemes.css`, `DynamicMusicCard`) SCENE theme sisteminden bağımsız — dokunulmaz.
-
-**Yeni açık iş (büyük, planlama gerekir):** "SCENE_KEYWORDS taksonomi yeniden tasarımı — gothic ailesini böl (dark/aggressive vs acoustic/roots/classical), decadeTheme'in yıldan-tür-tahmini mantığını gözden geçir (muhtemelen nötr/default fallback'e geç), FAZ 4c kararını bu iş bitince yeniden değerlendir."
-
-### NOT (2026-09-20) — eraThemeFor'da AYNI kırık mantık yaşıyor
-
-`decadeTheme` (resolver, render edilmiyor — FAZ 4c KARAR B) nötrleştirildi.
-Ama `sceneThemeFor`'un fallback'i olan `eraThemeFor` (`sceneTheme.ts`) BİREBİR
-aynı "yıldan tür tahmini" mantığını taşıyor VE bu, gerçekte RENDER
-EDİLEN kaynak. Bunu nötrleştirmek:
-- Gerçek görsel değişiklik yaratır (nostaljik dönem-atmosferi kalkar)
-- `eraTheme` differ testini kırar
-- kural-10'u TEKRAR AÇAR
-
-Bu yüzden BİLEREK yapılmadı. Taksonomi yeniden tasarımı işiyle birlikte
-ele alınacak (gothic bölme kararıyla aynı ADIM'da) — o zaman zaten
-kural-10 tekrar açılacağı için, iki değişikliği (`eraThemeFor`
-nötrleştirme + gothic bölme) birlikte yapıp TEK bir kural-10
-doğrulamasıyla kapatmak daha verimli.
+**Blast radius (ölçülü, ileride referans):** `SceneThemeId` union daha da genişlerse ~5 kaynak dosya (`scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx`) + 2-3 test dosyası etkilenir. gothic'e ait 50+ kod-tabanı eşleşmesinin çoğu (`gothicArt` UI, `huggingFaceService`, `cardThemes.css`, `DynamicMusicCard`) SCENE theme sisteminden bağımsız — dokunulmaz.
 
 ### Karar (2026-09-20) — HF Runtime Kapatma
 
@@ -289,5 +280,5 @@ ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page
 
 ---
 
-_Artık son güncelleme: Hermes — 2026-09-22 (overlay v1 push d7045eb + uzak 19-commit rebase entegrasyonu; test 69/674+2skip, tsc 0, build 0). HANDOFF bu commit'le güncellendi; handoff-check yeşile hedefleniyor._
+_Artık son güncelleme: Hermes — 2026-09-23 (HANDOFF refresh: §1 HEAD→e9a012c, §4 istatistik 69/674, §5 taksonomi bloğu 3892330'da EXECUTE'di, "19-commit" iddiası 4 commit'e düzeltildi — hash değişimi/force-push YOK). docs-only değişiklik, handoff-check yeşil hedefi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
