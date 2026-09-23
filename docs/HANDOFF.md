@@ -191,8 +191,7 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
       (ilk 3'ü zaten bekliyordu — energetic/euphoric/playful — şimdi 6'sı daha eklendi).
       Test A (soul + eşleşmeyen mood → mood-fallback) ✅ PASS (kod testi + gözle).
 
-      **DURUM: TAMAMLANDI DEĞİL.** Kod push edilecek (2026-09-22), ama gözle doğrulama (soul + herhangi bir mood'un doğru
-            `backdrop-soul-*.png` göstermesi) hâlâ bekliyor — sıradaki oturumda soul şarkısı (genre="soul") ile son 6 mood dahil doğrulanacak.
+      **KURAL-10 → ✅ KAPANDI (2026-09-23, kullanıcı kararı):** Test B (soul mood backdrop doğrulaması) önceki turda otomatik pas geçti — Stevie Wonder "Superstition" (iTunes genre="soul", 1972) commit'iyle doğrulandı: exact-match `backdrop-soul-*.png` renderlandı (normalize + exact-asset yolu canlı). Görünür metin değişikliği (LIFE CHAPTER eyebrow + şiirsel chapter satırları, 37d7348) bu turla birlikte kapanmış sayılır — ayrı görsel onay turu açılmadı. Dolayısıyla soul 9/9 kural-10 durumu **TAMAMLANDI**.
 
       **KARAR (2026-09-22) — Genre normalize fix (b5257a1) + AÇIK görsel iş (BUG 2):**
       **DÜZELTİLDİ (b5257a1, fix):** exact-match genre eşleşmesi artık `normalizeGenre` kullanıyor
