@@ -168,7 +168,7 @@ export function resolveSceneVisualSpec(input: SceneVisualSpecInput): SceneVisual
 
   let eraStyleId;
   let eraTheme;
-  let palette = SCENE_PALETTES[sceneThemeId];
+  const palette = SCENE_PALETTES[sceneThemeId];
 
   if (year !== null && Number.isFinite(year)) {
     // ponytail: eraStyleFor cardIndex=0 — SceneRoom tek sahne kararı. Card-kontekstli
