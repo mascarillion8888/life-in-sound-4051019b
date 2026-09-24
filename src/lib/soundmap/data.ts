@@ -62,7 +62,7 @@ export const eras: Era[] = [
   },
   {
     id: 5,
-    age: "18-28 Yaş",
+    age: "23-29 Yaş",
     phase: "Güç",
     question: "Sana güç veren, seni ayağa kaldıran şarkı?",
     hint: "Omuzlarını dikleştiren parça.",
@@ -73,7 +73,7 @@ export const eras: Era[] = [
   },
   {
     id: 6,
-    age: "23-30 Yaş",
+    age: "30-39 Yaş",
     phase: "Karanlık",
     question: "En zor dönemine eşlik eden şarkı?",
     hint: "Yükü hafifletmeyen ama yalnız bırakmayan ses.",
@@ -84,7 +84,7 @@ export const eras: Era[] = [
   },
   {
     id: 7,
-    age: "28+ Yaş",
+    age: "40+ Yaş",
     phase: "Derinlik",
     question: "Özlediğin birini hatırlatan şarkı?",
     hint: "Bir ismin melodiye dolanmış hâli.",

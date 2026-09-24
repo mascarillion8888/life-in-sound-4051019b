@@ -42,13 +42,19 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ## 3. Bugün ve Bu Hafta Ne Yapıldı
 
-### 2026-09-24 — Durum katmanı kuruldu + ageRanges bug'ı belgelendi
+### 2026-09-24 — Durum katmanı kuruldu + hızlı kazanç turu (Option A)
 - İlk kez bu **anlatısal durum dosyası** (`docs/PROJECT_STATUS.md`) oluşturuldu;
   HANDOFF'la aynı commit'te güncellenmesi kalıcı alışkanlık olarak kaydedildi.
-- **Yeni bulunan, ayrı küçük iş:** kartların yaş aralığı dizisinde bir çakışma —
-  STEEL dönemi "Ages 18-28" etiketi hem bir önceki ("18-22") hem bir sonraki
-  ("23-30") dönemle çakışıyor. Henüz düzeltilmedi; gözle görünür bir arıza yaratmıyor,
-  yalnız içerik tutarlılığı. HANDOFF'a açık iş olarak eklendi.
+- **Hızlı kazanç turu (Option A) — 4 küçük, kural-10-açmayan iş, tek tur:**
+  - Age aralıkları çakışması düzeltildi: STEEL "18-28" hem "18-22" hem "23-30" ile örtüşüyordu.
+    Kesintisiz, kesişmeyen bant getirildi ("23-29 / 30-39 / 40+"), kart (EN+TR) ve
+    progress-bar (`data.ts`) birlikte — iki yüzey artık tutarlı.
+  - `intensityLabel` ölü i18n alanı **zaten kaldırılmış** bulundu (eskiden "açık" sanılıyordu);
+    yalnız kaydı kapatıldı.
+  - Preview (`previewUrl`) veri sözleşmesi **zaten sağlam** doğrulandı: tek `SONG_FIELDS`
+    whitelist'i hem local hem remote katmanda, round-trip testli. Kod yok, kapandı.
+  - Görsel mimari dokümanlarında drift düzeltildi: "Visual Resolver / Asset Registry
+    FUTURE – kodda yok" etiketleri CANLI gerçeğine, eski HF-zinciri referansları Imagen→Gemini'ye.
 
 ### 2026-09-23 — Kural-10 kapanışı + başlık metni + oran doğrulaması
 - Soul görselleri için **gözle onay turu kapandı**: bir soul efsanesi (Stevie Wonder
@@ -110,7 +116,7 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   eklenmeyi bekliyor (onayla).
 - **Kart çerçevesi overlay (v1):** altyapı kuruldu, varsayılan kapalı; gerçek
   çerçeve görselleri + eşleme hâlâ bekliyor.
-- **Soul görsellerinin oran tutarsızlığı** + **ageRanges çakışması** (§3).
+- **Soul görsellerinin oran tutarsızlığı** (energetic/euphoric/playful 2:3 vs 3:4) — asset üretiminde düzeltilecek.
 
 ### Hiç Başlanmamış
 - FAZ 4 Music Memory veri modeli (tasarım taslağı var, kod yok), FAZ 5 User
@@ -120,7 +126,6 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ### Kısa Vade (bu hafta/gün)
 - Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
-- ageRanges çakışmasını düzelt (küçük, ayrı içerik işi).
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz
   doğrulaması gerekir).
 
@@ -138,7 +143,7 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - **FAZ 4c renk/tema kaynağı** için kanonik kaynak seçilmedi (çözücü vs sahne;
   post-2010 ayrışması bilinen risk).
 - Eski genel görsellerin içinde metin var (metinsiz yeniden üretim gerekiyor).
-- 3 Soul görseli farklı oranda (2:3); ageRanges küçük çakışma.
+- 3 Soul görseli farklı oranda (2:3).
 - Üç ayrı "yaş dönemi" sistemi hâlâ birleşmedi (ayrı karar, bilinçli dokunulmadı).
 - Kalıcı kurallar: repo-lokal git kimliği doğru olmalı (Vercel engeli); `git add -A`
   yasak (anahtar/debri süpürür).

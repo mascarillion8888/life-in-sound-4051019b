@@ -77,7 +77,9 @@ VisualProfile {
 
 ---
 
-## 3. Visual Resolver (FUTURE — kodda yok; kavramsal)
+## 3. Visual Resolver (CURRENT/IMPLEMENTED — FAZ 3/3.1/3.2/4a/4b)
+
+**Durum güncellemesi (2026-09-24):** Bu bölüm daha önce "FUTURE — kodda yok" etiketliydi; ancak Visual Resolver artık **CANLI**. `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` + `resolveExactAsset`) + `src/lib/visual/assetRegistry.ts` (`SCENE_ASSET_REGISTRY`) kurulu ve `SceneRoom` bunu çağırıyor (resolver canlı, orphan değil, FAZ 4a/4b wiring'i 2026-09-20'de tamamlandı). `moodBackdrop.ts` çok-eksenli fallback ile birlikte çalışır. Test: `visualSpec.test.ts` 19/19, SceneRoom bundle 40/40, tsc temiz. Aşağıdaki sözleşme tanımları geçerliliğini korur.
 
 **Karar girdisi (kanonik — 18 Eylül, STATE KARARLAR):** Resolver görsel kararı, tek eksen
 değil **`Song {mood, genre, decade}` bileşiminin** ürünüdür. Mood, genre ve decade birlikte
@@ -160,7 +162,7 @@ GPT Image, hedef Visual AI teknolojisidir. **Ancak:**
 
 > ⚠️ Şu an UYGULANMAZ: API çağrısı YOK, environment variable YOK, production kodu YOK.
 
-Bu repoda `cardArtwork.server.ts` Imagen→Gemini→HF kullanır (CURRENT, mevcut bir çizgi). GPT Image
+Bu repoda `cardArtwork.server.ts` Imagen→Gemini kullanır (CURRENT, mevcut bir çizgi; HF kademesi 2026-09-20'de kaldırıldı). GPT Image
 henüz hiçbir kodda yoktur.
 
 Hedef (FUTURE): provider'ı Music DNA / Visual Intelligence'a DOKUNMADAN DEĞİŞTİRMESİNE OLANAK VEREN
@@ -201,7 +203,9 @@ kimlik (base universe) korunur.
 
 ---
 
-## 8. Asset Registry (FUTURE — kodda yok; kavramsal metadata modeli)
+## 8. Asset Registry (CURRENT/IMPLEMENTED — temel kurulu; metadata modeli kısmen)
+
+**Durum güncellemesi (2026-09-24):** Bu bölüm daha önce "FUTURE — kodda yok" etiketliydi; ancak Asset Registry'nin **çalışan çekirdeği** kurulu: `src/lib/visual/assetRegistry.ts` `SCENE_ASSET_REGISTRY` (genre/décade-free soul 9/9 + pilot 1980s×Pop) + `resolveExactAsset` (genre `normalizeGenre` ile eşleşir). Aşağıdaki zengin metadata modeli (asset spec/status/version vb.) hâlâ **kavramsal/FUTURE** — bugün registry satırları daha basit bir shape'dir (`SceneAssetEntry`).
 
 Mimari, üretilen görsellerin YALNIZCA dosya olması yerine **metadata ile yönetilmesini** hedefler.
 
@@ -305,7 +309,7 @@ KISMİ öncülleridir; bunları "tamamlanmış hedef mimari" sanmayın.
 | `src/lib/art/cardBlueprint.ts` | multidim görsel brief (era×genre×memory/object vocab, deterministicLore) | CURRENT |
 | `src/lib/soundmap/posterTheme.ts` | genre/era/duygu→metal/atmosfer/arka plan | CURRENT |
 | `src/components/results/OrganicArtwork.tsx` | composition render dili | CURRENT |
-| `src/lib/art/{hfImage,useCardArtwork}.ts` | runtime üretim (tag Imagen→Gemini→HF) + cache (server/localStorage) | CURRENT |
+| `src/lib/art/useCardArtwork.ts` | runtime üretim (Imagen→Gemini; HF kaldırıldı) + cache (server/localStorage) | CURRENT |
 | `src/assets/mood-backdrop-*.png` (9) | CANLI scene backdrop asset'ler (SceneRoom mood-backdrop) | CURRENT |
 
 > **Açık mimari not:** `cardArtwork` şu an **runtime görsel ÜRETİMİ** yapıyor.

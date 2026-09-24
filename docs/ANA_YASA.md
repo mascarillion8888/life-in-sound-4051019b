@@ -320,7 +320,7 @@ onaysız değiştirilmemeli.
 | Gerçek şarkı seçimi | 🟢 |
 | Şarkı doğrulama | 🟢 |
 | Artwork | 🟢 |
-| 30 sn preview altyapısı | 🟡 veri sözleşmesi tamamlanmalı |
+| 30 sn preview altyapısı | 🟢 CANLI — previewUrl `SONG_FIELDS` whitelist'inde + `COERCE_TO_PERSISTED`'te; local (`journey-storage`) ve remote (`journey-remote`) tier aynı whitelist; round-trip testleri var (2026-09-24 doğrulandı) |
 | Journey persistence | 🟢 |
 | Music DNA | 🟢 mood-aware (13 Eylül) — genre > mood > diversity katmanlı gate |
 | Life Story | 🟡 mimari doğru, veri temeli güçlendirilmeli |
