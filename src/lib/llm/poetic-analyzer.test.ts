@@ -364,6 +364,37 @@ describe("parsePoeticAnalysis", () => {
     expect(analysis?.chapters[0].title).toBe("VALID");
   });
 
+  it("fills a missing chapter ageRange from the deterministic fallback (era badges / portal ages)", () => {
+    // The LLM chapter schema does not carry `ageRange` — the parsed chapter
+    // must inherit the deterministic chapter's age range by id, else by
+    // position, so MasterPosterSheet era-badges + portal-strip still render.
+    const payload = validGeminiPayload();
+    // Explicitly strip any ageRange from the LLM chapters (they have none by
+    // schema, but be explicit about the scenario being tested).
+    payload.chapters = payload.chapters.map((c) => ({ ...c, ageRange: undefined }));
+    const analysis = parsePoeticAnalysis(JSON.stringify(payload), ctx());
+    const fallback = deterministicPoeticAnalysis(ctx().profile, ctx().songs);
+    expect(analysis?.chapters).toHaveLength(4);
+    // Same position → same deterministic ageRange.
+    for (let i = 0; i < analysis!.chapters.length; i += 1) {
+      expect(analysis!.chapters[i].ageRange, `chapter ${i} ageRange`).toBe(
+        fallback.chapters[i].ageRange,
+      );
+    }
+    // All non-empty.
+    expect(analysis!.chapters.every((c) => c.ageRange.length > 0)).toBe(true);
+  });
+
+  it("prefers an explicit supplied ageRange over the fallback", () => {
+    const payload = validGeminiPayload();
+    payload.chapters[0] = {
+      ...payload.chapters[0],
+      ageRange: "Ages 40-45",
+    } as (typeof payload.chapters)[0];
+    const analysis = parsePoeticAnalysis(JSON.stringify(payload), ctx());
+    expect(analysis?.chapters[0].ageRange).toBe("Ages 40-45");
+  });
+
   it("rejects invalid hex colors and keeps the theme palette", () => {
     const payload = validGeminiPayload();
     (payload.visual as Record<string, unknown>).palette = {

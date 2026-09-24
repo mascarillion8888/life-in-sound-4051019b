@@ -705,10 +705,20 @@ export function parsePoeticAnalysis(
           )
         : [];
       if (indexes.length === 0) continue;
+      // The LLM chapter schema does not carry `ageRange` (see
+      // buildPoeticAnalyzerPrompt TASK) — when it is absent, fall back to the
+      // deterministic chapter's age range (matched by id, then by position) so
+      // the era badges and portal ages still render. Deterministic-only, no
+      // fabrication (ANA_YASA §0).
+      const resolvedId = asNonEmptyString(chapter.id) ?? `chapter-${chapters.length + 1}`;
+      const fallbackAgeRange =
+        fallback.chapters.find((c) => c.id === resolvedId)?.ageRange ??
+        fallback.chapters[chapters.length]?.ageRange ??
+        "";
       chapters.push({
-        id: asNonEmptyString(chapter.id) ?? `chapter-${chapters.length + 1}`,
+        id: resolvedId,
         title,
-        ageRange: asNonEmptyString(chapter.ageRange) ?? "",
+        ageRange: asNonEmptyString(chapter.ageRange) ?? fallbackAgeRange,
         songIndexes: [...new Set(indexes)],
         narrative,
         mood: asNonEmptyString(chapter.mood) ?? "luminous",

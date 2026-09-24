@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       b44f945 — "feat(safety): CrisisGuard (5-language deterministic triage) + CrisisSupportPanel + i18n 5-dil + ETHICAL_AI.md"
+HEAD:       55954b2 — "feat(ai): tanı-yasağı + anti-cliché rules into 4 prose prompts + mood-inference non-clinician system line + tests"
             origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-24)
             DÜZELTME (2026-09-23): 397ac09..e9a012c aralığı YALNIZCA 4 commit'tir — b5257a1, 6985aeb,
             d7045eb, e9a012c. "Uzak 19-commit rebase" iddiası YANLIŞTIR: bu klonun reflog'unda rebase
@@ -23,14 +23,14 @@ HEAD:       b44f945 — "feat(safety): CrisisGuard (5-language deterministic tri
             üretilip origin'e push edilmiş, bu klon sabah 07:35 "pull fast-forward" ile çekti). Hash
             değişimi YOK, force-push YOK — güvenli; eski commit numaralarımız geçerli.
             Son zincir (kritik):
+              55954b2  feat(ai): tanı-yasağı + anti-cliché kuralları 4 prose prompt'a + mood-inference non-clinician satır + testler
+              9fff09c  docs(handoff): sync §1 HEAD→b44f945 + CrisisGuard/ETHICAL_AI kaydı; PROJECT_STATUS Option C
               b44f945  feat(safety): CrisisGuard (5-lang triage) + CrisisSupportPanel + i18n + ETHICAL_AI.md (§0 Founding)
-              b6429fa  fix(cards): non-overlapping age band (18-22/23-29/30-39/40+) lifeCards EN+TR + data.ts
-              f1a9705  checkpoint: docs — §1 HEAD→9c73281 sync + PROJECT_STATUS.md narrative katmanı
               9c73281  docs(handoff): mark kural-10 ✅ KAPANDI (soul Test B + card header text closed same pass)
               c9b2a5a  docs(handoff): note STEEL era age-range overlaps neighbors (18-28 vs 18-22/23-30)
               37d7348  feat(card): add "Life Chapter" eyebrow + poetic chapter lines on EraCardReveal header
               297ac96  docs(handoff): backdrop aspect-ratio lock verified (9ff7671) + soul 2:3 vs 3:4 note
-Testler:    70 dosya, 685 passed / 2 skipped (687) — vitest v4.1.10, `npm test` exit 0 (doğrulandı 2026-09-24)
+Testler:    70 dosya, 691 passed / 2 skipped (693) — vitest v4.1.10, `npm test` exit 0 (doğrulandı 2026-09-24)
             visualSpec exact-match/genre-normalize dahil 19/19 yeşil (doğrulandı 2026-09-23)
 tsc:        temiz (`npm run typecheck` = 0 hata)
 Lint:       1 error (prefer-const 'palette') + 9 uyarı (baseline, pre-existing — bu oturum dokunmadı)
@@ -89,7 +89,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 
 ## 4. Test / Derleme İstatistikleri (2026-09-24 doğrulandı)
 
-- **Vitest:** 70 dosya, 685 passed / 2 skipped (0 failed) — `npm test` exit 0 (doğrulandı 2026-09-24). visualSpec 19/19.
+- **Vitest:** 70 dosya, 691 passed / 2 skipped (0 failed) — `npm test` exit 0 (doğrulandı 2026-09-24). visualSpec 19/19.
 - **TypeScript:** `tsc --noEmit` 0 hata.
 - **Lint:** `npx eslint src scripts --rule 'prettier/prettier: off'` = 1 error (baseline `prefer-const 'palette'` visualResolver.ts:171) + ~9 uyarı (pre-existing).
 - **Build:** `npm run build` exit 0.
@@ -225,11 +225,15 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 10. **Preview metadata veri sözleşmesi ✅ DOĞRULANDI, KAPALI (2026-09-24):** Gap Analysis §7'nin "preview metadata'sı journey persistence'da güvenilir birinci sınıf veri olarak taşınmalı" endişesi ÇÖZÜLMÜŞ durumda. `previewUrl` `SONG_FIELDS` whitelist'inde + `COERCE_TO_PERSISTED` coercion kuralında (birden fazla katman tek whitelist'e hüküm eder; `song/types.ts`). Local tier `journey-storage.ts` `normalizeSong` SONG_FIELDS üzerinden round-trip yapar (`journey-storage.test.ts:111"preserves releaseYear and previewUrl"`, `:239"round-trips EVERY Song field"`); remote tier `journey-remote.ts` `toProgress` aynı whitelist (`journey-remote.test.ts:215"restores EVERY Song field... previewUrl"`). Tüketiciler canlı: EraCardReveal autoplay, QuizCard preview butonu, results re-verify (`results.tsx:365/393`). Kod değişikliği GEREKMEDİ; madde kapandı. (ANA_YASA §7 "30s preview 🟡"→🟢 revizyonu bu commit'te.)
 11. **Kanonik doküman drift düzeltmesi ✅ (2026-09-24):** `VISUAL_ARCHITECTURE.md` §3 "Visual Resolver FUTURE — kodda yok" ve §8 "Asset Registry FUTURE — kodda yok" başlıkları artık GERÇEĞE ayarlandı (resolver FAZ 3/3.1/3.2/4a/4b'de CANLI; assetRegistry.ts canlı); §3 (§163) ve §11 tablosundaki eski HF zinciri referansları (Imagen→Gemini→HF) → "Imagen→Gemini" olarak düzeltildi. Resolver statü doğrulaması: `visualSpec.test.ts` 19/19, SceneRoom bundle 40/40. ANA_YASA §7 tablo "30 sn preview 🟡→🟢". (ARCHITECTURE.md §8.2 "Phase 4: Visual Resolver motorunun bağlanması" ROADMAP satırı bilinçli DOKUNULMADI — roadmap olarak açık.)
 12. **CrisisGuard + ETHICAL_AI (2026-09-24, b44f945) — kriz güvenliği ✅ TAMAMLANDI:** Kullanıcının kendi serbest metninde (Life Feed notu) açık intihar/kendine zarar niyetini 5 dilde (EN/TR/ES/DE/FR) deterministik tespit eden `src/lib/safety/crisisGuard.ts` (`detectCrisisNote` + `crisisGuardEnabled`, varsayılan AÇIK / `VITE_CRISIS_GUARD="off"`); LifeFeedInput submit'te guard'lar → kriz notu ne LLM'e gider ne kalıcılaşır; `CrisisSupportPanel` (sakin, insani, ülke-agnostik: güvenilen kişi / yerel acil numara / findahelpline.com) keskin UI. `docs/ETHICAL_AI.md` kuruldu: §0 **Founding Principle** (kullanıcının iyiliği metrikten önce; uygulamayı terk = başarı eğer gerçek yardıma ulaştıysa) + §2 kişilik/ton prensipleri + §3 kriz sözleşmesi + bilinen-sınırlama (TR `canımı yak` olumsuz kullanımda yanlış-pozitif; bilinçli recall lehine → negation-aware gelecek). Testler: crisisGuard 22/22, i18n parity 11/11. Kural-10: hayır (yalnız kriz-durumuna özgü panel; normal akış değişmedi). NOT: bu commit src/ değiştirdiği için ŞU HANDOFF senkron commit'i ile birlikte kapatıldı.
+13. **Tanı-yasağı + anti-klişe kuralları gerçek LLM promptlarına (2026-09-24, 55954b2) ✅ TAMAMLANDI:** 4 prose prompt'a eklendi — `src/lib/llm/prompts.ts` `GROUNDING_RULES` (life-story: "never a clinician... no mental-health conditions... maps of feeling are reflections, not diagnoses" + "never as medical evidence" + "no horoscope-generic, fortune-cookie..." ), `src/lib/llm/poetic-analyzer.ts` `ANALYZER_GROUNDING_RULES` (aynen 3 satır), `src/lib/llm/generateAnalysis.server.ts` `buildEntryInsightPrompt` kural 5-6 ("never a clinician", "avoid generic fortune-cookie"), `src/lib/art/generateCard.server.ts` `buildLorePrompt` ("not a clinical case", "never a generic fortune-cookie compliment"). `src/lib/ai/moodInference.server.ts` sistem satırı → "never a clinician or diagnostician; you only label a song's mood". **Davranış kanıtı (gerçek OpenRouter, temp 0.8):** aynı 8-şarkılık journey'nin OLD vs NEW life-story çıktısı karşılaştırıldı — NEW'da "testament to... define your spirit" türü jenerik/fortune-cookie satırları belirgin azaldı, anlatı şarkı gerçekliğine demirlendi; regresyon yok. Testler: 5 dosyada prompt-satırı `toContain` (+7, tam suite 691/2). Kural-10: hayır (prompt içeriği). `buildLorePrompt` test edilebilirlik için export edildi.
+14. **Bulgu 2 — era-badge/portal yaşları düzeltildi (2026-09-24, bu commit) ✅:** `parsePoeticAnalysis` LLM chapter'larında `ageRange` boş/eksikken deterministik fallback'ten (aynı id, yoksa pozisyon) ageRange'i düşüyordu — LLM prompt şeması `ageRange` taşımadığı için (buildPoeticAnalyzerPrompt TASK) her LLM chapter'ı boş yaşla render oluyordu (MasterPosterSheet era-badges + portal-strip boş metin). Çözüm: (ii) karar — LLM şemasına dokunmadan, parse'ta `asNonEmptyString(chapter.ageRange) ?? fallbackAgeRange` (id eşleşmesi → pozisyon). 2 test eklendi (eksik ageRange → fallback'ten dolar; sağlanmış ageRange → korunur). Suite 693/2, tsc 0. Kural-10: hayır (veri düzeltmesi, görsel layout aynı).
+15. **Bulgu 1 — Cinematic Poster canvas: LOCALDE DOĞRULANDI ÇALIŞIYOR, production bildirimi açık (2026-09-24) 🔵:** Hermes local repro'da (`npm run dev` + gerçek 8-şarkılık journey) `getImageData` ile kanıtladı: canvas `nonZeroRatio=1.0` (2.8M px %100 boyalı), 1400×2000, 27.315 açık metin pikseli — `renderPoster` deterministik çizim çalışıyor, "boş" değil. "Placeholder cinematic poster" aria-label'i yalnız `posterAlt` i18n string'i (dictionaries.ts:200), çizim-yok kanıtı değil. **Ancak:** kullanıcı Vercel PRODUCTION'da kalıcı boş gördüğünü bildirmişti (local'de değil). Bu, local dev vs production build arası hydration-TIMING farkı olabilir (Suspense/lazy-load/CDN-cache), henüz production'da repro EDİLMEDİ. Hermes canlı production /results'ta yeniden ölçüm yapacak; tekrar boş görürse **production'da (local'de değil) gerçek DevTools ölçümü** yapılmalı. NOT: Canvas hydration-öncesi SSR anında 0×0 boştur (GeneratedPoster.tsx:14 yorumu bunu zaten söyler). ayrıca: `posterAlt` "Placeholder" metni yanıltıcı — Sonraki temizlik turunda düzeltilecekler listesine eklendi (bu turda dokunulmadı).
 
 ---
 
 ## 6. Sıradaki İş Adımları (Next Steps)
 
+0. **MUSIC DNA P0 (büyük mimari iş — ayrı oturum, sıradaki büyük hedef):** gerçek şarkı verisi üzerinden analitik çekirdek. Şu an ürün büyük ölçüde soru-ağırlıklı: grounded pipeline şarkıları besliyor (results.tsx:411 `generateGroundedAnalysis(songs)`; genre iTunes'dan, mood inference per-song) ama Music DNA'nın AĞIRLIKLI çekirdeği (personality scoring / dominantVibe 2-sabit-etiket) hâlâ `answers` üzerinden; şarkı metadata'sı henüz Music DNA'nın temel girdisi değil. Detay: Gap Analysis §8-§10, ANA_YASA §1/§3/§8 (P0). Bu, yeni özellik eklemek değil; mevcut MVP'nin analitik kalbini düzeltmek.
 1. **✅ Kural-10 tamamlandı (2026-09-20):** mood-backdrop doğrulaması onaylandı — "Arayüz Onaylandı". Sıradaki görsel doğrulama yalnızca koşullu yeniden-açma durumlarında (taksonomi / FAZ 4c / yeni exact asset).
 2. **FAZ 4b tamamlandı:** exactAssetRef → gerçek URL çözülüp resolver backdrop'unda önceliklendirildi (pass-through: pilot exact asset'ler == mood dosyaları; 40/40, tsc temiz). Kalan: FAZ 4c (palette/eraStyle/eraTheme wiring) ayrı kanonik-kaynak kararı (sceneThemeFor vs resolver sceneThemeId — 2010-sonrası farklı sonuç, bilinen risk); orphan script temizliği (`generate-room-backdrop.mjs`) tamamlandı (silindi 2026-09-20). ⚠️ mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
 3. **Sırada (onayla):** user yetkisi — yeni asset kombinasyonu ekleme, FAZ 4c (palette kanonik-kaynak kararı), HF runtime kapanışı.
@@ -256,6 +260,8 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+55954b2 feat(ai): tanı-yasağı + anti-cliché rules into 4 prose prompts + mood-inference non-clinician system line + tests
+9fff09c docs(handoff): sync §1 HEAD→b44f945 + CrisisGuard/ETHICAL_AI record; PROJECT_STATUS: Option C in §3, kriz-güvenliği in §4
 b44f945 feat(safety): CrisisGuard (5-language deterministic triage) + CrisisSupportPanel + i18n 5-dil + ETHICAL_AI.md
 b6429fa fix(cards): non-overlapping age band (18-22/23-29/30-39/40+) in lifeCards EN+TR + data.ts; docs verified-closed
 f1a9705 checkpoint: docs(handoff) — §1 HEAD→9c73281 sync + PROJECT_STATUS.md narrative katmanı
@@ -296,5 +302,5 @@ ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page
 
 ---
 
-_Artık son güncelleme: Hermes — 2026-09-24 (HANDOFF sync: §1 HEAD→b44f945 + CrisisGuard/ETHICAL_AI kaydı §5 item 12 + age-band/docs turu f1a9705/b6429fa. Testler 70 dosya/685+2). docs-only değişiklik, handoff-check yeşil hedefi._
+_Artık son güncelleme: Hermes — 2026-09-24 (HANDOFF sync: §1 HEAD→55954b2 + kriz-güvenliği §5 item 12 + tanı-yasağı prompt entegrasyonu §5 item 13 + §6 Music DNA P0. Testler 70 dosya/691+2). docs-only değişiklik, handoff-check yeşil hedefi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._

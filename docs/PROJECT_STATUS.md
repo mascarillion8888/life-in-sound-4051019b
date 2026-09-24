@@ -56,6 +56,20 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   - Görsel mimari dokümanlarında drift düzeltildi: "Visual Resolver / Asset Registry
     FUTURE – kodda yok" etiketleri CANLI gerçeğine, eski HF-zinciri referansları Imagen→Gemini'ye.
 
+### 2026-09-24 — AI ton / tanı-yasağı kuralları gerçek promptlara (Option C #2)
+- **4 prose prompt'a tanı-yasağı + anti-klişe kuralları eklendi:** life-story,
+  poetic-analyzer, entry-insight ve card-lore artık "hiçbir zaman klinisyen/
+  terapist değilsin, teşhis etme, etiketleme; duygu haritaları teşhis değil
+  yansımadır" ve "spesifik ol, horoskop/fortune-cookie/jenerik iltifat yazma"
+  kurallarını taşıyor. mood-inference'ın sistem satırı da "klinik değil, yalnız
+  şarkının mood'unu etiketlersin"e çekildi.
+- **Neden:** bu kurallar yalnız vizyon dokümanlarında duruyordu; gerçek çıktı
+  tonuna etki etmiyordu. Artık modelin gördüğü prompt'ta var.
+- **Davranış kanıtı:** aynı 8-şarkılık journey ile gerçek LLM çağrısıyla
+  önce/sonra çıktısı karşılaştırıldı — yeni prompt'ta "testament to... define
+  your spirit" türü jenerik/fortune-cookie satırları azaldı, anlatı şarkı
+  gerçekliğine daha demirli. Kural-10 değil (propmt içeriği).
+
 ### 2026-09-24 — Kriz güvenliği (Option C)
 - **Founding Principle eklendi** (`docs/ETHICAL_AI.md` §0): ürünün önceliği
   ticari değil; kriz/güvenlik anlarında kullanıcının gerçek iyiliği, uygulamada
@@ -124,6 +138,9 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - **Kriz güvenliği:** CrisisGuard (5 dil deterministik triage) + CrisisSupportPanel +
   ETHICAL_AI.md (Founding Principle + bilinen-sınırlama). Kullanıcının kriz notu asla
   LLM'e gitmez / kalıcılaşmaz.
+- **AI ton / tanı-yasağı kuralları:** 4 prose prompt (life-story, poetic-analyzer,
+  entry-insight, card-lore) tanı-yasağı + anti-klişe kurallarını taşıyor; mood-inference
+  sistem satırı "klinik değil"e çekildi. Çıktı tonu davranışsal olarak doğrulandı.
 
 ### Kısmen Tamamlanan / Devam Eden
 - **FAZ 4c — renk/tema kaynağı kararı (açık):** sahne, kendi tema kaynağından renk
@@ -142,12 +159,19 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 ## 5. Sıradaki Adımlar
 
 ### Kısa Vade (bu hafta/gün)
+- FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
+- **Music DNA P0 (büyük mimari iş, ayrı oturum):** gerçek şarkı verisi üzerinden
+  analitik çekirdek — şu an ürün büyük ölçüde soru-tabanlı; şarkı gerçekliği henüz
+  tam bağlı değil.
+- **Music Map poster bulgusu — kullanıcı bildirimi, DOĞRULANMADI:** kullanıcının
+  gördüğü "boş / kahverengi çerçeve" posteri; repo'da kayıtlı kod-düzeyi bulgu YOK.
+  Erteleme öncesi gerçek bir ekran gözlemiyle doğrulanmalı (bu giriş bir tespit değil,
+  açık sorudur).
 - Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz
   doğrulaması gerekir).
 
 ### Orta Vade (bu ay)
-- FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
 - Asset Registry genişletmesi; çoklu tür kaynağı (iTunes/MusicBrainz tekeli kırma),
   sanatçı metadata, müzikal karakteristikler.
 
@@ -163,7 +187,10 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   ("canımı yakma") yanlış-pozitif tetikleyebilir — bilinçli recall lehine bırakıldı
   (kriz güvenliği önceliği). Gelecekte negation-aware pattern ile iyileştirilebilir.
 - Eski genel görsellerin içinde metin var (metinsiz yeniden üretim gerekiyor).
-- 3 Soul görseli farklı oranda (2:3).
+- **STEEL age-range sınırı (lifeCards):** "23-29" artık komşularla çakışmıyor ama
+  "Güç" çağının alt/üst sınırı tasarım kararı olarak netleşmedi — kabul edildi.
+- **Soul görsellerinin oran tutarsızlığı (energetic/euphoric/playful 2:3 vs 3:4):**
+  contain'da ince boşluk; asset üretiminde (kullanıcı) düzeltilecek.
 - Üç ayrı "yaş dönemi" sistemi hâlâ birleşmedi (ayrı karar, bilinçli dokunulmadı).
 - Kalıcı kurallar: repo-lokal git kimliği doğru olmalı (Vercel engeli); `git add -A`
   yasak (anahtar/debri süpürür).
@@ -173,7 +200,10 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 Bu, 8 şarkı→görsel-poster üreten React (TanStack Start, Node+Nitro, Vercel'de)
 uygulaması. Çalışmaya başlamadan önce **zorunlu sırayla oku**: `AGENTS.md` →
 `STATE.md` → `docs/HANDOFF.md` (tek otorite kaynak; bu dosya DEĞİL) → canlı repo
-durumunu `git pull` + `git log` ile doğrula (doküman değil git'e güven). Şu an
-kural-10 gözle onayları kapalı, worktree temiz, testler geçiyor. En kritik açık
-noktalar: FAZ 4c renk/tema kaynağı kararı ve eski görsellerin metinsiz yeniden
-üretimi. Her önemli push'ta bu dosyayı HANDOFF'la birlikte güncel tutmayı unutma.
+durumunu `git pull` + `git log` ile doğrula (doküman değil git'e güven). Proje artık
+**kriz-güvenli** (CrisisGuard, 5 dil serbest-metin triage) ve **tanı-yasaklı** AI
+kurallarına sahip (4 prose prompt'ta "klinisyen değilsin" + anti-klişe; `ETHICAL_AI.md`
+Founding Principle). Music DNA hâlâ büyük ölçüde soru-tabanlı — gerçek şarkı verisine
+henüz tam bağlı değil; **sıradaki büyük hedef Music DNA P0** (ayrı, mimari oturum).
+Testler geçiyor, worktree temiz, kural-10 göz onayları kapalı. Her önemli push'ta bu
+dosyayı HANDOFF'la birlikte güncel tutmayı unutma.
