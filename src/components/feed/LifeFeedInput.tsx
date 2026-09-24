@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Song } from "@/lib/song/types";
 import { suggestSongs } from "@/lib/song/searchSong.server";
+import { crisisGuardEnabled, detectCrisisNote } from "@/lib/safety/crisisGuard";
 
 /** A suggestion provider, injectable for tests. Defaults to iTunes via the server boundary. */
 export type SongSuggester = (query: string) => Promise<Song[]>;
@@ -39,11 +40,14 @@ function manualSong(title: string): Song {
  */
 export function LifeFeedInput({
   onAdd,
+  onCrisis,
   pending = false,
   suggester = defaultSuggester,
   debounceMs = 250,
 }: {
   onAdd: (input: { song: Song; note: string | null }) => void;
+  /** Invoked — instead of `onAdd` — when the user's note trips the CrisisGuard. */
+  onCrisis?: () => void;
   pending?: boolean;
   suggester?: SongSuggester;
   debounceMs?: number;
@@ -86,8 +90,19 @@ export function LifeFeedInput({
 
   const submit = () => {
     if (!canAdd || pending) return;
-    const song = selected ?? manualSong(query);
+    // CrisisGuard: if the user's own note expresses distress/self-harm intent,
+    // we step OUT of the storytelling flow — the note is never persisted and
+    // never sent to the LLM. The parent shows a calm support surface instead.
     const trimmed = note.trim();
+    if (trimmed && crisisGuardEnabled() && detectCrisisNote(trimmed)) {
+      onCrisis?.();
+      setQuery("");
+      setNote("");
+      setSelected(null);
+      setListOpen(false);
+      return;
+    }
+    const song = selected ?? manualSong(query);
     onAdd({ song, note: trimmed.length > 0 ? trimmed : null });
     setQuery("");
     setNote("");

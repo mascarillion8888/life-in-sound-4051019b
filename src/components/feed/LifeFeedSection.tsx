@@ -18,6 +18,7 @@ import { deterministicEntryInsight } from "@/lib/llm/poetic-analyzer";
 import { generateEntryInsight } from "@/lib/llm/generateAnalysis.server";
 import { LifeFeedInput, type SongSuggester } from "./LifeFeedInput";
 import { LifeFeedTimeline } from "./LifeFeedTimeline";
+import { CrisisSupportPanel } from "./CrisisSupportPanel";
 
 /** Instant-insight provider, injectable for tests. Defaults to the Gemini server function. */
 export type EntryInsightFetcher = (input: {
@@ -55,6 +56,7 @@ export function LifeFeedSection({
 }) {
   const [feed, setFeed] = useState<LifeFeedState | null>(null);
   const [pending, setPending] = useState(false);
+  const [crisisOpen, setCrisisOpen] = useState(false);
   const { language } = useLanguage();
   const feedRef = useRef<LifeFeedState | null>(null);
   feedRef.current = feed;
@@ -128,7 +130,16 @@ export function LifeFeedSection({
 
   return (
     <div className="space-y-6">
-      <LifeFeedInput onAdd={handleAdd} pending={pending} suggester={suggester} />
+      {crisisOpen ? (
+        <CrisisSupportPanel onDismiss={() => setCrisisOpen(false)} />
+      ) : (
+        <LifeFeedInput
+          onAdd={handleAdd}
+          onCrisis={() => setCrisisOpen(true)}
+          pending={pending}
+          suggester={suggester}
+        />
+      )}
       <LifeFeedTimeline
         entries={feed.entries}
         onDelete={handleDelete}

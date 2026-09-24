@@ -39,6 +39,22 @@ export type Dictionary = {
       addToCollection: string;
       inCollection: string;
     };
+  crisis: {
+    /** Panel heading — calm, humane, non-clinical. */
+    title: string;
+    /** Acknowledgement + not-alone + reach-out body. Never saved/generated. */
+    body: string;
+    /** Sub-heading above the resource list. */
+    supportHeading: string;
+    /** Resource #1 — a trusted person. */
+    trustedPerson: string;
+    /** Resource #2 — local emergency number if in immediate danger. */
+    emergency: string;
+    /** Resource #3 — findahelpline.com international directory (URL fixed). */
+    helplineDir: string;
+    /** Dismiss action — returns to normal flow without persisting the note. */
+    dismiss: string;
+  };
   gothicArt: {
     generating: string;
     rateLimitTitle: string;
@@ -138,6 +154,15 @@ const en: Dictionary = {
         addToCollection: "Add to Collection",
         inCollection: "In Collection ✓",
       },
+  crisis: {
+    title: "This sounds like a hard moment.",
+    body: "What you wrote matters more than a card. If you're finding it hard to go on or are worried about your safety, please don't sit with it alone — reach out to someone you trust, or to a support line that can help right now.",
+    supportHeading: "Ways to get support",
+    trustedPerson: "Tell someone you trust how you're feeling.",
+    emergency: "If you're in immediate danger, call your local emergency number.",
+    helplineDir: "Find a free, confidential helpline in your country:",
+    dismiss: "I'm okay for now — continue",
+  },
   gothicArt: {
     generating: "Etching your gothic art…",
     rateLimitTitle: "Ink Supply Exhausted",
@@ -256,6 +281,15 @@ const tr: Dictionary = {
         addToCollection: "Koleksiyona Ekle",
         inCollection: "Koleksiyonda ✓",
       },
+  crisis: {
+    title: "Bu zor bir an gibi görünüyor.",
+    body: "Yazdıkların bir karttan daha önemli. Devam etmekte zorlanıyorsan ya da kendini güvende hissetmiyorsan, yalnız kalma — güvendiğin birine ya da hemen yardım edebilecek bir destek hattına ulaş.",
+    supportHeading: "Destek alma yolları",
+    trustedPerson: "Güvendiğin birine nasıl hissettiğini anlat.",
+    emergency: "Ani bir tehlike içindeysen, yerel acil durum numarasını ara.",
+    helplineDir: "Ülkende ücretsiz, gizli bir yardım hattı bul:",
+    dismiss: "Şu an iyiyim — devam et",
+  },
   gothicArt: {
     generating: "Gotik sanatın kazınıyor…",
     rateLimitTitle: "Mürekkep Tükendi",
@@ -374,6 +408,15 @@ const es: Dictionary = {
         addToCollection: "Añadir a la colección",
         inCollection: "En la colección ✓",
       },
+  crisis: {
+    title: "Esto parece un momento difícil.",
+    body: "Lo que escribiste importa más que una tarjeta. Si te resulta difícil seguir adelante o te preocupa tu seguridad, no te quedes a solas con esto: habla con alguien de confianza o con una línea de apoyo que pueda ayudarte ahora mismo.",
+    supportHeading: "Cómo obtener apoyo",
+    trustedPerson: "Cuéntale a alguien de confianza cómo te sientes.",
+    emergency: "Si estás en peligro inmediato, llama a tu número de emergencia local.",
+    helplineDir: "Encuentra una línea de apoyo gratuita y confidencial en tu país:",
+    dismiss: "Estoy bien por ahora — continuar",
+  },
   gothicArt: {
     generating: "Grabando tu arte gótico…",
     rateLimitTitle: "Tinta Agotada",
@@ -493,6 +536,15 @@ const de: Dictionary = {
         addToCollection: "Zur Sammlung hinzufügen",
         inCollection: "In Sammlung ✓",
       },
+  crisis: {
+    title: "Das klingt nach einem schweren Moment.",
+    body: "Was du geschrieben hast, ist wichtiger als eine Karte. Wenn es dir schwerfällt, weiterzumachen, oder du dir Sorgen um deine Sicherheit machst, bleib nicht allein damit — wende dich an eine Person deines Vertrauens oder an eine Hilfslinie, die jetzt helfen kann.",
+    supportHeading: "Wege, Unterstützung zu bekommen",
+    trustedPerson: "Erzähl einer Person deines Vertrauens, wie es dir geht.",
+    emergency: "Wenn du in unmittelbarer Gefahr bist, ruf deine lokale Notrufnummer an.",
+    helplineDir: "Finde eine kostenlose, vertrauliche Hilfslinie in deinem Land:",
+    dismiss: "Mir geht es gerade gut — weiter",
+  },
   gothicArt: {
     generating: "Deine gotische Kunst wird geätzt…",
     rateLimitTitle: "Tinte Erschöpft",
@@ -612,6 +664,15 @@ const fr: Dictionary = {
         addToCollection: "Ajouter à la collection",
         inCollection: "Dans la collection ✓",
       },
+  crisis: {
+    title: "Cela ressemble à un moment difficile.",
+    body: "Ce que tu as écrit compte plus qu'une carte. S'il t'est difficile de continuer ou que tu es inquiet pour ta sécurité, ne reste pas seul avec ça — parle à une personne de confiance ou contacte une ligne d'écoute qui peut aider tout de suite.",
+    supportHeading: "Comment obtenir de l'aide",
+    trustedPerson: "Confie à une personne de confiance ce que tu ressens.",
+    emergency: "Si tu es en danger immédiat, appelle ton numéro d'urgence local.",
+    helplineDir: "Trouve une ligne d'écoute gratuite et confidentielle dans ton pays :",
+    dismiss: "Ça va, je continue",
+  },
   gothicArt: {
     generating: "Gravure de votre art gothique…",
     rateLimitTitle: "Encre Épuisée",
