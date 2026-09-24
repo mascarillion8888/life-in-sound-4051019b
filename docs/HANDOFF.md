@@ -15,7 +15,7 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       55954b2 — "feat(ai): tanı-yasağı + anti-cliché rules into 4 prose prompts + mood-inference non-clinician system line + tests"
+HEAD:       f8467d6 — "fix(lint): prefer-const palette in visualResolver (visualResolver.ts:171, eslint)"
             origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-24)
             DÜZELTME (2026-09-23): 397ac09..e9a012c aralığı YALNIZCA 4 commit'tir — b5257a1, 6985aeb,
             d7045eb, e9a012c. "Uzak 19-commit rebase" iddiası YANLIŞTIR: bu klonun reflog'unda rebase
@@ -23,6 +23,10 @@ HEAD:       55954b2 — "feat(ai): tanı-yasağı + anti-cliché rules into 4 pr
             üretilip origin'e push edilmiş, bu klon sabah 07:35 "pull fast-forward" ile çekti). Hash
             değişimi YOK, force-push YOK — güvenli; eski commit numaralarımız geçerli.
             Son zincir (kritik):
+              f8467d6  fix(lint): prefer-const palette in visualResolver (visualResolver.ts:171)
+              3999be2  refactor(ai): clinician/anti-cliché kuralları → ortak src/lib/llm/promptRules.ts (dedupe; entry-insight/card-lore/poetic-analyzer inline metinleri bilinçli duruyor, SonarCloud uyarısı kabul edildi)
+              c8760df  docs(handoff): Bulgu 1 KAPAT (poster canvas canlı — local+production doğrulandı); posterAlt placeholder sonraki temizlik
+              b2be045  fix(ai): poetic-analyzer chapter ageRange eksikken deterministik fallback'ten devralır (era badges/portal yaşları)
               55954b2  feat(ai): tanı-yasağı + anti-cliché kuralları 4 prose prompt'a + mood-inference non-clinician satır + testler
               9fff09c  docs(handoff): sync §1 HEAD→b44f945 + CrisisGuard/ETHICAL_AI kaydı; PROJECT_STATUS Option C
               b44f945  feat(safety): CrisisGuard (5-lang triage) + CrisisSupportPanel + i18n + ETHICAL_AI.md (§0 Founding)
@@ -30,10 +34,10 @@ HEAD:       55954b2 — "feat(ai): tanı-yasağı + anti-cliché rules into 4 pr
               c9b2a5a  docs(handoff): note STEEL era age-range overlaps neighbors (18-28 vs 18-22/23-30)
               37d7348  feat(card): add "Life Chapter" eyebrow + poetic chapter lines on EraCardReveal header
               297ac96  docs(handoff): backdrop aspect-ratio lock verified (9ff7671) + soul 2:3 vs 3:4 note
-Testler:    70 dosya, 691 passed / 2 skipped (693) — vitest v4.1.10, `npm test` exit 0 (doğrulandı 2026-09-24)
+Testler:    70 dosya, 693 passed / 2 skipped (695) — vitest v4.1.10, `npm test` exit 0 (doğrulandı 2026-09-24)
             visualSpec exact-match/genre-normalize dahil 19/19 yeşil (doğrulandı 2026-09-23)
 tsc:        temiz (`npm run typecheck` = 0 hata)
-Lint:       1 error (prefer-const 'palette') + 9 uyarı (baseline, pre-existing — bu oturum dokunmadı)
+Lint:       temiz — visualResolver.ts:171 'prefer-const'→const (f8467d6 ile kapandı); prettier-on CRLF gürültüsü hariç. Kalan 9 react-refresh uyarısı pre-existing.
 Build:      `npm run build` exit 0 (doğrulandı 2026-09-22).
 Worktree:   temiz. stash@{0}=HF WIP backup (superseded — onaysız drop YOK). Asset 18 PNG
             (9× mood-backdrop-*.png + 9× backdrop-soul-*.png). .claude/ YOK.
@@ -76,7 +80,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 - **Scene/backdrop:** `SceneRoom` = tek backdrop standardı; backdrop artık `moodBackdropUrl(mood, genre, decade)` ile çok-eksenli çözülür (fallback: dec×gen×mood → dec×mood → gen×mood → mood; mood yoksa `dreamy`). Decade, `releaseYear`'den `eraThemeForYear` ile türetilir (tek kaynak).
 - **Backdrop sabit-oran kiliti — DOĞRULANDI (2026-09-23):** `aspect-[3/4]` (EraCardReveal.tsx:42) 9ff7671'de zaten uygulanmış. 3 viewport'ta (1920, 1106, 390px) gerçek DOM ölçümüyle (getBoundingClientRect) doğrulandı — hepsi tam 0.750 (3:4), viewport yüksekliğinden bağımsız. Mobilde (390px) içerik container'ı aşıyor (709px > 500px) ama `overflow-y:auto` ile sayfa-içi scroll'a düşüyor, kırpma YOK — beklenen/kabul edilebilir davranış.
 - **BULGU (2026-09-23):** `backdrop-soul-{energetic,euphoric,playful}.png` 1024×1536 (2:3) üretilmiş; setin geri kalanı (dark, dreamy, melancholic, nostalgic, romantic, world + genel `mood-backdrop-*`) 1086×1448 (3:4). Bu 3 dosya container'ın (3:4) beklediği orandan farklı — contain katmanında üstte/altta ince boşluk bırakabilir (kırpma değil ama tutarsız görünüm). Asset üretim sırasında düzeltilmeli (kullanıcı elle üretiyor).
-- **BULGU (2026-09-23): STEEL era age-range komşularla örtüşüyor.** lifeCards.ts'te `ageRanges[4]="Ages 18-28"` — komşu `[3]="Ages 18-22"` ve `[5]="Ages 23-30"` ile çakışıyor. Sonraki düzeltmede ele alınacak (bu turda düzeltilmedi).
+- **KAPANDI (2026-09-24, b6429fa): STEEL era age-range çakışması.** Eski `ageRanges[4]="Ages 18-28"` komşularıyla (18-22 / 23-30) çakışıyordu; b6429fa ile **18-22 / 23-29 / 30-39 / 40+** yapıldı (lifeCards EN+TR + data.ts) — çakışma YOK. Ayrıntı: §5 "DÜZELTİLDİ (2026-09-24, yaş aralığı çakışması)".
 - **Visual katmanı (yeni, FAZ 3/3.1):** `src/types/visualSpec.ts` (kontrat), `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` deterministik, `resolveExactAsset`), `src/lib/visual/assetRegistry.ts` (`SCENE_ASSET_REGISTRY`, pilot pop×1980s×9 mood + soul 9/9 decade-free), `src/lib/visual/visualSpec.test.ts` (19 test).
 - **Motorlar:** `musicDnaEngine.ts` (mood-coverage gate'li vibe), `lifeStoryEngine.ts`, `emotionalTimelineEngine.ts`.
 - **Mood veri yolu:** provider→Song(mood null)→journey şarkı seçimi→`resolveSongMood`(inferMood)→`Song.mood` persist→SceneRoom mood-backdrop.
@@ -302,5 +306,5 @@ ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page
 
 ---
 
-_Artık son güncelleme: Hermes — 2026-09-24 (HANDOFF sync: §1 HEAD→55954b2 + kriz-güvenliği §5 item 12 + tanı-yasağı prompt entegrasyonu §5 item 13 + §6 Music DNA P0. Testler 70 dosya/691+2). docs-only değişiklik, handoff-check yeşil hedefi._
+_Artık son güncelleme: Hermes — 2026-09-24 (HANDOFF sync: §1 HEAD→f8467d6, test 693+2, 3 commit özeti b2be045/c8760df/3999be2, STEEL kapalı, lint temiz). docs-only değişiklik + fix push'u, handoff-check yeşil hedefi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
