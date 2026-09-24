@@ -15,23 +15,21 @@
 ```
 Aktif ortam: Windows yerel (C:\Users\frontoffice\life-in-sound-new\life-in-sound-4051019b)
 Dal:        main
-HEAD:       e9a012c — "checkpoint: card overlay v1 + rebase senkronu — HANDOFF.md güncellendi"
-            origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-22)
+HEAD:       9c73281 — "docs(handoff): mark kural-10 ✅ KAPANDI (soul Test B + card header text closed same pass)"
+            origin/main ile SENKRON (rev-list 0 0; push edildi 2026-09-24)
             DÜZELTME (2026-09-23): 397ac09..e9a012c aralığı YALNIZCA 4 commit'tir — b5257a1, 6985aeb,
             d7045eb, e9a012c. "Uzak 19-commit rebase" iddiası YANLIŞTIR: bu klonun reflog'unda rebase
             yok, d7045eb/e9a012c LOCAL reflog'da hiç geçmiyor (başka — dün akşamki Hermes — oturumda
             üretilip origin'e push edilmiş, bu klon sabah 07:35 "pull fast-forward" ile çekti). Hash
             değişimi YOK, force-push YOK — güvenli; eski commit numaralarımız geçerli.
             Son zincir (kritik):
+              9c73281  docs(handoff): mark kural-10 ✅ KAPANDI (soul Test B + card header text closed same pass)
+              c9b2a5a  docs(handoff): note STEEL era age-range overlaps neighbors (18-28 vs 18-22/23-30)
+              37d7348  feat(card): add "Life Chapter" eyebrow + poetic chapter lines on EraCardReveal header
+              297ac96  docs(handoff): backdrop aspect-ratio lock verified (9ff7671) + soul 2:3 vs 3:4 note
+              bd2ec90  checkpoint: HANDOFF refresh — §1 HEAD e9a012c, §4 69/674, §5 taksonomi 3892330 EXECUTE, 19-commit→4 düzeltmesi
               e9a012c  checkpoint: card overlay v1 + rebase senkronu — HANDOFF güncellendi
-              d7045eb  feat(card): optional card-frame template overlay (QuizCard templateFile + cardTemplates.ts + EraCardReveal default-null) — 4 dosya
-              6985aeb  docs(handoff): genre-normalize fix + BUG 2 açık iş
-              b5257a1  fix(visual): genre alias normalize (R&B/Soul→soul) — soul exact-assets eşleşiyor
-              397ac09  checkpoint: soul 6 yeni exact-asset + kural-10 Test B 9 mood
-              3892330  refactor(visual): gothic → dark/acoustic ayrımı + eraThemeFor year-guess nötralize
-              d5c2131  refactor(hf): client-side HF dead-code TAMAMEN kaldırıldı (huggingFaceService.* silindi)
-              be79f9c  feat(card): QuizCard redesign Adım 1-4 + okunurluk katmanı
-Testler:    69 dosya, 674 passed / 2 skipped (676) — vitest v4.1.10, `npm test` exit 0 (2026-09-22)
+Testler:    69 dosya, 674 passed / 2 skipped (676) — vitest v4.1.10, `npm test` exit 0 (doğrulandı 2026-09-24)
             visualSpec exact-match/genre-normalize dahil 19/19 yeşil (doğrulandı 2026-09-23)
 tsc:        temiz (`npm run typecheck` = 0 hata)
 Lint:       1 error (prefer-const 'palette') + 9 uyarı (baseline, pre-existing — bu oturum dokunmadı)
@@ -78,7 +76,7 @@ Doğrula: `git pull origin main && npm test && npm run typecheck && npx eslint s
 - **Backdrop sabit-oran kiliti — DOĞRULANDI (2026-09-23):** `aspect-[3/4]` (EraCardReveal.tsx:42) 9ff7671'de zaten uygulanmış. 3 viewport'ta (1920, 1106, 390px) gerçek DOM ölçümüyle (getBoundingClientRect) doğrulandı — hepsi tam 0.750 (3:4), viewport yüksekliğinden bağımsız. Mobilde (390px) içerik container'ı aşıyor (709px > 500px) ama `overflow-y:auto` ile sayfa-içi scroll'a düşüyor, kırpma YOK — beklenen/kabul edilebilir davranış.
 - **BULGU (2026-09-23):** `backdrop-soul-{energetic,euphoric,playful}.png` 1024×1536 (2:3) üretilmiş; setin geri kalanı (dark, dreamy, melancholic, nostalgic, romantic, world + genel `mood-backdrop-*`) 1086×1448 (3:4). Bu 3 dosya container'ın (3:4) beklediği orandan farklı — contain katmanında üstte/altta ince boşluk bırakabilir (kırpma değil ama tutarsız görünüm). Asset üretim sırasında düzeltilmeli (kullanıcı elle üretiyor).
 - **BULGU (2026-09-23): STEEL era age-range komşularla örtüşüyor.** lifeCards.ts'te `ageRanges[4]="Ages 18-28"` — komşu `[3]="Ages 18-22"` ve `[5]="Ages 23-30"` ile çakışıyor. Sonraki düzeltmede ele alınacak (bu turda düzeltilmedi).
-- **Visual katmanı (yeni, FAZ 3/3.1):** `src/types/visualSpec.ts` (kontrat), `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` deterministik, `resolveExactAsset`), `src/lib/visual/assetRegistry.ts` (`SCENE_ASSET_REGISTRY`, pilot pop×1980s×9 mood), `src/lib/visual/visualSpec.test.ts` (13 test).
+- **Visual katmanı (yeni, FAZ 3/3.1):** `src/types/visualSpec.ts` (kontrat), `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` deterministik, `resolveExactAsset`), `src/lib/visual/assetRegistry.ts` (`SCENE_ASSET_REGISTRY`, pilot pop×1980s×9 mood + soul 9/9 decade-free), `src/lib/visual/visualSpec.test.ts` (19 test).
 - **Motorlar:** `musicDnaEngine.ts` (mood-coverage gate'li vibe), `lifeStoryEngine.ts`, `emotionalTimelineEngine.ts`.
 - **Mood veri yolu:** provider→Song(mood null)→journey şarkı seçimi→`resolveSongMood`(inferMood)→`Song.mood` persist→SceneRoom mood-backdrop.
 - **Pipeline:** `src/lib/ai/pipeline.ts` → `generateGroundedAnalysis` (content-keyed memo + contextText fingerprint).
@@ -209,6 +207,13 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
       ÜRETİLMESİ gerekir (kullanıcının asset üretim işi). Soul şarkılarında artık yeni soul dosyaları gösterildiği için
       bu kusur soul'da görünmez; diğer tür/decade kombinasyonlarında eski dosyalar hâlâ kullanılır.
 
+   **AÇIK İŞ (ayrı küçük iş, 2026-09-24 doğrulandı) — `ageRanges` dizisinde çakışma:**
+   BUG (bulundu 2026-09-24): `lifeCards.ts`'te `ageRanges[4]="Ages 18-28"` komşularıyla (index 3="Ages
+   18-22", index 5="Ages 23-30") üst üste biniyor — hem İngilizce (satır 34-43) hem Türkçe (satır 128-137)
+   kopyada. Düzeltme henüz yapılmadı, ayrı küçük bir iş olarak bekliyor (STEEL çağının sınırları netleştirilecek
+   veya başka değerlere çekilecek). Negatif görsel etki yok — bu etiketler yalnız kart başlık alt-metninde,
+   kural-10 gerektirmez ama iş bittiğinde gözle teyit iyi olur.
+
    ### FAZ 4 / P2 (sonraki oturumlar)
 2. **FAZ 4c — ertelendi (KARAR "B", 2026-09-20):** SceneRoom `resolveSceneVisualSpec` + exactAssetRef URL çözümü canlı (FAZ 4a/4b). Palette/tema rengi KAYNAĞI: **sceneThemeFor kanonik kalıyor**; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmez (backdrop/exactAssetRef için resolver canlı). Gerekçe + blast radius + taksonomi planı: §5 "Karar (2026-09-20) — FAZ 4c" bloğu. ⚠️ Registry'ye mood-dosyasından farklı exact asset eklendiğinde kural-10 tekrar açılmalı.
 3. **Asset Registry genişlemesi:** kullanıcı yeni `genre × decade × mood` kombinasyonu ürettikçe `SCENE_ASSET_REGISTRY`'ye manuel ekleme (yalnız onayla, No Uncontrolled Refactoring).
@@ -251,6 +256,12 @@ yüzünde albüm kapağı + AI resmi ayrı katmandır (QuizCard art-window).
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+9c73281 docs(handoff): mark kural-10 ✅ KAPANDI (soul Test B auto-passed + card header text change closed same pass)
+c9b2a5a docs(handoff): note STEEL era age-range overlaps neighbors (18-28 vs 18-22/23-30)
+37d7348 feat(card): add "Life Chapter" eyebrow + replace clinical age-range with poetic chapter lines on EraCardReveal header
+297ac96 docs(handoff): backdrop aspect-ratio lock verified (already in 9ff7671) + note soul-energetic/euphoric/playful 2:3 vs 3:4
+bd2ec90 checkpoint: docs(handoff): HANDOFF refresh — §1 HEAD e9a012c, §4 69/674, §5 taksonomi 3892330 EXECUTE, 19-commit→4 düzeltmesi
+e9a012c checkpoint: card overlay v1 + rebase senkronu — HANDOFF güncellendi
 d7045eb feat(card): optional card-frame template overlay (QuizCard templateFile + cardTemplates.ts)
 6985aeb docs(handoff): genre-normalize fix (b5257a1) + BUG 2 eski metin-işlenmiş mood-backdrop açar iş
 b5257a1 fix(visual): normalize genre aliases so iTunes 'R&B/Soul' matches soul exact-assets
@@ -282,5 +293,5 @@ ef27814 fix(mood): dedupe render-driven 8x mood-inference calls on results page
 
 ---
 
-_Artık son güncelleme: Hermes — 2026-09-23 (HANDOFF refresh: §1 HEAD→e9a012c, §4 istatistik 69/674, §5 taksonomi bloğu 3892330'da EXECUTE'di, "19-commit" iddiası 4 commit'e düzeltildi — hash değişimi/force-push YOK). docs-only değişiklik, handoff-check yeşil hedefi._
+_Artık son güncelleme: Hermes — 2026-09-24 (HANDOFF §1 HEAD→9c73281 senkronu + §5'e ageRanges çakışması açık iş eklendi). docs-only değişiklik, handoff-check yeşil hedefi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
