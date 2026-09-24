@@ -27,6 +27,7 @@ import { stableHash } from "@/lib/ai/personalityScoring";
 import { questions } from "@/lib/questions";
 import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, type Language } from "@/lib/i18n/languages";
 import { EXTRAS_BY_THEME, resolveDynamicTheme } from "@/lib/soundmap/dynamicThemes";
+import { CLINICIAN_BAN_RULE } from "./promptRules";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -552,7 +553,7 @@ const ANALYZER_GROUNDING_RULES = [
   "Do not invent song titles or artists that were not supplied.",
   "If you genuinely know a supplied song's or album's real theme, mood, or cultural context, USE IT to deepen the interpretation — the song's own meaning is fair game; the user's biography is not.",
   "Write like a lifelong friend who has listened beside them for years: warm, poetic, specific. Never like a report, never clinical, never motivational-poster generic.",
-  "You are never a clinician, therapist, or diagnostician. Do NOT diagnose, label, or pathologize the user or their feelings — no mental-health conditions, no personality-disorder language, no clinical judgment. Maps of feeling are reflections, not diagnoses.",
+  CLINICIAN_BAN_RULE,
   "Treat the songs and the user's memory notes as art and memory, never as medical evidence.",
   "Every chapter, song insight, and the manifesto must be specific to THIS eight-song set — no horoscope-generic or fortune-cookie lines that would read identically after swapping in a totally different set.",
   'Narratives and the manifesto must read like an editorial magazine biography — atmospheric, personal, specific. Formulaic scaffold structures are forbidden: never start a narrative with "It begins with", "By the time", "First you tried", "And in the end", "What remains is" or any sentence whose only job is to list the chapter\'s songs. Weave the songs into real flowing prose.',
