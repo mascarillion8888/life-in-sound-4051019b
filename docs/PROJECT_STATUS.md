@@ -162,11 +162,8 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
 - **Music DNA P0 (büyük mimari iş, ayrı oturum):** gerçek şarkı verisi üzerinden
   analitik çekirdek — şu an ürün büyük ölçüde soru-tabanlı; şarkı gerçekliği henüz
-  tam bağlı değil.
-- **Music Map poster bulgusu — kullanıcı bildirimi, DOĞRULANMADI:** kullanıcının
-  gördüğü "boş / kahverengi çerçeve" posteri; repo'da kayıtlı kod-düzeyi bulgu YOK.
-  Erteleme öncesi gerçek bir ekran gözlemiyle doğrulanmalı (bu giriş bir tespit değil,
-  açık sorudur).
+  tam bağlı değil. (Kapatılan Music Map poster bulgusu — aşağı.)
+- ~~Music Map poster bulgusu — DOĞRULANMADI~~ **ÇÖZÜLDÜ (Bulgu 1, kapalı):** canvas hem local hem production'da dolu ölçüldü (nonZero=1.0); "boş kahverengi çerçeve" repro edilemedi, hydration-timing anıydı. Açık iş değil; posterAlt "Placeholder" metni ayrı temizlik notu.
 - Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz
   doğrulaması gerekir).
