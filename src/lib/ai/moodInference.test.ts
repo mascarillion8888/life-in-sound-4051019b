@@ -68,6 +68,27 @@ describe("inferMood kontratı", () => {
     expect(parseMoodResponse(a)).toBe("Nostalgic");
   });
 
+  it("sisteme tanı-dışı kimlik satırı taşır (never a clinician)", async () => {
+    // Capture the outbound request body to assert the system prompt's identity line.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let capturedBody: any = null;
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      capturedBody = init?.body;
+      return new Response(JSON.stringify({ choices: [{ message: { content: "{\"mood\": null}" } }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as unknown as typeof fetch;
+
+    await callGeminiMoodInference(buildMoodPrompt({ title: "Fragile", artist: "Sting", genre: "Rock" }), {
+      fetchImpl,
+    });
+    expect(capturedBody).toBeTruthy();
+    const parsed = JSON.parse(String(capturedBody));
+    const system = parsed.messages?.find((m: { role: string }) => m.role === "system");
+    expect(system?.content).toContain("never a clinician or diagnostician");
+  });
+
   it("MOOD_SET, ANA_YASA §5.1'deki 9 mood'u içerir", () => {
     expect(MOOD_SET).toHaveLength(9);
     expect(MOOD_SET).toEqual([

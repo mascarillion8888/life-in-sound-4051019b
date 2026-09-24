@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 
 import {
+  buildLorePrompt,
   generateCardLoreCore,
   persistCardCore,
   type GenerateCardInput,
@@ -202,5 +203,28 @@ describe("persistCardCore", () => {
     );
     expect(ok).toBe(false);
     expect(invalidateCardsCacheMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("buildLorePrompt", () => {
+  it("carries the tanı-yasağı (non-diagnostic) + anti-cliché identity rules", () => {
+    const prompt = buildLorePrompt({
+      artist: "Sting",
+      songTitle: "Fragile",
+      encounterAge: 9,
+    });
+    expect(prompt).toContain("never diagnose, label, or pathologize");
+    expect(prompt).toContain("not a clinical case");
+    expect(prompt).toContain("never a generic fortune-cookie compliment");
+  });
+
+  it("weaves an optional personal memory into the snippet", () => {
+    const prompt = buildLorePrompt({
+      artist: "Sting",
+      songTitle: "Fragile",
+      encounterAge: 9,
+      userMemory: "rain on the window that summer",
+    });
+    expect(prompt).toContain("Personal memory to honour: rain on the window that summer");
   });
 });

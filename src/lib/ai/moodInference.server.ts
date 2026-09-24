@@ -83,7 +83,7 @@ export async function callGeminiMoodInference(
       {
         role: "system",
         content:
-          "You are a music mood analyst. You answer with strict JSON only — no markdown, no code fences, no commentary.",
+          "You are a music mood analyst (never a clinician or diagnostician; you only label a song's mood). You answer with strict JSON only — no markdown, no code fences, no commentary.",
       },
       { role: "user", content: prompt },
     ],

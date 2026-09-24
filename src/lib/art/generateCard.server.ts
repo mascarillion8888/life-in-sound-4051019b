@@ -65,7 +65,7 @@ const DAILY_LIMIT = 20; // ported from card-studio's per-user quota
 /* Lore                                                                        */
 /* -------------------------------------------------------------------------- */
 
-function buildLorePrompt(encounter: CardEncounter): string {
+export function buildLorePrompt(encounter: CardEncounter): string {
   const eraYear = historicalEraYear(encounter);
   const parts = [
     `Write a friendly, poetic nostalgia snippet of exactly 2 sentences for a music memory card.`,
@@ -82,6 +82,8 @@ function buildLorePrompt(encounter: CardEncounter): string {
   }
   parts.push(
     "Warm, gentle, second-person-free prose about a child absorbed in music. " +
+      "This is a friend's memory, not a clinical case — never diagnose, label, or pathologize the listener or their feelings. " +
+      "Write something specific and warm, never a generic fortune-cookie compliment. " +
       "No artist face descriptions, no lyrics, no quotes. Reply with ONLY the 2 sentences.",
   );
   return parts.join(" ");

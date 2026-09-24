@@ -81,6 +81,15 @@ describe("Life Story prompt construction", () => {
     expect(prompt).toContain("Use ONLY the information supplied below");
   });
 
+  it("carries the tanı-yasağı (non-diagnostic) + anti-cliché identity rules", () => {
+    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
+    expect(prompt).toContain("never a clinician, therapist, or diagnostician");
+    expect(prompt).toContain("Maps of feeling are reflections, not diagnoses");
+    expect(prompt).toContain("never as medical evidence");
+    expect(prompt).toContain("no horoscope-generic, fortune-cookie");
+    expect(prompt).toContain("specific to THIS song set and THIS profile");
+  });
+
   it("allows real-world knowledge of supplied songs/albums but forbids inventing the user's life", () => {
     const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
     // Real, known meaning of a song/album is fair game — NOT fabrication.

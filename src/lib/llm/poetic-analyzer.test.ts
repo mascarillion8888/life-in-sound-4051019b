@@ -223,6 +223,16 @@ describe("buildPoeticAnalyzerPrompt", () => {
     expect(prompt).toContain("Do not invent facts about the user's real life");
   });
 
+  it("carries the tanı-yasağı (non-diagnostic) + anti-cliché identity rules", () => {
+    const { profile, songs } = ctx();
+    const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
+    expect(prompt).toContain("never a clinician, therapist, or diagnostician");
+    expect(prompt).toContain("Maps of feeling are reflections, not diagnoses");
+    expect(prompt).toContain("songs and the user's memory notes as art and memory, never as medical evidence");
+    expect(prompt).toContain("no horoscope-generic or fortune-cookie lines");
+    expect(prompt).toContain("specific to THIS eight-song set");
+  });
+
   it("forbids formulaic scaffold templates in narratives", () => {
     const { profile, songs } = ctx();
     const prompt = buildPoeticAnalyzerPrompt({ profile, songs });

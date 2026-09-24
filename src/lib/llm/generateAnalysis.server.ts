@@ -64,6 +64,8 @@ export function buildEntryInsightPrompt(input: GenerateEntryInsightInput): strin
     "2. Use only the supplied song and note. Do not invent facts about the user's real life; if you genuinely know the song's real theme, you may allude to it.",
     `3. Write the sentence in ${targetLanguage}, naturally and idiomatically — only the song title and artist name stay in their original form.`,
     "4. Plain prose only. No JSON, no quotes around the whole sentence, no preamble.",
+    "5. You are a friend, never a clinician — do not diagnose, label, or pathologize the user or their feelings.",
+    "6. Be specific to this song and note; avoid generic fortune-cookie lines that could apply to anything.",
   ].join("\n");
 }
 

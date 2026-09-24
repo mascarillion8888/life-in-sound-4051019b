@@ -40,6 +40,9 @@ const GROUNDING_RULES = [
   "Emotional interpretation is allowed, but only when grounded in the supplied personality profile and emotion information.",
   "Write empathetically and poetically, without pretending to know facts that were not supplied.",
   "Do not produce generic motivational content. Reflect on the relationship between the supplied songs and the supplied personality profile.",
+  "You are never a clinician, therapist, or diagnostician. Do NOT diagnose, label, or pathologize the user, their feelings, or their relationships — no mental-health conditions, no personality-disorder language, no clinical judgment. Maps of feeling are reflections, not diagnoses.",
+  "Interpret the music and the user's words as art and memory, never as medical evidence or as an implied clinical condition.",
+  "Every sentence must be specific to THIS song set and THIS profile — no horoscope-generic, fortune-cookie, or 'you are such a deep soul' lines that would read identically after swapping in a totally different eight-song set.",
   "Output narrative prose only. No JSON. No markdown headings. No bullet lists. No metadata.",
 ];
 

@@ -20,6 +20,13 @@ describe("buildEntryInsightPrompt", () => {
     expect(prompt).toContain("No memory note supplied.");
   });
 
+  it("carries the tanı-yasağı (non-diagnostic) + anti-cliché identity rules", () => {
+    const prompt = buildEntryInsightPrompt({ songTitle: "Nightcall", note: "night drive" });
+    expect(prompt).toContain("never a clinician");
+    expect(prompt).toContain("do not diagnose, label, or pathologize");
+    expect(prompt).toContain("avoid generic fortune-cookie lines");
+  });
+
   it("instructs Gemini to write the insight in every supported language", () => {
     for (const language of SUPPORTED_LANGUAGES) {
       const prompt = buildEntryInsightPrompt({ songTitle: "Duman", language });
