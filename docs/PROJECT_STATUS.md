@@ -56,6 +56,20 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   - Görsel mimari dokümanlarında drift düzeltildi: "Visual Resolver / Asset Registry
     FUTURE – kodda yok" etiketleri CANLI gerçeğine, eski HF-zinciri referansları Imagen→Gemini'ye.
 
+### 2026-09-24 — Kriz güvenliği (Option C)
+- **Founding Principle eklendi** (`docs/ETHICAL_AI.md` §0): ürünün önceliği
+  ticari değil; kriz/güvenlik anlarında kullanıcının gerçek iyiliği, uygulamada
+  kalmasından veya herhangi bir metrikten hep önceliklidir. Kullanıcının gerçek
+  yardıma ulaşıp uygulamayı terk etmesi başarıdır, başarısızlık değil.
+- **CrisisGuard** (`src/lib/safety/crisisGuard.ts`): kullanıcının kendi yazdığı
+  serbest metinde (Life Feed notu) açık intihar/kendine zarar niyetini 5 dilde
+  (EN/TR/ES/DE/FR) deterministik tespit eder — LLM'e hiçbir şey gitmeden.
+  Tespit olursa not ne LLM'e iletilir ne kalıcılaştırılır; yerine sakin, insani
+  bir **CrisisSupportPanel** gösterilir (güvenilen kişi / yerel acil numara /
+  findahelpline.com). Panel kullanıcıyı uygulamada tutmaya değil, gerçek
+  insana/kaynağa yönlendirmeye çalışır. İlk açık görsel iş değil — ilk **kriz** işi.
+- Kural-10 değil; yalnız kriz-durumuna özgü panel, normal akış değişmedi.
+
 ### 2026-09-23 — Kural-10 kapanışı + başlık metni + oran doğrulaması
 - Soul görselleri için **gözle onay turu kapandı**: bir soul efsanesi (Stevie Wonder
   "Superstition") gerçek bir seçimle doğrulandı; sistemin kayıtlı Soul görselini
@@ -107,6 +121,9 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - Hugging Face tamamen kaldırıldı (sunucu kademesi + istemci ölü kod / zombi
   hata dalları); taksonomi düzeltildi.
 - Kart yeniden tasarımı (Adım 1-4) + "Add to Collection" + okunurluk katmanı.
+- **Kriz güvenliği:** CrisisGuard (5 dil deterministik triage) + CrisisSupportPanel +
+  ETHICAL_AI.md (Founding Principle + bilinen-sınırlama). Kullanıcının kriz notu asla
+  LLM'e gitmez / kalıcılaşmaz.
 
 ### Kısmen Tamamlanan / Devam Eden
 - **FAZ 4c — renk/tema kaynağı kararı (açık):** sahne, kendi tema kaynağından renk
@@ -141,7 +158,10 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 ## 6. Bilinen Riskler / Açık Kararlar
 
 - **FAZ 4c renk/tema kaynağı** için kanonik kaynak seçilmedi (çözücü vs sahne;
-  post-2010 ayrışması bilinen risk).
+  post-2010 ayrışması bilinen risk). **Karar henüz verilmedi.**
+- **CrisisGuard TR pattern sınırlaması:** `canımı\s+(yak|almak)` olumsuz kullanımda
+  ("canımı yakma") yanlış-pozitif tetikleyebilir — bilinçli recall lehine bırakıldı
+  (kriz güvenliği önceliği). Gelecekte negation-aware pattern ile iyileştirilebilir.
 - Eski genel görsellerin içinde metin var (metinsiz yeniden üretim gerekiyor).
 - 3 Soul görseli farklı oranda (2:3).
 - Üç ayrı "yaş dönemi" sistemi hâlâ birleşmedi (ayrı karar, bilinçli dokunulmadı).
