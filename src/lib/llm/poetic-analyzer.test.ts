@@ -36,6 +36,19 @@ function makeProfile(): PersonalityProfile {
 
 const ctx = () => ({ profile: makeProfile(), songs: SONGS });
 
+/** Deterministic fallback for the shared fixture ctx (single build). */
+const fallbackFor = () => deterministicPoeticAnalysis(ctx().profile, ctx().songs);
+
+/** Shared prompt builder over the fixture ctx; opts override input fields. */
+const promptFor = (
+  opts?: Partial<Parameters<typeof buildPoeticAnalyzerPrompt>[0]>,
+) =>
+  buildPoeticAnalyzerPrompt({
+    profile: ctx().profile,
+    songs: ctx().songs,
+    ...opts,
+  });
+
 function validGeminiPayload() {
   return {
     manifesto: "You were forged, not born — and every scar hums in tune.",
@@ -217,15 +230,13 @@ describe("buildPoeticAnalyzerPrompt", () => {
     expect(prompt).toContain("gothic-dark | vintage-jazz | vibrant-pop | raw-melancholy");
   });
   it("keeps the biography grounding rule", () => {
-    const { profile, songs } = ctx();
-    const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
+    const prompt = promptFor();
     expect(prompt).toContain("the user's biography is not");
     expect(prompt).toContain("Do not invent facts about the user's real life");
   });
 
   it("carries the tanı-yasağı (non-diagnostic) + anti-cliché identity rules", () => {
-    const { profile, songs } = ctx();
-    const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
+    const prompt = promptFor();
     expect(prompt).toContain("never a clinician, therapist, or diagnostician");
     expect(prompt).toContain("Maps of feeling are reflections, not diagnoses");
     expect(prompt).toContain(
@@ -236,35 +247,31 @@ describe("buildPoeticAnalyzerPrompt", () => {
   });
 
   it("forbids formulaic scaffold templates in narratives", () => {
-    const { profile, songs } = ctx();
-    const prompt = buildPoeticAnalyzerPrompt({ profile, songs });
+    const prompt = promptFor();
     expect(prompt).toContain("Formulaic scaffold structures are forbidden");
     expect(prompt).toContain("editorial magazine biography");
   });
 
   it("includes memory notes when supplied", () => {
-    const { profile, songs } = ctx();
     const memories = SONGS.map(() => null as string | null);
     memories[0] = "my brother's basement, summer of 99";
-    const prompt = buildPoeticAnalyzerPrompt({ profile, songs, memories });
+    const prompt = promptFor({ memories });
     expect(prompt).toContain('memory note: "my brother\'s basement, summer of 99"');
   });
 
   it("enforces the requested target language for the whole story body", () => {
-    const { profile, songs } = ctx();
-
-    const turkish = buildPoeticAnalyzerPrompt({ profile, songs, language: "tr" });
+    const turkish = promptFor({ language: "tr" });
     expect(turkish).toContain("LANGUAGE REQUIREMENT");
     expect(turkish).toContain("MUST be written in Türkçe");
     expect(turkish).toContain("REMINDER: Respond entirely in Türkçe.");
     expect(turkish).toContain("every JSON value, not only top-level fields");
 
-    const german = buildPoeticAnalyzerPrompt({ profile, songs, language: "de" });
+    const german = promptFor({ language: "de" });
     expect(german).toContain("MUST be written in Deutsch");
 
     // Omitted language defaults to English.
-    const fallback = buildPoeticAnalyzerPrompt({ profile, songs });
-    expect(fallback).toContain("MUST be written in English");
+    const defaultLang = promptFor();
+    expect(defaultLang).toContain("MUST be written in English");
   });
 });
 
@@ -350,7 +357,7 @@ describe("parsePoeticAnalysis", () => {
     expect(analysis).not.toBeNull();
     const a = analysis as PoeticAnalysis;
     expect(a.manifesto).toBe("Only this.");
-    expect(a.chapters).toEqual(deterministicPoeticAnalysis(ctx().profile, ctx().songs).chapters);
+    expect(a.chapters).toEqual(fallbackFor().chapters);
     expect(a.songInsights).toHaveLength(8);
     expect(a.emotionalCurve).toHaveLength(8);
   });
@@ -375,7 +382,7 @@ describe("parsePoeticAnalysis", () => {
     // schema, but be explicit about the scenario being tested).
     payload.chapters = payload.chapters.map((c) => ({ ...c, ageRange: undefined }));
     const analysis = parsePoeticAnalysis(JSON.stringify(payload), ctx());
-    const fallback = deterministicPoeticAnalysis(ctx().profile, ctx().songs);
+    const fallback = fallbackFor();
     expect(analysis?.chapters).toHaveLength(4);
     // Same position → same deterministic ageRange.
     for (let i = 0; i < analysis!.chapters.length; i += 1) {
@@ -420,9 +427,7 @@ describe("parsePoeticAnalysis", () => {
     short.emotionalCurve = [{ label: "X", intensity: 0.5 }];
     const withShort = parsePoeticAnalysis(JSON.stringify(short), ctx());
     expect(withShort?.emotionalCurve).toHaveLength(8);
-    expect(withShort?.emotionalCurve[0].label).toBe(
-      deterministicPoeticAnalysis(ctx().profile, ctx().songs).emotionalCurve[0].label,
-    );
+    expect(withShort?.emotionalCurve[0].label).toBe(fallbackFor().emotionalCurve[0].label);
   });
 
   it("merges partial song insights over the deterministic ones", () => {

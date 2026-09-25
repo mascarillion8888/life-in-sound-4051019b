@@ -7,11 +7,22 @@
  * Contract:
  *  - "timeless" theme has EMPTY overlayClasses: applying it must produce
  *    ZERO visual change (regression guard for missing year data).
- *  - All classes are complete literal Tailwind strings (never built by
- *    concatenation) so the JIT compiler can see them.
+ *  - Every Tailwind token appears as a COMPLETE literal string in this file
+ *    (shared constants count). Interpolating class *names* dynamically
+ *    (e.g. `bg-${color}-500`) stays forbidden — the JIT scanner only sees
+ *    tokens that exist as whole strings in scanned source.
  *  - Consumers mount the overlay as an aria-hidden absolute layer; existing
  *    component classes are never overridden.
  */
+
+/** Shared overlay frame (aria-hidden layer contract, see header). */
+const OVERLAY_FRAME = "pointer-events-none absolute inset-0 -z-10";
+/** Gradient direction tokens (literal so the JIT scanner sees them). */
+const GRAD_BR = "bg-gradient-to-br";
+const GRAD_TR = "bg-gradient-to-tr";
+
+/** Compose one overlay's classes from the shared frame + literal color tail. */
+const overlay = (gradient: string, tail: string): string => `${OVERLAY_FRAME} ${gradient} ${tail}`;
 export type EraThemeId =
   "1950s" | "1960s" | "1970s" | "1980s" | "1990s" | "2000s" | "2010s" | "2020s" | "timeless";
 
@@ -39,64 +50,56 @@ export const ERAS: EraTheme[] = [
     label: "Vinyl & Chrome",
     years: "1950-1959",
     accent: "#c9a227",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-amber-900/30 via-transparent to-yellow-700/20",
+    overlayClasses: overlay(GRAD_BR, "from-amber-900/30 via-transparent to-yellow-700/20"),
   },
   {
     id: "1960s",
     label: "Psychedelia",
     years: "1960-1969",
     accent: "#e26d5c",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-tr from-orange-800/25 via-transparent to-purple-700/20",
+    overlayClasses: overlay(GRAD_TR, "from-orange-800/25 via-transparent to-purple-700/20"),
   },
   {
     id: "1970s",
     label: "Analog Soul",
     years: "1970-1979",
     accent: "#e07b39",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-orange-900/30 via-transparent to-amber-600/20",
+    overlayClasses: overlay(GRAD_BR, "from-orange-900/30 via-transparent to-amber-600/20"),
   },
   {
     id: "1980s",
     label: "Neon Youth",
     years: "1980-1989",
     accent: "#ff3ec8",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-fuchsia-600/25 via-purple-800/15 to-cyan-500/20",
+    overlayClasses: overlay(GRAD_BR, "from-fuchsia-600/25 via-purple-800/15 to-cyan-500/20"),
   },
   {
     id: "1990s",
     label: "Grunge Static",
     years: "1990-1999",
     accent: "#4ade80",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-emerald-900/30 via-transparent to-lime-700/15",
+    overlayClasses: overlay(GRAD_BR, "from-emerald-900/30 via-transparent to-lime-700/15"),
   },
   {
     id: "2000s",
     label: "Y2K Chrome",
     years: "2000-2009",
     accent: "#60a5fa",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-blue-900/30 via-transparent to-sky-600/20",
+    overlayClasses: overlay(GRAD_BR, "from-blue-900/30 via-transparent to-sky-600/20"),
   },
   {
     id: "2010s",
     label: "Minimal Pulse",
     years: "2010-2019",
     accent: "#22d3ee",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-cyan-900/25 via-transparent to-teal-600/15",
+    overlayClasses: overlay(GRAD_BR, "from-cyan-900/25 via-transparent to-teal-600/15"),
   },
   {
     id: "2020s",
     label: "Soft Future",
     years: "2020-now",
     accent: "#a78bfa",
-    overlayClasses:
-      "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-violet-900/25 via-transparent to-fuchsia-700/15",
+    overlayClasses: overlay(GRAD_BR, "from-violet-900/25 via-transparent to-fuchsia-700/15"),
   },
 ];
 

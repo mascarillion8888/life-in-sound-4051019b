@@ -60,62 +60,61 @@ const TEST_PROFILE: PersonalityProfile = {
   ),
 };
 
+/**
+ * Every prompt-shape test uses the same single fixture prompt — build it
+ * once instead of repeating `buildLifeStoryPrompt({...})` per assertion
+ * block (SonarCloud duplication).
+ */
+const PROMPT = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
+
 describe("Life Story prompt construction", () => {
   it("contains every supplied song title", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
     for (const song of TEST_SONGS) {
-      expect(prompt).toContain(song);
+      expect(PROMPT).toContain(song);
     }
   });
 
   it("contains supplied deterministic profile data (archetype, emotions, genres)", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
-    expect(prompt).toContain(TEST_PROFILE.archetype);
-    expect(prompt).toContain(TEST_PROFILE.emotionalProfile.join(", "));
-    expect(prompt).toContain(TEST_PROFILE.recommendedGenres.join(", "));
-    expect(prompt).toContain(TEST_PROFILE.archetype);
+    expect(PROMPT).toContain(TEST_PROFILE.archetype);
+    expect(PROMPT).toContain(TEST_PROFILE.emotionalProfile.join(", "));
+    expect(PROMPT).toContain(TEST_PROFILE.recommendedGenres.join(", "));
   });
 
   it("contains explicit grounding rules against inventing facts", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
-    expect(prompt).toContain("Do not invent facts");
-    expect(prompt).toContain(
+    expect(PROMPT).toContain("Do not invent facts");
+    expect(PROMPT).toContain(
       "Do not invent people, places, locations, dates, times, weather, life events, or memories",
     );
-    expect(prompt).toContain("Do not invent song titles or artists");
-    expect(prompt).toContain("Use ONLY the information supplied below");
+    expect(PROMPT).toContain("Do not invent song titles or artists");
+    expect(PROMPT).toContain("Use ONLY the information supplied below");
   });
 
   it("carries the tanı-yasağı (non-diagnostic) + anti-cliché identity rules", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
-    expect(prompt).toContain("never a clinician, therapist, or diagnostician");
-    expect(prompt).toContain("Maps of feeling are reflections, not diagnoses");
-    expect(prompt).toContain("never as medical evidence");
-    expect(prompt).toContain("no horoscope-generic, fortune-cookie");
-    expect(prompt).toContain("specific to THIS song set and THIS profile");
+    expect(PROMPT).toContain("never a clinician, therapist, or diagnostician");
+    expect(PROMPT).toContain("Maps of feeling are reflections, not diagnoses");
+    expect(PROMPT).toContain("never as medical evidence");
+    expect(PROMPT).toContain("no horoscope-generic, fortune-cookie");
+    expect(PROMPT).toContain("specific to THIS song set and THIS profile");
   });
 
   it("allows real-world knowledge of supplied songs/albums but forbids inventing the user's life", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
     // Real, known meaning of a song/album is fair game — NOT fabrication.
-    expect(prompt).toContain("USE IT to enrich the interpretation");
-    expect(prompt).toContain("the song's own meaning is fair game");
+    expect(PROMPT).toContain("USE IT to enrich the interpretation");
+    expect(PROMPT).toContain("the song's own meaning is fair game");
     // The user's biography is still off-limits.
-    expect(prompt).toContain("invent facts about the USER's personal life");
-    expect(prompt).toContain("the user's biography is not");
+    expect(PROMPT).toContain("invent facts about the USER's personal life");
+    expect(PROMPT).toContain("the user's biography is not");
   });
 
   it("asks the model to draw on a recognized song's real themes in the TASK block", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
-    expect(prompt).toContain("draw on its real, known themes and emotional tone");
-    expect(prompt).toContain("without pretending to know it");
+    expect(PROMPT).toContain("draw on its real, known themes and emotional tone");
+    expect(PROMPT).toContain("without pretending to know it");
   });
 
   it("requests narrative prose only (no JSON / markdown headings)", () => {
-    const prompt = buildLifeStoryPrompt({ profile: TEST_PROFILE, songs: TEST_SONGS });
-    expect(prompt).toContain("Output narrative prose only");
-    expect(prompt).toContain("No JSON");
-    expect(prompt).toContain("No markdown headings");
+    expect(PROMPT).toContain("Output narrative prose only");
+    expect(PROMPT).toContain("No JSON");
+    expect(PROMPT).toContain("No markdown headings");
   });
 });
 
@@ -151,6 +150,30 @@ describe("Orchestra runRole failure safety", () => {
     process.env = { ...originalEnv };
   });
 
+  /**
+   * Mock fetch factory: builds a `typeof fetch` returning the given payload
+   * shape. `mode: "ok" | "http-error" | "empty-body"`, or a thrower.
+   */
+  function mockFetch(
+    mode: "ok" | "http-error" | "empty-body" | "throw",
+    content = "narrative",
+  ): typeof fetch {
+    if (mode === "throw") {
+      return (() => {
+        throw new Error("network down");
+      }) as unknown as typeof fetch;
+    }
+    if (mode === "http-error") {
+      return (async () => new Response("error", { status: 500 })) as unknown as typeof fetch;
+    }
+    const body = mode === "empty-body" ? { choices: [] } : { choices: [{ message: { content } }] };
+    return (async () =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+  }
+
   it("returns null when the provider key is missing (fallback path)", async () => {
     const result = await runRole("summarizer", "hello");
     expect(result).toBeNull();
@@ -159,55 +182,35 @@ describe("Orchestra runRole failure safety", () => {
   it("returns null on a simulated network error without throwing", async () => {
     // Restore a key so we reach the fetch path, then make fetch throw.
     process.env.GROQ_API_KEY = "test-key";
-    const throwingFetch = (() => {
-      throw new Error("network down");
-    }) as unknown as typeof fetch;
-    const result = await runRole("summarizer", "hello", { fetchImpl: throwingFetch });
+    const result = await runRole("summarizer", "hello", { fetchImpl: mockFetch("throw") });
     expect(result).toBeNull();
   });
 
   it("returns null on a non-OK HTTP response without throwing", async () => {
     process.env.GROQ_API_KEY = "test-key";
-    const notOkFetch = (async () =>
-      new Response("error", { status: 500 })) as unknown as typeof fetch;
-    const result = await runRole("summarizer", "hello", { fetchImpl: notOkFetch });
+    const result = await runRole("summarizer", "hello", { fetchImpl: mockFetch("http-error") });
     expect(result).toBeNull();
   });
 
   it("returns null on an empty/malformed response body without throwing", async () => {
     process.env.GROQ_API_KEY = "test-key";
-    const emptyBodyFetch = (async () =>
-      new Response(JSON.stringify({ choices: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      })) as unknown as typeof fetch;
-    const result = await runRole("summarizer", "hello", { fetchImpl: emptyBodyFetch });
+    const result = await runRole("summarizer", "hello", { fetchImpl: mockFetch("empty-body") });
     expect(result).toBeNull();
   });
 
   it("returns the assistant text on a well-formed response", async () => {
     process.env.GROQ_API_KEY = "test-key";
-    const okFetch = (async () =>
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: "  Once upon a sound.  " } }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as unknown as typeof fetch;
-    const result = await runRole("summarizer", "hello", { fetchImpl: okFetch });
+    const result = await runRole("summarizer", "hello", {
+      fetchImpl: mockFetch("ok", "  Once upon a sound.  "),
+    });
     expect(result).toBe("Once upon a sound.");
   });
 
   it("never returns an API key in its result", async () => {
     process.env.GROQ_API_KEY = "super-secret-key-value";
-    const okFetch = (async () =>
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: "narrative" } }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as unknown as typeof fetch;
-    const result = await runRole("summarizer", "hello", { fetchImpl: okFetch });
+    const result = await runRole("summarizer", "hello", {
+      fetchImpl: mockFetch("ok", "narrative"),
+    });
     expect(result).toBe("narrative");
     expect(JSON.stringify(result)).not.toContain("super-secret-key-value");
   });

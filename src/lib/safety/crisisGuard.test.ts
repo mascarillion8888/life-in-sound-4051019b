@@ -2,61 +2,59 @@ import { describe, expect, it } from "vitest";
 
 import { crisisGuardEnabled, detectCrisisNote, normalizeNote } from "./crisisGuard";
 
+/**
+ * Crisis triage tables. Each row is (note, mustTrip). Rows are grouped per
+ * language so a newly added language extends the table — it never copies a
+ * new describe block (SonarCloud duplication: the previous five per-language
+ * `it` blocks repeated the same expect shape).
+ */
+const CRISIS_CASES: Array<[note: string, mustTrip: boolean]> = [
+  // English — explicit self-harm / suicidal intent
+  ["i want to kill myself", true],
+  ["I keep thinking about suicide", true],
+  ["sometimes I wish I wouldn't wake up", true],
+  ["i don't want to live anymore", true],
+  ["thinking about self-harm", true],
+  ["no reason to go on", true],
+  // Turkish
+  ["intihar etmek istiyorum", true],
+  ["kendimi öldürmek istiyorum", true],
+  ["yaşamak istemiyorum", true],
+  ["canımı yakmak istiyorum", true],
+  // Spanish
+  ["quiero suicidarme", true],
+  ["no quiero seguir viviendo", true],
+  ["quiero morir", true],
+  // German
+  ["ich will mich umbringen", true],
+  ["suizid", true],
+  // French
+  ["je veux me tuer", true],
+  ["suicide", true],
+
+  // Precision: melancholy-but-healthy nostalgia must NOT interrupt.
+  // The core case: heavy sadness without intent stays in the normal flow.
+  ["this song makes me miss my grandmother so much", false],
+  ["I was so sad that summer, but music saved me", false],
+  ["dark days, but I got through them", false],
+  ["bunu dinlerken ağladım ama iyiydim", false],
+  ["me transmite mucha nostalgia pero me da fuerzas", false],
+  // Benign musical context ("killer", "die" inside other words).
+  ["this song has a great guitar solo", false],
+  ["the beat is killer", false],
+  // Empty / whitespace.
+  ["", false],
+  ["   ", false],
+];
+
 describe("detectCrisisNote", () => {
+  it.each(CRISIS_CASES)("%j → %s", (note, mustTrip) => {
+    expect(detectCrisisNote(note)).toBe(mustTrip);
+  });
+
   it("is case-insensitive and trims whitespace", () => {
     expect(detectCrisisNote("  KILL MYSELF  ")).toBe(true);
     expect(detectCrisisNote("\tSuIcIdAl\n")).toBe(true);
-  });
-
-  it("detects explicit English self-harm / suicidal intent", () => {
-    expect(detectCrisisNote("i want to kill myself")).toBe(true);
-    expect(detectCrisisNote("I keep thinking about suicide")).toBe(true);
-    expect(detectCrisisNote("sometimes I wish I wouldn't wake up")).toBe(true);
-    expect(detectCrisisNote("i don't want to live anymore")).toBe(true);
-    expect(detectCrisisNote("thinking about self-harm")).toBe(true);
-    expect(detectCrisisNote("no reason to go on")).toBe(true);
-  });
-
-  it("detects explicit Turkish intent", () => {
-    expect(detectCrisisNote("intihar etmek istiyorum")).toBe(true);
-    expect(detectCrisisNote("kendimi öldürmek istiyorum")).toBe(true);
-    expect(detectCrisisNote("yaşamak istemiyorum")).toBe(true);
-    expect(detectCrisisNote("canımı yakmak istiyorum")).toBe(true);
-  });
-
-  it("detects explicit Spanish intent", () => {
-    expect(detectCrisisNote("quiero suicidarme")).toBe(true);
-    expect(detectCrisisNote("no quiero seguir viviendo")).toBe(true);
-    expect(detectCrisisNote("quiero morir")).toBe(true);
-  });
-
-  it("detects explicit German intent", () => {
-    expect(detectCrisisNote("ich will mich umbringen")).toBe(true);
-    expect(detectCrisisNote("suizid")).toBe(true);
-  });
-
-  it("detects explicit French intent", () => {
-    expect(detectCrisisNote("je veux me tuer")).toBe(true);
-    expect(detectCrisisNote("suicide")).toBe(true);
-  });
-
-  it("does NOT trip on melancholy-but-healthy nostalgic notes", () => {
-    // The core precision case: heavy sadness without intent must NOT interrupt.
-    expect(detectCrisisNote("this song makes me miss my grandmother so much")).toBe(false);
-    expect(detectCrisisNote("I was so sad that summer, but music saved me")).toBe(false);
-    expect(detectCrisisNote("dark days, but I got through them")).toBe(false);
-    expect(detectCrisisNote("bunu dinlerken ağladım ama iyiydim")).toBe(false);
-    expect(detectCrisisNote("me transmite mucha nostalgia pero me da fuerzas")).toBe(false);
-  });
-
-  it("does NOT trip on the word 'die' in benign musical context", () => {
-    expect(detectCrisisNote("this song has a great guitar solo")).toBe(false);
-    expect(detectCrisisNote("the beat is killer")).toBe(false);
-  });
-
-  it("returns false for empty or whitespace-only input", () => {
-    expect(detectCrisisNote("")).toBe(false);
-    expect(detectCrisisNote("   ")).toBe(false);
   });
 });
 
