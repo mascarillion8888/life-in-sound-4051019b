@@ -107,7 +107,10 @@ export async function callOpenRouter(
   } catch (err) {
     // Network-level failure (thrown by fetch): treat like a transient provider
     // error — try the fallback once.
-    console.warn(`[openrouter] ${primaryModel} ağ hatası → fallback deneniyor: ${fallbackModel}`, (err as Error).message);
+    console.warn(
+      `[openrouter] ${primaryModel} ağ hatası → fallback deneniyor: ${fallbackModel}`,
+      (err as Error).message,
+    );
     result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
     usedModel = fallbackModel;
     didFallback = true;
@@ -115,7 +118,9 @@ export async function callOpenRouter(
 
   if (result.status === 429 || result.status >= 500) {
     if (!didFallback) {
-      console.warn(`[openrouter] ${primaryModel} → ${result.status} (rate limit / sunucu), fallback deneniyor: ${fallbackModel}`);
+      console.warn(
+        `[openrouter] ${primaryModel} → ${result.status} (rate limit / sunucu), fallback deneniyor: ${fallbackModel}`,
+      );
       result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
       usedModel = fallbackModel;
       didFallback = true;
@@ -127,18 +132,24 @@ export async function callOpenRouter(
     // (400/401/…) varsa — fallback anlamsız; fırlat. (isteğe bağlı: anlamlı log)
     const detail = result.text.slice(0, 200).replace(/\n/g, " ");
     if (result.status === 429 || result.status >= 500) {
-      console.error(`[openrouter] hata model=${result.model} status=${result.status} gövde=${detail}`);
+      console.error(
+        `[openrouter] hata model=${result.model} status=${result.status} gövde=${detail}`,
+      );
       throw new Error(
         `OpenRouter ${result.model} başarısız: HTTP ${result.status} (fallback de başarısız)`,
       );
     }
-    console.error(`[openrouter] istemci hatası model=${usedModel} status=${result.status} gövde=${detail}`);
+    console.error(
+      `[openrouter] istemci hatası model=${usedModel} status=${result.status} gövde=${detail}`,
+    );
     throw new Error(`OpenRouter isteği reddedildi: HTTP ${result.status}`);
   }
 
   const content = parseContent(result.text);
   if (content === null) {
-    console.error(`[openrouter] parse edilemeyen yanıt model=${usedModel} gövde=${result.text.slice(0, 120).replace(/\n/g, " ")}`);
+    console.error(
+      `[openrouter] parse edilemeyen yanıt model=${usedModel} gövde=${result.text.slice(0, 120).replace(/\n/g, " ")}`,
+    );
     return null;
   }
 

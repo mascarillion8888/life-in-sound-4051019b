@@ -138,7 +138,11 @@ describe("collection localStorage persistence (journey-independent)", () => {
       COLLECTION_STORAGE_KEY,
       JSON.stringify({
         entries: [
-          { trackKey: "good", snapshot: { title: "A", artist: "B" }, addedAt: "2026-01-01T00:00:00Z" },
+          {
+            trackKey: "good",
+            snapshot: { title: "A", artist: "B" },
+            addedAt: "2026-01-01T00:00:00Z",
+          },
           { trackKey: "bad" }, // no snapshot → dropped
           { snapshot: { title: "NoKey" } }, // no trackKey → dropped
         ],

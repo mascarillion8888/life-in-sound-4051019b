@@ -87,7 +87,13 @@ export async function callGeminiMoodInference(
       },
       { role: "user", content: prompt },
     ],
-    { temperature: 0, maxTokens: 64, jsonMode: true, signal: options.signal, fetchImpl: options.fetchImpl },
+    {
+      temperature: 0,
+      maxTokens: 64,
+      jsonMode: true,
+      signal: options.signal,
+      fetchImpl: options.fetchImpl,
+    },
   ).catch(() => null);
 }
 

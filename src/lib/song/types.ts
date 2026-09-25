@@ -99,11 +99,13 @@ export type SongField = (typeof SONG_FIELDS)[number];
  * build its entries field-locally and return them without unsafe casts.
  */
 type PersistedSong = {
-  [K in SongField]-?:
-    K extends "provider" | "providerId" | "title" | "artist" ? string :
-    K extends "album" | "artworkUrl" | "previewUrl" | "isrc" | "genre" | "mood" ? string | null :
-    K extends "releaseYear" ? number | null :
-    boolean | undefined; // "verified"
+  [K in SongField]-?: K extends "provider" | "providerId" | "title" | "artist"
+    ? string
+    : K extends "album" | "artworkUrl" | "previewUrl" | "isrc" | "genre" | "mood"
+      ? string | null
+      : K extends "releaseYear"
+        ? number | null
+        : boolean | undefined; // "verified"
 };
 
 /**

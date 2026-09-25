@@ -21,7 +21,12 @@ import { Loader2, Music, Star, Volume2, VolumeX } from "lucide-react";
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
-import { isInCollection, loadCollection, saveCollection, toggleInCollection } from "@/lib/collection";
+import {
+  isInCollection,
+  loadCollection,
+  saveCollection,
+  toggleInCollection,
+} from "@/lib/collection";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import type { LifeCard } from "@/lib/soundmap/lifeCards";
@@ -180,7 +185,9 @@ export function QuizCard({
   // on mount and bumped on toggle; the card mounts one at a time in
   // EraCardReveal, so a simple useState is sufficient (no cross-card sync).
   const collectionKey = song ? cardArtworkKey(song) : "";
-  const [saved, setSaved] = useState(song ? isInCollection(loadCollection(), collectionKey) : false);
+  const [saved, setSaved] = useState(
+    song ? isInCollection(loadCollection(), collectionKey) : false,
+  );
   const toggleSaved = () => {
     if (!song) return;
     const next = toggleInCollection(loadCollection(), collectionKey, song);

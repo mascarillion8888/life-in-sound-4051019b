@@ -32,13 +32,13 @@ export type Dictionary = {
     recognizedAria: string;
   };
   quizCard: {
-      playPreviewAria: string;
-      mutePreviewAria: string;
-      previewUnavailableAria: string;
-      artGenerating: string;
-      addToCollection: string;
-      inCollection: string;
-    };
+    playPreviewAria: string;
+    mutePreviewAria: string;
+    previewUnavailableAria: string;
+    artGenerating: string;
+    addToCollection: string;
+    inCollection: string;
+  };
   crisis: {
     /** Panel heading — calm, humane, non-clinical. */
     title: string;
@@ -151,9 +151,9 @@ const en: Dictionary = {
     mutePreviewAria: "Mute preview",
     previewUnavailableAria: "Preview unavailable",
     artGenerating: "Etched ink art generating…",
-        addToCollection: "Add to Collection",
-        inCollection: "In Collection ✓",
-      },
+    addToCollection: "Add to Collection",
+    inCollection: "In Collection ✓",
+  },
   crisis: {
     title: "This sounds like a hard moment.",
     body: "What you wrote matters more than a card. If you're finding it hard to go on or are worried about your safety, please don't sit with it alone — reach out to someone you trust, or to a support line that can help right now.",
@@ -278,9 +278,9 @@ const tr: Dictionary = {
     mutePreviewAria: "Önizlemeyi sustur",
     previewUnavailableAria: "Önizleme yok",
     artGenerating: "Gravür çizim üretiliyor…",
-        addToCollection: "Koleksiyona Ekle",
-        inCollection: "Koleksiyonda ✓",
-      },
+    addToCollection: "Koleksiyona Ekle",
+    inCollection: "Koleksiyonda ✓",
+  },
   crisis: {
     title: "Bu zor bir an gibi görünüyor.",
     body: "Yazdıkların bir karttan daha önemli. Devam etmekte zorlanıyorsan ya da kendini güvende hissetmiyorsan, yalnız kalma — güvendiğin birine ya da hemen yardım edebilecek bir destek hattına ulaş.",
@@ -405,9 +405,9 @@ const es: Dictionary = {
     mutePreviewAria: "Silenciar vista previa",
     previewUnavailableAria: "Vista previa no disponible",
     artGenerating: "Generando grabado a tinta…",
-        addToCollection: "Añadir a la colección",
-        inCollection: "En la colección ✓",
-      },
+    addToCollection: "Añadir a la colección",
+    inCollection: "En la colección ✓",
+  },
   crisis: {
     title: "Esto parece un momento difícil.",
     body: "Lo que escribiste importa más que una tarjeta. Si te resulta difícil seguir adelante o te preocupa tu seguridad, no te quedes a solas con esto: habla con alguien de confianza o con una línea de apoyo que pueda ayudarte ahora mismo.",
@@ -533,9 +533,9 @@ const de: Dictionary = {
     mutePreviewAria: "Vorschau stummschalten",
     previewUnavailableAria: "Vorschau nicht verfügbar",
     artGenerating: "Tuschradierung wird erstellt…",
-        addToCollection: "Zur Sammlung hinzufügen",
-        inCollection: "In Sammlung ✓",
-      },
+    addToCollection: "Zur Sammlung hinzufügen",
+    inCollection: "In Sammlung ✓",
+  },
   crisis: {
     title: "Das klingt nach einem schweren Moment.",
     body: "Was du geschrieben hast, ist wichtiger als eine Karte. Wenn es dir schwerfällt, weiterzumachen, oder du dir Sorgen um deine Sicherheit machst, bleib nicht allein damit — wende dich an eine Person deines Vertrauens oder an eine Hilfslinie, die jetzt helfen kann.",
@@ -661,9 +661,9 @@ const fr: Dictionary = {
     mutePreviewAria: "Couper le son de l'extrait",
     previewUnavailableAria: "Extrait indisponible",
     artGenerating: "Gravure à l'encre en cours…",
-        addToCollection: "Ajouter à la collection",
-        inCollection: "Dans la collection ✓",
-      },
+    addToCollection: "Ajouter à la collection",
+    inCollection: "Dans la collection ✓",
+  },
   crisis: {
     title: "Cela ressemble à un moment difficile.",
     body: "Ce que tu as écrit compte plus qu'une carte. S'il t'est difficile de continuer ou que tu es inquiet pour ta sécurité, ne reste pas seul avec ça — parle à une personne de confiance ou contacte une ligne d'écoute qui peut aider tout de suite.",

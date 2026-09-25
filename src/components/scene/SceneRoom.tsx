@@ -100,27 +100,27 @@ export function SceneRoom({
       {/* Slight darkening over the blur so the sharp layer reads clearly. */}
       <span aria-hidden className="absolute inset-0 bg-black/40" />
       {/* Sharp main layer — whole image visible, centered, never cropped. */}
-            <span
-              aria-hidden
-              data-testid={`scene-backdrop-main-${slug}`}
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${moodImage})`,
-                backgroundSize: "contain",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }}
-            />
-            {/* Center fade — softens the "two halves" seam under the card so the
+      <span
+        aria-hidden
+        data-testid={`scene-backdrop-main-${slug}`}
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${moodImage})`,
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      {/* Center fade — softens the "two halves" seam under the card so the
                 centered image doesn't read as two disconnected scenes. */}
-            <span
-              aria-hidden
-              data-testid={`scene-backdrop-fade-${slug}`}
-              className="absolute inset-0"
-              style={{
-                background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 58%)",
-              }}
-            />
+      <span
+        aria-hidden
+        data-testid={`scene-backdrop-fade-${slug}`}
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 58%)",
+        }}
+      />
       {/* Ambient room light — the theme's personality over the texture. */}
       <span
         aria-hidden

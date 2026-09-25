@@ -135,12 +135,8 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
     const callsBefore = vi.mocked(inferMood).mock.calls.length;
     const set = [song("Fragile", "Sting", 1987, "s3")];
 
-    await generateGroundedAnalysis(set, [
-      { questionId: 1, stageName: "Childhood", song: set[0] },
-    ]);
-    await generateGroundedAnalysis(set, [
-      { questionId: 1, stageName: "Hard Time", song: set[0] },
-    ]);
+    await generateGroundedAnalysis(set, [{ questionId: 1, stageName: "Childhood", song: set[0] }]);
+    await generateGroundedAnalysis(set, [{ questionId: 1, stageName: "Hard Time", song: set[0] }]);
 
     // Two distinct context fingerprints ⇒ two inference passes.
     expect(vi.mocked(inferMood).mock.calls.length - callsBefore).toBe(2);
@@ -158,10 +154,20 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
     const set = [song("Fragile", "Sting", 1987, "s3")];
 
     const first = await generateGroundedAnalysis(set, [
-      { questionId: 1, stageName: "Childhood", song: set[0], contextText: "first winter on the coast" },
+      {
+        questionId: 1,
+        stageName: "Childhood",
+        song: set[0],
+        contextText: "first winter on the coast",
+      },
     ]);
     const second = await generateGroundedAnalysis(set, [
-      { questionId: 1, stageName: "Childhood", song: set[0], contextText: "skipping stones on the lake" },
+      {
+        questionId: 1,
+        stageName: "Childhood",
+        song: set[0],
+        contextText: "skipping stones on the lake",
+      },
     ]);
 
     // Identical song set + identical LifeContext fields (only contextText

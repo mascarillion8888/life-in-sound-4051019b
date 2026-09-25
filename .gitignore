@@ -50,6 +50,10 @@ __pycache__/
 # TypeScript build artifact (tsc --incremental / tsBuildInfoFile)
 *.tsbuildinfo
 
+# Yabancı lockfile — proje npm kullanır (package-lock.json kanonik).
+# Bu ortamda yanlışlıkla koşulan `bun install` artığı; commit edilmez.
+bun.lock
+
 # Geçici canlı test script'leri (commit edilmez)
 scripts/test-mood-live.ts
 scripts/test-openrouter-live.ts

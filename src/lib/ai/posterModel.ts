@@ -49,7 +49,11 @@ function angleFromString(value: string): number {
  * dominant emotion, the motif from the music profile, and glow strength from
  * emotional intensity. Everything is deterministic.
  */
-export function buildPosterVisual(emotions: EmotionProfile, music: MusicProfile, archetype: string): PosterVisual {
+export function buildPosterVisual(
+  emotions: EmotionProfile,
+  music: MusicProfile,
+  archetype: string,
+): PosterVisual {
   const colors = COLORS_BY_EMOTION[emotions.dominantEmotion] ?? DEFAULT_COLORS;
   return {
     ...colors,

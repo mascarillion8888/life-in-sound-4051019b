@@ -36,5 +36,14 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // shadcn/ui vendored primitives — stil ve API shadcn kaynağına bağlı;
+    // Fast-refresh uyarıları burada bilinçli olarak bastırılır (baseline). Dosyalar
+    // elle düzenlenmez; güncelleme yalnızca shadcn CLI/regenerate ile olur.
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
   eslintPluginPrettier,
 );

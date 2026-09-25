@@ -26,7 +26,7 @@ export interface TemporalPattern {
 export interface MusicalIdentity {
   /** Up to 3 artist names, most frequent first. */
   topArtists: string[];
-/** uniqueArtists / totalSongs as a 0–100 integer. */
+  /** uniqueArtists / totalSongs as a 0–100 integer. */
   diversityScore: number;
   /** Human-readable label derived from diversityScore. */
   dominantVibe: string;

@@ -7,6 +7,10 @@
  *   no provider is present, so components (and their unit tests) can render
  *   standalone without wiring the provider.
  */
+/* eslint-disable react-refresh/only-export-components --
+   Context modülü: provider + hook bilinçli olarak birlikte yaşar (React context
+   konvansiyonu). Hook'u ayrı dosyaya taşımak her tüketiciye ikinci içe-aktarma
+   yolu ekler; çalışma-zamanı faydası yoktur. */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { dictionaries, type Dictionary } from "./dictionaries";

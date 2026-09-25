@@ -204,9 +204,7 @@ describe("QuizCard", () => {
   });
 
   it("draws an uploaded frame template over the artwork window when one is set", () => {
-    render(
-      <QuizCard card={cards[0]} song={song()} templateFile="frame-gothic.png" />,
-    );
+    render(<QuizCard card={cards[0]} song={song()} templateFile="frame-gothic.png" />);
     const tpl = screen.getByTestId("card-art-template") as HTMLImageElement;
     expect(tpl.src).toContain("data:image/png;base64");
     expect(tpl.className).toContain("pointer-events-none");

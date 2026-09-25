@@ -30,7 +30,6 @@ import { GeneratedPoster } from "@/components/results/GeneratedPoster";
 import { posterToDataUrl } from "@/lib/ai/posterRenderer";
 import posterBackdrop from "@/assets/mood-backdrop-dreamy.png";
 
-
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
 
 export const Route = createFileRoute("/results")({
@@ -156,7 +155,7 @@ function LifeStory({
       />
       <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/80 sm:text-lg">
         {showFallback ? (
-groundedStory ? (
+          groundedStory ? (
             <div className="space-y-5">
               <p className="text-xl font-semibold text-foreground">{groundedStory.title}</p>
               <p>{groundedStory.summary}</p>
@@ -329,21 +328,28 @@ function ResultsPage() {
       ),
     [journey, answers],
   );
+  // Bilinçli content-keyed memo: deps yerine songsFingerprint (içerik parmak izi)
+  // kullanılır. `answers`/`journey.songs` dep'e girseydi, aynı şarkı setinde
+  // referans değişikliği bile `songs`'u yeniden üretip grounded mood pipeline'ını
+  // yeniden tetiklerdi (render-driven çift LLM çağrısı — ef27814 fix'i).
+  /* eslint-disable react-hooks/exhaustive-deps -- content-key pattern: fingerprint değeri == içerik kimliği */
   const songs = useMemo(
     () =>
-      questions.map((q) =>
-        journey?.songs?.[q.id] ?? {
-          provider: "manual" as const,
-          providerId: `manual-${q.id}`,
-          title: answers?.[q.id] ?? `Untitled track ${q.id}`,
-          artist: "",
-          album: null,
-          artworkUrl: null,
-          isrc: null,
-        },
+      questions.map(
+        (q) =>
+          journey?.songs?.[q.id] ?? {
+            provider: "manual" as const,
+            providerId: `manual-${q.id}`,
+            title: answers?.[q.id] ?? `Untitled track ${q.id}`,
+            artist: "",
+            album: null,
+            artworkUrl: null,
+            isrc: null,
+          },
       ),
     [songsFingerprint],
   );
+  /* eslint-enable react-hooks/exhaustive-deps */
   const profile = useMemo(() => analyzeUserJourney(answers), [answers]);
 
   // Results-side telafi (QA Bug 2): if a song still arrives as a manual entry
@@ -404,7 +410,9 @@ function ResultsPage() {
   // journey Song[] selection (not just title strings), upgraded with per-song
   // LLM mood inference. Never blocks the page: the async call falls back to
   // null when the journey is empty or the inference fails.
-  const [grounded, setGrounded] = useState<Awaited<ReturnType<typeof generateGroundedAnalysis>> | null>(null);
+  const [grounded, setGrounded] = useState<Awaited<
+    ReturnType<typeof generateGroundedAnalysis>
+  > | null>(null);
   useEffect(() => {
     let active = true;
     setGrounded(null);
@@ -460,8 +468,6 @@ function ResultsPage() {
     link.click();
   };
 
-
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
@@ -486,7 +492,7 @@ function ResultsPage() {
           </header>
         </AnimatedReveal>
 
-{/* Universe Hero — Phase 1: the visual multiverse entry point */}
+        {/* Universe Hero — Phase 1: the visual multiverse entry point */}
         <AnimatedReveal>
           <MusicUniverseHero profile={profile} grounded={grounded} songs={songs} />
         </AnimatedReveal>
@@ -515,7 +521,10 @@ function ResultsPage() {
 
         {/* AI Personality */}
         <AnimatedReveal>
-          <AIPersonalityCard profile={profile} topGenres={grounded?.dna.musicalIdentity.topGenres} />
+          <AIPersonalityCard
+            profile={profile}
+            topGenres={grounded?.dna.musicalIdentity.topGenres}
+          />
         </AnimatedReveal>
 
         {/* Music DNA — grounded P0 row (era distribution / diversity / vibe)
@@ -605,7 +614,7 @@ function ResultsPage() {
           </section>
         </AnimatedReveal>
 
-{/* Song Universe Cards — Phase 1: one song, one universe */}
+        {/* Song Universe Cards — Phase 1: one song, one universe */}
         <AnimatedReveal>
           <section>
             <SectionHeading icon={Dna} eyebrow={t.results.dnaEyebrow} title="Song Universes" />
@@ -776,7 +785,6 @@ function ResultsPage() {
                 A printable poster of your SoundMap is coming soon.
               </p>
             )}
-
           </section>
         </AnimatedReveal>
 

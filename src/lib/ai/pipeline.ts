@@ -168,17 +168,17 @@ function groundedFingerprint(songs: Song[], contexts?: LifeContext[]): string {
     JSON.stringify([s.provider, s.providerId, s.title, s.artist, s.releaseYear ?? null]),
   );
   const ctxKeys = contexts?.map((c) =>
-      JSON.stringify([
-        c.questionId,
-        c.stageName,
-        c.song?.providerId ?? c.song?.title ?? String(c.questionId),
-        // contextText is a real input consumed by the grounded engines, so it
-        // must be part of the memo key — otherwise two calls with identical
-        // songs+stage but different contextText would collide and reuse a stale
-        // result. `?? null` keeps behaviour identical for inputs without it.
-        c.contextText ?? null,
-      ]),
-    );
+    JSON.stringify([
+      c.questionId,
+      c.stageName,
+      c.song?.providerId ?? c.song?.title ?? String(c.questionId),
+      // contextText is a real input consumed by the grounded engines, so it
+      // must be part of the memo key — otherwise two calls with identical
+      // songs+stage but different contextText would collide and reuse a stale
+      // result. `?? null` keeps behaviour identical for inputs without it.
+      c.contextText ?? null,
+    ]),
+  );
   return JSON.stringify([songKeys, ctxKeys ?? null]);
 }
 
