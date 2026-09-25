@@ -224,8 +224,8 @@ function JourneyPage() {
       });
     }
     // Deposit inferred moods in the background; resolveSongMood is stable per
-        // session (never re-fires duplicate calls), and `songs` is the only trigger.
-      }, [restored, completed, songs]);
+    // session (never re-fires duplicate calls), and `songs` is the only trigger.
+  }, [restored, completed, songs]);
 
   // Background verification pipeline. Fires for the typed draft (debounced)
   // and never blocks the UI: Onayla/Next commit synchronously without waiting

@@ -52,7 +52,12 @@ const TEST_PROFILE: PersonalityProfile = {
   emotions: TEST_EMOTIONS,
   music: TEST_MUSIC,
   poeticSummary: "Your music feels like an old photograph that still smells like summer.",
-  poster: buildPosterModel("The Keeper", "You carry every year with you", TEST_EMOTIONS, TEST_MUSIC),
+  poster: buildPosterModel(
+    "The Keeper",
+    "You carry every year with you",
+    TEST_EMOTIONS,
+    TEST_MUSIC,
+  ),
 };
 
 describe("Life Story prompt construction", () => {

@@ -129,8 +129,16 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
   });
 
   it("soul (decade-free) herhangi bir yılda eşleşir — decade koşulu yoksayılır", () => {
-    const seventies = resolveSceneVisualSpec({ mood: "Energetic", genre: "soul", releaseYear: 1975 });
-    const nineties = resolveSceneVisualSpec({ mood: "Energetic", genre: "soul", releaseYear: 1994 });
+    const seventies = resolveSceneVisualSpec({
+      mood: "Energetic",
+      genre: "soul",
+      releaseYear: 1975,
+    });
+    const nineties = resolveSceneVisualSpec({
+      mood: "Energetic",
+      genre: "soul",
+      releaseYear: 1994,
+    });
     expect(seventies.exactAssetRef).toBe("backdrop-soul-energetic.png");
     expect(nineties.exactAssetRef).toBe("backdrop-soul-energetic.png");
     // dönemsiz kayıt trace'i genre-mood şeklindedir (decade yok).
@@ -197,6 +205,4 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(normalizeGenre(null)).toBeNull();
     expect(normalizeGenre("  ")).toBeNull();
   });
-  });
-
-
+});

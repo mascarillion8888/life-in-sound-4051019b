@@ -29,9 +29,7 @@ describe("SceneRoom — the fixed global library environment", () => {
       );
       expect(screen.getByTestId(`scene-room-${themeId}`)).toBeTruthy();
       // Blurred fill layer — covers the whole container.
-      const fill = container.querySelector(
-        `[data-testid='scene-backdrop-dreamy']`,
-      ) as HTMLElement;
+      const fill = container.querySelector(`[data-testid='scene-backdrop-dreamy']`) as HTMLElement;
       expect(fill).toBeTruthy();
       expect(fill.style.backgroundImage).toContain("mood-backdrop-dreamy");
       expect(fill.style.backgroundSize).toBe("cover");
@@ -50,8 +48,8 @@ describe("SceneRoom — the fixed global library environment", () => {
   it("uses the song's mood backdrop when a mood is present (genre/decade do not pick the image alone)", () => {
     const { container } = render(<SceneRoom themeId="synth" mood="dark" />);
     expect(
-      (container.querySelector(`[data-testid='scene-backdrop-dark']`) as HTMLElement)
-        .style.backgroundImage,
+      (container.querySelector(`[data-testid='scene-backdrop-dark']`) as HTMLElement).style
+        .backgroundImage,
     ).toContain("mood-backdrop-dark");
     expect(
       (container.querySelector(`[data-testid='scene-backdrop-main-dark']`) as HTMLElement).style
@@ -126,14 +124,18 @@ describe("sceneThemeFor — DOM-side mirror of the server scene vocabulary", () 
 
   it("routes acoustic/roots and classical/chamber keywords to the acoustic room", () => {
     expect(
-      sceneThemeFor(song({ title: "Take Me Home Country Roads", artist: "John Denver", releaseYear: 1971 })),
+      sceneThemeFor(
+        song({ title: "Take Me Home Country Roads", artist: "John Denver", releaseYear: 1971 }),
+      ),
     ).toBe("acoustic");
     expect(
-      sceneThemeFor(song({ title: "Clair de Lune", artist: "Debussy classical piano", releaseYear: 1905 })),
+      sceneThemeFor(
+        song({ title: "Clair de Lune", artist: "Debussy classical piano", releaseYear: 1905 }),
+      ),
     ).toBe("acoustic");
-    expect(sceneThemeFor(song({ title: "Only Love Can Hurt Like This", artist: "Paloma Faith folk" }))).toBe(
-      "acoustic",
-    );
+    expect(
+      sceneThemeFor(song({ title: "Only Love Can Hurt Like This", artist: "Paloma Faith folk" })),
+    ).toBe("acoustic");
   });
 
   it("keeps metal/punk/doom in the dark gothic room after the split", () => {

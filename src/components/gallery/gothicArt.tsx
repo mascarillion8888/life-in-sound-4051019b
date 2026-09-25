@@ -11,6 +11,11 @@
  *   holds the classification message and, for retryable failures, a retry
  *   action. It never renders a broken <img>.
  */
+/* eslint-disable react-refresh/only-export-components --
+   Bilinçli ortak-modül dosyası: CardGallery'nin yükleniyor/hata dili (skeleton,
+   fallback, hata sınıflandırması) tek dosyada yaşar. Bölmek, tek tüketicinin
+   olduğu bir yüzey için iki içe-aktarma yolu zorlar; HMR'da component kaybı
+   kabul edilebilir (yalnızca galeri yenilenir). */
 import type { ReactNode } from "react";
 import { Loader2, RotateCw, Skull } from "lucide-react";
 
@@ -23,12 +28,7 @@ import { Button } from "@/components/ui/button";
  * is a generic "couldn't paint" surface, not an HF-coupled one.)
  */
 export type GothicArtErrorKind =
-  | "missing-token"
-  | "rate-limit"
-  | "auth"
-  | "network"
-  | "provider"
-  | "unknown";
+  "missing-token" | "rate-limit" | "auth" | "network" | "provider" | "unknown";
 
 /** Resolve a classified HF error into localized fallback copy + retry flag. */
 export function gothicArtFallbackContent(

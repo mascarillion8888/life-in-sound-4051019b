@@ -22,7 +22,8 @@ export function generateGroundedLifeStory(
     const stage = ctx.stageName || "Hayat Dilimi";
     const year = ctx.song?.year ?? ctx.song?.releaseYear ?? null;
 
-    const narrative = ctx.contextText?.trim() || buildNarrative({ stage, songTitle, artistName, year, index });
+    const narrative =
+      ctx.contextText?.trim() || buildNarrative({ stage, songTitle, artistName, year, index });
 
     return {
       id: `chapter-${index}`,
@@ -96,4 +97,3 @@ function buildNarrative(input: {
   const opening = openings[index % openings.length];
   return `${opening} Bu seçim, dönemin ${tone} tonunu taşıyor ve hikâyenin bu bölümünü kendi ritmiyle işaretliyor.`;
 }
-

@@ -3,11 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Song } from "@/lib/song/types";
 
 import { inferMood } from "./moodInference";
-import {
-  __resetSongMoodAttempts,
-  resolveSongMood,
-  songMoodKey,
-} from "./enrichSongMood";
+import { __resetSongMoodAttempts, resolveSongMood, songMoodKey } from "./enrichSongMood";
 
 vi.mock("./moodInference", () => ({ inferMood: vi.fn() }));
 

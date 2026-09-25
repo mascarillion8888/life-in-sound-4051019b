@@ -14,11 +14,7 @@
  * without any provider access.
  */
 import type { PersonalityProfile } from "@/lib/ai/types";
-import {
-  ANTI_CLICHE_RULE,
-  CLINICIAN_BAN_RULE,
-  MEDICAL_EVIDENCE_RULE,
-} from "./promptRules";
+import { ANTI_CLICHE_RULE, CLINICIAN_BAN_RULE, MEDICAL_EVIDENCE_RULE } from "./promptRules";
 
 export type LifeStoryInput = {
   profile: PersonalityProfile;

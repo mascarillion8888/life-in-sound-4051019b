@@ -217,7 +217,8 @@ describe("generateCardArtworkCore", () => {
       trackKey: "itunes:42", // same key — the card route must NOT add "::card"
       artist: "Sting",
       title: "Fragile",
-      promptOverride: "A multidimensional blueprint prompt with candlelight and a typographic sleeve.",
+      promptOverride:
+        "A multidimensional blueprint prompt with candlelight and a typographic sleeve.",
     };
     const first = await generateCardArtworkCore(artworkCall, {
       fetchImpl: fetchImpl as unknown as typeof fetch,

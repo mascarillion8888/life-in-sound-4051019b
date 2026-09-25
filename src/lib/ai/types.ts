@@ -53,7 +53,6 @@ export type PosterModel = {
   visual: PosterVisual;
 };
 
-
 export type PersonalityProfile = {
   archetype: string;
   title: string;

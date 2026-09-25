@@ -24,17 +24,7 @@ import type { SceneThemeId } from "@/components/scene/SceneRoom";
 export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
   {
     id: "gothic",
-    keywords: [
-      "goth",
-      "doom",
-      "metal",
-      "thrash",
-      "slayer",
-      "sabbath",
-      "priest",
-      "maiden",
-      "punk",
-    ],
+    keywords: ["goth", "doom", "metal", "thrash", "slayer", "sabbath", "priest", "maiden", "punk"],
   },
   {
     id: "hiphop",

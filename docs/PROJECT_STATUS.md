@@ -42,6 +42,32 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ## 3. Bugün ve Bu Hafta Ne Yapıldı
 
+### 2026-09-25 — Kod tabanı hijyeni: lint/format mimarisi sıfırlandı
+- **Önceki oturumun sağlık raporu** üç dikkat noktası üretmişti: untracked `bun.lock`,
+  Windows/Linux satır-sonu (CRLF) ayrışması ve "prettier'i kapatarak koş" kuralı,
+  9 taşınan lint uyarısı. Kullanıcı "ana mimariye göre düzelt" dedi; ilke:
+  **bastırmak değil, kök-nedeninden çözmek.**
+- **CRLF ayrışması config'ten çözüldü:** Prettier artık `endOfLine: "auto"` ile
+  hem Windows (CRLF) hem Linux (LF) checkout'ta aynı kararı veriyor. Böylece
+  "lint'i prettier-off ile koş" geçici kuralı kaldırıldı — artık `npm run lint`
+  tek başına kanonik ve **tamamen temiz (0 hata / 0 uyarı)**.
+- **Birikmiş format sapması temizlendi:** Bu arada ortaya çıktı ki sahte 167 hata
+  dediğimiz şeyin önemli kısmı son commit'lerde birikmiş **gerçek** format
+  driftiydi; 48 dosya yalnızca check'in işaretlediği ölçüde formatlandı (geniş
+  `prettier --write .` koşulmadı).
+- **Uyarılar üç sınıfa ayrılıp kökünden çözüldü:** (1) shadcn `ui/` bileşenleri
+  vendored olduğu için fast-refresh kuralı config'de o klasör için kapandı;
+  (2) galeri hata dili (`gothicArt.tsx`) ve dil-context (`LanguageContext.tsx`)
+  bilinçli ortak-modül dosyaları — gerekçeleri kod içinde dosya-başı notu olarak
+  kaydedildi; (3) results ekranındaki şarkı listesi memo'sunun içerik-parmak-izi
+  deseni, mood LLM çift-çağrısı regresyonunu (eski hata) koruyan bilinçli bir
+  karardır — gerekçesi kodda, dep listesine `answers` eklemeyin.
+- **Yabancı lockfile kapatıldı:** `bun.lock` artık `.gitignore`'da (proje npm
+  kullanıyor; o dosya bu ortamda yanlışlıkla koşulan `bun install` artığıydı).
+- **Doğrulama:** tip 0 hata, lint 0/0, prettier yeşil, testler 693/693 —
+  formatlama hiçbir davranışı değiştirmedi. Görsel iş olmadığı için göz-onayı
+  (kural-10) gerekmedi.
+
 ### 2026-09-24 — Durum katmanı kuruldu + hızlı kazanç turu (Option A)
 - İlk kez bu **anlatısal durum dosyası** (`docs/PROJECT_STATUS.md`) oluşturuldu;
   HANDOFF'la aynı commit'te güncellenmesi kalıcı alışkanlık olarak kaydedildi.

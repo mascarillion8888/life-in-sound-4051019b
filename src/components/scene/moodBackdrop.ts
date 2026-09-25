@@ -166,4 +166,3 @@ export function moodBackdropUrlByFilename(
   if (!filename) return undefined;
   return Object.entries(map).find(([moduleKey]) => moduleKey.endsWith(filename))?.[1];
 }
-

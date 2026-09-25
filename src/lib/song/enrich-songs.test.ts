@@ -58,10 +58,7 @@ describe("collectUnverifiedManualSongs — committed-song verification guarantee
       mood: null,
     };
     const [q1, manualSong] = manual("Billie Jean", 1);
-    const pending = collectUnverifiedManualSongs(
-      { 1: manualSong, 2: verified },
-      new Set<string>(),
-    );
+    const pending = collectUnverifiedManualSongs({ 1: manualSong, 2: verified }, new Set<string>());
     expect(pending).toEqual([{ questionId: 1, song: manualSong }]);
   });
 

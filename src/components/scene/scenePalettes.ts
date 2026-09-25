@@ -3,14 +3,7 @@
  * React-free so the component layer (`SceneRoom`) can import it.
  */
 export type SceneThemeId =
-  | "gothic"
-  | "reggae"
-  | "synth"
-  | "jazz"
-  | "soul"
-  | "grunge"
-  | "hiphop"
-  | "acoustic";
+  "gothic" | "reggae" | "synth" | "jazz" | "soul" | "grunge" | "hiphop" | "acoustic";
 
 export type ScenePalette = {
   /** Back wall wash (behind the shelves). */

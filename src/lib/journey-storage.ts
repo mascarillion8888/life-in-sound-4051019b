@@ -62,7 +62,7 @@ export function isValidSong(value: unknown): value is Song {
  * instead of silently dropping data).
  */
 export function normalizeSong(song: Song): Song {
-const out: Partial<Record<(typeof SONG_FIELDS)[number], unknown>> = {};
+  const out: Partial<Record<(typeof SONG_FIELDS)[number], unknown>> = {};
   for (const field of SONG_FIELDS) {
     // The optional verified flag only appears when true (absent otherwise).
     if (field === "verified") {

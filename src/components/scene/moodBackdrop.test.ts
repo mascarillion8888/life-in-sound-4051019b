@@ -29,8 +29,12 @@ describe("moodBackdrop — fallback contract", () => {
   });
 
   it("resolves the URL when the file exists in the map", () => {
-    const map = { "/src/assets/mood-backdrop-energetic.png": "/assets/mood-backdrop-energetic-abc123.png" };
-    expect(moodBackdropUrl("Energetic", undefined, undefined, map)).toBe("/assets/mood-backdrop-energetic-abc123.png");
+    const map = {
+      "/src/assets/mood-backdrop-energetic.png": "/assets/mood-backdrop-energetic-abc123.png",
+    };
+    expect(moodBackdropUrl("Energetic", undefined, undefined, map)).toBe(
+      "/assets/mood-backdrop-energetic-abc123.png",
+    );
   });
 
   it("is case-insensitive: MOOD_SET value maps to its lowercase file", () => {
@@ -40,7 +44,17 @@ describe("moodBackdrop — fallback contract", () => {
   });
 
   it("resolves all 9 shipped mood files through the real glob map", () => {
-    const moods = ["Energetic", "Euphoric", "Playful", "Romantic", "Melancholic", "Dreamy", "Nostalgic", "Dark", "World"];
+    const moods = [
+      "Energetic",
+      "Euphoric",
+      "Playful",
+      "Romantic",
+      "Melancholic",
+      "Dreamy",
+      "Nostalgic",
+      "Dark",
+      "World",
+    ];
     for (const m of moods) {
       expect(moodBackdropUrl(m)).toBeDefined();
     }
@@ -94,7 +108,9 @@ describe("moodBackdropUrl — multi-axis resolution through injected map", () =>
   };
 
   it("picks the most specific dec×genre×mood asset", () => {
-    expect(moodBackdropUrl("Energetic", "Pop", "1980s", map)).toBe("/assets/1980s-pop-energetic.png");
+    expect(moodBackdropUrl("Energetic", "Pop", "1980s", map)).toBe(
+      "/assets/1980s-pop-energetic.png",
+    );
   });
 
   it("falls back to dec×mood when the exact trio is absent", () => {

@@ -93,9 +93,10 @@ function normalizeEntry(value: unknown): CollectionEntry | null {
       artist: typeof s.artist === "string" ? s.artist : "",
       artworkUrl: typeof s.artworkUrl === "string" ? s.artworkUrl : null,
       album: typeof s.album === "string" ? s.album : null,
-      releaseYear: typeof s.releaseYear === "number" && Number.isFinite(s.releaseYear)
-        ? Math.floor(s.releaseYear)
-        : null,
+      releaseYear:
+        typeof s.releaseYear === "number" && Number.isFinite(s.releaseYear)
+          ? Math.floor(s.releaseYear)
+          : null,
       previewUrl: typeof s.previewUrl === "string" ? s.previewUrl : null,
     },
     addedAt: typeof v.addedAt === "string" ? v.addedAt : now(),
@@ -117,7 +118,10 @@ export function loadCollection(): CollectionState {
       .filter((e): e is CollectionEntry => e !== null);
     // Enforce the LRU cap defensively on load too (a hand-edited or stale key).
     const capped = entries.slice(0, MAX_COLLECTION_ENTRIES);
-    return { entries: capped, updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : now() };
+    return {
+      entries: capped,
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : now(),
+    };
   } catch {
     return emptyCollection();
   }

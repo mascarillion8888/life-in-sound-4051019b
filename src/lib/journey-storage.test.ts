@@ -256,7 +256,13 @@ describe("journey-storage structured Song persistence", () => {
         current: 1,
         answers: { 1: "x" },
         songs: {
-          1: { ...song(), genre: undefined, mood: undefined, releaseYear: undefined, previewUrl: undefined },
+          1: {
+            ...song(),
+            genre: undefined,
+            mood: undefined,
+            releaseYear: undefined,
+            previewUrl: undefined,
+          },
         },
       }),
     );

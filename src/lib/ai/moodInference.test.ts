@@ -41,14 +41,20 @@ function mockFetchReturning(content: string): typeof fetch {
 describe("inferMood kontratı", () => {
   it("bilinmeyen bir şarkı için null döner (uydurmaz)", async () => {
     const fetchImpl = mockFetchReturning('{"mood": null}');
-    const raw = await callGeminiMoodInference(buildMoodPrompt({ title: "Obscure", artist: "Nobody", genre: null }), { fetchImpl });
+    const raw = await callGeminiMoodInference(
+      buildMoodPrompt({ title: "Obscure", artist: "Nobody", genre: null }),
+      { fetchImpl },
+    );
     expect(parseMoodResponse(raw)).toBeNull();
   });
 
   it("dönen değer her zaman 9 kapalı mood setinden biridir (veya null)", async () => {
     // Geçerli mood → sette kalır.
     const fetchImpl = mockFetchReturning('{"mood": "Melancholic"}');
-    const raw = await callGeminiMoodInference(buildMoodPrompt({ title: "Fragile", artist: "Sting", genre: "Rock" }), { fetchImpl });
+    const raw = await callGeminiMoodInference(
+      buildMoodPrompt({ title: "Fragile", artist: "Sting", genre: "Rock" }),
+      { fetchImpl },
+    );
     const mood = parseMoodResponse(raw);
     expect(mood === null || (MOOD_SET as readonly string[]).includes(mood)).toBe(true);
 
@@ -74,15 +80,21 @@ describe("inferMood kontratı", () => {
     let capturedBody: any = null;
     const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
       capturedBody = init?.body;
-      return new Response(JSON.stringify({ choices: [{ message: { content: "{\"mood\": null}" } }] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: '{"mood": null}' } }] }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      );
     }) as unknown as typeof fetch;
 
-    await callGeminiMoodInference(buildMoodPrompt({ title: "Fragile", artist: "Sting", genre: "Rock" }), {
-      fetchImpl,
-    });
+    await callGeminiMoodInference(
+      buildMoodPrompt({ title: "Fragile", artist: "Sting", genre: "Rock" }),
+      {
+        fetchImpl,
+      },
+    );
     expect(capturedBody).toBeTruthy();
     const parsed = JSON.parse(String(capturedBody));
     const system = parsed.messages?.find((m: { role: string }) => m.role === "system");
