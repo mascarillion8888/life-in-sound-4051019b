@@ -186,9 +186,7 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ### Kısa Vade (bu hafta/gün)
 - FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
-- **Music DNA P0 (büyük mimari iş, ayrı oturum):** gerçek şarkı verisi üzerinden
-  analitik çekirdek — şu an ürün büyük ölçüde soru-tabanlı; şarkı gerçekliği henüz
-  tam bağlı değil. (Kapatılan Music Map poster bulgusu — aşağı.)
+- **Music DNA P0 (uygulanıyor, işlenmemiş):** gerçek şarkı verisi üzerinden analitik çekirdek — motor zaten şarkı-tabanlı (13 Eylül'den beri); P0 Seçenek A(uygulanıyor): metadata eksikken dürüst "Unclassified" + Emotional Timeline'ın şarkı-mood'una bağlanması. Kod worktree'de; Kural-10 göz onayı bekliyor. (Kapatılan Music Map poster bulgusu — aşağı.)
 - ~~Music Map poster bulgusu — DOĞRULANMADI~~ **ÇÖZÜLDÜ (Bulgu 1, kapalı):** canvas hem local hem production'da dolu ölçüldü (nonZero=1.0); "boş kahverengi çerçeve" repro edilemedi, hydration-timing anıydı. Açık iş değil; posterAlt "Placeholder" metni ayrı temizlik notu.
 - Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz
@@ -225,8 +223,9 @@ uygulaması. Çalışmaya başlamadan önce **zorunlu sırayla oku**: `AGENTS.md
 `STATE.md` → `docs/HANDOFF.md` (tek otorite kaynak; bu dosya DEĞİL) → canlı repo
 durumunu `git pull` + `git log` ile doğrula (doküman değil git'e güven). Proje artık
 **kriz-güvenli** (CrisisGuard, 5 dil serbest-metin triage) ve **tanı-yasaklı** AI
-kurallarına sahip (4 prose prompt'ta "klinisyen değilsin" + anti-klişe; `ETHICAL_AI.md`
-Founding Principle). Music DNA hâlâ büyük ölçüde soru-tabanlı — gerçek şarkı verisine
-henüz tam bağlı değil; **sıradaki büyük hedef Music DNA P0** (ayrı, mimari oturum).
-Testler geçiyor, worktree temiz, kural-10 göz onayları kapalı. Her önemli push'ta bu
+ai kurallarına sahip (4 prose prompt'ta "klinisyen değilsin" + anti-klişe; `ETHICAL_AI.md`
+Founding Principle). Music DNA motoru **şarkı-tabanlı** çalışıyor (cevaplar DNA'ya katılmaz;
+ayrı kişilik profili + poster besler); P0 Seçenek A uygulanıyor (metadata-yoksa dürüst
+"Unclassified" + timeline→şarkı-mood; Kural-10 görsel onay bekliyor). Testler geçiyor,
+worktree'de işlenmemiş kod var, kural-10 göz onayları kapalı. Her önemli push'ta bu
 dosyayı HANDOFF'la birlikte güncel tutmayı unutma.

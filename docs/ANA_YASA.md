@@ -49,18 +49,20 @@ gerçek Emotional Timeline
 Cinematic Visual Story (Poster + Card)
 ```
 
-**Ana teşhis (27 Ağustos denetimi, hâlâ geçerli):**
-Kullanıcı akışı, 8 soru sistemi, gerçek şarkı seçimi, persistence,
-artwork, card sistemi ve poster sistemi büyük ölçüde kurulu. Ancak
-ürünün analitik çekirdeğinde kritik boşluk var: **seçilen gerçek
-şarkılar, Music DNA'nın gerçek girdisi haline gelmemiş.** Mevcut
-personality scoring ağırlıklı olarak sorulara önceden atanmış
-boyutlardan geliyor; şarkı seçimi sadece sınırlı bir text/hash
-varyasyonu olarak katkı sağlıyor.
+**Ana teşhis (27 Ağustos denetimi — KOD BU TESPİTİ AŞTI):** 27 Ağustos'taki
+"seçilen gerçek şarkılar Music DNA'nın gerçek girdisi haline gelmemiş; mevcut
+scoring sorulara önceden atanmış boyutlardan geliyor" tespiti o dönem doğruydu
+(DNA soru-tabanlıydı). 13 Eylül'den beri `musicDnaEngine` bunu aştı ve ARTIK
+`Song[]{releaseYear, artist, genre, mood}`'u doğrudan tüketir (temporal +
+identity şarkıdan çıkar). Cevaplar DNA'ya katılmaz — legacy "kişilik profili"
+(`analyzeUserJourney`) ayrı bir katman olarak poster/sosyal paylaşımı besler;
+`LifeContext.contextText` Life Story'e taşınır (production'da henüz kullanılmıyor,
+açık iş). Yani hedef `Music DNA = Actual Music Selection DNA` büyük ölçüde
+CANLI'dır; eksik kalan `LIFE CONTEXT` katmanıdır (§4, 🔵).
 
 ```
-Mevcut:  Music DNA ≈ Question DNA + answer variation
-Hedef:   Music DNA = Actual Music Selection DNA
+Kod bugün: Music DNA = Actual Music Selection DNA (CANLI) + ayrı cevap-tabanlı kişilik profili
+Kalan:     Life Context (cevapların anlatıya akışı) — §4 tasarım, uygulanacak
 ```
 
 ---
@@ -115,9 +117,11 @@ asla geride kalmamalı.
   çıkarılıyor, deterministic.
 - **Musical identity:** `topArtists`, `diversityScore`,
   `hasVerifiedTracks` üretiliyor.
-- `dominantVibe` şu an yalnızca **iki sabit etiket** kullanıyor
-  ("Eclectic Explorer" / "Focused Nostalgic") — bu, gerçek genre/mood
-  verisi gelene kadar geçici bir yer tutucu, genişletilmeli.
+- `dominantVibe` 13 Eylül'den beri GERÇEK genre+mood verisinden üretilir (katmanlı
+  gate): mood-coverage ≥60 → "Genre · Mood"; genre-coverage ≥50 → "Genre & Beyond/
+  Devotee"; yeterli gerçek sinyal yoksa dürüst **"Unclassified"** (P0 Seçenek A(a)
+  uygulanıyor — eski "Eclectic Explorer"/"Focused Nostalgic" diversity-etiketleri
+  ANA_YASA §0 gereği KALDIRILIYOR).
 
 ### Pipeline (🟢 CANLI)
 ```
@@ -322,7 +326,7 @@ onaysız değiştirilmemeli.
 | Artwork | 🟢 |
 | 30 sn preview altyapısı | 🟢 CANLI — previewUrl `SONG_FIELDS` whitelist'inde + `COERCE_TO_PERSISTED`'te; local (`journey-storage`) ve remote (`journey-remote`) tier aynı whitelist; round-trip testleri var (2026-09-24 doğrulandı) |
 | Journey persistence | 🟢 |
-| Music DNA | 🟢 mood-aware (13 Eylül) — genre > mood > diversity katmanlı gate |
+| Music DNA | 🟢 song-tabanlı (13 Eylül) — genre > mood katmanlı gate; metadata-yoksa dürüst "Unclassified" (P0 A(a)) |
 | Life Story | 🟡 mimari doğru, veri temeli güçlendirilmeli |
 | Emotional Timeline | 🟡 mevcut, Music DNA düzeltmesi sonrası yeniden beslenmeli |
 | Cinematic Poster | 🟢 teknik olarak güçlü |

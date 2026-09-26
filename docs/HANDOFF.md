@@ -16,8 +16,10 @@
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
 Dal:        main — origin/main ile SENKRON
 HEAD:       28ef8ba — "fix(i18n): drop stale 'Placeholder' from EN posterAlt"
-            Bu oturum i18n alt metnini temizledi (yalnız accessibility alt dizgisi; görünür
-            render DEĞİL → Kural-10 kapalı). Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
+            Şu an main'in TEK kod HEAD'i budur. Bu push yalnız docs-drift düzeltmesi
+            (ANA_YASA §1/§3/§7 + HANDOFF §5 + PROJECT_STATUS). MUSIC DNA P0 Seçenek
+            A(a)+(b) kodları İŞLENMEMİŞ — worktree'de, Kural-10 görsel onay bekliyor.
+            Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
 Önceki zincir (kritik):
               2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
               f8467d6  fix(lint): prefer-const palette in visualResolver
@@ -132,7 +134,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 
 ### Mimari kararlar (bekleyen)
 5. **FAZ 4c — palette kaynağı (KARAR "B" ertelendi):** SceneRoom `sceneThemeFor` kanonik kalıyor; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmiyor (backdrop/exactAssetRef canlı). İki kaynak farklı sonuç verebilir — bilinen risk. Blast radius: `scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx` + 2-3 test.
-6. **MUSIC DNA P0 (sıradaki büyük hedef):** analitik çekirdek `answers`-ağırlıklı; şarkı metadata'sı Music DNA'nın temel girdisi değil (genre iTunes'dan, mood per-song canlı ama DNA'ya ağırlık vermiyor). Detay: Gap Analysis §8-§10, ANA_YASA §1/§3/§8.
+6. **MUSIC DNA P0 (uygulanıyor):** motor zaten `Song[]`-tabanlı (eski "analitik çekirdek answers-ağırlıklı" tarifi GEÇERSİZ — 13 Eylül'den beri DNA şarkıdan). P0 **Seçenek A(a)+(b) ONAYLANDI**: (a) metadata yetersizken dominantVibe dürüst "Unclassified" (ANA_YASA §0; eski "Eclectic Explorer"/"Focused Nostalgic" kaldırıldı), (b) Emotional Timeline node'ları şarkının kendi mood'undan (STAGE_EMOTION_MATRIX yerine; mood yoksa matris fallback). KURAL-10 görsel onay BEKLİYOR (a/b kod işlenmemiş, worktree'de). (c) cevapların Life Story'e akışı AÇIK iş, ayrı (results.tsx:419 `generateGroundedAnalysis(songs)` contexts'siz).
 7. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli), artist metadata, musical characteristics.
 8. **P2 küçük temizlik:** ✅ `posterAlt` EN "Placeholder" metni temizlendi (28ef8ba — accessibility alt, görsel değil). Kaldı: MusicUniverseHero görsel zenginliği skeleton ile geri kazanım (Kural-10); SongUniverseCard'a gerçek `grounded.timeline.nodes`.
 
@@ -217,5 +219,5 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 
 ---
 
-_Artık son güncelleme: Hermes (2026-09-26) — posterAlt EN i18n temizliği (28ef8ba) + soniccloud=Suizid GitHub uyarısı teşhisi (zararsız) + Windows lint borcu notu._
+_Artık son güncelleme: Hermes (2026-09-26) — docs-drift düzeltmesi: ANA_YASA §1/§3/§7 + HANDOFF §5 + PROJECT_STATUS'ta "answer-tabanlı/sabit-2-etiket" ifadeleri gerçek song-tabanlı koda göre güncellendi (POSTER/P0 A(a)+(b) işlenmemiş, worktree'de, Kural-10 onay bekliyor). Önce: posterAlt i18n (28ef8ba) + soniccloud=Suizid teşhisi + Windows lint borcu._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
