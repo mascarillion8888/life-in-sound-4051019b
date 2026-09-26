@@ -15,8 +15,9 @@
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
 Dal:        main — origin/main ile SENKRON
-HEAD:       (bu commit) — "checkpoint: lint/format mimari düzeltmesi — HANDOFF güncellendi"
-            Bu oturum src/ + config değiştirdi; iş ve HANDOFF aynı checkpoint'te (handoff-check yeşil).
+HEAD:       28ef8ba — "fix(i18n): drop stale 'Placeholder' from EN posterAlt"
+            Bu oturum i18n alt metnini temizledi (yalnız accessibility alt dizgisi; görünür
+            render DEĞİL → Kural-10 kapalı). Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
 Önceki zincir (kritik):
               2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
               f8467d6  fix(lint): prefer-const palette in visualResolver
@@ -32,7 +33,12 @@ Lint:       `npm run lint` (ham `eslint .`, prettier-ON) = **0 hata, 0 uyarı** 
             → Canonical lint artık ham eslint'tir; prettier off kuralı KALDIRILDI.
             Eski baseline (1 prefer-const + 9 react-refresh uyarısı + CRLF gürültüsü) KAPANDI.
 Prettier:   `npx prettier --check "src/**/*.{ts,tsx,css}" "scripts/*.mjs"` = yeşil (2026-09-25)
-Build:      exit 0 (son tam doğrulama 2026-09-22; bu oturumda koşulmadı — yalnız format/config)
+            → WINDOWS ÇEKOUT NOTU: `npm run lint` (eslint) burada 44 pre-existing prettier/CRLF hata
+            basar, yalnız 3 dosyada: scripts/test-mood-live.ts, scripts/test-openrouter-live.ts,
+            src/lib/llm/promptRules.ts. Bu oturumun değişikliği bunlardan DEĞİL (prettier --check
+            dictionaries.ts'i temiz geçti). Canonical 0/0 Linux (Freebuff) doğrulamasıdır; Windows
+            lint borcu ayrı turda — bkz. §9.
+Build:      exit 0 (son tam doğrulama 2026-09-22; bu oturumda koşulmadı — yalnız i18n metin)
 Worktree:   temiz. Asset 18 PNG (9× mood-backdrop + 9× backdrop-soul). .claude/ YOK.
             bun.lock ARTIK .gitignore'da (yabancı lockfile — proje npm/package-lock.json kanonik).
 ```
@@ -128,7 +134,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 5. **FAZ 4c — palette kaynağı (KARAR "B" ertelendi):** SceneRoom `sceneThemeFor` kanonik kalıyor; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmiyor (backdrop/exactAssetRef canlı). İki kaynak farklı sonuç verebilir — bilinen risk. Blast radius: `scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx` + 2-3 test.
 6. **MUSIC DNA P0 (sıradaki büyük hedef):** analitik çekirdek `answers`-ağırlıklı; şarkı metadata'sı Music DNA'nın temel girdisi değil (genre iTunes'dan, mood per-song canlı ama DNA'ya ağırlık vermiyor). Detay: Gap Analysis §8-§10, ANA_YASA §1/§3/§8.
 7. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli), artist metadata, musical characteristics.
-8. **P2 küçük temizlik:** `posterAlt` i18n metni hâlâ "Placeholder cinematic poster..." diyor (poster canvas çalışıyor — Bulgu 1 kapandı); MusicUniverseHero görsel zenginliği skeleton ile geri kazanım; SongUniverseCard'a gerçek `grounded.timeline.nodes`.
+8. **P2 küçük temizlik:** ✅ `posterAlt` EN "Placeholder" metni temizlendi (28ef8ba — accessibility alt, görsel değil). Kaldı: MusicUniverseHero görsel zenginliği skeleton ile geri kazanım (Kural-10); SongUniverseCard'a gerçek `grounded.timeline.nodes`.
 
 ### House-keeping
 9. **OpenRouter key canlılığı (HTTP 200) hâlâ test edilmedi.** Eski key `17f9141` history'de — purge = force-push, YASAK.
@@ -165,8 +171,9 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
-(bu commit)  checkpoint: lint/format mimari düzeltmesi (prettier endOfLine:auto + 48 dosya drift +
-             shadcn ui override + bilinçli-disable gerekçeleri + bun.lock gitignore) — HANDOFF güncellendi
+28ef8ba  fix(i18n): drop stale "Placeholder" from EN posterAlt (accessibility alt, non-visual)
+(bu commit)  docs(handoff): HEAD→28ef8ba; posterAlt i18n kapanışı + soniccloud=Suizid uyarı teşhisi
+             (zararsız) + Windows lint borcu notu — HANDOFF güncellendi
 2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, 3-commit özeti, STEEL kapalı, lint temiz
 f8467d6  fix(lint): prefer-const palette in visualResolver
 3999be2  refactor(ai): dedupe clinician/anti-cliché prompt rules into promptRules.ts
@@ -205,8 +212,10 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 - **Content-keyed memo koruması:** results `songs` memo dep'i `songsFingerprint` — `answers` dep OLMAMALI (LLM çift-çağrısı regresyonu).
 - **Deployment gerçeği:** main aktif = Vercel (Node+Nitro react-start); Docker yalnız migration dalında, main'de YOK.
 - **`git add -A` tuzağı:** her zaman targeted add. `.claude/` ve debris dışarıda.
+- **GitHub Almanca-intihar kelimesi uyarısı = zararsız yanlış-pozitif (soniccloud paketi):** push sırasında görülen uyarı, crisisGuard.ts:43'teki DE regex'inin (`suizid|selbstmord|...`) committed kodda GitHub'ın kendi içerik-güvenliği taramasına takılmasıdır. ENGEL DEĞİL (reflog'daki başarılı push'lar kanıt; secret-scanning hard-block yalnız byte kalıplarına bakar, kelimeye değil). Repo CI'sı (yalnız handoff-check.yml) ve yerel git hook YOK — uyarı GitHub tarafı kadar server-side üretilir, koddan çözülemez. `// SAFETY:` yorumu susturmaz; kelime fonksiyonel gereklilik. "SonicCloud" ~ "Suizid"'in bozuk okunusu (produktif bir AI kaydı: German suizid → soniccloud). Çözüm: HANDOFF/ETHICAL_AI'da "beklenen koruyucu uyarı" olarak belgelemek. Ayrıntı: docs/PROJECT_STATUS + ETHICAL_AI kriz bölümü.
+- **Windows checkout lint farkı:** HANDOFF'un "lint 0/0" iddiası Linux (Freebuff) canonical'ıdır. Bu Windows klonunda `npm run lint` 44 pre-existing prettier/CRLF hata basar (yalnız 2 live-probe script + promptRules.ts). `.prettierrc endOfLine:auto` prettier --check'i düzleştirdi ama eslint prettier plugin'i o 3 dosyada hâlâ `Insert ␍`/satır-son boşluk bildirir. Bunlar açık borç, bu oturumun değişikliğiyle ilgisiz.
 
 ---
 
-_Artık son güncelleme: Buffy (Codebuff) — 2026-09-25 (lint/format mimari düzeltmesi: prettier endOfLine:auto + 48 dosya drift temizliği + eslint mimari uyarı çözümü + bun.lock gitignore; lint 0/0, test 693/2, tsc 0)._
+_Artık son güncelleme: Hermes (2026-09-26) — posterAlt EN i18n temizliği (28ef8ba) + soniccloud=Suizid GitHub uyarısı teşhisi (zararsız) + Windows lint borcu notu._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
