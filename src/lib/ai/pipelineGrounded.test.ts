@@ -68,10 +68,12 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
     expect(story.chapters[0].narrative).toContain("Holy Diver");
     expect(story.isGrounded).toBe(true);
 
-    // P3 Emotional Timeline — node values come from the deterministic
-    // stage-emotion matrix (Childhood valency > 0; peak pinned to the strongest).
+    // P3 Emotional Timeline — node emotion is driven by each song's REAL mood
+    // (Holy Diver infers Dark), falling back to the stage matrix only when a
+    // song has no mood.
     expect(timeline.nodes).toHaveLength(3);
-    expect(timeline.nodes[0].valency).toBeGreaterThan(0);
+    expect(timeline.nodes[0].vibeLabel).toBe("Shadowed Weight"); // mood=Dark
+    expect(timeline.nodes[0].valency).toBeLessThan(0);
     expect(timeline.nodes[0].temporalArcPosition).toBe(0);
     expect(timeline.nodes[2].temporalArcPosition).toBe(100);
     expect(timeline.dominantEmotion).toBe(dna.musicalIdentity.dominantVibe);

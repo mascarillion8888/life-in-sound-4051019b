@@ -27,4 +27,40 @@ describe("emotionalTimelineEngine", () => {
     expect(result.nodes).toEqual([]);
     expect(result.isGrounded).toBe(false);
   });
+
+  it("derives each node's emotion from the song's own mood when present", () => {
+    const contexts = [
+      {
+        id: "ctx-1",
+        song: { title: "Paranoid", artist: "Black Sabbath", year: 1970, mood: "Dark" },
+        stageName: "Childhood",
+        questionId: 1,
+      },
+    ] as unknown as LifeContext[];
+
+    const result = generateEmotionalTimeline(null, contexts);
+
+    // Dark mood drives the node — not the fixed Childhood stage template.
+    expect(result.nodes[0].vibeLabel).toBe("Shadowed Weight");
+    expect(result.nodes[0].valency).toBeLessThan(0);
+    expect(result.nodes[0].primaryEmotion).toBe("Dark");
+    expect(result.nodes[0].energy).toBe(0.7);
+  });
+
+  it("falls back to the stage-emotion template when the song has no mood", () => {
+    const contexts = [
+      {
+        id: "ctx-2",
+        song: { title: "Dancing Queen", artist: "ABBA", year: 1976, mood: null },
+        stageName: "Childhood",
+        questionId: 1,
+      },
+    ] as unknown as LifeContext[];
+
+    const result = generateEmotionalTimeline(null, contexts);
+
+    // No mood → the existing Childhood stage template still applies.
+    expect(result.nodes[0].vibeLabel).toBe("Nostalgic Spark");
+    expect(result.nodes[0].valency).toBeGreaterThan(0);
+  });
 });
