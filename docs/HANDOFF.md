@@ -15,11 +15,11 @@
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
 Dal:        main — origin/main ile SENKRON
-HEAD:       cac6372 — "feat(timeline): Emotional Timeline node'ları şarkı mood'undan — P0 B(b)"
-            MUSIC DNA P0 Seçenek A(a)+(b) MERGE EDİLDİ ve Kural-10 gözle onay VERİLDİ
-            (2026-09-26: C per-node mood-driven + ardışık kontrast; D kırılma yok +
-            null→fallback birim testli). (a)=d49b24d "Unclassified", (b)=cac6372
-            timeline→şarkı-mood. Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
+HEAD:       a18421c — "fix(results): manual-song artwork verification now resolves + flows to master frame"
+            MUSIC DNA P0 A(a)+(b) MERGE EDİLDİ (d49b24d+cac6372) + Kural-10 VERİLDİ (2026-09-26).
+            ARDIŞIK: manuel-şarkı artwork fix'i (a18421c) — title+artist query + 0-bazlı keying +
+            master-frame artPatch + loading-gate; tarayıcıda 8/8 kapak + doğru master-frame GÖRÜLDÜ,
+            Kural-10 onayı alındı. Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
 Önceki zincir (kritik):
               2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
               f8467d6  fix(lint): prefer-const palette in visualResolver
@@ -141,15 +141,17 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ### House-keeping
 9. **OpenRouter key canlılığı (HTTP 200) hâlâ test edilmedi.** Eski key `17f9141` history'de — purge = force-push, YASAK.
 10. **KAPANDI (kayıt):** HF runtime (server+client dead-code), STEEL age-range çakışması, intensityLabel, preview metadata sözleşmesi, doküman drift'i, lint borcu (bu turda 0/0), bun.lock (gitignore'da).
+11. **✅ KAPANDI (2026-09-26, a18421c) — manuel-şarkı artwork fix'i:** artPatch `searchSongs` query'si title+artist'a genişletildi (itunes-mapping her iki token'ı şart koşuyordu; title-only asla doğrulamıyordu) + artPatch/artStatus 0-bazlı `[i]` keying'e çekildi (1-bazlı `qid` okuyan taraflarla uyuşmuyordu → Purple Rain hep disc, master-frame yanlış kart kapağı) + `posterSongs` master-frame'e artPatch'i taşıyor (fix-1) + journey-yüklenene dek skeleton (fix-2). Tarayıcıda 8/8 kapak + doğru master-frame görüldü, Kural-10 ONAY VERİLDİ. Kod HANDOFF'la aynı checkpoint; kural-10 artık KAPALI.
+12. **TEKNİK BORÇ (2026-09-26, canlı gözlendi, kullanıcı işi değil):** `cardArtwork.server.ts:28` birincil Imagen tier'ı `imagen-3.0-generate-002` bu API'de YOK (`:predict` → 404; `ListModels`'ta mevcut değil) → üretim zinciri fiilen her zaman `gemini-2.5-flash-image`'e düşüyor. Ayrıca bugünkü Gemini free-tier görsel kotası (429, input-token + requests, GÜNLÜK limit) aşıldı. Fizibilite (metinsiz Metal/Dark sahnesi) bu yüzden ÖLÇÜLEMEDİ — B). Artwork üretimini bloklamaz (üretim fallback'ten yürür); kota sıfırlanınca yeniden dene.
 
 ---
 
 ## 6. Sıradaki İş Adımları (Next Steps)
 
-1. **Sırada (onayla):** MUSIC DNA P0 analitik çekirdek (bkz. §5-6) — yeni özellik değil, MVP'nin analitik kalbi.
+1. **Sırada (onayla):** MUSIC DNA P0 — bekleyen (c) kalıntısı: kullanıcı serbest metninin (`contexts`) production'da Life Story'e akışı (results.tsx `generateGroundedAnalysis(songs)` contexts'siz çağrıyor). Ayrıca P0 tam analitik çekirdek + kullanıcı cevaplarının poster'e akışı (HANDOFF §5-6).
 2. **Kullanıcı işi:** BUG 2 metinsiz mood-backdrop yeniden üretimi + soul 3 oran düzeltmesi + yeni asset kombinasyonları.
 3. **FAZ 4c palette kanonik-kaynak kararı** (sceneThemeFor vs resolver) — onaylı olursa.
-4. **Build yeniden doğrulaması:** bir sonraki src-değişikliği olan turda `npm run build` koşulmalı (bu tur yalnız format).
+4. **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş, 2026-09-24 planlı):** textless sahne + CSS metin; runtime üretim YOK; 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel (Hermes toplu üretmez). Ön koşul: dominantVibe gerçek kategori seti netleşmesi (P0 madde a bunu sağladı). BLOCKLU — kod/asset üretimi başlamadı. Fizibilite (metinsiz Metal/Dark): Gemini free-tier kota günlük aştığı için ÖLÇÜLEMEDİ (429); kota sıfırlanınca tekrar dene.
 
 ---
 
@@ -173,6 +175,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+(a18421c)  fix(results): manuel-şarkı artwork verification çözüldü + master-frame'e aktarım (Kural-10 VERİLDİ, tarayıcı 8/8)
 cac6372  feat(timeline): Emotional Timeline node'ları şarkı mood'undan (stage matrix fallback) + EmotionalNode primaryEmotion/energy
 d49b24d  feat(dna): honest "Unclassified" dominantVibe when genre/mood sparse (drop fake "Eclectic Explorer"/"Focused Nostalgic")
 fb2f435  checkpoint: docs — Music DNA drift düzeltmesi (ANA_YASA §1/§3/§7, HANDOFF §5, PROJECT_STATUS §5/§7)
@@ -221,8 +224,9 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 - **MUSIC DNA P0 A(a)+(b) tamamlandı + Kural-10 VERİLDİ:** (a) dominantVibe metadata-yoksa dürüst "Unclassified" — "Eclectic Explorer"/"Focused Nostalgic" diversity-etiketleri ANA_YASA §0 gereği kaldırıldı; (b) Emotional Timeline node duygusu şarkının LLM-infer mood'undan (`MOOD_EMOTION_MAP`, 9 mood), stage-matrix yalnız fallback. Runtime kanıtı: C senaryoda 8 node per-node farklı (Dark/Melancholic/Euphoric kontrast net), D'de kırılma yok.
 - **"Mood null" regresyonunu canlı koşuda üretmek zor — LLM enstrümantallere de mood atar:** D'de Jarre/Oxygène → "Dreamy", Green Onions → "Energetic" infer edildi (null dönmedi), yani stage-fallback dalı canlıda görsel tetiklenmedi. O dal deterministik birim testiyle kanıtlı (emotionalTimelineEngine.test.ts: mood yoksa "Nostalgic Spark"). Sonuç: null-branch'i doğrulamak için gerçek LLM başarısızlığını zorlamak yerine birim testine güven.
 - **Runtime görsel test reçetesi (Kural-10):** journey UI'ı kırılgan (tarayıcı harness encoding/state flakiness) — daha güveniliri `soundmap.journey.v1`'ı şemaya uygun seed'leyip `loadJourney` üzerinden `/results`'ı çalıştırmak: `{current:8, answers:{1..8}, songs:{1..8:Song}}` (Song: provider/providerId/title/artist zorunlu, genre=gerçek) → `generateGroundedAnalysis` her şarkı için mood'u LLM'in yeniden infer eder → header+timeline dökümü. Harness koduna non-ASCII (örn. "·") koyma — stdin'de UnicodeDecodeError.
+- **artwork doğrulama title+artist şart (2026-09-26, a18421c):** `itunes-mapping.freeTextMatches` HER query token'inin title∪artist birleşiminde olmasını VE hem title hem artist'ta en az birer token olmasını şart koşar. O yüzden manual-song artPatch query'si title-only olamaz — `searchSongs({query: [title, artist].join(" ")})` gerekir; title-only sorguyla **hiçbir** şarkı doğrulanmaz (canlı kanıt: 7/8 "Album art not found"). Ayrıca bu state küçük bir set/oku ekseni uyumsuzluğuyla da bozulurdu: artPatch/artStatus 1-bazlı yazılıp 0-bazlı okunuyordu → ilk şarkı hep disc, son şarkının frame'i öncekinin kapağını gösteriyordu. Kural: state anahtarıyla okuyucu anahtarı AYNI eksende (hepsi 0-bazlı).
 
 ---
 
-_Artık son güncelleme: Hermes (2026-09-26) — MUSIC DNA P0 A(a)+(b) merge + Kural-10 VERİLDİ (C/D runtime kanıt: per-node mood-driven, no break). (a) "Unclassified" dominantVibe, (b) timeline→şarkı-mood. Önce: docs-drift düzeltmesi (fb2f435) + posterAlt (28ef8ba) + soniccloud=Suizid teşhisi._
+_Artık son güncelleme: Hermes (2026-09-26) — a18421c manuel-şarkı artwork fix'i (Kural-10 VERİLDİ, tarayıcı 8/8 + doğru master-frame). Bundan önce: MUSIC DNA P0 A(a)+(b) merge + Kural-10 (C/D runtime kanıtı) + docs-drift düzeltmesi + posterAlt + soniccloud=Suizid teşhisi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._

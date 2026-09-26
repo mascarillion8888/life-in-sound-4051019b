@@ -42,6 +42,14 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ## 3. Bugün ve Bu Hafta Ne Yapıldı
 
+### 2026-09-26 — Manuel-şarkı artwork fix'i (master-frame artık gerçek kapak gösteriyor) + Kural-10 onayı
+- **Kök neden 1 (title-only sorgu):** results ekranındaki manuel-şarkı artwork doğrulaması (`artPatch`) iTunes'a yalnız şarkı adıyla sorgu atıyordu; iTunes eşleme kuralları (itunes-mapping) hem başlık hem sanatçı token'ı şart koşuyor. Title-only sorgu hiçbir zaman doğrulanmıyordu → manuel şarkıların kapakları (Song Universe kartlarında bile) hep boş kaldı. Sorguya sanatçı eklendi.
+- **Kök neden 2 (kayıt/okuma ekseni uyumsuzluğu):** `artPatch`/`artStatus` 1-bazlı anahtara (`qid`) yazılıyor ama 0-bazlı (`[i]`)'den okunuyordu. İlk şarkı (Purple Rain) hep boş "disc", son şarkının master-çerçevesi bir öncekinin kapağını gösteriyordu. Yazım 0-bazlıya çekildi.
+- **Fix-1 (master-frame):** doğrulanmış artwork artık yalnız alt kartlara değil, ana posteri/müzik haritası çerçevesine (DynamicMusicMap/MasterPosterSheet) de uygulanıyor.
+- **Fix-2 (yükleme-gate):** kaydedilmiş yolculuk yüklenmeden önce müzik haritası artık gerçek veriyle değil, iskelet (skeleton) ile bekliyor.
+- **Kural-10:** gözle onay VERİLDİ — tarayıcıda 8/8 şarkı kartında gerçek albüm kapağı + master-çerfremede doğru şarkının (Bohemian Rhapsody/Queen) kapağı görüldü. Commit `a18421c`.
+- **Not (teknik borç, bugünkü işi bloklamadı):** `cardArtwork.server.ts` birincil Imagen tier'ı (`imagen-3.0-generate-002`) bu API'de 404 veriyor; üretim zinciri fiilen her zaman Gemini native'e düşüyor. Artwork üretimi çalışmaya devam ediyor (fallback'ten). Gemini free-tier günlük görsel kotası da bugün aşılmıştı (429).
+
 ### 2026-09-25 — Kod tabanı hijyeni: lint/format mimarisi sıfırlandı
 - **Önceki oturumun sağlık raporu** üç dikkat noktası üretmişti: untracked `bun.lock`,
   Windows/Linux satır-sonu (CRLF) ayrışması ve "prettier'i kapatarak koş" kuralı,
@@ -185,12 +193,12 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 ## 5. Sıradaki Adımlar
 
 ### Kısa Vade (bu hafta/gün)
+- **MUSIC DNA P0 Sıradaki kalıntı:** kullanıcı serbest metninin (`contexts`) production'da Life Story'e akışı (results `generateGroundedAnalysis(songs)` contexts'siz çağırıyor) — ayrı iş.
+- **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş):** metinsiz sahne + CSS metin, runtime üretim yok, 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel. Fizibilite (metinsiz Metal/Dark sahnesi) Gemini free-tier günlük kota (429) yüzünden ölçülemedi — kota sıfırlanınca yeniden dene.
+- **Teknik borç:** `cardArtwork.server.ts:28` Imagen modeli bu API'de 404 (üretim zinciri hep 2. tier'a düşüyor) — ayrı gün ele alın.
 - FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
-- **Music DNA P0 — Seçenek A (a)+(b) TAMAMLANDI (Kural-10 onay verildi):** motor şarkı-tabanlı; (a) metadata eksikken dominantVibe dürüst "Unclassified" (uydurma diversity-etiketleri kaldırıldı — ANA_YASA §0), (b) Emotional Timeline node'ları artık şarkının gerçek mood'undan, stage-şablonu yalnız fallback. Tarayıcıda C (per-node mood-driven + net kontrast) ve D (kırılma yok) doğrulandı. Açık kalıntı: kullanıcı cevaplarının Life Story'e akışı (ayrı iş).
-- ~~Music Map poster bulgusu — DOĞRULANMADI~~ **ÇÖZÜLDÜ (Bulgu 1, kapalı):** canvas hem local hem production'da dolu ölçüldü (nonZero=1.0); "boş kahverengi çerçeve" repro edilemedi, hydration-timing anıydı. Açık iş değil; posterAlt "Placeholder" metni ayrı temizlik notu.
 - Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
-- Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz
-  doğrulaması gerekir).
+- Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz doğrulaması gerekir).
 
 ### Orta Vade (bu ay)
 - Asset Registry genişletmesi; çoklu tür kaynağı (iTunes/MusicBrainz tekeli kırma),
