@@ -381,31 +381,58 @@ function ResultsPage() {
       const key = `${qid}:${song.title.toLowerCase()}`;
       if (artVerifyRef.current.has(key)) continue;
       artVerifyRef.current.add(key);
-      setArtStatus((p) => ({ ...p, [qid]: "loading" }));
+      // NOTE: artStatus/artPatch are keyed by the 0-based `i` below — the
+      // SongUniverseCard consume `artPatch[i]`/`artStatus[i]` (0-based). Using
+      // `qid` here would write to 1-based keys that no reader reads (Purple Rain
+      // stays a silent disc, and Back In Black's frame shows the previous song's
+      // cover). The qid is used ONLY for the dedupe key above.
+      setArtStatus((p) => ({ ...p, [i]: "loading" }));
       void (async () => {
         try {
-          const out = await searchSongs({ data: { query: song.title } });
+          const out = await searchSongs({
+            // Include the artist so iTunes confidence matching can pass: the
+            // matcher requires BOTH a title and an artist token in the query,
+            // so a title-only query ("Purple Rain") can never verify. This
+            // makes manual-song artwork verification actually resolve.
+            data: { query: [song.title, song.artist].filter(Boolean).join(" ") },
+          });
           const match = out.results[0] ?? null;
           if (!match) {
-            setArtStatus((p) => ({ ...p, [qid]: "notfound" }));
+            setArtStatus((p) => ({ ...p, [i]: "notfound" }));
             return;
           }
           setArtPatch((p) => ({
             ...p,
-            [qid]: {
+            [i]: {
               artworkUrl: match.artworkUrl ?? null,
               album: match.album ?? null,
               releaseYear: match.releaseYear ?? null,
               previewUrl: match.previewUrl ?? null,
             },
           }));
-          setArtStatus((p) => ({ ...p, [qid]: "ok" }));
+          setArtStatus((p) => ({ ...p, [i]: "ok" }));
         } catch {
-          setArtStatus((p) => ({ ...p, [qid]: "notfound" }));
+          setArtStatus((p) => ({ ...p, [i]: "notfound" }));
         }
       })();
     }
   }, [songs, answers]);
+  // (1) Master-frame fix — the QA artPatch carries the VERIFIED artwork for
+  // manual/doğrulanmış-olmayan songs, but it was only applied to SongUniverseCard,
+  // so a manual song's master-frame stayed an empty placeholder even after
+  // verification. Apply the same patch here so the poster/map frame, tracklist and
+  // panel use the verified artwork too. Kept separate from `songs` so the grounded
+  // mood pipeline (content-fingerprint) is NOT re-triggered by artwork changes.
+  const posterSongs = useMemo(
+    () =>
+      songs.map((s, i) => ({
+        ...s,
+        artworkUrl: artPatch[i]?.artworkUrl ?? s.artworkUrl ?? null,
+        album: artPatch[i]?.album ?? s.album ?? null,
+        releaseYear: artPatch[i]?.releaseYear ?? s.releaseYear ?? null,
+      })),
+    [songs, artPatch],
+  );
   // Grounded P0/P2/P3 analysis — deterministic master-gap engines fed from the
   // journey Song[] selection (not just title strings), upgraded with per-song
   // LLM mood inference. Never blocks the page: the async call falls back to
@@ -634,7 +661,28 @@ function ResultsPage() {
         {/* Dynamic Music Map — evolves with the Life Feed */}
         <AnimatedReveal>
           {profile ? (
-            <DynamicMusicMap profile={profile} songs={songs} feedEntries={feed?.entries ?? []} />
+            journey ? (
+              <DynamicMusicMap
+                profile={profile}
+                songs={posterSongs}
+                feedEntries={feed?.entries ?? []}
+              />
+            ) : (
+              // (2) Timing fix — don't render the map from fallback (placeholder)
+              // songs before the saved journey is loaded. Show a skeleton instead;
+              // the real map mounts the moment loadJourney() resolves.
+              <section>
+                <SectionHeading
+                  icon={Map}
+                  eyebrow={t.results.mapEyebrow}
+                  title={t.results.mapTitle}
+                />
+                <div aria-hidden className="mt-8 space-y-4">
+                  <div className="h-8 w-1/2 rounded bg-muted/60 animate-pulse" />
+                  <div className="aspect-[2/3] w-full rounded border border-border/40 bg-muted/20 animate-pulse" />
+                </div>
+              </section>
+            )
           ) : null}
         </AnimatedReveal>
 
