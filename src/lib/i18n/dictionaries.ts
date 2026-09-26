@@ -197,7 +197,7 @@ const en: Dictionary = {
     timelineTitle: "Emotional Timeline",
     posterEyebrow: "Framed",
     posterTitle: "Cinematic Poster",
-    posterAlt: "Placeholder cinematic poster of your personal SoundMap",
+    posterAlt: "Cinematic poster of your personal SoundMap",
     posterFullscreenAria: "View poster fullscreen",
   },
   poster: {
