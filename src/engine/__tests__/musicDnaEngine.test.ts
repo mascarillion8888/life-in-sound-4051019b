@@ -40,8 +40,8 @@ describe("musicDnaEngine", () => {
   ];
 
   // Only one of three songs carries a real genre — below the 50% trust
-  // threshold, so dominantVibe must fall back to the diversity heuristic
-  // rather than presenting a shaky genre label as confident.
+  // threshold, so dominantVibe must fall back to the honest "Unclassified"
+  // label rather than presenting a shaky genre label as confident.
   const songsWithSparseGenre: Song[] = [
     song("Holy Diver", "Dio", 1983, "s1", "Metal"),
     song("Rainbow in the Dark", "Dio", 1983, "s2", null),
@@ -63,11 +63,11 @@ describe("musicDnaEngine", () => {
     expect(identity.topArtists).toContain("Black Sabbath");
     expect(identity.diversityScore).toBe(67); // 2 benzersiz / 3 şarkı = ~67%
     expect(identity.hasVerifiedTracks).toBe(true);
-    // Hiçbir şarkıda gerçek genre yok — genre-temelli etiket yerine eski
-    // diversity heuristiği kullanılmalı.
+    // Hiçbir şarkıda gerçek genre yok — genre-temelli etiket yerine dürüst
+    // "Unclassified" etiketi kullanılmalı (sahte diversity-etiketi değil).
     expect(identity.topGenres).toEqual([]);
     expect(identity.genreCoverage).toBe(0);
-    expect(identity.dominantVibe).toBe("Focused Nostalgic");
+    expect(identity.dominantVibe).toBe("Unclassified");
   });
 
   it("gerçek genre verisi coverage eşiğinin üzerindeyken dominantVibe'a yansımalı", () => {
@@ -78,12 +78,12 @@ describe("musicDnaEngine", () => {
     expect(identity.dominantVibe).toBe("Metal & Beyond");
   });
 
-  it("genre coverage %50'nin altındayken gerçek genre olsa bile diversity heuristiğine düşmeli", () => {
+  it("genre coverage %50'nin altındayken gerçek genre olsa bile dürüst 'Unclassified'a düşmeli", () => {
     const identity = calculateMusicalIdentity(songsWithSparseGenre);
     expect(identity.topGenres).toEqual(["Metal"]);
     expect(identity.genreCoverage).toBe(33); // 1/3 ≈ 33%
-    // coverage < 50 → genre etiketine güvenilmez, eski heuristiğe düşülür.
-    expect(identity.dominantVibe).toBe("Focused Nostalgic");
+    // coverage < 50 → genre etiketine güvenilmez, sahte etiket yerine dürüst etikete düşülür.
+    expect(identity.dominantVibe).toBe("Unclassified");
   });
 
   it("generateMusicDNA geçerli şarkılarla isGrounded=true çıktısı vermeli", () => {

@@ -51,15 +51,15 @@ const MIN_MOOD_COVERAGE_FOR_LABEL = 60;
 
 /** Human-readable vibe label. Layered trust: a mood-aware label (real genre +
  *  inferred mood) when enough of the selection carries an inferred mood; the
- *  genre-only label when enough carries a real provider genre; otherwise the
- *  original diversity-only heuristic. Never invents a genre or mood to fill
- *  the gap. */
+ *  genre-only label when enough carries a real provider genre; otherwise an
+ *  honest "Unclassified" (ANA_YASA §0: never invent a confident-sounding
+ *  diversity label when the real genre/mood signal is too sparse). Never
+ *  invents a genre or mood to fill the gap. */
 function deriveDominantVibe(
   topGenres: string[],
   genreCoverage: number,
   topMoods: string[],
   moodCoverage: number,
-  diversityScore: number,
 ): string {
   if (moodCoverage >= MIN_MOOD_COVERAGE_FOR_LABEL && topMoods.length > 0) {
     const primaryMood = topMoods[0];
@@ -70,7 +70,7 @@ function deriveDominantVibe(
     const [primaryGenre] = topGenres;
     return topGenres.length > 1 ? `${primaryGenre} & Beyond` : `${primaryGenre} Devotee`;
   }
-  return diversityScore > 75 ? "Eclectic Explorer" : "Focused Nostalgic";
+  return "Unclassified";
 }
 
 /**
@@ -121,7 +121,6 @@ export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
       genreCoverage,
       topMoods,
       moodCoverage,
-      diversityScore,
     ),
     hasVerifiedTracks: songs.every((s) => s.verified === true),
     topGenres,

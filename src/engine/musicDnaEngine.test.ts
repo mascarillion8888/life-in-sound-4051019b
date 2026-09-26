@@ -75,7 +75,7 @@ describe("calculateMusicalIdentity — katmanlı vibe etiketi (genre > mood > di
     expect(identity.dominantVibe).toBe("Nostalgic Mood");
   });
 
-  it("genre ve mood yoksa diversity-only etikete düşer", () => {
+  it("genre ve mood yoksa dürüst 'Unclassified' etikete düşer", () => {
     const songs: Song[] = [
       song({ title: "s1", artist: "A1", releaseYear: 1983 }),
       song({ title: "s2", artist: "A2", releaseYear: 1970 }),
@@ -87,7 +87,7 @@ describe("calculateMusicalIdentity — katmanlı vibe etiketi (genre > mood > di
 
     expect(identity.genreCoverage).toBe(0);
     expect(identity.moodCoverage).toBe(0);
-    expect(identity.dominantVibe).toBe("Eclectic Explorer"); // 5/5 unique artist → 100 diversity
+    expect(identity.dominantVibe).toBe("Unclassified"); // metadata yok → sahte-etiket yerine dürüst etiket
   });
 
   it("topMoods en sık mood'u ilk sırada verir ve 3 ile sınırlar", () => {
