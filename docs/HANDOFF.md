@@ -15,11 +15,11 @@
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
 Dal:        main — origin/main ile SENKRON
-HEAD:       28ef8ba — "fix(i18n): drop stale 'Placeholder' from EN posterAlt"
-            Şu an main'in TEK kod HEAD'i budur. Bu push yalnız docs-drift düzeltmesi
-            (ANA_YASA §1/§3/§7 + HANDOFF §5 + PROJECT_STATUS). MUSIC DNA P0 Seçenek
-            A(a)+(b) kodları İŞLENMEMİŞ — worktree'de, Kural-10 görsel onay bekliyor.
-            Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
+HEAD:       cac6372 — "feat(timeline): Emotional Timeline node'ları şarkı mood'undan — P0 B(b)"
+            MUSIC DNA P0 Seçenek A(a)+(b) MERGE EDİLDİ ve Kural-10 gözle onay VERİLDİ
+            (2026-09-26: C per-node mood-driven + ardışık kontrast; D kırılma yok +
+            null→fallback birim testli). (a)=d49b24d "Unclassified", (b)=cac6372
+            timeline→şarkı-mood. Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
 Önceki zincir (kritik):
               2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
               f8467d6  fix(lint): prefer-const palette in visualResolver
@@ -134,7 +134,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 
 ### Mimari kararlar (bekleyen)
 5. **FAZ 4c — palette kaynağı (KARAR "B" ertelendi):** SceneRoom `sceneThemeFor` kanonik kalıyor; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmiyor (backdrop/exactAssetRef canlı). İki kaynak farklı sonuç verebilir — bilinen risk. Blast radius: `scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx` + 2-3 test.
-6. **MUSIC DNA P0 (uygulanıyor):** motor zaten `Song[]`-tabanlı (eski "analitik çekirdek answers-ağırlıklı" tarifi GEÇERSİZ — 13 Eylül'den beri DNA şarkıdan). P0 **Seçenek A(a)+(b) ONAYLANDI**: (a) metadata yetersizken dominantVibe dürüst "Unclassified" (ANA_YASA §0; eski "Eclectic Explorer"/"Focused Nostalgic" kaldırıldı), (b) Emotional Timeline node'ları şarkının kendi mood'undan (STAGE_EMOTION_MATRIX yerine; mood yoksa matris fallback). KURAL-10 görsel onay BEKLİYOR (a/b kod işlenmemiş, worktree'de). (c) cevapların Life Story'e akışı AÇIK iş, ayrı (results.tsx:419 `generateGroundedAnalysis(songs)` contexts'siz).
+6. **MUSIC DNA P0 — (a)+(b) ✅ TAMAMLANDI (d49b24d + cac6372, Kural-10 onay VERİLDİ 2026-09-26):** (a) metadata yetersizken dominantVibe dürüst "Unclassified" (eski "Eclectic Explorer"/"Focused Nostalgic" kaldırıldı — ANA_YASA §0); (b) Emotional Timeline node'ları şarkının kendi mood'undan (STAGE_EMOTION_MATRIX yalnız fallback). (c) — Kullanıcı serbest metninin (`contexts`) production'da Life Story'e akışı: AÇIK iş, ayrı (results.tsx:419 `generateGroundedAnalysis(songs)` contexts'siz çağrılıyor).
 7. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli), artist metadata, musical characteristics.
 8. **P2 küçük temizlik:** ✅ `posterAlt` EN "Placeholder" metni temizlendi (28ef8ba — accessibility alt, görsel değil). Kaldı: MusicUniverseHero görsel zenginliği skeleton ile geri kazanım (Kural-10); SongUniverseCard'a gerçek `grounded.timeline.nodes`.
 
@@ -173,9 +173,11 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+cac6372  feat(timeline): Emotional Timeline node'ları şarkı mood'undan (stage matrix fallback) + EmotionalNode primaryEmotion/energy
+d49b24d  feat(dna): honest "Unclassified" dominantVibe when genre/mood sparse (drop fake "Eclectic Explorer"/"Focused Nostalgic")
+fb2f435  checkpoint: docs — Music DNA drift düzeltmesi (ANA_YASA §1/§3/§7, HANDOFF §5, PROJECT_STATUS §5/§7)
+(bu commit)  docs(handoff): (a)+(b) merge tamamlandı + Kural-10 onay VERİLDİ (C/D runtime kanıtı) — HANDOFF güncellendi
 28ef8ba  fix(i18n): drop stale "Placeholder" from EN posterAlt (accessibility alt, non-visual)
-(bu commit)  docs(handoff): HEAD→28ef8ba; posterAlt i18n kapanışı + soniccloud=Suizid uyarı teşhisi
-             (zararsız) + Windows lint borcu notu — HANDOFF güncellendi
 2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, 3-commit özeti, STEEL kapalı, lint temiz
 f8467d6  fix(lint): prefer-const palette in visualResolver
 3999be2  refactor(ai): dedupe clinician/anti-cliché prompt rules into promptRules.ts
@@ -216,8 +218,11 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 - **`git add -A` tuzağı:** her zaman targeted add. `.claude/` ve debris dışarıda.
 - **GitHub Almanca-intihar kelimesi uyarısı = zararsız yanlış-pozitif (soniccloud paketi):** push sırasında görülen uyarı, crisisGuard.ts:43'teki DE regex'inin (`suizid|selbstmord|...`) committed kodda GitHub'ın kendi içerik-güvenliği taramasına takılmasıdır. ENGEL DEĞİL (reflog'daki başarılı push'lar kanıt; secret-scanning hard-block yalnız byte kalıplarına bakar, kelimeye değil). Repo CI'sı (yalnız handoff-check.yml) ve yerel git hook YOK — uyarı GitHub tarafı kadar server-side üretilir, koddan çözülemez. `// SAFETY:` yorumu susturmaz; kelime fonksiyonel gereklilik. "SonicCloud" ~ "Suizid"'in bozuk okunusu (produktif bir AI kaydı: German suizid → soniccloud). Çözüm: HANDOFF/ETHICAL_AI'da "beklenen koruyucu uyarı" olarak belgelemek. Ayrıntı: docs/PROJECT_STATUS + ETHICAL_AI kriz bölümü.
 - **Windows checkout lint farkı:** HANDOFF'un "lint 0/0" iddiası Linux (Freebuff) canonical'ıdır. Bu Windows klonunda `npm run lint` 44 pre-existing prettier/CRLF hata basar (yalnız 2 live-probe script + promptRules.ts). `.prettierrc endOfLine:auto` prettier --check'i düzleştirdi ama eslint prettier plugin'i o 3 dosyada hâlâ `Insert ␍`/satır-son boşluk bildirir. Bunlar açık borç, bu oturumun değişikliğiyle ilgisiz.
+- **MUSIC DNA P0 A(a)+(b) tamamlandı + Kural-10 VERİLDİ:** (a) dominantVibe metadata-yoksa dürüst "Unclassified" — "Eclectic Explorer"/"Focused Nostalgic" diversity-etiketleri ANA_YASA §0 gereği kaldırıldı; (b) Emotional Timeline node duygusu şarkının LLM-infer mood'undan (`MOOD_EMOTION_MAP`, 9 mood), stage-matrix yalnız fallback. Runtime kanıtı: C senaryoda 8 node per-node farklı (Dark/Melancholic/Euphoric kontrast net), D'de kırılma yok.
+- **"Mood null" regresyonunu canlı koşuda üretmek zor — LLM enstrümantallere de mood atar:** D'de Jarre/Oxygène → "Dreamy", Green Onions → "Energetic" infer edildi (null dönmedi), yani stage-fallback dalı canlıda görsel tetiklenmedi. O dal deterministik birim testiyle kanıtlı (emotionalTimelineEngine.test.ts: mood yoksa "Nostalgic Spark"). Sonuç: null-branch'i doğrulamak için gerçek LLM başarısızlığını zorlamak yerine birim testine güven.
+- **Runtime görsel test reçetesi (Kural-10):** journey UI'ı kırılgan (tarayıcı harness encoding/state flakiness) — daha güveniliri `soundmap.journey.v1`'ı şemaya uygun seed'leyip `loadJourney` üzerinden `/results`'ı çalıştırmak: `{current:8, answers:{1..8}, songs:{1..8:Song}}` (Song: provider/providerId/title/artist zorunlu, genre=gerçek) → `generateGroundedAnalysis` her şarkı için mood'u LLM'in yeniden infer eder → header+timeline dökümü. Harness koduna non-ASCII (örn. "·") koyma — stdin'de UnicodeDecodeError.
 
 ---
 
-_Artık son güncelleme: Hermes (2026-09-26) — docs-drift düzeltmesi: ANA_YASA §1/§3/§7 + HANDOFF §5 + PROJECT_STATUS'ta "answer-tabanlı/sabit-2-etiket" ifadeleri gerçek song-tabanlı koda göre güncellendi (POSTER/P0 A(a)+(b) işlenmemiş, worktree'de, Kural-10 onay bekliyor). Önce: posterAlt i18n (28ef8ba) + soniccloud=Suizid teşhisi + Windows lint borcu._
+_Artık son güncelleme: Hermes (2026-09-26) — MUSIC DNA P0 A(a)+(b) merge + Kural-10 VERİLDİ (C/D runtime kanıt: per-node mood-driven, no break). (a) "Unclassified" dominantVibe, (b) timeline→şarkı-mood. Önce: docs-drift düzeltmesi (fb2f435) + posterAlt (28ef8ba) + soniccloud=Suizid teşhisi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._

@@ -186,7 +186,7 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ### Kısa Vade (bu hafta/gün)
 - FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
-- **Music DNA P0 (uygulanıyor, işlenmemiş):** gerçek şarkı verisi üzerinden analitik çekirdek — motor zaten şarkı-tabanlı (13 Eylül'den beri); P0 Seçenek A(uygulanıyor): metadata eksikken dürüst "Unclassified" + Emotional Timeline'ın şarkı-mood'una bağlanması. Kod worktree'de; Kural-10 göz onayı bekliyor. (Kapatılan Music Map poster bulgusu — aşağı.)
+- **Music DNA P0 — Seçenek A (a)+(b) TAMAMLANDI (Kural-10 onay verildi):** motor şarkı-tabanlı; (a) metadata eksikken dominantVibe dürüst "Unclassified" (uydurma diversity-etiketleri kaldırıldı — ANA_YASA §0), (b) Emotional Timeline node'ları artık şarkının gerçek mood'undan, stage-şablonu yalnız fallback. Tarayıcıda C (per-node mood-driven + net kontrast) ve D (kırılma yok) doğrulandı. Açık kalıntı: kullanıcı cevaplarının Life Story'e akışı (ayrı iş).
 - ~~Music Map poster bulgusu — DOĞRULANMADI~~ **ÇÖZÜLDÜ (Bulgu 1, kapalı):** canvas hem local hem production'da dolu ölçüldü (nonZero=1.0); "boş kahverengi çerçeve" repro edilemedi, hydration-timing anıydı. Açık iş değil; posterAlt "Placeholder" metni ayrı temizlik notu.
 - Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz
@@ -225,7 +225,7 @@ durumunu `git pull` + `git log` ile doğrula (doküman değil git'e güven). Pro
 **kriz-güvenli** (CrisisGuard, 5 dil serbest-metin triage) ve **tanı-yasaklı** AI
 ai kurallarına sahip (4 prose prompt'ta "klinisyen değilsin" + anti-klişe; `ETHICAL_AI.md`
 Founding Principle). Music DNA motoru **şarkı-tabanlı** çalışıyor (cevaplar DNA'ya katılmaz;
-ayrı kişilik profili + poster besler); P0 Seçenek A uygulanıyor (metadata-yoksa dürüst
-"Unclassified" + timeline→şarkı-mood; Kural-10 görsel onay bekliyor). Testler geçiyor,
-worktree'de işlenmemiş kod var, kural-10 göz onayları kapalı. Her önemli push'ta bu
+ayrı kişilik profili + poster besler); P0 Seçenek A (a)+(b) tamamlandı (metadata-yoksa dürüst
+"Unclassified" + timeline→şarkı-mood; Kural-10 onay verildi). Testler geçiyor, worktree temiz,
+kural-10 göz onayları kapalı. Her önemli push'ta bu
 dosyayı HANDOFF'la birlikte güncel tutmayı unutma.
