@@ -42,6 +42,11 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ## 3. Bugün ve Bu Hafta Ne Yapıldı
 
+### 2026-09-26 — SonarCloud New-Code duplication gate'i (%3.4→%3) temizlendi
+- GitHub'daki "commit yanında kırmızı X"in kaynağı SonarCloud Code Analysis'ti (handoff-check zaten yeşildi). SonarCloud "New Code" penceresi (30 günlük birikim) %3.4 duplication ölçüyordu — bu, bugünkü işin değil, önceki session'ların eklediği dosyaların katkısıydı.
+- Per-file inceleme: 172 dup satır dağılımı — `dictionaries.ts` (56, %75.7, 5 dil yapısal şablon = bilinen false-positive), `eraThemes.ts` (64, %58.7, structural theme-ladder), `crisisGuard.test.ts` (38, 5 dilli tekrar iskeleti), kalanı küçük test tekrarları. Dictionaries/eraThemes production ve false-positive/structural — dokunulmadı (davranış/yakınsama riski, ayrı iş).
+- **Action:** yalnız `crisisGuard.test.ts`'deki 5 dilli `it(detect...)` iskeleti iki `it.each` tabloya indirildi (aynı örnekler, davranış değişmedi — kriz güvenliği korundu). 172−38=134 satır → tahmini %2.62 (< %3 eşiği). typecheck 0, lint temiz, full suite 714 passed.
+
 ### 2026-09-26 — Manuel-şarkı artwork fix'i (master-frame artık gerçek kapak gösteriyor) + Kural-10 onayı
 - **Kök neden 1 (title-only sorgu):** results ekranındaki manuel-şarkı artwork doğrulaması (`artPatch`) iTunes'a yalnız şarkı adıyla sorgu atıyordu; iTunes eşleme kuralları (itunes-mapping) hem başlık hem sanatçı token'ı şart koşuyor. Title-only sorgu hiçbir zaman doğrulanmıyordu → manuel şarkıların kapakları (Song Universe kartlarında bile) hep boş kaldı. Sorguya sanatçı eklendi.
 - **Kök neden 2 (kayıt/okuma ekseni uyumsuzluğu):** `artPatch`/`artStatus` 1-bazlı anahtara (`qid`) yazılıyor ama 0-bazlı (`[i]`)'den okunuyordu. İlk şarkı (Purple Rain) hep boş "disc", son şarkının master-çerçevesi bir öncekinin kapağını gösteriyordu. Yazım 0-bazlıya çekildi.

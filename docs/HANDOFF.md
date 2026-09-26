@@ -142,7 +142,8 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 9. **OpenRouter key canlılığı (HTTP 200) hâlâ test edilmedi.** Eski key `17f9141` history'de — purge = force-push, YASAK.
 10. **KAPANDI (kayıt):** HF runtime (server+client dead-code), STEEL age-range çakışması, intensityLabel, preview metadata sözleşmesi, doküman drift'i, lint borcu (bu turda 0/0), bun.lock (gitignore'da).
 11. **✅ KAPANDI (2026-09-26, a18421c) — manuel-şarkı artwork fix'i:** artPatch `searchSongs` query'si title+artist'a genişletildi (itunes-mapping her iki token'ı şart koşuyordu; title-only asla doğrulamıyordu) + artPatch/artStatus 0-bazlı `[i]` keying'e çekildi (1-bazlı `qid` okuyan taraflarla uyuşmuyordu → Purple Rain hep disc, master-frame yanlış kart kapağı) + `posterSongs` master-frame'e artPatch'i taşıyor (fix-1) + journey-yüklenene dek skeleton (fix-2). Tarayıcıda 8/8 kapak + doğru master-frame görüldü, Kural-10 ONAY VERİLDİ. Kod HANDOFF'la aynı checkpoint; kural-10 artık KAPALI.
-12. **TEKNİK BORÇ (2026-09-26, canlı gözlendi, kullanıcı işi değil):** `cardArtwork.server.ts:28` birincil Imagen tier'ı `imagen-3.0-generate-002` bu API'de YOK (`:predict` → 404; `ListModels`'ta mevcut değil) → üretim zinciri fiilen her zaman `gemini-2.5-flash-image`'e düşüyor. Ayrıca bugünkü Gemini free-tier görsel kotası (429, input-token + requests, GÜNLÜK limit) aşıldı. Fizibilite (metinsiz Metal/Dark sahnesi) bu yüzden ÖLÇÜLEMEDİ — B). Artwork üretimini bloklamaz (üretim fallback'ten yürür); kota sıfırlanınca yeniden dene.
+12. **✅ KAPANDI (2026-09-26, 82c30f8) — SonarCloud "New-Code dup %3.4>%3" gate'i:** kırmızı X'in kaynağı SonarCloud'du (handoff-check zaten success). Per-file New-Code dup = 172 satır: eraThemes.ts 64 + dictionaries.ts 56 (ikisi de FALSE-POSITIVE/structural production — DOKUNMADI), crisisGuard.test.ts 38 + lifeStory.test 9 + poetic-analyzer.test 5 (test). Yalnız **test** tekrarı action edildi: crisisGuard 5-dilli `it(detect...)` iskeleti iki `it.each` tabloya indirildi (aynı 19 pozitif + 9 negatif cümle, davranış değişmedi). 172−38=134 satır → ~%2.62 (<%3). Eski %3.36→~%2.62. Dictionaries/eraThemes in-repo exclusion (sonar-project.properties) ayrı iş — gerek yok (gate geçer).
+13. **TEKNİK BORÇ (2026-09-26, canlı gözlendi, kullanıcı işi değil):** `cardArtwork.server.ts:28` birincil Imagen tier'ı `imagen-3.0-generate-002` bu API'de YOK (`:predict` → 404; `ListModels`'ta mevcut değil) → üretim zinciri fiilen her zaman `gemini-2.5-flash-image`'e düşüyor. Ayrıca bugünkü Gemini free-tier görsel kotası (429, input-token + requests, GÜNLÜK limit) aşıldı. Fizibilite (metinsiz Metal/Dark sahnesi) bu yüzden ÖLÇÜLEMEDİ — B). Artwork üretimini bloklamaz (üretim fallback'ten yürür); kota sıfırlanınca yeniden dene.
 
 ---
 
@@ -175,6 +176,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+(82c30f8)  test(security): crisisGuard 5-dil detect iskeletini it.each'e dedupe (SonarCloud New-Code dup %3.4→~%2.6)
 (a18421c)  fix(results): manuel-şarkı artwork verification çözüldü + master-frame'e aktarım (Kural-10 VERİLDİ, tarayıcı 8/8)
 cac6372  feat(timeline): Emotional Timeline node'ları şarkı mood'undan (stage matrix fallback) + EmotionalNode primaryEmotion/energy
 d49b24d  feat(dna): honest "Unclassified" dominantVibe when genre/mood sparse (drop fake "Eclectic Explorer"/"Focused Nostalgic")
@@ -228,5 +230,5 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 
 ---
 
-_Artık son güncelleme: Hermes (2026-09-26) — a18421c manuel-şarkı artwork fix'i (Kural-10 VERİLDİ, tarayıcı 8/8 + doğru master-frame). Bundan önce: MUSIC DNA P0 A(a)+(b) merge + Kural-10 (C/D runtime kanıtı) + docs-drift düzeltmesi + posterAlt + soniccloud=Suizid teşhisi._
+_Artık son güncelleme: Hermes (2026-09-26) — 82c30f8 SonarCloud New-Code dup gate temizliği (%3.4→~%2.6, crisisGuard it.each). Bundan önce: a18421c artwork fix (Kural-10 VERİLDİ) + MUSIC DNA P0 A(a)+(b) merge + Kural-10 + docs-drift + posterAlt + soniccloud=Suizid._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
