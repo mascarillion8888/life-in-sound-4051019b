@@ -1,6 +1,6 @@
 # SoundMap / Life in a Sound — Proje Durumu
 
-Son güncelleme: 2026-09-24
+Son güncelleme: 2026-09-27
 
 > **Bu dosya ne:** Her önemli push'ta (kod değişikliği içerenler; yalnızca
 > docs-only checkpoint'lerde şart değil) güncellenen, insan dilinde yazılmış
@@ -41,6 +41,12 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   matrisi yok (§10).
 
 ## 3. Bugün ve Bu Hafta Ne Yapıldı
+
+### 2026-09-27 — MUSIC DNA P0 (c): kullanıcının kendi sözleri artık Life Story'ye işleniyor + OpenRouter canlılığı
+- **Boşluğu kapatıldı:** kullanıcının Life Feed'e yazdığı serbest metin notları artık gerçekten Life Story chapter'larına ve Emotional Timeline'a akıyor. Önceden results ekranı grounded analizi `contexts`'siz çağırıyordu — yani kullanıcının kelimeleri üretimde asla anlatıya ulaşmıyordu (şablon metin kalıyordu). Artık Life Feed varsa, her girişin notu `contextText` olarak ilgili aşamanın anlatısına taşınıyor; Life Feed yoksa davranış değişmiyor (şablon).
+- **Kural-10 gözle onayı VERİLDİ.** Bu bir "LLM çıktı metni" değişikliği olduğu için, code-review'ın da gerekli gördüğü üzere önce/sonra kanıtı üretildi: aynı şarkı/aşama için (1) contexts'siz çağrıldığında ŞABLON metin ("Childhood: her şey {şarkı} ile başlıyor. Bu seçim, dönemin nostalgic tonunu taşıyor…"), (2) not ile çağrıldığında KULLANICININ BİREBİR notu ("Bu şarkı beni hep ilk işimi kaybettiğim döneme götürüyor…"). İki metin net şekilde farklı; ikincisi kullanıcının kelimelerini taşıyor. Yeni veri yolu açıldığından CrisisGuard de doğrulandı — anlamlı ama kriz-sinyali olmayan notta YANLIŞ tetikleme YOK.
+- **OpenRouter key canlılığı doğrulandı:** gerçek bir mood-inference çağrısı (canlı kod yolu) HTTP 200 döndü ve "Superstition / Stevie Wonder" için "Energetic" (doğru) mood verdi; openrouter/free fallback'i de HTTP 200 — fallback'e sessiz düşüş yok. (Uzun süredir "test edilmedi" listesinde bekleyen madde kapatıldı.)
+- Yeni birim testi eklendi (`buildGroundedLifeContexts`): 8 aşamalı merdiven + not taşıma + 8-sonrası girişin "New Chapter" alması (Acceptance sanmasın).
 
 ### 2026-09-26 — SonarCloud New-Code duplication gate'i (%3.4→%3) temizlendi
 - GitHub'daki "commit yanında kırmızı X"in kaynağı SonarCloud Code Analysis'ti (handoff-check zaten yeşildi). SonarCloud "New Code" penceresi (30 günlük birikim) %3.4 duplication ölçüyordu — bu, bugünkü işin değil, önceki session'ların eklediği dosyaların katkısıydı.
@@ -180,6 +186,9 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - **AI ton / tanı-yasağı kuralları:** 4 prose prompt (life-story, poetic-analyzer,
   entry-insight, card-lore) tanı-yasağı + anti-klişe kurallarını taşıyor; mood-inference
   sistem satırı "klinik değil"e çekildi. Çıktı tonu davranışsal olarak doğrulandı.
+- **MUSIC DNA P0 (a)+(b)+(c) tümü tamamlandı:** dürüst "Unclassified" vibe (metadata yoksa),
+  Emotional Timeline şarkının kendi mood'undan, ve **kullanıcının Life Feed serbest metni artık
+  Life Story'e akıyor** (Kural-10 göz onayı alındı). OpenRouter key canlılığı da doğrulandı (HTTP 200).
 
 ### Kısmen Tamamlanan / Devam Eden
 - **FAZ 4c — renk/tema kaynağı kararı (açık):** sahne, kendi tema kaynağından renk
@@ -198,7 +207,6 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 ## 5. Sıradaki Adımlar
 
 ### Kısa Vade (bu hafta/gün)
-- **MUSIC DNA P0 Sıradaki kalıntı:** kullanıcı serbest metninin (`contexts`) production'da Life Story'e akışı (results `generateGroundedAnalysis(songs)` contexts'siz çağırıyor) — ayrı iş.
 - **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş):** metinsiz sahne + CSS metin, runtime üretim yok, 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel. Fizibilite (metinsiz Metal/Dark sahnesi) Gemini free-tier günlük kota (429) yüzünden ölçülemedi — kota sıfırlanınca yeniden dene.
 - **Teknik borç:** `cardArtwork.server.ts:28` Imagen modeli bu API'de 404 (üretim zinciri hep 2. tier'a düşüyor) — ayrı gün ele alın.
 - FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
@@ -238,7 +246,8 @@ durumunu `git pull` + `git log` ile doğrula (doküman değil git'e güven). Pro
 **kriz-güvenli** (CrisisGuard, 5 dil serbest-metin triage) ve **tanı-yasaklı** AI
 ai kurallarına sahip (4 prose prompt'ta "klinisyen değilsin" + anti-klişe; `ETHICAL_AI.md`
 Founding Principle). Music DNA motoru **şarkı-tabanlı** çalışıyor (cevaplar DNA'ya katılmaz;
-ayrı kişilik profili + poster besler); P0 Seçenek A (a)+(b) tamamlandı (metadata-yoksa dürüst
-"Unclassified" + timeline→şarkı-mood; Kural-10 onay verildi). Testler geçiyor, worktree temiz,
+ayrı kişilik profili + poster besler); P0 (a)+(b)+(c) tamamlandı (metadata-yoksa dürüst
+"Unclassified" + timeline→şarkı-mood + **kullanıcının Life Feed serbest metni Life Story'ye
+akıyor**; Kural-10 onayları verildi). OpenRouter key canlılığı doğrulandı (HTTP 200). Testler geçiyor, worktree temiz,
 kural-10 göz onayları kapalı. Her önemli push'ta bu
 dosyayı HANDOFF'la birlikte güncel tutmayı unutma.

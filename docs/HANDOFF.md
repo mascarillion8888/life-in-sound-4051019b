@@ -15,11 +15,13 @@
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
 Dal:        main — origin/main ile SENKRON
-HEAD:       a18421c — "fix(results): manual-song artwork verification now resolves + flows to master frame"
-            MUSIC DNA P0 A(a)+(b) MERGE EDİLDİ (d49b24d+cac6372) + Kural-10 VERİLDİ (2026-09-26).
-            ARDIŞIK: manuel-şarkı artwork fix'i (a18421c) — title+artist query + 0-bazlı keying +
-            master-frame artPatch + loading-gate; tarayıcıda 8/8 kapak + doğru master-frame GÖRÜLDÜ,
-            Kural-10 onayı alındı. Kod + HANDOFF aynı checkpoint'te (handoff-check yeşil).
+HEAD:       655ddae — "feat(results): carry Life Feed free-text notes into grounded Life Story / Emotional Timeline (P0 c, rule-10)"
+            MUSIC DNA P0 A(a)+(b) MERGE (d49b24d+cac6372) + manuel-şarkı artwork fix (a18421c)
+            + SonarCloud dup gate (82c30f8) + P0 (c) MERGE (655ddae, Kural-10 VERİLDİ 2026-09-27).
+            P0 (c): kullanıcının Life Feed serbest metni artık contextText üzerinden üretimde
+            Life Story/Emotional Timeline'e akıyor (önceden results.tsx contexts'siz çağırıyordu);
+            önce/sonra şablon-vs-not kanıtı (Temp/kural10-beforeafter.txt) + Kural-10 göz onayı.
+            OpenRouter key canlılığı DOĞRULANDI (HTTP 200, Temp/openrouter-liveness.txt).
 Önceki zincir (kritik):
               2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
               f8467d6  fix(lint): prefer-const palette in visualResolver
@@ -28,9 +30,9 @@ HEAD:       a18421c — "fix(results): manual-song artwork verification now reso
               55954b2  feat(ai): tanı-yasağı + anti-cliché 4 prose prompt + mood-inference sistem satırı
               9fff09c  docs(handoff): CrisisGuard/ETHICAL_AI kaydı
               b44f945  feat(safety): CrisisGuard (5-lang triage) + CrisisSupportPanel + ETHICAL_AI.md
-Testler:    70 dosya, 693 passed / 2 skipped (695) — vitest v4.1.10, `npm test` exit 0
-            (doğrulandı 2026-09-25, bu oturumda format sonrası)
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-09-25)
+Testler:    71 dosya, 715 passed / 2 skipped (717) — vitest v4.1.11, `npm test` exit 0
+            (doğrulandı 2026-09-27, P0 (c) dahil — buildGroundedLifeContexts testi)
+tsc:        temiz (`npm run typecheck` = 0 hata, 2026-09-27)
 Lint:       `npm run lint` (ham `eslint .`, prettier-ON) = **0 hata, 0 uyarı** (2026-09-25)
             → Canonical lint artık ham eslint'tir; prettier off kuralı KALDIRILDI.
             Eski baseline (1 prefer-const + 9 react-refresh uyarısı + CRLF gürültüsü) KAPANDI.
@@ -41,7 +43,9 @@ Prettier:   `npx prettier --check "src/**/*.{ts,tsx,css}" "scripts/*.mjs"` = ye�
             dictionaries.ts'i temiz geçti). Canonical 0/0 Linux (Freebuff) doğrulamasıdır; Windows
             lint borcu ayrı turda — bkz. §9.
 Build:      exit 0 (son tam doğrulama 2026-09-22; bu oturumda koşulmadı — yalnız i18n metin)
-Worktree:   temiz. Asset 18 PNG (9× mood-backdrop + 9× backdrop-soul). .claude/ YOK.
+Worktree:   temiz (yalnız untracked `Temp/` — kanıt dosyaları burada:
+            openrouter-liveness.txt + kural10-beforeafter.txt). Asset 18 PNG
+            (9× mood-backdrop + 9× backdrop-soul). .claude/ YOK.
             bun.lock ARTIK .gitignore'da (yabancı lockfile — proje npm/package-lock.json kanonik).
 ```
 
@@ -134,12 +138,12 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 
 ### Mimari kararlar (bekleyen)
 5. **FAZ 4c — palette kaynağı (KARAR "B" ertelendi):** SceneRoom `sceneThemeFor` kanonik kalıyor; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmiyor (backdrop/exactAssetRef canlı). İki kaynak farklı sonuç verebilir — bilinen risk. Blast radius: `scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx` + 2-3 test.
-6. **MUSIC DNA P0 — (a)+(b) ✅ TAMAMLANDI (d49b24d + cac6372, Kural-10 onay VERİLDİ 2026-09-26):** (a) metadata yetersizken dominantVibe dürüst "Unclassified" (eski "Eclectic Explorer"/"Focused Nostalgic" kaldırıldı — ANA_YASA §0); (b) Emotional Timeline node'ları şarkının kendi mood'undan (STAGE_EMOTION_MATRIX yalnız fallback). (c) — Kullanıcı serbest metninin (`contexts`) production'da Life Story'e akışı: AÇIK iş, ayrı (results.tsx:419 `generateGroundedAnalysis(songs)` contexts'siz çağrılıyor).
+6. **MUSIC DNA P0 — (a)+(b) ✅ +(c) ✅ TAMAMLANDI (2026-09-26/27, Kural-10 VERİLDİ):** (a) metadata yetersizken dominantVibe dürüst "Unclassified" (eski "Eclectic Explorer"/"Focused Nostalgic" kaldırıldı — ANA_YASA §0, d49b24d); (b) Emotional Timeline node'ları şarkının kendi mood'undan (STAGE_EMOTION_MATRIX yalnız fallback, cac6372); (c) **kullanıcı serbest metni (`contexts`) artık production'da Life Story'e AKIYOR (655ddae, rule-10, onay VERİLDİ)** — results.tsx Life Feed varsa `buildGroundedLifeContexts(grown, lifeFeedMemories(feed))` ile contextText'i taşıyor; yoksa/eski davranışa degrade (şablon). Önce/sonra kanıtı: şablon vs birebir kullanıcı notu (Temp/kural10-beforeafter.txt); CrisisGuard notta yanlış tetiklemedi.
 7. **P1 kalıntısı:** çoklu-kaynak genre (MusicBrainz/iTunes tekeli), artist metadata, musical characteristics.
 8. **P2 küçük temizlik:** ✅ `posterAlt` EN "Placeholder" metni temizlendi (28ef8ba — accessibility alt, görsel değil). Kaldı: MusicUniverseHero görsel zenginliği skeleton ile geri kazanım (Kural-10); SongUniverseCard'a gerçek `grounded.timeline.nodes`.
 
 ### House-keeping
-9. **OpenRouter key canlılığı (HTTP 200) hâlâ test edilmedi.** Eski key `17f9141` history'de — purge = force-push, YASAK.
+9. **✅ KAPANDI (2026-09-27) — OpenRouter key canlılığı DOĞRULANDI:** gerçek mood-inference çağrısı (canlı kod yolu: callOpenRouter+buildMoodPrompt+parseMoodResponse) primary model `google/gemini-2.5-flash-lite` ile HTTP 200 döndü, mood "Energetic" (Superstition/Stevie Wonder — doğru). Fallback (`openrouter/free`) AYRICA HTTP 200; fallback'e sessiz düşüş YOK. Kanıt: Temp/openrouter-liveness.txt. Eski key `17f9141` history'de — purge = force-push, YASAK (kalır).
 10. **KAPANDI (kayıt):** HF runtime (server+client dead-code), STEEL age-range çakışması, intensityLabel, preview metadata sözleşmesi, doküman drift'i, lint borcu (bu turda 0/0), bun.lock (gitignore'da).
 11. **✅ KAPANDI (2026-09-26, a18421c) — manuel-şarkı artwork fix'i:** artPatch `searchSongs` query'si title+artist'a genişletildi (itunes-mapping her iki token'ı şart koşuyordu; title-only asla doğrulamıyordu) + artPatch/artStatus 0-bazlı `[i]` keying'e çekildi (1-bazlı `qid` okuyan taraflarla uyuşmuyordu → Purple Rain hep disc, master-frame yanlış kart kapağı) + `posterSongs` master-frame'e artPatch'i taşıyor (fix-1) + journey-yüklenene dek skeleton (fix-2). Tarayıcıda 8/8 kapak + doğru master-frame görüldü, Kural-10 ONAY VERİLDİ. Kod HANDOFF'la aynı checkpoint; kural-10 artık KAPALI.
 12. **✅ KAPANDI (2026-09-26, 82c30f8) — SonarCloud "New-Code dup %3.4>%3" gate'i:** kırmızı X'in kaynağı SonarCloud'du (handoff-check zaten success). Per-file New-Code dup = 172 satır: eraThemes.ts 64 + dictionaries.ts 56 (ikisi de FALSE-POSITIVE/structural production — DOKUNMADI), crisisGuard.test.ts 38 + lifeStory.test 9 + poetic-analyzer.test 5 (test). Yalnız **test** tekrarı action edildi: crisisGuard 5-dilli `it(detect...)` iskeleti iki `it.each` tabloya indirildi (aynı 19 pozitif + 9 negatif cümle, davranış değişmedi). 172−38=134 satır → ~%2.62 (<%3). Eski %3.36→~%2.62. Dictionaries/eraThemes in-repo exclusion (sonar-project.properties) ayrı iş — gerek yok (gate geçer).
@@ -149,7 +153,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 
 ## 6. Sıradaki İş Adımları (Next Steps)
 
-1. **Sırada (onayla):** MUSIC DNA P0 — bekleyen (c) kalıntısı: kullanıcı serbest metninin (`contexts`) production'da Life Story'e akışı (results.tsx `generateGroundedAnalysis(songs)` contexts'siz çağrıyor). Ayrıca P0 tam analitik çekirdek + kullanıcı cevaplarının poster'e akışı (HANDOFF §5-6).
+1. **Sırada (onayla):** MUSIC DNA P0 — (c) ✅ kapandı (655ddae). Kalan P0: tam analitik çekirdek + kullanıcı cevaplarının poster'e akışı (answers-odaklı `analyzeUserJourney` hâlâ ayrı engine, results'ta canlı; grounding ile birleşmesi ayrı karar).
 2. **Kullanıcı işi:** BUG 2 metinsiz mood-backdrop yeniden üretimi + soul 3 oran düzeltmesi + yeni asset kombinasyonları.
 3. **FAZ 4c palette kanonik-kaynak kararı** (sceneThemeFor vs resolver) — onaylı olursa.
 4. **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş, 2026-09-24 planlı):** textless sahne + CSS metin; runtime üretim YOK; 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel (Hermes toplu üretmez). Ön koşul: dominantVibe gerçek kategori seti netleşmesi (P0 madde a bunu sağladı). BLOCKLU — kod/asset üretimi başlamadı. Fizibilite (metinsiz Metal/Dark): Gemini free-tier kota günlük aştığı için ÖLÇÜLEMEDİ (429); kota sıfırlanınca tekrar dene.
@@ -176,6 +180,7 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+655ddae  feat(results): Life Feed serbest metnini grounded Life Story / Emotional Timeline'e akıt (P0 c, Kural-10 VERİLDİ 2026-09-27; önce/sonra + CrisisGuard kanıtı)
 (82c30f8)  test(security): crisisGuard 5-dil detect iskeletini it.each'e dedupe (SonarCloud New-Code dup %3.4→~%2.6)
 (a18421c)  fix(results): manuel-şarkı artwork verification çözüldü + master-frame'e aktarım (Kural-10 VERİLDİ, tarayıcı 8/8)
 cac6372  feat(timeline): Emotional Timeline node'ları şarkı mood'undan (stage matrix fallback) + EmotionalNode primaryEmotion/energy
@@ -227,8 +232,10 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 - **"Mood null" regresyonunu canlı koşuda üretmek zor — LLM enstrümantallere de mood atar:** D'de Jarre/Oxygène → "Dreamy", Green Onions → "Energetic" infer edildi (null dönmedi), yani stage-fallback dalı canlıda görsel tetiklenmedi. O dal deterministik birim testiyle kanıtlı (emotionalTimelineEngine.test.ts: mood yoksa "Nostalgic Spark"). Sonuç: null-branch'i doğrulamak için gerçek LLM başarısızlığını zorlamak yerine birim testine güven.
 - **Runtime görsel test reçetesi (Kural-10):** journey UI'ı kırılgan (tarayıcı harness encoding/state flakiness) — daha güveniliri `soundmap.journey.v1`'ı şemaya uygun seed'leyip `loadJourney` üzerinden `/results`'ı çalıştırmak: `{current:8, answers:{1..8}, songs:{1..8:Song}}` (Song: provider/providerId/title/artist zorunlu, genre=gerçek) → `generateGroundedAnalysis` her şarkı için mood'u LLM'in yeniden infer eder → header+timeline dökümü. Harness koduna non-ASCII (örn. "·") koyma — stdin'de UnicodeDecodeError.
 - **artwork doğrulama title+artist şart (2026-09-26, a18421c):** `itunes-mapping.freeTextMatches` HER query token'inin title∪artist birleşiminde olmasını VE hem title hem artist'ta en az birer token olmasını şart koşar. O yüzden manual-song artPatch query'si title-only olamaz — `searchSongs({query: [title, artist].join(" ")})` gerekir; title-only sorguyla **hiçbir** şarkı doğrulanmaz (canlı kanıt: 7/8 "Album art not found"). Ayrıca bu state küçük bir set/oku ekseni uyumsuzluğuyla da bozulurdu: artPatch/artStatus 1-bazlı yazılıp 0-bazlı okunuyordu → ilk şarkı hep disc, son şarkının frame'i öncekinin kapağını gösteriyordu. Kural: state anahtarıyla okuyucu anahtarı AYNI eksende (hepsi 0-bazlı).
+- **P0 (c): "user's own words reach the story" artık GERÇEK (655ddae, Kural-10 VERİLDİ 2026-09-27):** Life Feed notu contextText üzerinden Life Story narrative'ine birebir akıyor. MİMARİ GERÇEK: bu narrative DETERMINISTIK lifeStoryEngine'den gelir (narrative = contextText ?? buildNarrative şablonu) — LLM olan kısım yalnız mood-inference (P0 b). Yani davranış değişikliği tekrar üretilebilir, "sessiz LLM varyasyonu" değil. Kural-10 kanıt yöntemi: `generateGroundedLifeStory`'yi buildGroundedLifeContexts'ın iki varyantıyla çağır (notes'suz=şablon, notes ile=birebir not) — deterministik önce/sonra. Ayrıca yeni veri yolu açıldığı için CrisisGuard `detectCrisisNote(note)`'u her zaman doğrula (not kriz-sinyali içermiyorsa false dönmeli).
+- **OpenRouter key canlılık probe'u (2026-09-27):** mood-inference production yolu HTTP 200 + gerçek mood döndü. Probe reçetesi: src/__probe/ altına vitest testi → dotenv ile .env yükle (key'i YAZDIRMA, yalnız len) → global fetch'i sar (her çağrının {model,status} kaydı) → callOpenRouter + buildMoodPrompt + parseMoodResponse ile GERÇEK song (Superstition) → Temp/ raporu → `rm -rf src/__probe`. Sonra unutma: bunu §5 item 9'dan KAPANDI yap.
 
 ---
 
-_Artık son güncelleme: Hermes (2026-09-26) — 82c30f8 SonarCloud New-Code dup gate temizliği (%3.4→~%2.6, crisisGuard it.each). Bundan önce: a18421c artwork fix (Kural-10 VERİLDİ) + MUSIC DNA P0 A(a)+(b) merge + Kural-10 + docs-drift + posterAlt + soniccloud=Suizid._
+_Artık son güncelleme: Hermes (2026-09-27) — P0 (c) merge (655ddae, Life Feed notları Life Story'e, Kural-10 VERİLDİ) + OpenRouter canlılık doğrulaması. Bundan önce: 82c30f8 SonarCloud dup gate, a18421c artwork fix (Kural-10), MUSIC DNA P0 A(a)+(b), docs-drift, posterAlt, soniccloud=Suizid._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
