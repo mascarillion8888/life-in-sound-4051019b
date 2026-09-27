@@ -1,5 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { generateGroundedAnalysis, analyzeUserJourney, __resetGroundedMemo } from "./pipeline";
+import {
+  buildGroundedLifeContexts,
+  generateGroundedAnalysis,
+  analyzeUserJourney,
+  __resetGroundedMemo,
+} from "./pipeline";
 import { inferMood } from "./moodInference";
 import type { Song } from "@/lib/song/types";
 
@@ -182,5 +187,35 @@ describe("generateGroundedAnalysis (P1 pipeline integration)", () => {
   it("keeps the personality pipeline untouched (regression)", () => {
     const profile = analyzeUserJourney({});
     expect(profile).toBeNull();
+  });
+
+  it("buildGroundedLifeContexts: base-8 ladder + optional notes; beyond-8 → generic stage", () => {
+    const songs = [
+      song("Holy Diver", "Dio", 1983, "s1"),
+      song("Paranoid", "Black Sabbath", 1970, "s2"),
+    ];
+    const notes = ["childhood basement", null];
+    const contexts = buildGroundedLifeContexts(songs, notes);
+
+    expect(contexts).toHaveLength(2);
+    expect(contexts[0]).toMatchObject({
+      questionId: 1,
+      stageName: "Childhood",
+      contextText: "childhood basement",
+    });
+    expect(contexts[0].song).toBe(songs[0]);
+    // null note → contextText undefined (engine falls back to template narrative)
+    expect(contexts[1].contextText).toBeUndefined();
+
+    // A post-8 feed entry must NOT masquerade as "Acceptance" — generic stage so
+    // the emotion engine uses DEFAULT_STAGE_RULE.
+    const grown = buildGroundedLifeContexts(
+      Array.from({ length: 9 }, (_, i) => song(`track ${i}`, "A", 1990, `t${i}`)),
+      ["n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"],
+    );
+    expect(grown[7].stageName).toBe("Acceptance");
+    expect(grown[8].stageName).toBe("New Chapter");
+    expect(grown[8].contextText).toBe("n8");
+    expect(grown[8].questionId).toBe(9);
   });
 });

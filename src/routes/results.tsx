@@ -7,10 +7,16 @@ import { questions } from "@/lib/questions";
 import { loadJourney, type JourneyProgress } from "@/lib/journey-storage";
 import { resetJourneySession } from "@/lib/reset-session";
 import { useSession } from "@/lib/supabase/use-session";
-import type { LifeFeedEntry, LifeFeedState } from "@/lib/life-feed";
+import {
+  lifeFeedMemories,
+  lifeFeedSongs,
+  type LifeFeedEntry,
+  type LifeFeedState,
+} from "@/lib/life-feed";
 import type { Song } from "@/lib/song/types";
 import { searchSongs } from "@/lib/song/searchSong.server";
 import type { GroundedLifeStory } from "@/types/lifeStory";
+import type { LifeContext } from "@/types/musicDna";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { AnimatedReveal } from "@/components/AnimatedReveal";
@@ -19,7 +25,11 @@ import { MusicUniverseHero } from "@/components/results/MusicUniverseHero";
 import { SongUniverseCard } from "@/components/results/SongUniverseCard";
 import { MasterPosterCanvas } from "@/components/results/MasterPosterCanvas";
 import { LifeFeedSection } from "@/components/feed/LifeFeedSection";
-import { analyzeUserJourney, generateGroundedAnalysis } from "@/lib/ai/pipeline";
+import {
+  analyzeUserJourney,
+  buildGroundedLifeContexts,
+  generateGroundedAnalysis,
+} from "@/lib/ai/pipeline";
 import { getQuestionEmotionLabels } from "@/lib/ai/questionEmotions";
 import { generateStory } from "@/lib/llm/generateStory.server";
 import { deterministicLifeStory } from "@/lib/llm/prompts";
@@ -437,13 +447,31 @@ function ResultsPage() {
   // journey Song[] selection (not just title strings), upgraded with per-song
   // LLM mood inference. Never blocks the page: the async call falls back to
   // null when the journey is empty or the inference fails.
+  //
+  // P0 (c): when a Life Feed exists, grounded analysis consumes the GROWN map
+  // (base 8 + feed entries) and carries each entry's free-text memory note into
+  // `LifeContext.contextText` — so the user's own words reach the Life Story /
+  // Emotional Timeline. Before the feed loads, or with no feed, this degrades to
+  // the base 8 with no notes (unchanged behaviour). Derived as ONE memo so the
+  // grounded effect stays content-keyed and never re-fires the mood batch on a
+  // stable input.
+  const groundedSources = useMemo(() => {
+    if (feed && lifeFeedSongs(feed).length >= 1) {
+      const grown = lifeFeedSongs(feed);
+      return {
+        songs: grown,
+        contexts: buildGroundedLifeContexts(grown, lifeFeedMemories(feed)),
+      };
+    }
+    return { songs, contexts: undefined as LifeContext[] | undefined };
+  }, [songs, feed]);
   const [grounded, setGrounded] = useState<Awaited<
     ReturnType<typeof generateGroundedAnalysis>
   > | null>(null);
   useEffect(() => {
     let active = true;
     setGrounded(null);
-    generateGroundedAnalysis(songs)
+    generateGroundedAnalysis(groundedSources.songs, groundedSources.contexts)
       .then((result) => {
         if (active) setGrounded(result);
       })
@@ -453,7 +481,7 @@ function ResultsPage() {
     return () => {
       active = false;
     };
-  }, [songs]);
+  }, [groundedSources]);
   // Same deterministic fallback DynamicMusicMap uses — the lightbox frame and
   // the sheet paint the same palette.
   const posterTheme = useMemo(

@@ -208,6 +208,31 @@ export async function generateGroundedAnalysis(
   return promise;
 }
 
+/**
+ * Build the default 8-stage LifeContext[] from a song set, optionally carrying
+ * per-song free-text notes (Life Feed memories) into `contextText`.
+ *
+ * Single source for the stage labels AND the fallback shape so `runGroundedAnalysis`
+ * (default) and `results.tsx` (when it passes an explicit context list) cannot
+ * drift apart. Notes beyond the 8-stage ladder (post-journey feed entries) reuse
+ * a generic stage name instead of repeating "Acceptance", so their emotion falls
+ * to the engine's DEFAULT_STAGE_RULE rather than masquerading as the final era.
+ */
+export function buildGroundedLifeContexts(
+  songs: Song[],
+  notes?: (string | null)[],
+): LifeContext[] {
+  return songs.map((song, index) => ({
+    questionId: index + 1,
+    stageName:
+      index < GROUNDED_STAGE_NAMES.length
+        ? GROUNDED_STAGE_NAMES[index]
+        : "New Chapter",
+    song,
+    contextText: notes?.[index]?.trim() ? notes[index].trim() : undefined,
+  }));
+}
+
 async function runGroundedAnalysis(
   songs: Song[],
   contexts?: LifeContext[],
@@ -227,13 +252,7 @@ async function runGroundedAnalysis(
   });
 
   const lifeContexts: LifeContext[] =
-    contexts && contexts.length
-      ? contexts
-      : enrichedSongs.map((song, idx) => ({
-          questionId: idx + 1,
-          stageName: GROUNDED_STAGE_NAMES[Math.min(idx, GROUNDED_STAGE_NAMES.length - 1)],
-          song,
-        }));
+    contexts && contexts.length ? contexts : buildGroundedLifeContexts(enrichedSongs);
 
   const dna = generateMusicDNA(enrichedSongs);
   const story = generateGroundedLifeStory(dna, lifeContexts);
