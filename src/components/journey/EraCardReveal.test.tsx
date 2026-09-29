@@ -36,12 +36,11 @@ function song(overrides: Partial<Song> = {}): Song {
 const cards: LifeCard[] = buildLifeCards({ locale: "en" });
 
 describe("EraCardReveal", () => {
-  it("shows the era position, the card, and the English narrative on its face", () => {
+  it("shows the card and the English narrative on its face", () => {
     render(<EraCardReveal card={cards[2]} song={song()} isLast={false} onContinue={() => {}} />);
-    expect(screen.getByText("Era 3 of 8")).toBeInTheDocument();
-    // The reveal heading keeps the era name; the card face shows the
-    // dynamic per-track title instead.
-    expect(screen.getAllByText("REBELLION").length).toBeGreaterThanOrEqual(1);
+    // The reveal no longer renders its own header text (position line and
+    // era-title h2 were both removed 2026-09-29) — the card face carries the
+    // per-track title and the card-face tag (REBELLION & <CAPTION>).
     expect(screen.getByText(/REBELLION & [A-Z]+/)).toBeInTheDocument();
     // The dynamic English narrative lives on the card face.
     expect(screen.getByText(/volume ran higher than feeling/)).toBeInTheDocument();

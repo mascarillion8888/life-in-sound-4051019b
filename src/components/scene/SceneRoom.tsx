@@ -7,12 +7,9 @@
  * Visual Resolver (Phase 4) — they never pick an image alone, only together
  * with mood (no fixed genre->mood mapping).
  *
- * Backdrop rendering — classic "blurred backdrop fill" (Spotify/Apple Music
- * style) so a landscape asset never looks cropped in the portrait room:
- *   - a SHARP `contain` layer shows the whole image, centered, never cropped;
- *   - a `cover` + heavy-blur fill layer behind it softly fills the whole
- *     container (blur ~28px + slight darkening + scale so blur edges stay
- *     covered), so the empty bands around the contain strip never look blank.
+ * Backdrop rendering — a single SHARP `cover` layer fills the whole room,
+ * centered (crop-safe, no letterbox bands / no duplicated blurred fill), over
+ * the themed wall gradient.
  *
  * The backdrop image is resolved via the canonical Visual Resolver
  * (`resolveSceneVisualSpec`), which runs the exact-match asset registry
@@ -42,9 +39,6 @@ export const SCENE_THEMES = SCENE_PALETTES;
  * per-song mood exists its own image is used instead.
  */
 const FALLBACK_MOOD: Mood = "Dreamy";
-
-/** Blur applied to the fill layer so it reads as soft ambiance, not a crop. */
-const FILL_BLUR_PX = 28;
 
 /**
  * The ambient library room. Children render over the desk zone; the backdrop
@@ -84,29 +78,16 @@ export function SceneRoom({
       className="pointer-events-none absolute inset-0 overflow-hidden"
       style={{ background: `linear-gradient(to bottom, ${theme.wall[0]}, ${theme.wall[1]})` }}
     >
-      {/* Blurred fill layer — covers fully, soft ambiance behind the sharp layer. */}
-      <span
-        aria-hidden
-        data-testid={`scene-backdrop-${slug}`}
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${moodImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: `blur(${FILL_BLUR_PX}px)`,
-          transform: "scale(1.2)",
-        }}
-      />
-      {/* Slight darkening over the blur so the sharp layer reads clearly. */}
+      {/* Slight darkening so the sharp layer reads clearly. */}
       <span aria-hidden className="absolute inset-0 bg-black/40" />
-      {/* Sharp main layer — whole image visible, centered, never cropped. */}
+      {/* Sharp main layer — covers the whole room, centered (crop-safe, no letterbox bands). */}
       <span
         aria-hidden
         data-testid={`scene-backdrop-main-${slug}`}
         className="absolute inset-0"
         style={{
           backgroundImage: `url(${moodImage})`,
-          backgroundSize: "contain",
+          backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
         }}

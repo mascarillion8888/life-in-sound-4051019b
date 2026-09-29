@@ -1,5 +1,5 @@
 import { AnimatedSection } from "@/components/AnimatedSection";
-import previewBackdrop from "@/assets/mood-backdrop-dreamy.png";
+import previewBackdrop from "@/assets/pop/mood-backdrop-dreamy.jpg";
 
 export default function PreviewSection() {
   return (

@@ -28,17 +28,14 @@ describe("SceneRoom — the fixed global library environment", () => {
         <SceneRoom themeId={themeId as keyof typeof SCENE_THEMES} />,
       );
       expect(screen.getByTestId(`scene-room-${themeId}`)).toBeTruthy();
-      // Blurred fill layer — covers the whole container.
-      const fill = container.querySelector(`[data-testid='scene-backdrop-dreamy']`) as HTMLElement;
-      expect(fill).toBeTruthy();
-      expect(fill.style.backgroundImage).toContain("mood-backdrop-dreamy");
-      expect(fill.style.backgroundSize).toBe("cover");
-      // Sharp main layer — full image visible, contain, never cropped.
+      // Single sharp backdrop layer — covers the whole room, centered,
+      // crop-safe, no letterbox bands, no duplicated blurred fill.
       const main = container.querySelector(
         `[data-testid='scene-backdrop-main-dreamy']`,
       ) as HTMLElement;
       expect(main).toBeTruthy();
-      expect(main.style.backgroundSize).toBe("contain");
+      expect(main.style.backgroundImage).toContain("mood-backdrop-dreamy");
+      expect(main.style.backgroundSize).toBe("cover");
       // No runtime DOM furniture vector elements are drawn.
       expect(container.querySelectorAll("[aria-hidden]").length).toBeLessThan(6);
       unmount();
@@ -47,14 +44,10 @@ describe("SceneRoom — the fixed global library environment", () => {
 
   it("uses the song's mood backdrop when a mood is present (genre/decade do not pick the image alone)", () => {
     const { container } = render(<SceneRoom themeId="synth" mood="dark" />);
-    expect(
-      (container.querySelector(`[data-testid='scene-backdrop-dark']`) as HTMLElement).style
-        .backgroundImage,
-    ).toContain("mood-backdrop-dark");
-    expect(
-      (container.querySelector(`[data-testid='scene-backdrop-main-dark']`) as HTMLElement).style
-        .backgroundSize,
-    ).toBe("contain");
+    const main = container.querySelector(`[data-testid='scene-backdrop-main-dark']`) as HTMLElement;
+    expect(main).toBeTruthy();
+    expect(main.style.backgroundImage).toContain("mood-backdrop-dark");
+    expect(main.style.backgroundSize).toBe("cover");
   });
 
   it("paints the fallback wall gradient from the theme palette", () => {

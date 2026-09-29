@@ -30,17 +30,17 @@ describe("moodBackdrop — fallback contract", () => {
 
   it("resolves the URL when the file exists in the map", () => {
     const map = {
-      "/src/assets/mood-backdrop-energetic.png": "/assets/mood-backdrop-energetic-abc123.png",
+      "/src/assets/pop/mood-backdrop-energetic.jpg": "/assets/pop-mood-backdrop-energetic-abc123.jpg",
     };
     expect(moodBackdropUrl("Energetic", undefined, undefined, map)).toBe(
-      "/assets/mood-backdrop-energetic-abc123.png",
+      "/assets/pop-mood-backdrop-energetic-abc123.jpg",
     );
   });
 
   it("is case-insensitive: MOOD_SET value maps to its lowercase file", () => {
     expect(moodBackdropSlug("Melancholic")).toBe("melancholic");
-    expect(moodBackdropFilename("Playful")).toBe("mood-backdrop-playful.png");
-    expect(moodBackdropKey("Dreamy")).toBe("/src/assets/mood-backdrop-dreamy.png");
+    expect(moodBackdropFilename("Playful")).toBe("mood-backdrop-playful.jpg");
+    expect(moodBackdropKey("Dreamy")).toBe("/src/assets/pop/mood-backdrop-dreamy.jpg");
   });
 
   it("resolves all 9 shipped mood files through the real glob map", () => {
@@ -61,67 +61,68 @@ describe("moodBackdrop — fallback contract", () => {
   });
 });
 
-describe("backdropCandidates — multi-axis fallback chain", () => {
-  it("full combo first, decade+mood, genre+mood, mood-only last", () => {
+describe("backdropCandidates — genre-agnostic neutral mood-wall fallback", () => {
+  it("always returns the neutral pop folder's mood file (genre/decade ignored)", () => {
     expect(backdropCandidates("Melancholic", "Blues", "1960s")).toEqual([
-      "mood-backdrop-1960s-blues-melancholic.png",
-      "mood-backdrop-1960s-melancholic.png",
-      "mood-backdrop-blues-melancholic.png",
-      "mood-backdrop-melancholic.png",
+      "pop/mood-backdrop-melancholic.jpg",
     ]);
   });
 
-  it("genre-only shortens the chain", () => {
+  it("registered genre folders are NOT named here — the registry handles them", () => {
+    // Genre-specific selection is the Asset Registry's job; the fallback chain
+    // stays genre-agnostic (pop) so metal/jazz/etc. get a real neutral mood wall.
     expect(backdropCandidates("Dark", "Metal", undefined)).toEqual([
-      "mood-backdrop-metal-dark.png",
-      "mood-backdrop-dark.png",
+      "pop/mood-backdrop-dark.jpg",
+    ]);
+    expect(backdropCandidates("Dark", "Rock", undefined)).toEqual([
+      "pop/mood-backdrop-dark.jpg",
     ]);
   });
 
-  it("decade-only shortens the chain", () => {
+  it("decade does not shape the filename anymore", () => {
     expect(backdropCandidates("Dreamy", undefined, "1970s")).toEqual([
-      "mood-backdrop-1970s-dreamy.png",
-      "mood-backdrop-dreamy.png",
+      "pop/mood-backdrop-dreamy.jpg",
     ]);
   });
 
-  it("normalizes case and removes spaces/dashes in genre/decade", () => {
-    expect(backdropCandidates("Energetic", "Hip-Hop", "1980s")).toEqual([
-      "mood-backdrop-1980s-hiphop-energetic.png",
-      "mood-backdrop-1980s-energetic.png",
-      "mood-backdrop-hiphop-energetic.png",
-      "mood-backdrop-energetic.png",
+  it("lowercases the mood slug for the file name", () => {
+    expect(backdropCandidates("Energetic", "Pop", "1980s")).toEqual([
+      "pop/mood-backdrop-energetic.jpg",
     ]);
   });
 
   it("mood-only when no genre/decade", () => {
-    expect(backdropCandidates("World")).toEqual(["mood-backdrop-world.png"]);
+    expect(backdropCandidates("World")).toEqual(["pop/mood-backdrop-world.jpg"]);
   });
 });
 
-describe("moodBackdropUrl — multi-axis resolution through injected map", () => {
+describe("moodBackdropUrl — neutral mood-wall resolution through injected map", () => {
   const map = {
-    "/src/assets/mood-backdrop-1980s-pop-energetic.png": "/assets/1980s-pop-energetic.png",
-    "/src/assets/mood-backdrop-1960s-energetic.png": "/assets/1960s-energetic.png",
-    "/src/assets/mood-backdrop-rock-energetic.png": "/assets/rock-energetic.png",
-    "/src/assets/mood-backdrop-energetic.png": "/assets/energetic.png",
+    "/src/assets/pop/mood-backdrop-energetic.jpg": "/assets/pop-mood-backdrop-energetic-abc.jpg",
+    "/src/assets/pop/mood-backdrop-dreamy.jpg": "/assets/pop-mood-backdrop-dreamy-abc.jpg",
+    "/src/assets/rock/mood-backdrop-energetic.jpg": "/assets/rock-mood-backdrop-energetic-abc.jpg",
   };
 
-  it("picks the most specific dec×genre×mood asset", () => {
+  it("resolves the neutral (pop) mood wall regardless of genre/decade", () => {
     expect(moodBackdropUrl("Energetic", "Pop", "1980s", map)).toBe(
-      "/assets/1980s-pop-energetic.png",
+      "/assets/pop-mood-backdrop-energetic-abc.jpg",
     );
   });
 
-  it("falls back to dec×mood when the exact trio is absent", () => {
-    expect(moodBackdropUrl("Energetic", "Rock", "1960s", map)).toBe("/assets/1960s-energetic.png");
+  it("registered-genre keys are NOT consumed by the genre-agnostic fallback", () => {
+    // Genre-specific selection is the registry's job; moodBackdropUrl stays neutral (pop).
+    expect(moodBackdropUrl("Energetic", "Rock", "1960s", map)).toBe(
+      "/assets/pop-mood-backdrop-energetic-abc.jpg",
+    );
   });
 
-  it("falls back to genre×mood when decade is absent from map", () => {
-    expect(moodBackdropUrl("Energetic", "Rock", undefined, map)).toBe("/assets/rock-energetic.png");
+  it("returns undefined when the neutral file is absent from the map", () => {
+    expect(moodBackdropUrl("World", "Rock", undefined, map)).toBeUndefined();
   });
 
-  it("ends at plain mood when nothing richer matches", () => {
-    expect(moodBackdropUrl("Energetic", "Soul", "1990s", map)).toBe("/assets/energetic.png");
+  it("genre/decade never change the neutral (pop) selection", () => {
+    expect(moodBackdropUrl("Dreamy", "Soul", "1990s", map)).toBe(
+      "/assets/pop-mood-backdrop-dreamy-abc.jpg",
+    );
   });
 });

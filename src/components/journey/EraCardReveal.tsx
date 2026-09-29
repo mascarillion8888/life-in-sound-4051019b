@@ -11,33 +11,15 @@
  * English-only by design: the card copy is generated per-track in English
  * (the full-English experience requirement).
  */
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 import { SceneRoom } from "@/components/scene/SceneRoom";
 import { Button } from "@/components/ui/button";
 import { QuizCard } from "@/components/results/QuizCard";
 import { sceneThemeFor } from "@/lib/art/sceneTheme";
-import { LIFE_CARD_COUNT, type LifeCard } from "@/lib/soundmap/lifeCards";
+import { type LifeCard } from "@/lib/soundmap/lifeCards";
 import type { Song } from "@/lib/song/types";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
-
-/**
- * Position-indexed poetic chapter lines (English-only reveal). These replace
- * the clinical age-range string as the card header's secondary line — the
- * chapter reads as a life-transition phrase, not a mood declaration. The
- * numeric `ageRange` stays on the card face / poster (QuizCard, MasterPoster,
- * poeticPoster still consume it). Approved 2026-09-23 (Variant 1).
- */
-const ERA_CHAPTER_LINES: string[] = [
-  "Where the world still felt soft and vast…",
-  "When taste first became a mirror…",
-  "When volume ran louder than feeling…",
-  "The years that gathered more questions than answers…",
-  "Where softness learned to armor itself…",
-  "Where sound arrived before light…",
-  "When loss became portable through music…",
-  "Where inquiry and peace met in a single melody…",
-];
 
 export function EraCardReveal({
   card,
@@ -73,22 +55,6 @@ export function EraCardReveal({
       />
 
       <div className="relative z-10 my-auto flex flex-col items-center gap-6">
-        <div className="space-y-2 text-center">
-          <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-primary">
-            <Sparkles className="h-4 w-4" />
-            Era {card.songIndex} of {LIFE_CARD_COUNT}
-          </span>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground/70">
-            Life Chapter
-          </p>
-          <h2 className="text-2xl font-bold uppercase tracking-wide text-foreground sm:text-3xl">
-            {card.eraTitle}
-          </h2>
-          <p className="text-sm uppercase tracking-wider text-muted-foreground">
-            {ERA_CHAPTER_LINES[card.index] ?? card.ageRange}
-          </p>
-        </div>
-
         {/* The card stands on the desk. */}
         <div className="relative isolate w-full max-w-xs animate-in fade-in zoom-in-95 duration-500">
           {eraTheme.overlayClasses && (

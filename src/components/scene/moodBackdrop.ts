@@ -65,43 +65,40 @@ export function moodBackdropSlug(mood: Mood | string): string {
   return mood.toLowerCase();
 }
 
-/** The filename portion, e.g. "mood-backdrop-energetic.png". */
+/** The filename portion, e.g. "mood-backdrop-energetic.jpg". */
 export function moodBackdropFilename(mood: Mood | string): string {
-  return `mood-backdrop-${moodBackdropSlug(mood)}.png`;
+  return `mood-backdrop-${moodBackdropSlug(mood)}.jpg`;
 }
 
 /**
- * A path-safe label segment for decade/genre: lowercase, spaces and dashes
- * stripped so "hip hop" / "hip-hop" → "hiphop" (one canonical file slug).
+ * Genre-agnostic neutral mood-wall source folder. Reached only when a song's
+ * genre has NO registered folder (e.g. metal/jazz/hiphop — outside
+ * pop/punk/rock/soul) or genre is absent. A REAL pop-class mood asset is shown,
+ * never an invented/generated image (ANA_YASA §0). Genre-specific selection is
+ * the Asset Registry's job (SCENE_ASSET_REGISTRY); this module only supplies the
+ * neutral mood wall.
  */
-function labelSegment(s: string | null | undefined): string {
-  return s ? s.toLowerCase().replace(/[\s-]+/g, "") : "";
-}
+export const NEUTRAL_BACKDROP_GENRE = "pop" as const;
 
 /**
- * Backdrop filename fallback chain — most specific first, mood-only last.
- * 1. <decade>-<genre>-<mood>    2. <decade>-<mood>    3. <genre>-<mood>    4. <mood>
- * The final mood-only entry is the existing 9-file reference / last resort.
+ * Backdrop fallback candidates (most specific first) as `<folder>/mood-backdrop-
+ * <mood>.jpg` subpaths. The genre axis is now a FOLDER resolved by the Asset
+ * Registry, so the genre-agnostic fallback here always points at the neutral mood
+ * wall (NEUTRAL_BACKDROP_GENRE). Decade no longer shapes a filename — it was
+ * never backed by real `<decade>-...` files.
  */
 export function backdropCandidates(
   mood: Mood | string,
-  genre?: string | null,
-  decade?: string | null,
+  _genre?: string | null,
+  _decade?: string | null,
 ): string[] {
   const m = moodBackdropSlug(mood);
-  const g = labelSegment(genre);
-  const d = labelSegment(decade);
-  const out: string[] = [];
-  if (d && g) out.push(`mood-backdrop-${d}-${g}-${m}.png`);
-  if (d) out.push(`mood-backdrop-${d}-${m}.png`);
-  if (g) out.push(`mood-backdrop-${g}-${m}.png`);
-  out.push(`mood-backdrop-${m}.png`);
-  return out;
+  return [`${NEUTRAL_BACKDROP_GENRE}/mood-backdrop-${m}.jpg`];
 }
 
-/** The module key portion, e.g. "/src/assets/mood-backdrop-energetic.png". */
+/** The module key portion for the neutral mood wall, e.g. "/src/assets/pop/mood-backdrop-dreamy.jpg". */
 export function moodBackdropKey(mood: Mood | string): string {
-  return `/src/assets/mood-backdrop-${moodBackdropSlug(mood)}.png`;
+  return `/src/assets/${NEUTRAL_BACKDROP_GENRE}/mood-backdrop-${moodBackdropSlug(mood)}.jpg`;
 }
 
 /**
@@ -114,13 +111,15 @@ export function moodBackdropKey(mood: Mood | string): string {
  * reason about, so we match by the module key ending with the exact filename.
  */
 /**
- * Vite build-time glob: `mood-backdrop-*.png` (mood standardı) + `backdrop-soul-*.png`
- * (genre-spesifik exact-match asset'ler) → resolved URL via `?url`.
- * Birden çok pattern: dönemsiz risk-free; exact-asset dosyaları da burada
- * çözülür ki `moodBackdropUrlByFilename` onları bulabilsin.
+ * Vite build-time glob: the four genre folders' mood walls,
+ * `assets/<folder>/mood-backdrop-<mood>.jpg` (pop/punk/rock/soul) → resolved URL
+ * via `?url`. The single-level `*` matches any one folder so each genre's 9 mood
+ * walls are included. Files that don't exist yield NO entry (no build error).
+ * Exact-match registry `assetRef`s (`<folder>/mood-backdrop-<mood>.jpg`) are
+ * resolved here via `moodBackdropUrlByFilename`.
  */
 const MOOD_BACKDROP_URLS: Record<string, string> = import.meta.glob<string>(
-  ["../../assets/mood-backdrop-*.png", "../../assets/backdrop-soul-*.png"],
+  ["../../assets/*/mood-backdrop-*.jpg"],
   { eager: true, import: "default", query: "?url" },
 );
 

@@ -21,7 +21,17 @@ import type { Mood } from "@/lib/ai/moodInference";
 
 /** Kanonik tür kimlikleri (küçük harf, normalleştirilmiş). */
 export type GenreId =
-  "pop" | "metal" | "rock" | "hiphop" | "jazz" | "reggae" | "soul" | "synth" | "gothic" | "grunge";
+  | "pop"
+  | "punk"
+  | "metal"
+  | "rock"
+  | "hiphop"
+  | "jazz"
+  | "reggae"
+  | "soul"
+  | "synth"
+  | "gothic"
+  | "grunge";
 
 /**
  * Genre etiketlerini kanonik `GenreId`'ye indirger (recorded provider'lar tek
@@ -48,6 +58,17 @@ export const GENRE_ALIASES: Record<string, GenreId> = {
   "synth-pop": "synth",
   "synth pop": "synth",
   "new wave": "synth",
+  "hard rock": "rock",
+  "heavy metal": "rock",
+  metal: "rock",
+  "hard rock & metal": "rock",
+  "hard rock and metal": "rock",
+  "classic rock": "rock",
+  "rock & roll": "rock",
+  "rock and roll": "rock",
+  "arena rock": "rock",
+  rockabilly: "rock",
+  "german rock": "rock",
 };
 
 /** null/boş'a güvenli kanonik genre kimliği. Eşleşme yoksa küçük-harfli orijinal. */
@@ -75,28 +96,53 @@ export interface SceneAssetEntry {
 
 /**
  * Kayıtlı (üretilmiş) kombinasyonlar.
- * Pilot `1980s × Pop × 9 mood` (dönemsel) + dönemsiz `Soul × 9 mood` (tüm
- * dönemlerde geçerli — `decade` opsiyonel olduğundan atlanır). Boş kalan
- * eksenlerde `resolveExactAsset` eşleşme bulamaz → mevcut FAZ 3 davranışı
- * aynen korunur.
+ * Dört genre (pop, punk, rock, soul) × 9 mood = 36 satır — hepsi DÖNEMSİZ
+ * (`decade` opsiyonel olduğundan atlanır → tüm yıllarda geçerli). `assetRef`
+ * artık genre klasörü içindeki gerçek dosyayı gösterir:
+ * `<genre>/mood-backdrop-<mood>.jpg` (2026-09-29 restructure).
+ * Bu dört genre dışındaki (metal/jazz/hiphop/…) kayıt YOKTUR — `resolveExactAsset`
+ * eşleşme bulamaz → moodBackdropUrl'nin nötr fallback'i devreye girer (pop klasörü,
+ * ANA_YASA §0 — hiçbir görsel uydurulmaz, yalnız gerçek asset geri kullanılır).
  */
 export const SCENE_ASSET_REGISTRY: SceneAssetEntry[] = [
-  { genre: "pop", decade: "1980s", mood: "Energetic", assetRef: "mood-backdrop-energetic.png" },
-  { genre: "pop", decade: "1980s", mood: "Euphoric", assetRef: "mood-backdrop-euphoric.png" },
-  { genre: "pop", decade: "1980s", mood: "Playful", assetRef: "mood-backdrop-playful.png" },
-  { genre: "pop", decade: "1980s", mood: "Romantic", assetRef: "mood-backdrop-romantic.png" },
-  { genre: "pop", decade: "1980s", mood: "Melancholic", assetRef: "mood-backdrop-melancholic.png" },
-  { genre: "pop", decade: "1980s", mood: "Dreamy", assetRef: "mood-backdrop-dreamy.png" },
-  { genre: "pop", decade: "1980s", mood: "Nostalgic", assetRef: "mood-backdrop-nostalgic.png" },
-  { genre: "pop", decade: "1980s", mood: "Dark", assetRef: "mood-backdrop-dark.png" },
-  { genre: "pop", decade: "1980s", mood: "World", assetRef: "mood-backdrop-world.png" },
-  { genre: "soul", mood: "Energetic", assetRef: "backdrop-soul-energetic.png" },
-  { genre: "soul", mood: "Euphoric", assetRef: "backdrop-soul-euphoric.png" },
-  { genre: "soul", mood: "Playful", assetRef: "backdrop-soul-playful.png" },
-  { genre: "soul", mood: "Romantic", assetRef: "backdrop-soul-romantic.png" },
-  { genre: "soul", mood: "Melancholic", assetRef: "backdrop-soul-melancholic.png" },
-  { genre: "soul", mood: "Dreamy", assetRef: "backdrop-soul-dreamy.png" },
-  { genre: "soul", mood: "Nostalgic", assetRef: "backdrop-soul-nostalgic.png" },
-  { genre: "soul", mood: "Dark", assetRef: "backdrop-soul-dark.png" },
-  { genre: "soul", mood: "World", assetRef: "backdrop-soul-world.png" },
+  // pop × 9 (dönemsiz; klasör pop/)
+  { genre: "pop", mood: "Energetic", assetRef: "pop/mood-backdrop-energetic.jpg" },
+  { genre: "pop", mood: "Euphoric", assetRef: "pop/mood-backdrop-euphoric.jpg" },
+  { genre: "pop", mood: "Playful", assetRef: "pop/mood-backdrop-playful.jpg" },
+  { genre: "pop", mood: "Romantic", assetRef: "pop/mood-backdrop-romantic.jpg" },
+  { genre: "pop", mood: "Melancholic", assetRef: "pop/mood-backdrop-melancholic.jpg" },
+  { genre: "pop", mood: "Dreamy", assetRef: "pop/mood-backdrop-dreamy.jpg" },
+  { genre: "pop", mood: "Nostalgic", assetRef: "pop/mood-backdrop-nostalgic.jpg" },
+  { genre: "pop", mood: "Dark", assetRef: "pop/mood-backdrop-dark.jpg" },
+  { genre: "pop", mood: "World", assetRef: "pop/mood-backdrop-world.jpg" },
+  // punk × 9
+  { genre: "punk", mood: "Energetic", assetRef: "punk/mood-backdrop-energetic.jpg" },
+  { genre: "punk", mood: "Euphoric", assetRef: "punk/mood-backdrop-euphoric.jpg" },
+  { genre: "punk", mood: "Playful", assetRef: "punk/mood-backdrop-playful.jpg" },
+  { genre: "punk", mood: "Romantic", assetRef: "punk/mood-backdrop-romantic.jpg" },
+  { genre: "punk", mood: "Melancholic", assetRef: "punk/mood-backdrop-melancholic.jpg" },
+  { genre: "punk", mood: "Dreamy", assetRef: "punk/mood-backdrop-dreamy.jpg" },
+  { genre: "punk", mood: "Nostalgic", assetRef: "punk/mood-backdrop-nostalgic.jpg" },
+  { genre: "punk", mood: "Dark", assetRef: "punk/mood-backdrop-dark.jpg" },
+  { genre: "punk", mood: "World", assetRef: "punk/mood-backdrop-world.jpg" },
+  // rock × 9
+  { genre: "rock", mood: "Energetic", assetRef: "rock/mood-backdrop-energetic.jpg" },
+  { genre: "rock", mood: "Euphoric", assetRef: "rock/mood-backdrop-euphoric.jpg" },
+  { genre: "rock", mood: "Playful", assetRef: "rock/mood-backdrop-playful.jpg" },
+  { genre: "rock", mood: "Romantic", assetRef: "rock/mood-backdrop-romantic.jpg" },
+  { genre: "rock", mood: "Melancholic", assetRef: "rock/mood-backdrop-melancholic.jpg" },
+  { genre: "rock", mood: "Dreamy", assetRef: "rock/mood-backdrop-dreamy.jpg" },
+  { genre: "rock", mood: "Nostalgic", assetRef: "rock/mood-backdrop-nostalgic.jpg" },
+  { genre: "rock", mood: "Dark", assetRef: "rock/mood-backdrop-dark.jpg" },
+  { genre: "rock", mood: "World", assetRef: "rock/mood-backdrop-world.jpg" },
+  // soul × 9
+  { genre: "soul", mood: "Energetic", assetRef: "soul/mood-backdrop-energetic.jpg" },
+  { genre: "soul", mood: "Euphoric", assetRef: "soul/mood-backdrop-euphoric.jpg" },
+  { genre: "soul", mood: "Playful", assetRef: "soul/mood-backdrop-playful.jpg" },
+  { genre: "soul", mood: "Romantic", assetRef: "soul/mood-backdrop-romantic.jpg" },
+  { genre: "soul", mood: "Melancholic", assetRef: "soul/mood-backdrop-melancholic.jpg" },
+  { genre: "soul", mood: "Dreamy", assetRef: "soul/mood-backdrop-dreamy.jpg" },
+  { genre: "soul", mood: "Nostalgic", assetRef: "soul/mood-backdrop-nostalgic.jpg" },
+  { genre: "soul", mood: "Dark", assetRef: "soul/mood-backdrop-dark.jpg" },
+  { genre: "soul", mood: "World", assetRef: "soul/mood-backdrop-world.jpg" },
 ];

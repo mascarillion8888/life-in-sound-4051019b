@@ -38,7 +38,7 @@ import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
 import { GeneratedPoster } from "@/components/results/GeneratedPoster";
 import { posterToDataUrl } from "@/lib/ai/posterRenderer";
-import posterBackdrop from "@/assets/mood-backdrop-dreamy.png";
+import posterBackdrop from "@/assets/pop/mood-backdrop-dreamy.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
 
