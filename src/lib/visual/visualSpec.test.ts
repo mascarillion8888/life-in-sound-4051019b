@@ -32,13 +32,16 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
   });
 
   it("same mood + different genre → differentiatable via sceneThemeId/palette", () => {
+    // İki kayıtsız genre (registry'de asset klasörü YOK): Doom Metal (→ gothic
+    // keyword) ile Grunge (→ grunge theme). İkisi de nötr mood-wall fallback'ine
+    // düşer, ama sceneThemeId ile ayrışırlar.
     const goth = resolveSceneVisualSpec({ mood: "Dark", genre: "Doom Metal", releaseYear: 1990 });
-    const jazz = resolveSceneVisualSpec({ mood: "Dark", genre: "Jazz", releaseYear: 1990 });
+    const grunge = resolveSceneVisualSpec({ mood: "Dark", genre: "Grunge", releaseYear: 1990 });
 
-    expect(goth.sceneThemeId).not.toBe(jazz.sceneThemeId);
-    // mood ekseni etkilenmez (aynı mood → aynı backdrop):
-    expect(goth.backdropUrl).toBe(jazz.backdropUrl);
-  });
+    expect(goth.sceneThemeId).not.toBe(grunge.sceneThemeId);
+    // mood ekseni etkilenmez (aynı mood + kayıtsız genre → aynı nötr backdrop):
+    expect(goth.backdropUrl).toBe(grunge.backdropUrl);
+    });
 
   it("missing mood → NO backdrop fallback (backdropUrl undefined), genre/decade still work", () => {
     const { backdropUrl, sceneThemeId } = resolveSceneVisualSpec({
@@ -116,11 +119,11 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(res.backdropUrl).toContain("mood-backdrop-energetic");
   });
 
-  it("genre eşleşmezse (Hip-Hop-1985, klasörsüz/registry'siz) → exactAssetRef undefined, exact-match izi yok", () => {
-    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "Hip-Hop", releaseYear: 1985 });
+  it("genre eşleşmezse (Grunge-1985, klasörsüz/registry'siz) → exactAssetRef undefined, exact-match izi yok", () => {
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "Grunge", releaseYear: 1985 });
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
-  });
+    });
 
   it("pop artık dönemsiz — 1990s'te de exact match eder", () => {
     const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1992 });
@@ -158,6 +161,24 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(seventies.backdropUrl).toContain("mood-backdrop-dark");
   });
 
+  it("yeni genre klasörleri exact-match eder — jazz/hiphop/funk/new-age/reggae (2026-09-30)", () => {
+    const cases: [string, string, string][] = [
+      // [genre, mood, expected assetRef]
+      ["Jazz", "Dark", "jazz/mood-backdrop-dark.jpg"],
+      ["Hip-Hop", "Energetic", "hip-hop/mood-backdrop-energetic.jpg"],
+      ["Funk", "Playful", "funk/mood-backdrop-playful.jpg"],
+      ["New Age", "Dreamy", "new age/mood-backdrop-dreamy.jpg"],
+      ["Reggae", "World", "reggae/mood-backdrop-world.jpg"],
+    ];
+    for (const [genre, mood, expectedRef] of cases) {
+      const res = resolveSceneVisualSpec({ mood, genre, releaseYear: 1990 });
+      expect(res.exactAssetRef).toBe(expectedRef);
+      expect(res.fallbackTrace.join("|")).toContain("exact-match:");
+      expect(res.backdropUrl).toBeDefined();
+      expect(res.backdropUrl).toContain("mood-backdrop");
+    }
+  });
+
   it("regresyon: pop dönemsiz — 1980s ve 1990s ikisi de exact match eder", () => {
     const eighties = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1985 });
     const nineties = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1995 });
@@ -166,12 +187,13 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(eighties.fallbackTrace.join("|")).toContain("exact-match:pop-energetic");
   });
 
-  it("kayıtlı dört genre kapalı — set dışı genre'de (hiphop) exact asset seçilmez", () => {
-    // pop/punk/rock/soul'un 9 mood'unun tamamı registry'de. hiphop klasörsüz/registry'siz:
-    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "hiphop", releaseYear: 2002 });
+  it("kayıtlı dokuz genre kapalı — set dışı genre'de (grunge) exact asset seçilmez", () => {
+    // pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae'nin 9 mood'unun tamamı registry'de.
+    // grunge klasörsüz/registry'siz (GenreId var ama asset yok):
+    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "grunge", releaseYear: 2002 });
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
-  });
+    });
 
   it("provider genre'si normalize edilir — iTunes 'R&B/Soul' → soul exact asset", () => {
     // Gerçek provider değeri registry anahtarıyla birebir aynı değildir:
@@ -210,6 +232,23 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
       ["Arena Rock", "rock"],
       ["Rockabilly", "rock"],
       ["Doom Metal", "doom metal"], // alias'ta yok → küçük-harfli orijinal (eşleşmez)
+      // 2026-09-30 yeni genre aileleri → ilgili klasör
+      ["Funk", "funk"],
+      ["P-Funk", "funk"],
+      ["Smooth Jazz", "jazz"],
+      ["Acid Jazz", "jazz"],
+      ["Bebop", "jazz"],
+      ["Swing", "jazz"],
+      ["New Age", "new age"],
+      ["Newage", "new age"],
+      ["Ambient", "new age"],
+      ["Dancehall", "reggae"],
+      ["Ska", "reggae"],
+      ["Reggaeton", "reggae"],
+      ["Roots Reggae", "reggae"],
+      // hibritler soul'a iner (soul kaynağı), funk klasörüne DEĞİL:
+      ["Soul/Funk", "soul"],
+      ["Funk/Soul", "soul"],
     ];
     for (const [input, expected] of cases) {
       expect(normalizeGenre(input)).toBe(expected);
