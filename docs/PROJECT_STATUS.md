@@ -1,6 +1,6 @@
 # SoundMap / Life in a Sound — Proje Durumu
 
-Son güncelleme: 2026-09-27
+Son güncelleme: 2026-09-30
 
 > **Bu dosya ne:** Her önemli push'ta (kod değişikliği içerenler; yalnızca
 > docs-only checkpoint'lerde şart değil) güncellenen, insan dilinde yazılmış
@@ -30,9 +30,10 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - **Müzik Sistemi (CANLI):** şarkı arama (iTunes/MusicBrainz) → Music DNA + mood
   çıkarımı → hayat/duygu motorları. Mood bir kez hesaplanıp kalıcılaştırılır.
 - **Görsel Sistem (kısmen CANLI):** deterministik çözücü (resolver) + Asset
-  Registry (pilot: 1980'ler × Pop, tamamı; Soul 9/9 mood) → sahne duvar kağıdı
-  (çok eksenli geri dönüş zinciri). Resolver'in renk/tema çıktısı sahne render'ında
-  henüz tüketilmiyor (açık karar, §6).
+  Registry (**9 tür × 9 duygu = 81 kombinasyon** — pop/punk/rock/soul/funk/hip-hop/
+  jazz/new-age/reggae) → sahne duvar kağıdı (çok eksenli geri dönüş zinciri; tek
+  keskin `cover` katmanı, bulanık letterbox yok). Resolver'in renk/tema çıktısı
+  sahne render'ında henüz tüketilmiyor (açık karar, §6).
 - **Kart/Poster Sistemi (kısmen):** quiz kartı (yolculuk adımı; metinler HTML/CSS
   tipografiyle, görselin içine gömülü değil), kartı ortaya çıkarma ekranı (3:4 sabit
   oran), poster/hero/grid bileşenleri.
@@ -41,6 +42,15 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   matrisi yok (§10).
 
 ## 3. Bugün ve Bu Hafta Ne Yapıldı
+
+### 2026-09-30 — 5 yeni türün sahne duvar kağıtları bağlandı + görsel katman doğrulandı + taksonomi kararı
+- **5 yeni tür klasörü Asset Registry'ye bağlandı:** kullanıcı `funk/`, `hip-hop/`, `jazz/`, `new age/`, `reggae/` klasörlerini tam 9 duygu durumu setiyle ekledi. Bunlar artık sahne arka planı sisteminde gerçekten kullanılıyor: tür kimlikleri eklendi, tür aile eşlemeleri (funk: p-funk; yeni çağ: newage/ambient; caz: bebop/swing; reggae: dancehall/ska vb.) tanımlandı ve kayıt defteri 36 satırdan **81 satıra** çıktı (9 tür × 9 duygu). Daha önce bu türler nötr pop duvarına düşüyordu; artık kendi atmosferlerini gösteriyor.
+- **Doğrulama:** tip 0 hata, testler 716 geçti / 2 atlandı (0 başarısız), derleme başarılı ve build 81 arka plan görselinin tamamını içeriyor (tür başına 9). Görsel değişiklik olduğu için tarayıcı göz onayı (kural-10) alındı.
+- **Görsel katman teyidi:** kartı-ortaya-çıkarma ekranındaki "Era X of 8" başlığı (artık yok) ve sahnenin tek keskin `cover` arka planı (eski bulanık letterbox katmanı kaldırıldı) tek tarayıcı koşusunda birlikte doğrulandı.
+- **Taksonomi kararı (kod hatası değil):** kullanıcı, funk olarak bildiği bir parçanın (Fat Larry's Band) soul görseli gösterdiğini raporladı. Gerçek neden araştırıldı: iTunes bu parçayı/albümü **"R&B/Soul"** etiketiyle kataloglamış ("funk" geçmiyor); uygulama yalnızca provider'ın primary-genre etiketini sadıkça yansıtıyor. Bu, sanatçı düzeyi bir kürasyon meselesidir, alias/kod hatası değil. **Karar:** olduğu gibi kabul (R&B/Soul → soul, iTunes'a sadık); sanatçı-özel üst üste binmeler ileride music map işinde manuel ele alınacak — tür eşleme tablosunu değiştirerek değil.
+
+### 2026-09-29 — Görsel asset dosyaları tür klasörlerine ayrıldı (arka plan mimarisinin ön adımı)
+- Eski metin-içeren genel `mood-backdrop` PNG seti kaldırıldı; yerine her tür için ayrı klasörlerde metinsiz `.jpg` setleri geldi (4 tür ile başladı: pop/punk/rock/soul — 5 tür ertesi gün eklendi).
 
 ### 2026-09-27 — MUSIC DNA P0 (c): kullanıcının kendi sözleri artık Life Story'ye işleniyor + OpenRouter canlılığı
 - **Boşluğu kapatıldı:** kullanıcının Life Feed'e yazdığı serbest metin notları artık gerçekten Life Story chapter'larına ve Emotional Timeline'a akıyor. Önceden results ekranı grounded analizi `contexts`'siz çağırıyordu — yani kullanıcının kelimeleri üretimde asla anlatıya ulaşmıyordu (şablon metin kalıyordu). Artık Life Feed varsa, her girişin notu `contextText` olarak ilgili aşamanın anlatısına taşınıyor; Life Feed yoksa davranış değişmiyor (şablon).
@@ -177,6 +187,9 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   Timeline + görsel poster; kalıcılık (kayıt yüklendi/yerel) ve F5 direnci.
 - Görsel sözleşme + deterministik çözücü + Asset Registry (1980'ler×Pop tam,
   Soul 9/9) + tür normalizasyonu; kural-10 gözle onayı kapandı.
+- **Asset Registry 9 tür × 9 duygu = 81 kombinasyonla tamamlandı (2026-09-30):**
+  funk/hip-hop/jazz/new-age/reggae klasörleri bağlandı; her tür kendi atmosferini
+  gösterir, eşleşmesiz türler nötr pop duvarına düşer. Kural-10 onayı alındı.
 - Hugging Face tamamen kaldırıldı (sunucu kademesi + istemci ölü kod / zombi
   hata dalları); taksonomi düzeltildi.
 - Kart yeniden tasarımı (Adım 1-4) + "Add to Collection" + okunurluk katmanı.
@@ -195,10 +208,11 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   alıyor; çözücünün renk/tema çıktısı henüz render'da kullanılmıyor. İki kaynak
   farklı türetiyor (2010-sonrası ayrışma riski) — karar verilmemiş.
 - **Asset Registry genişlemesi:** yeni tür/dönem/duygu kombinasyonları manuel
-  eklenmeyi bekliyor (onayla).
+  eklenmeyi bekliyor (onayla). **9 tür kapanmış durumda (2026-09-30);** henüz
+  klasörsüz: metal (rock'a gider), synth, gothic, grunge.
 - **Kart çerçevesi overlay (v1):** altyapı kuruldu, varsayılan kapalı; gerçek
   çerçeve görselleri + eşleme hâlâ bekliyor.
-- **Soul görsellerinin oran tutarsızlığı** (energetic/euphoric/playful 2:3 vs 3:4) — asset üretiminde düzeltilecek.
+- ~~Soul görsellerinin oran tutarsızlığı~~ **ÇÖZÜLDÜ (2026-09-30):** yeni `.jpg` seti uniform **832×1248 (2:3)**; oran tutarsızlığı yok.
 
 ### Hiç Başlanmamış
 - FAZ 4 Music Memory veri modeli (tasarım taslağı var, kod yok), FAZ 5 User
@@ -207,11 +221,12 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 ## 5. Sıradaki Adımlar
 
 ### Kısa Vade (bu hafta/gün)
-- **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş):** metinsiz sahne + CSS metin, runtime üretim yok, 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel. Fizibilite (metinsiz Metal/Dark sahnesi) Gemini free-tier günlük kota (429) yüzünden ölçülemedi — kota sıfırlanınca yeniden dene.
+- **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş):** metinsiz sahne + CSS metin, runtime üretim yok, 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel. ✅ **Görsel-API fizibilitesi denendi + VAZGEÇİLDİ (2026-09-27):** gerçek görsel-üretim API'si (openai/gpt-5-image) teknik olarak mümkündü ama maliyet (~$0.25/görsel), süre (~45-50sn/görsel) ve tutarsız kalite nedeniyle bu yola girmeme kararı verildi; kullanıcı kendi elle üreteceği assetlerle devam edecek.
 - **Teknik borç:** `cardArtwork.server.ts:28` Imagen modeli bu API'de 404 (üretim zinciri hep 2. tier'a düşüyor) — ayrı gün ele alın.
 - FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
-- Eski genel `mood-backdrop` setini metinsiz yeniden üret (açık görsel iş).
+- ~~Eski genel `mood-backdrop` setini metinsiz yeniden üret~~ **ÇÖZÜLDÜ (2026-09-29/30):** yerini genre klasörlerindeki metinsiz `.jpg` setleri aldı.
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz doğrulaması gerekir).
+- **Music map / artist kürasyonu:** funk-adjacent isimlerin (örn. Fat Larry's Band) iTunes "R&B/Soul" etiketiyle soul görseli alması kabul edilmiş taksonomi kararıdır; sanatçı-özel üst üste binmeler ileride music map işinde manuel ele alınacak.
 
 ### Orta Vade (bu ay)
 - Asset Registry genişletmesi; çoklu tür kaynağı (iTunes/MusicBrainz tekeli kırma),
@@ -228,11 +243,10 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 - **CrisisGuard TR pattern sınırlaması:** `canımı\s+(yak|almak)` olumsuz kullanımda
   ("canımı yakma") yanlış-pozitif tetikleyebilir — bilinçli recall lehine bırakıldı
   (kriz güvenliği önceliği). Gelecekte negation-aware pattern ile iyileştirilebilir.
-- Eski genel görsellerin içinde metin var (metinsiz yeniden üretim gerekiyor).
+- ~~Eski genel görsellerin içinde metin var~~ **ÇÖZÜLDÜ (2026-09-29):** metinli eski PNG seti kaldırıldı, yerini metinsiz `.jpg` setleri aldı.
 - **STEEL age-range sınırı (lifeCards):** "23-29" artık komşularla çakışmıyor ama
   "Güç" çağının alt/üst sınırı tasarım kararı olarak netleşmedi — kabul edildi.
-- **Soul görsellerinin oran tutarsızlığı (energetic/euphoric/playful 2:3 vs 3:4):**
-  contain'da ince boşluk; asset üretiminde (kullanıcı) düzeltilecek.
+- ~~Soul görsellerinin oran tutarsızlığı~~ **ÇÖZÜLDÜ (2026-09-30):** yeni `.jpg` seti uniform 2:3.
 - Üç ayrı "yaş dönemi" sistemi hâlâ birleşmedi (ayrı karar, bilinçli dokunulmadı).
 - Kalıcı kurallar: repo-lokal git kimliği doğru olmalı (Vercel engeli); `git add -A`
   yasak (anahtar/debri süpürür).

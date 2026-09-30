@@ -14,14 +14,18 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main ile SENKRON
-HEAD:       655ddae — "feat(results): carry Life Feed free-text notes into grounded Life Story / Emotional Timeline (P0 c, rule-10)"
-            MUSIC DNA P0 A(a)+(b) MERGE (d49b24d+cac6372) + manuel-şarkı artwork fix (a18421c)
-            + SonarCloud dup gate (82c30f8) + P0 (c) MERGE (655ddae, Kural-10 VERİLDİ 2026-09-27).
-            P0 (c): kullanıcının Life Feed serbest metni artık contextText üzerinden üretimde
-            Life Story/Emotional Timeline'e akıyor (önceden results.tsx contexts'siz çağırıyordu);
-            önce/sonra şablon-vs-not kanıtı (Temp/kural10-beforeafter.txt) + Kural-10 göz onayı.
-            OpenRouter key canlılığı DOĞRULANDI (HTTP 200, Temp/openrouter-liveness.txt).
+Dal:        main — origin/main ile SENKRON (0d96969 push edildi, no force/rebases)
+HEAD:       0d96969 — "checkpoint: code+assets — 5 new genre backdrop folders wired into scene
+            registry (81 rows, funk/hiphop/jazz/new-age/reggae) + genre aliases"
+            3fa5ec0  — scene backdrop 4-genre wiring (36 rows, pop/punk/rock/soul genre folders)
+                       + tek keskin cover katmanı (blur/letterbox kaldırıldı)
+                       + reveal era başlığı ("Era X of 8") KALDIRILDI + rock/metal aliasları
+            (zincir) 655ddae P0 (c) MERGE (Kural-10 VERİLDİ) + OpenRouter canlılık doğrulandı
+            + MUSIC DNA P0 A(a)+(b) MERGE + SonarCloud dup gate (82c30f8)
+            ≥ 3fa5ec0: asset klasörü restructure → pop/punk/rock/soul klasörlerinde
+            mood-backdrop-<mood>.jpg (eski text-laden .png seti kaldırıldı).
+            ≥ 0d96969: 5 yeni genre klasörü (funk/hip-hop/jazz/new age/reggae) eklendi,
+            SCENE_ASSET_REGISTRY 36→81 satır (9 genre × 9 mood, hepsi DÖNEMSİZ).
 Önceki zincir (kritik):
               2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
               f8467d6  fix(lint): prefer-const palette in visualResolver
@@ -30,9 +34,10 @@ HEAD:       655ddae — "feat(results): carry Life Feed free-text notes into gro
               55954b2  feat(ai): tanı-yasağı + anti-cliché 4 prose prompt + mood-inference sistem satırı
               9fff09c  docs(handoff): CrisisGuard/ETHICAL_AI kaydı
               b44f945  feat(safety): CrisisGuard (5-lang triage) + CrisisSupportPanel + ETHICAL_AI.md
-Testler:    71 dosya, 715 passed / 2 skipped (717) — vitest v4.1.11, `npm test` exit 0
-            (doğrulandı 2026-09-27, P0 (c) dahil — buildGroundedLifeContexts testi)
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-09-27)
+Testler:    70 dosya, 716 passed / 2 skipped, 0 failed (718) — vitest v4.1.11, `npm test` exit 0
+            (doğrulandı 2026-09-30, 5-genre wiring dahil; 9 eski missing-PNG testi 3fa5ec0'un 4-genre
+            .jpg setiyle zaten yeşildi, bu ek onları da korudu)
+tsc:        temiz (`npm run typecheck` = 0 hata, 2026-09-30)
 Lint:       `npm run lint` (ham `eslint .`, prettier-ON) = **0 hata, 0 uyarı** (2026-09-25)
             → Canonical lint artık ham eslint'tir; prettier off kuralı KALDIRILDI.
             Eski baseline (1 prefer-const + 9 react-refresh uyarısı + CRLF gürültüsü) KAPANDI.
@@ -42,10 +47,12 @@ Prettier:   `npx prettier --check "src/**/*.{ts,tsx,css}" "scripts/*.mjs"` = ye�
             src/lib/llm/promptRules.ts. Bu oturumun değişikliği bunlardan DEĞİL (prettier --check
             dictionaries.ts'i temiz geçti). Canonical 0/0 Linux (Freebuff) doğrulamasıdır; Windows
             lint borcu ayrı turda — bkz. §9.
-Build:      exit 0 (son tam doğrulama 2026-09-22; bu oturumda koşulmadı — yalnız i18n metin)
-Worktree:   temiz (yalnız untracked `Temp/` — kanıt dosyaları burada:
-            openrouter-liveness.txt + kural10-beforeafter.txt). Asset 18 PNG
-            (9× mood-backdrop + 9× backdrop-soul). .claude/ YOK.
+Build:      exit 0 (2026-09-30 doğrulandı; 81 mood-backdrop .jpg build'e emisyonlandı —
+            find .output/public -name 'mood-backdrop-*.jpg' | wc -l = 81)
+Worktree:   docs/HANDOFF.md + docs/PROJECT_STATUS.md değişmiş (bu commit öncesi);
+            `Temp/` untracked — kanıt dosyaları (kural10-beforeafter.txt, openrouter-liveness.txt,
+            sonar_dup.json, kural10-shots/). Asset 45 yeni .jpg (5 genre × 9 mood) + 36 önceki
+            (4 genre × 9 mood) = 81. .claude/ YOK.
             bun.lock ARTIK .gitignore'da (yabancı lockfile — proje npm/package-lock.json kanonik).
 ```
 
@@ -94,6 +101,54 @@ basitleşti: `npm run lint` yeterli (prettier-off eki gereksiz). Testler
 whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerde
 (QuizCard, EraCardReveal, SceneRoom) aynı attribute'lar korunmuştur.
 
+## 2b. Bu Oturum (2026-09-30): 5 Genre Backdrop Wiring + Reveal/Scene doğrulaması + R&B/Soul kararı
+
+**KAPSAM:** Kullanıcı `src/assets/` altına 5 yeni genre klasörü ekledi — `funk/`,
+`hip-hop/`, `jazz/`, `new age/`, `reggae/` — her biri tam 9 mood'lu
+`mood-backdrop-<mood>.jpg` setiyle. Bu oturumda bunlar Asset Registry'ye
+bağlandı; ayrıca daha önce (HEAD 3fa5ec0'da) tamamlanmış iki değişiklik (reveal
+"Era X of 8" başlığının kaldırılması ve SceneRoom keskin katmanının `contain`→
+`cover`'a çevrilmesi) tarayıcı koşusuyla birlikte doğrulandı.
+
+**Kod (commit 0d96969, push edildi, no force/rebases):**
+1. **`assetRegistry.ts`**
+   - `GenreId`'ye `funk` ve `new age` eklendi (hiphop/jazz/reggae zaten vardı).
+   - `GENRE_ALIASES`: her yeni genre için aile eşlemesi — funk (`p-funk`), new
+     age (`newage`, `new-age`, `ambient`), jazz (`smooth jazz`, `acid jazz`,
+     `jazz fusion`, `bebop`, `swing`), reggae (`dancehall`, `ska`, `reggaeton`,
+     `roots reggae`). Hibrit `funk/soul` ↔ `soul/funk` **bilinçli olarak soul'da
+     kaldı** (mevcut `soul/funk → soul`; eşlenen `funk/soul → soul` da eklendi).
+   - `SCENE_ASSET_REGISTRY` 36 → **81 satır** (9 genre × 9 mood, hepsi dönemsiz).
+     `assetRef` gerçek on-disk klasör adını kullanır (`hip-hop/mood-backdrop-*.jpg`,
+     `new age/mood-backdrop-*.jpg` — boşluk/kısa-çizgi dosya adıyla BİREBİR eşleşmeli).
+2. **`visualSpec.test.ts`** — 2 test yeniden yazıldı: `Hip-Hop`/`hiphop` artık
+   kayıtlı olduğu için "eşleşmez" iddiaları `grunge` (hâlâ kayıtsız) üzerinden
+   kanıtlanıyor; 5 yeni genre için pozitif exact-match case-tablosu + cins
+   aliasları eklendi.
+3. **45 yeni asset .jpg** (5 folder × 9 mood) eklendi.
+
+**Doğrulama:** typecheck 0; `npm test` 716 passed / 2 skipped, 0 failed;
+`npm run build` exit 0 — build 81 mood-backdrop .jpg emisyonluyor (per-mood 9).
+Kısa ömürlü probe (sonra kaldırıldı) her yeni genre'nin `assetRef`'inin glob
+üzerinden gerçek backdrop URL'sine çözüldüğünü doğruladı; kalıcı coverage
+visualSpec.test.ts'te duruyor.
+
+**Kural-10:** Bu oturumun 5-genre eklemesi görsel (genre'ye özel art ortaya
+çıkıyor) → **push öncesi tarayıcı göz onayı VERİLDİ** (kullanıcı tek pass'ta
+star/Era X yok, cover dolum, 5 genre'yi kontrol etti). `3fa5ec0`'ın reveal/cover
+değişimi Kural-10 kapsamındaydı ve bu turda birlikte onaylandı.
+
+**BULGU (2026-09-30, ÇÖZÜM KARARI — kod hatası DEĞİL):** Fat Larry's Band
+"Breakin' Out" (sözlükte funk) soul backdrop gösteriyordu. Gerçek neden:
+iTunes `primaryGenreName` bu parça/dönem için birebir **`"R&B/Soul"`** döndürüyor
+(10 sonucun hepsi; "funk" geçmedi bile). Bu, İLK yeni alias'a veya bu oturumun
+funk/soul-hibrit kuralına takılmıyor — uzun süredir var olan `"r&b/soul": "soul"`
+(assetRegistry.ts:49) eşlemesine denk geliyor. Hibrit kural burada devreye
+GİRMEDİ. Karar: **kabul et** — `R&B/Soul → soul`, iTunes etiketlemesine sadık;
+kullanıcı bunu kod hatası değil taksonomi/kürasyon meselesi olarak onayladı.
+Sanatçı düzeyi üst-üste binmeler ileride music map işinde manuel ele alınacak,
+**GENRE_ALIASES ile değil**. (NOTLAR §9'a da düşüldü.)
+
 ### 2a. Geçmiş bağlam (özet — tam kayıt PROJECT_STATUS + commit mesajlarında)
 - **FAZ 3 (18 Eyl):** kanonik görsel kontrat `Song{mood,genre,decade}` + deterministik `visualResolver`.
 - **FAZ 3.1 (19 Eyl):** exact-match `assetRegistry` (pilot pop×1980s×9; sonra soul 9/9 decade-free) — runtime üretim YOK (§9).
@@ -106,9 +161,9 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 
 ## 3. Kod Tabanı Özeti & Mevcut Durum
 
-- **Scene/backdrop:** `SceneRoom` tek standard; backdrop `moodBackdropUrl(mood, genre, decade)` (fallback: dec×gen×mood → dec×mood → gen×mood → mood; mood yoksa `dreamy`). Decade `eraThemeForYear` (tek kaynak).
-- **BULGU (2026-09-23, AÇIK):** `backdrop-soul-{energetic,euphoric,playful}.png` 1024×1536 (2:3); setin geri kalanı 3:4 — contain'da ince letterbox. Asset üretiminde düzeltilecek (kullanıcı elle üretiyor).
-- **Visual katman:** `visualSpec.ts` (kontrat), `visualResolver.ts` (deterministik + `resolveExactAsset`), `assetRegistry.ts` (`SCENE_ASSET_REGISTRY`), `visualSpec.test.ts` (19 test).
+- **Scene/backdrop:** `SceneRoom` tek standard; backdrop `moodBackdropUrl(mood, genre, decade)` (fallback: dec×gen×mood → dec×mood → gen×mood → mood; mood yoksa `dreamy`). Decade `eraThemeForYear` (tek kaynak). **2026-09-30:** görsel katman tek keskin `cover` backdrop (blur letterbox katmanı kaldırıldı — 3fa5ec0); genre'e özel backdrop `SCENE_ASSET_REGISTRY` (81 satır) üzerinden, eşleşmesiz genre'ler `pop` nötr mood-wall'a düşer (uydurmaz, ANA_YASA §0).
+- **Asset oranı (2026-09-30, doğrulandı):** tüm `mood-backdrop-*.jpg` setleri (soul/pop/funk/jazz ölçüldü; 9 folder aynı üretimden) **832×1248 = 2:3** (PORTRAIT). Reveal/post er 3:4 (`aspect-[3/4]`) kutuda `cover` ile oynar — cover, boy (2:3) < kutu (3:4) olduğundan YÜKSEKLİK'e ölçekler (dikey doldurma + yan kırpma; başlık metni dikey merkezde korunur, kırpma yataydır, başlık kesilmez). Eski §3 BULGU (soul .png 2:3 vs 3:4 tutarsızlığı) 2026-09-29 restructure'da kaldırılan eski `.png` setine aittir — artık geçerli değil; yeni set uniform 2:3.
+- **Visual katman:** `visualSpec.ts` (kontrat), `visualResolver.ts` (deterministik + `resolveExactAsset`), `assetRegistry.ts` (`SCENE_ASSET_REGISTRY`), `visualSpec.test.ts` (20 test).
 - **Motorlar:** `musicDnaEngine.ts` (mood-coverage gate), `lifeStoryEngine.ts`, `emotionalTimelineEngine.ts`.
 - **Mood veri yolu:** provider→Song(mood null)→şarkı seçimi→`resolveSongMood`→`Song.mood` persist→SceneRoom backdrop.
 - **Pipeline:** `pipeline.ts` → `generateGroundedAnalysis` (content-keyed memo + fingerprint). `results.tsx` `songs` memo da content-keyed (bkz. §2-6 — korunan pattern).
@@ -119,22 +174,25 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 
 ---
 
-## 4. Test / Derleme İstatistikleri (2026-09-25 doğrulandı)
+## 4. Test / Derleme İstatistikleri (2026-09-30 doğrulandı)
 
-- **Vitest:** 70 dosya, 693 passed / 2 skipped (0 failed) — `npm test` exit 0. visualSpec 19/19.
+- **Vitest:** 70 dosya, 716 passed / 2 skipped, 0 failed (718) — `npm test` exit 0. visualSpec 20/20.
 - **TypeScript:** `tsc --noEmit` 0 hata.
 - **Lint:** `npm run lint` (ham eslint, prettier-ON) = **0 error, 0 warning**. Prettier check yeşil.
-- **Build:** `npm run build` exit 0 (2026-09-22; bu oturum yalnız format/config — yeniden koşulmadı).
+- **Build:** `npm run build` exit 0 (2026-09-30) — 81 mood-backdrop .jpg build'e emisyonlandı.
 
 ---
 
 ## 5. Açık / Bekleyen İşler
 
 ### AÇIK görsel iş (kullanıcı onaylı, asset üretimi kullanıcıda)
-1. **BUG 2 — eski `mood-backdrop-*.png` 9'luk set içlerinde METİN taşıyor** ("1980s • POP", sanatçı etiketleri). Metinsiz-yeniden-üretim KARAR REVİZYONU ihlali; programatik düzeltilemez. Soul'da görünmez (yeni soul dosyaları temiz); diğer kombinasyonlarda hâlâ kullanılıyor.
-2. **Soul 3 dosya oran uyuşmazlığı:** soul-energetic/euphoric/playful 2:3, set 3:4 — yeniden üretimde düzelt.
-3. **Asset Registry genişlemesi:** yeni `genre × decade × mood` kombinasyonu ürettikçe manuel kayıt (yalnız onayla; kartezyen matris YOK §10). Yeni exact asset = kural-10 YENİDEN AÇILIR.
+1. ~~BUG 2 — eski `mood-backdrop-*.png` seti metinli~~ **ÇÖZÜLDÜ (2026-09-29 restructure, 3fa5ec0):** text-laden eski `.png` seti kaldırıldı; yerini genre klasörlerinde (`pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae`) metinsiz `mood-backdrop-<mood>.jpg` setleri aldı.
+2. ~~Soul 3 dosya oran uyuşmazlığı~~ **ÇÖZÜLDÜ:** yeni `.jpg` seti uniform **832×1248 (2:3)**, oran tutarsızlığı yok (2026-09-30 doğrulandı, §3).
+3. **Asset Registry genişlemesi:** ✅ **2026-09-30 — 9 genre kapalı (81 satır, pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae × 9 mood, hepsi dönemsiz).** Yeni `genre × decade × mood` kombinasyonu ürettikçe manuel kayıt (yalnız onayla; kartezyen matris YOK §10). Yeni exact asset = kural-10 YENİDEN AÇILIR. **Not:** henüz klasörsüz genre'ler: metal (rock'a alias), synth, gothic, grunge.
 4. **Kart overlay v2:** gerçek `card-templates/*.png` yükle + `CARD_TEMPLATES` eşlemesi; aktifleşince kural-10 aç.
+
+### Taksonomi / kürasyon (kod hatası değil)
+- **TAXONOMY KARARI (2026-09-30, kabul edildi):** `GENRE_ALIASES` `"R&B/Soul" → soul` (assetRegistry.ts:49) bilinçli/uzun süreli eşlemedir — iTunes'un gerçek `primaryGenreName`'i Fat Larry's Band "Breakin' Out" gibi funk-adjacent parçalar için birebir **"R&B/Soul"** döndürür (iTunes'ta "funk" etiketi YOK). Sanatçı-düzeyi üst-üste binmeler (funk olarak bilinen bir ismin soul gösterilmesi) **kod hatası değil, taksonomi/kürasyon meselesidir**; ileride music map işinde manuel artist-override ile ele alınacak, **GENRE_ALIASES değiştirilerek DEĞİL**. (NOTLAR §9 + §2b.)
 
 ### Mimari kararlar (bekleyen)
 5. **FAZ 4c — palette kaynağı (KARAR "B" ertelendi):** SceneRoom `sceneThemeFor` kanonik kalıyor; resolver'ın `sceneThemeId`/`palette` çıktısı render'da tüketilmiyor (backdrop/exactAssetRef canlı). İki kaynak farklı sonuç verebilir — bilinen risk. Blast radius: `scenePalettes.ts`, `sceneTheme.ts`, `visualResolver.ts`, `SceneRoom.tsx`, `EraCardReveal.tsx` + 2-3 test.
@@ -154,9 +212,9 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 6. Sıradaki İş Adımları (Next Steps)
 
 1. **Sırada (onayla):** MUSIC DNA P0 — (c) ✅ kapandı (655ddae). Kalan P0: tam analitik çekirdek + kullanıcı cevaplarının poster'e akışı (answers-odaklı `analyzeUserJourney` hâlâ ayrı engine, results'ta canlı; grounding ile birleşmesi ayrı karar).
-2. **Kullanıcı işi:** BUG 2 metinsiz mood-backdrop yeniden üretimi + soul 3 oran düzeltmesi + yeni asset kombinasyonları.
+2. **Kullanıcı işi:** yeni asset kombinasyonları (metal/synth/gothic/grunge klasörleri); music map artist kürasyonu (R&B/Soul→soul sanatçı-özel override'ları).
 3. **FAZ 4c palette kanonik-kaynak kararı** (sceneThemeFor vs resolver) — onaylı olursa.
-4. **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş, 2026-09-24 planlı):** textless sahne + CSS metin; runtime üretim YOK; 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel (Hermes toplu üretmez). Ön koşul: dominantVibe gerçek kategori seti netleşmesi (P0 madde a bunu sağladı). BLOCKLU — kod/asset üretimi başlamadı. Fizibilite (metinsiz Metal/Dark): Gemini free-tier kota günlük aştığı için ÖLÇÜLEMEDİ (429); kota sıfırlanınca tekrar dene.
+4. **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş, 2026-09-24 planlı):** textless sahne + CSS metin; runtime üretim YOK; 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel (Hermes toplu üretmez). Ön koşul: dominantVibe gerçek kategori seti netleşmesi (P0 madde a bunu sağladı). BLOCKLU — kod/asset üretimi başlamadı. ✅ **GÖRSEL-API FİZİBİLİTESİ DENENDİ + VAZGEÇİLDİ (2026-09-27):** gerçek görsel-üretim API'si (openai/gpt-5-image, OpenRouter `/api/v1/images`, aspect_ratio 2:3) ile test edildi — teknik olarak MÜMKÜN ama maliyet (~$0.25/görsel), süre (~45-50sn/görsel) ve tutarsız kalite nedeniyle bu yoldan VAZGEÇİLDİ. Kullanıcı kendi elle üreteceği assetlerle devam ediyor (mevcut mood-backdrop-*.png setinin yükseltilmesi).
 
 ---
 
@@ -180,6 +238,8 @@ whitespace/format + lint config + i18n metni değil. Format dokunan bileşenlerd
 ## 8. Devir Kaydı (son commit'ler)
 
 ```
+0d96969  checkpoint: code+assets — 5 new genre backdrop folders wired into scene registry (81 rows, funk/hiphop/jazz/new-age/reggae) + rock/metal genre aliases (Kural-10 VERİLDİ, tarayıcı tek pass — star/Era X, cover, 5 genre)
+3fa5ec0  checkpoint: code — scene backdrop 4-genre wiring (36 registry rows, pop/punk/rock/soul genre folders) + single sharp cover layer (no blur/letterbox) + drop reveal era header + rock/metal genre aliases
 655ddae  feat(results): Life Feed serbest metnini grounded Life Story / Emotional Timeline'e akıt (P0 c, Kural-10 VERİLDİ 2026-09-27; önce/sonra + CrisisGuard kanıtı)
 (82c30f8)  test(security): crisisGuard 5-dil detect iskeletini it.each'e dedupe (SonarCloud New-Code dup %3.4→~%2.6)
 (a18421c)  fix(results): manuel-şarkı artwork verification çözüldü + master-frame'e aktarım (Kural-10 VERİLDİ, tarayıcı 8/8)
@@ -234,8 +294,12 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 - **artwork doğrulama title+artist şart (2026-09-26, a18421c):** `itunes-mapping.freeTextMatches` HER query token'inin title∪artist birleşiminde olmasını VE hem title hem artist'ta en az birer token olmasını şart koşar. O yüzden manual-song artPatch query'si title-only olamaz — `searchSongs({query: [title, artist].join(" ")})` gerekir; title-only sorguyla **hiçbir** şarkı doğrulanmaz (canlı kanıt: 7/8 "Album art not found"). Ayrıca bu state küçük bir set/oku ekseni uyumsuzluğuyla da bozulurdu: artPatch/artStatus 1-bazlı yazılıp 0-bazlı okunuyordu → ilk şarkı hep disc, son şarkının frame'i öncekinin kapağını gösteriyordu. Kural: state anahtarıyla okuyucu anahtarı AYNI eksende (hepsi 0-bazlı).
 - **P0 (c): "user's own words reach the story" artık GERÇEK (655ddae, Kural-10 VERİLDİ 2026-09-27):** Life Feed notu contextText üzerinden Life Story narrative'ine birebir akıyor. MİMARİ GERÇEK: bu narrative DETERMINISTIK lifeStoryEngine'den gelir (narrative = contextText ?? buildNarrative şablonu) — LLM olan kısım yalnız mood-inference (P0 b). Yani davranış değişikliği tekrar üretilebilir, "sessiz LLM varyasyonu" değil. Kural-10 kanıt yöntemi: `generateGroundedLifeStory`'yi buildGroundedLifeContexts'ın iki varyantıyla çağır (notes'suz=şablon, notes ile=birebir not) — deterministik önce/sonra. Ayrıca yeni veri yolu açıldığı için CrisisGuard `detectCrisisNote(note)`'u her zaman doğrula (not kriz-sinyali içermiyorsa false dönmeli).
 - **OpenRouter key canlılık probe'u (2026-09-27):** mood-inference production yolu HTTP 200 + gerçek mood döndü. Probe reçetesi: src/__probe/ altına vitest testi → dotenv ile .env yükle (key'i YAZDIRMA, yalnız len) → global fetch'i sar (her çağrının {model,status} kaydı) → callOpenRouter + buildMoodPrompt + parseMoodResponse ile GERÇEK song (Superstition) → Temp/ raporu → `rm -rf src/__probe`. Sonra unutma: bunu §5 item 9'dan KAPANDI yap.
+- **Görsel-API fizibilite testi (2026-09-27) — YOL KAPANDI, kullanıcı kararı:** gerçek görsel üretim API'si (OpenRouter `openai/gpt-5-image`) ile test edildi; SONUÇ: teknik olarak mümkün ama maliyet (~$0.25/görsel), süre (~45-50sn/görsel) ve tutarsız kalite → **kullanıcı VAZGEÇTİ, elle üretecek**. Öğrenilen teknik gerçekler: (1) OpenRouter'da görsel üretimi **`/api/v1/images`** endpoint'idir (chat completions DEĞİL; görsel `data[].b64_json` içinde döner, chat'te `message.images[].image_url.url`); (2) `aspect_ratio` ayrı bir API parametresidir — gpt-5-image provider'ı `1:1`/`3:2`/`2:3`/`auto` subset'ini destekler, **`3:4` REDDEDİLİR (400)**; 2:3 → 1024×1536 doğru dikey portre; (3) modelenın önceki chat-completions ~500ms "süre" ölçümü gerçek değildi — doğru `/api/v1/images` çağrısı 44-48sn sürdü; (4) `/credits` cüzdanı `20` gösteriyor ama görsel üretimi 3. görselde `402 Insufficient credits` ile kesti (sunucudaki gerçek bakiye /credits ekranından farklı olabilir — 402 yetkilidir). Bu yoldan dönersek prodüktif bilgi budur; şu an proje **runtime görsel üretimi EKLEMEZ** (ANA_YASA §9 + kullanıcı kararı).
+- **R&B/Soul → soul bilinçli taksonomi kararıdır, kod hatası değil (2026-09-30):** Fat Larry's Band "Breakin' Out" (funk-adjacent) soul backdrop gösterdiğinde bunun nedeninin YENİ alias ya da funk/soul-hibrit kuralı olmadığı, iTunes'un o parça için gerçek `primaryGenreName`'inin birebir **"R&B/Soul"** olması olduğu canlı probe'uyla doğrulandı (10 sonucun hepsi; "funk" kelimesi geçmiyor). Eşleme uzun süredir var olan `"r&b/soul": "soul"` (assetRegistry.ts:49). **Karar: kabul et** — sanatçı-düzeyi funk/soul üst-üste binmeleri kod değil kürasyon meselesi; ileride music map işinde manuel artist-override ile ele alınacak, GENRE_ALIASES ile DEĞİL.
+- **Bir şarkının "neden soul görseli aldığını" teşhis ederken provider'ın gerçek genre string'ini probe et — alias tablosundan tahmin etme (2026-09-30):** aynı iTunes endpoint + sorgu şekliyle (`itunes.apple.com/search?term=...&media=music&entity=song`) `primaryGenreName`'i oku; GENRE_ALIASES'ta içinde "funk" geçen her girdiyi değil, gerçek girdinin denk geldiği girdiyi göster. Bu, yanlış "hibrit kuralı çok geniş" hipotezini bir canlı veriyle çürüttü.
+- **Asset folder restructure'da {kategori × mood} her yeni kümesi `SCENE_ASSET_REGISTRY`'nin 3 yerini günceller (GenreId union + GENRE_ALIASES + 81-satır registry); glob (`assets/*/mood-backdrop-*.jpg`) dosyaları otomatik görür ama görsel CIKMAZ — satır olmadan her kombinasyon nötr pop wall'a düşer (hata yok, etki yok).** Kural-10 her yeni genre için yeniden açılır (genre'e özel art ortaya çıkar). Aynı `assetRef`'te klasör adı BİREBİR on-disk adı olmalı (`hip-hop/`, `new age/` boşluk/kısa-çizgi korunur). Yeni genre eklerken önce visualSpec.test.ts'teki "eşleşmez" tanığı genre'nin hâlâ kayıtsız olduğunu doğrula (hip-hop→grunge'a taşındı) — kayıtsız bir tanık birden kayıtlı olursa test FLIP eder.
 
 ---
 
-_Artık son güncelleme: Hermes (2026-09-27) — P0 (c) merge (655ddae, Life Feed notları Life Story'e, Kural-10 VERİLDİ) + OpenRouter canlılık doğrulaması. Bundan önce: 82c30f8 SonarCloud dup gate, a18421c artwork fix (Kural-10), MUSIC DNA P0 A(a)+(b), docs-drift, posterAlt, soniccloud=Suizid._
+_Artık son güncelleme: Hermes (2026-09-30) — 5 genre backdrop wiring (0d96969, funk/hiphop/jazz/new-age/reggae → 81 registry rows) push edildi + R&B/Soul→soul taksonomi kararı (kabul edildi, kod hatası değil) + reveal "Era X of 8" kaldırma & cover değişimi (3fa5ec0) tarayıcı teyidi. Bundan önce: 3fa5ec0 4-genre wiring + cover + era-header kaldırma, 655ddae P0 (c), 82c30f8 SonarCloud dup gate, a18421c artwork fix._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
