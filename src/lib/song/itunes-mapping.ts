@@ -23,6 +23,7 @@ import Fuse from "fuse.js";
 
 import type { Song } from "./types";
 import { POPULAR_CATALOG } from "./popularCatalog";
+import { normalizeGenre } from "@/lib/visual/assetRegistry";
 
 export type ITunesTrack = {
   wrapperType?: unknown;
@@ -196,23 +197,24 @@ export function trackToSong(track: ITunesTrack): Song | null {
 
   const artworkUrl100 = asString(track.artworkUrl100);
   return {
-    provider: PROVIDER,
-    providerId,
-    title,
-    artist,
-    album: asString(track.collectionName),
-    // High-resolution variant of the real CDN artwork — never a stock/fake URL.
-    artworkUrl: artworkUrl100 ? highResArtworkUrl(artworkUrl100) : null,
-    releaseYear: extractReleaseYear(track.releaseDate),
-    // 30s AAC preview straight from the API — null when iTunes has none.
-    previewUrl: asString(track.previewUrl),
-    isrc: null,
-    verified: true,
-    // Primary genre straight from the API — null when iTunes has none. iTunes
-    // does not supply a mood tag, so mood stays null for provider results.
-    genre: asString(track.primaryGenreName),
-    mood: null,
-  };
+      provider: PROVIDER,
+      providerId,
+      title,
+      artist,
+      album: asString(track.collectionName),
+      // High-resolution variant of the real CDN artwork — never a stock/fake URL.
+      artworkUrl: artworkUrl100 ? highResArtworkUrl(artworkUrl100) : null,
+      releaseYear: extractReleaseYear(track.releaseDate),
+      // 30s AAC preview straight from the API — null when iTunes has none.
+      previewUrl: asString(track.previewUrl),
+      isrc: null,
+      verified: true,
+      // Primary genre from the API, normalized through the single canonical
+      // normalizeGenre() so downstream consumers (scene theme, backdrop registry)
+      // all share the same mapping. Null when iTunes has none.
+      genre: normalizeGenre(asString(track.primaryGenreName)),
+      mood: null,
+    };
 }
 
 /**

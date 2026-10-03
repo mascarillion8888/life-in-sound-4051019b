@@ -17,9 +17,10 @@ import type { SceneThemeId } from "@/components/scene/SceneRoom";
  * wins. In 2026-09 the former single "gothic" family (19 keywords spanning
  * 3 unrelated genres) was split: gothic now holds only dark/aggressive
  * (9), while the warm/roots + classical/chamber keywords moved into a new
- * "acoustic" family (10). Soul precedes jazz because "soul" is its own
- * room identity now; funk moved out of the synth family (70s warm, not
- * neon).
+ * "acoustic" family (10). Jazz precedes soul because "blues" is a root jazz
+ * keyword (bebop, swing, latin jazz, vocal jazz) and was incorrectly
+ * sending jazz tracks to soul. Funk moved out of the synth family (70s warm,
+ * not neon).
  */
 export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
   {
@@ -61,6 +62,7 @@ export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
       "alternative",
     ],
   },
+  { id: "jazz", keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner", "latin jazz", "vocal jazz", "big band"] },
   {
     id: "soul",
     keywords: [
@@ -77,7 +79,6 @@ export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
       "wonder",
     ],
   },
-  { id: "jazz", keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner"] },
   {
     id: "reggae",
     keywords: ["reggae", "dub", "ska", "dancehall", "marley", "rastafari", "tosh"],

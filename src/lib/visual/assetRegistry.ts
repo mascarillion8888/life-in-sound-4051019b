@@ -33,7 +33,8 @@ export type GenreId =
   | "new age"
   | "synth"
   | "gothic"
-  | "grunge";
+  | "grunge"
+  | "acoustic";
 
 /**
  * Genre etiketlerini kanonik `GenreId`'ye indirger (recorded provider'lar tek
@@ -56,12 +57,17 @@ export const GENRE_ALIASES: Record<string, GenreId> = {
   motown: "soul",
   stax: "soul",
   "hip-hop": "hiphop",
-  "hip hop": "hiphop",
-  rap: "hiphop",
-  "synth-pop": "synth",
-  "synth pop": "synth",
-  "new wave": "synth",
-  "hard rock": "rock",
+    "hip hop": "hiphop",
+    "hip-hop/rap": "hiphop",
+    "hip hop/rap": "hiphop",
+    rap: "hiphop",
+    "synth-pop": "synth",
+      "synth pop": "synth",
+      "new wave": "synth",
+      "dance": "synth",
+      "disco": "synth",
+      "eurodance": "synth",
+      "hard rock": "rock",
   "heavy metal": "rock",
   metal: "rock",
   "hard rock & metal": "rock",
@@ -88,11 +94,114 @@ export const GENRE_ALIASES: Record<string, GenreId> = {
   "bebop": "jazz",
   "swing": "jazz",
   // reggae ailesi → reggae klasörü (2026-09-30)
-  "dancehall": "reggae",
-  "ska": "reggae",
-  "reggaeton": "reggae",
-  "roots reggae": "reggae",
-};
+    "dancehall": "reggae",
+    "ska": "reggae",
+    "reggaeton": "reggae",
+    "roots reggae": "reggae",
+    // country/folk/acoustic ailesi → acoustic (registry'de acoustic klasörü YOK; fallback acoustic theme/keyword)
+    "country": "acoustic",
+    "folk": "acoustic",
+    "americana": "acoustic",
+    "bluegrass": "acoustic",
+    "singer/songwriter": "acoustic",
+    "contemporary folk": "acoustic",
+    "traditional folk": "acoustic",
+    "celtic": "acoustic",
+    // classical/instrumental/new age ailesi → new age (registry'de new age klasörü VAR)
+    "classical": "new age",
+    "opera": "new age",
+    "instrumental": "new age",
+    "meditation": "new age",
+    "holiday": "new age",
+    // latin ailesi → synth (registry'de latin klasörü YOK; synth fallback - latin pop/dance synth keyword'lere uygun)
+    "latin": "synth",
+    "urbano latino": "synth",
+    "música mexicana": "synth",
+    "regional mexican": "synth",
+    "salsa": "synth",
+    "bachata": "synth",
+    "merengue": "synth",
+    "cumbia": "synth",
+    "vallenato": "synth",
+    "tango": "synth",
+    "flamenco": "synth",
+    "brazilian": "synth",
+    "bossa nova": "synth",
+    "samba": "synth",
+    // world/wide ailesi → acoustic (registry'de world klasörü YOK; acoustic fallback)
+    "world": "acoustic",
+    "worldwide": "acoustic",
+    "african": "acoustic",
+    "afrobeat": "acoustic",
+    "highlife": "acoustic",
+    "juju": "acoustic",
+    "rai": "acoustic",
+    "indian": "acoustic",
+    "bollywood": "acoustic",
+    // k-pop / j-pop / c-pop → pop (registry'de pop klasörü VAR)
+    "k-pop": "pop",
+    "j-pop": "pop",
+    "c-pop": "pop",
+    // soundtrack/score/musical theatre → acoustic (context'e göre değişir, güvenli varsayılan)
+    "soundtrack": "acoustic",
+    "score": "acoustic",
+    "musical theatre": "acoustic",
+    // electronic sub-genres → synth (registry'de synth klasörü YOK; synth keyword fallback)
+    "trance": "synth",
+    "dubstep": "synth",
+    "drum & bass": "synth",
+    "downtempo": "synth",
+    "post-disco": "synth",
+    "industrial dance": "synth",
+    // rock/metal alt türleri → rock (registry'de rock klasörü VAR)
+    "thrash metal": "rock",
+    "death metal": "rock",
+    "black metal": "rock",
+    "progressive metal": "rock",
+    "alternative metal": "rock",
+    "nu metal": "rock",
+    "pop punk": "punk",
+    "hardcore punk": "punk",
+    "post-punk": "punk",
+    "indie rock": "rock",
+    "gothic rock": "gothic",
+    "industrial": "gothic",
+    // hip-hop alt türleri → hiphop
+    "trap": "hiphop",
+    "gangsta rap": "hiphop",
+    "conscious hip-hop": "hiphop",
+    "old school rap": "hiphop",
+    // jazz alt türleri → jazz
+    "latin jazz": "jazz",
+    "vocal jazz": "jazz",
+    "big band": "jazz",
+    "avant-garde jazz": "jazz",
+    // r&b/soul alt türleri → soul
+        "neo soul": "soul",
+        "contemporary r&b": "soul",
+        "quiet storm": "soul",
+        // alternative → grunge (SCENE_KEYWORDS grunge keywords include "alternative")
+        "alternative": "grunge",
+        // blues → jazz (blues keyword jazz'de; soul'da da var ama jazz önce gelsin - SCENE_KEYWORDS sırası düzeltilecek)
+    "blues": "jazz",
+    // country/folk rock → rock
+    "country rock": "rock",
+    "folk rock": "rock",
+    // other / special → acoustic fallback
+    "comedy": "acoustic",
+    "spoken word": "acoustic",
+    "audiobook": "acoustic",
+    "poetry": "acoustic",
+    "children's music": "pop",
+    "kids": "pop",
+    "education": "acoustic",
+    "religious": "acoustic",
+    "christian & gospel": "acoustic",
+    "gospel": "soul",
+    "anime": "synth",
+    "video game music": "synth",
+    "fitness & workout": "synth",
+  };
 
 /** null/boş'a güvenli kanonik genre kimliği. Eşleşme yoksa küçük-harfli orijinal. */
 export function normalizeGenre(genre: string | null | undefined): string | null {
