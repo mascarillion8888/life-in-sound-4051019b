@@ -40,13 +40,16 @@ export function EraCardReveal({
     <div
       data-testid={`era-reveal-${card.songIndex}`}
       data-scene={themeId}
-      className="relative -mx-5 -my-10 flex aspect-[3/4] w-[calc(100%+2.5rem)] flex-col items-center overflow-y-auto px-5 sm:-mx-6 sm:w-[calc(100%+3rem)]"
+      className="relative -mx-5 -my-10 flex aspect-[2/3] w-[calc(100%+2.5rem)] flex-col items-center overflow-y-auto px-5 sm:-mx-6 sm:w-[calc(100%+3rem)]"
     >
       {/* The fixed global room — shelves, desk, lamp — themed to the music.
-                    Locked to a fixed 3:4 backdrop box (aspect-[3/4]) so the mood
-                    wallpaper matches the produced asset 1:1 and never depends on
-                    viewport height. If the card content exceeds the 3:4 box on
-                    short/mobile viewports the wrapper scrolls (never clips). */}
+                    Locked to a fixed 2:3 backdrop box (aspect-[2/3]) so the mood
+                    wallpaper matches the produced asset 1:1 (all backdrops are
+                    832×1248 = 2:3) and never depends on viewport height. With
+                    cover the 2:3 image now fills the box edge-to-edge with no
+                    vertical crop (title/corner content stays visible). If the card
+                    content exceeds the 2:3 box on short/mobile viewports the
+                    wrapper scrolls (never clips). */}
       <SceneRoom
         themeId={themeId}
         mood={song?.mood ?? null}
