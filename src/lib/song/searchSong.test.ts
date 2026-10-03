@@ -90,12 +90,12 @@ describe("itunes mapping: trackToSong", () => {
       previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/fragile.m4a",
       isrc: null,
       verified: true,
-      genre: "Rock",
+      genre: "rock", // normalized lowercase
       mood: null,
     });
   });
   it("maps the real iTunes primaryGenreName into Song.genre when present", () => {
-    expect(trackToSong(TRACK_FRAGILE_WITH_GENRE)?.genre).toBe("Rock");
+    expect(trackToSong(TRACK_FRAGILE_WITH_GENRE)?.genre).toBe("rock");
   });
 
   it("never fabricates mood — always null regardless of input", () => {
@@ -103,7 +103,7 @@ describe("itunes mapping: trackToSong", () => {
   });
 
   it("maps the primary genre when the API supplies one, else null", () => {
-    expect(trackToSong(TRACK_FRAGILE)?.genre).toBe("Rock");
+    expect(trackToSong(TRACK_FRAGILE)?.genre).toBe("rock");
     // iTunes never supplies a mood tag — mood stays null for provider results.
     expect(trackToSong(TRACK_FRAGILE)?.mood).toBeNull();
     const { primaryGenreName: _omitted, ...noGenre } = TRACK_FRAGILE;

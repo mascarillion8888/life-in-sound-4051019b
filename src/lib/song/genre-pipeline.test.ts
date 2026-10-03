@@ -46,26 +46,26 @@ describe("genre pipeline: iTunes → Song → storage → engine", () => {
   });
 
   it("carries genre from the iTunes payload to the engine input without loss", () => {
-    const jazz = trackToSong(ITUNES_JAZZ_TRACK)!;
-    const synth = trackToSong(ITUNES_SYNTH_TRACK)!;
-    expect(jazz.genre).toBe("Jazz");
-    expect(synth.genre).toBeNull(); // absent genre = unknown, not undefined
+      const jazz = trackToSong(ITUNES_JAZZ_TRACK)!;
+      const synth = trackToSong(ITUNES_SYNTH_TRACK)!;
+      expect(jazz.genre).toBe("jazz"); // normalized lowercase
+      expect(synth.genre).toBeNull(); // absent genre = unknown, not undefined
 
-    // Persist + reload — the storage layer must keep both values.
-    saveJourney({
-      current: 1,
-      answers: { 1: jazz.title, 2: synth.title },
-      songs: { 1: jazz, 2: synth },
+      // Persist + reload — the storage layer must keep both values.
+      saveJourney({
+        current: 1,
+        answers: { 1: jazz.title, 2: synth.title },
+        songs: { 1: jazz, 2: synth },
+      });
+      const reloaded = loadJourney();
+      expect(reloaded?.songs[1].genre).toBe("jazz");
+      expect(reloaded?.songs[2].genre).toBeNull();
+      expect(reloaded?.songs[1].mood).toBeNull();
+      expect(reloaded?.songs[1].provider).toBe("itunes");
+
+      // The results-page consumer reads the same value the UI renders with.
+      const jazzFeatures = extractSongFeatures(reloaded!.songs[1]);
+      expect(getGenreFromSong(jazzFeatures)).toBe("jazz");
+      expect(getMoodFromSong(jazzFeatures)).toBeNull();
     });
-    const reloaded = loadJourney();
-    expect(reloaded?.songs[1].genre).toBe("Jazz");
-    expect(reloaded?.songs[2].genre).toBeNull();
-    expect(reloaded?.songs[1].mood).toBeNull();
-    expect(reloaded?.songs[1].provider).toBe("itunes");
-
-    // The results-page consumer reads the same value the UI renders with.
-    const jazzFeatures = extractSongFeatures(reloaded!.songs[1]);
-    expect(getGenreFromSong(jazzFeatures)).toBe("Jazz");
-    expect(getMoodFromSong(jazzFeatures)).toBeNull();
-  });
 });
