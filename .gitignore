@@ -28,6 +28,9 @@ dist-ssr
 *.suo
 *.ntvs*
 *.njsproj
+
+# Temp / test artifacts (per-session, not committed)
+Temp/
 *.sln
 *.sw?
 
