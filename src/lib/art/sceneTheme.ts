@@ -147,6 +147,15 @@ function releaseYearOf(song: Song | null | undefined): number | null {
  * (minus the preference channel).
  */
 export function sceneThemeFor(song: Song | null | undefined): SceneThemeId {
+  // First, check the song's normalized genre field (from trackToSong/normalizeGenre)
+  // This is the strongest signal — use the same keyword matching as visualResolver
+  if (song?.genre) {
+    const haystack = song.genre.toLowerCase();
+    for (const { id, keywords } of SCENE_KEYWORDS) {
+      if (keywords.some((k) => keywordIn(haystack, k))) return id;
+    }
+  }
+  // Fallback: title/artist/album keyword matching (legacy behavior for songs without genre)
   const haystack = song ? `${song.title} ${song.artist} ${song.album ?? ""}`.toLowerCase() : "";
   if (haystack) {
     for (const { id, keywords } of SCENE_KEYWORDS) {
