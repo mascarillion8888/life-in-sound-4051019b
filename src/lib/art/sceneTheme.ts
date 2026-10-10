@@ -141,20 +141,53 @@ function releaseYearOf(song: Song | null | undefined): number | null {
 }
 
 /**
+ * Açık genre → tema eşlemesi (2026-10-10, wiring sonrası gerileme düzeltmesi).
+ * 23-tür wiring (0ed0b05) `GENRE_ALIASES`'ı re-target edince bazı ham iTunes
+ * etiketleri artık kendi GenreId'lerine gidiyor (latin→latin, gospel→gospel,
+ * soundtrack→soundtrack, world→world), ama bu yeni GenreId'lerin SCENE_KEYWORDS
+ * keyword'ü YOK → tema sessizce gothic'a düştü. Bu map, o türleri ESKİ temalarına
+ * geri taşır (kullanıcı onayı: latin→synth, gospel→soul, soundtrack→acoustic,
+ * world→acoustic, timeless-opera→gothic). Yalnız `song.genre` ALANI'ndan okunur;
+ * title/artist/album fallback'ini ETKİLEMEZ (bu sözcükler SCENE_KEYWORDS'a
+ * eklenmiyor — "Hello World"/"Latin Lover"/"Movie Score" başlıklarını bozmasın).
+ */
+const GENRE_THEME_OVERRIDE: Readonly<Record<string, SceneThemeId>> = {
+  latin: "synth",
+  gospel: "soul",
+  soundtrack: "acoustic",
+  world: "acoustic",
+  "timeless-opera": "gothic",
+};
+
+/**
+ * Genre'dan tema: önce açık ovriding (GENRE_THEME_OVERRIDE), sonra SCENE_KEYWORDS
+ * keyword matrisi. Genre yok/boşsa veya hiçbir family'a uymuyorsa undefined döner
+ * (çağırıcı kendi fallback'ine geçer). Hem `sceneThemeFor` (render) hem resolver
+ * (visualResolver) bu tek fonksiyonu kullanır — iki kaynak aynı karar verir.
+ */
+export function sceneThemeForGenre(genre: string | null | undefined): SceneThemeId | undefined {
+  if (!genre) return undefined;
+  const key = genre.trim().toLowerCase();
+  const override = GENRE_THEME_OVERRIDE[key];
+  if (override) return override;
+  for (const { id, keywords } of SCENE_KEYWORDS) {
+    if (keywords.some((k) => keywordIn(key, k))) return id;
+  }
+  return undefined;
+}
+
+/**
  * Resolve the room theme for a song: genre keywords first (strongest
  * atmospheric signal), then the neutral era fallback (gothic). No year
  * guess, no fabricated culture. Mirrors `cardArtworkScene` on the server
  * (minus the preference channel).
  */
 export function sceneThemeFor(song: Song | null | undefined): SceneThemeId {
-  // First, check the song's normalized genre field (from trackToSong/normalizeGenre)
-  // This is the strongest signal — use the same keyword matching as visualResolver
-  if (song?.genre) {
-    const haystack = song.genre.toLowerCase();
-    for (const { id, keywords } of SCENE_KEYWORDS) {
-      if (keywords.some((k) => keywordIn(haystack, k))) return id;
-    }
-  }
+  // First, check the song's normalized genre field (from trackToSong/normalizeGenre).
+  // Uses sceneThemeForGenre — the same explicit override map + SCENE_KEYWORDS as the
+  // resolver, so render (this) and resolver.sceneThemeId agree.
+  const genreTheme = sceneThemeForGenre(song?.genre);
+  if (genreTheme) return genreTheme;
   // Fallback: title/artist/album keyword matching (legacy behavior for songs without genre)
   const haystack = song ? `${song.title} ${song.artist} ${song.album ?? ""}`.toLowerCase() : "";
   if (haystack) {

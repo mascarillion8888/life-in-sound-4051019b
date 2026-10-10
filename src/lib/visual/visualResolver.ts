@@ -17,7 +17,7 @@
 import type { SceneThemeId } from "@/components/scene/scenePalettes";
 import { SCENE_PALETTES } from "@/components/scene/scenePalettes";
 import { moodBackdropUrl, moodBackdropUrlByFilename } from "@/components/scene/moodBackdrop";
-import { SCENE_KEYWORDS, keywordIn } from "@/lib/art/sceneTheme";
+import { sceneThemeForGenre } from "@/lib/art/sceneTheme";
 import { eraStyleFor } from "@/lib/soundmap/eraStyle";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
 import type { Mood } from "@/lib/ai/moodInference";
@@ -34,12 +34,9 @@ import { SCENE_ASSET_REGISTRY, normalizeGenre, type SceneAssetEntry } from "./as
  * tanım sırası). Eşleşme yoksa undefined (çağırıcı decade ladder'a geçer).
  */
 function themeFromGenreKeyword(genre: string | null): SceneThemeId | undefined {
-  if (!genre) return undefined;
-  const haystack = genre.toLowerCase();
-  for (const { id, keywords } of SCENE_KEYWORDS) {
-    if (keywords.some((k) => keywordIn(haystack, k))) return id;
-  }
-  return undefined;
+  // Same explicit override map + SCENE_KEYWORDS as sceneThemeFor (render source), so
+  // resolver.sceneThemeId and the rendered room theme never diverge.
+  return sceneThemeForGenre(genre);
 }
 
 /**
