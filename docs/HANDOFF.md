@@ -14,46 +14,29 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main ile SENKRON (0d96969 push edildi, no force/rebases)
-HEAD:       0d96969 — "checkpoint: code+assets — 5 new genre backdrop folders wired into scene
-            registry (81 rows, funk/hiphop/jazz/new-age/reggae) + genre aliases"
-            3fa5ec0  — scene backdrop 4-genre wiring (36 rows, pop/punk/rock/soul genre folders)
-                       + tek keskin cover katmanı (blur/letterbox kaldırıldı)
-                       + reveal era başlığı ("Era X of 8") KALDIRILDI + rock/metal aliasları
-            (zincir) 655ddae P0 (c) MERGE (Kural-10 VERİLDİ) + OpenRouter canlılık doğrulandı
-            + MUSIC DNA P0 A(a)+(b) MERGE + SonarCloud dup gate (82c30f8)
-            ≥ 3fa5ec0: asset klasörü restructure → pop/punk/rock/soul klasörlerinde
-            mood-backdrop-<mood>.jpg (eski text-laden .png seti kaldırıldı).
-            ≥ 0d96969: 5 yeni genre klasörü (funk/hip-hop/jazz/new age/reggae) eklendi,
-            SCENE_ASSET_REGISTRY 36→81 satır (9 genre × 9 mood, hepsi DÖNEMSİZ).
-Önceki zincir (kritik):
-              2ddfba9  docs(handoff): sync §1 HEAD→f8467d6, test 693/2, STEEL kapalı, lint temiz
-              f8467d6  fix(lint): prefer-const palette in visualResolver
-              3999be2  refactor(ai): clinician/anti-cliché → ortak promptRules.ts
-              b2be045  fix(ai): poetic-analyzer chapter ageRange deterministik fallback
-              55954b2  feat(ai): tanı-yasağı + anti-cliché 4 prose prompt + mood-inference sistem satırı
-              9fff09c  docs(handoff): CrisisGuard/ETHICAL_AI kaydı
-              b44f945  feat(safety): CrisisGuard (5-lang triage) + CrisisSupportPanel + ETHICAL_AI.md
-Testler:    70 dosya, 716 passed / 2 skipped, 0 failed (718) — vitest v4.1.11, `npm test` exit 0
-            (doğrulandı 2026-09-30, 5-genre wiring dahil; 9 eski missing-PNG testi 3fa5ec0'un 4-genre
-            .jpg setiyle zaten yeşildi, bu ek onları da korudu)
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-09-30)
-Lint:       `npm run lint` (ham `eslint .`, prettier-ON) = **0 hata, 0 uyarı** (2026-09-25)
-            → Canonical lint artık ham eslint'tir; prettier off kuralı KALDIRILDI.
-            Eski baseline (1 prefer-const + 9 react-refresh uyarısı + CRLF gürültüsü) KAPANDI.
-Prettier:   `npx prettier --check "src/**/*.{ts,tsx,css}" "scripts/*.mjs"` = yeşil (2026-09-25)
-            → WINDOWS ÇEKOUT NOTU: `npm run lint` (eslint) burada 44 pre-existing prettier/CRLF hata
-            basar, yalnız 3 dosyada: scripts/test-mood-live.ts, scripts/test-openrouter-live.ts,
-            src/lib/llm/promptRules.ts. Bu oturumun değişikliği bunlardan DEĞİL (prettier --check
-            dictionaries.ts'i temiz geçti). Canonical 0/0 Linux (Freebuff) doğrulamasıdır; Windows
-            lint borcu ayrı turda — bkz. §9.
-Build:      exit 0 (2026-09-30 doğrulandı; 81 mood-backdrop .jpg build'e emisyonlandı —
-            find .output/public -name 'mood-backdrop-*.jpg' | wc -l = 81)
-Worktree:   docs/HANDOFF.md + docs/PROJECT_STATUS.md değişmiş (bu commit öncesi);
-            `Temp/` untracked — kanıt dosyaları (kural10-beforeafter.txt, openrouter-liveness.txt,
-            sonar_dup.json, kural10-shots/). Asset 45 yeni .jpg (5 genre × 9 mood) + 36 önceki
-            (4 genre × 9 mood) = 81. .claude/ YOK.
-            bun.lock ARTIK .gitignore'da (yabancı lockfile — proje npm/package-lock.json kanonik).
+Dal:        main — origin/main'den 2 commit AYRIK (aşağıda; PUSH EDİLMEDİ, göz onayı bekliyor)
+HEAD:       0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY (derived
+            GenreId×mood, 207 paths) — GenreId +9, GENRE_ALIASES re-target (classical→classical,
+            metal→metal, latin→latin, country→country, folk→folk, world→world, soundtrack→soundtrack,
+            gospel→gospel, r&b/rb→rnb, opera→timeless-opera) + registry/alias-target tests"
+            a4eaa30 — "assets: add 14 new genre backdrop folders (23 total, 207 jpg 832x1248) —
+            acoustic classical country folk gospel gothic grunge latin metal rnb soundtrack
+            synth timeless-opera world"
+            309e7d7 — Vercel build risk RESOLVED (react-start 1.168.60, CVE-2026-102989)
+            ≥ 0d96969: 5 yeni genre klasörü (funk/hip-hop/jazz/new age/reggae), registry 81 satır
+            ≥ 2026-10-10: 23 genre × 9 mood = 207 satır, SCENE_ASSET_REGISTRY ARTIK DERIVED
+            (GenreId × MOOD_SET, elle bakım yok — yeni tür eklemek GenreId+GENRE_ALIASES yeterli).
+            81→207: metal/synth/gothic/grunge/acoustic artık kendi klasörüne (eskiden fallback),
+            9 YENİ tür eklendi: classical, country, folk, gospel, latin, rnb, soundtrack,
+            timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
+Testler:    70 dosya, 774 passed / 2 skipped, 0 failed (776) — vitest v4.1.11, `npm test` exit 0
+            (2026-10-10 doğrulandı; +3: registry integritesi 207-yol + alias-validite)
+tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-10)
+Lint:       `npx eslint src scripts --rule 'prettier/prettier: off'` = 0 hata (2026-10-10)
+Build:      exit 0 (2026-10-10 doğrulandı)
+⚠ PUSH:     KURAL-10 (görünür arkaplan tür başına değişti) → GÖZ ONAYI GEREKLİ. Tarayıcı
+            doğrulaması YAPILDI (metal/country/latin/synth/soundtrack/world/folk... kendi
+            klasöründen HTTP 200 backdrop; 23 klasörün hepsi 200) — ama göz onayı SENIN.
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
