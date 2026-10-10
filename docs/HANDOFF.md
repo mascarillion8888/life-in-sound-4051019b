@@ -54,6 +54,7 @@ AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
     ASKIDA: (a) MetaBrainz ticari lisansı, (b) lisansı-temiz başka kaynak (Wikidata/Discogs — ayrı doğrulanacak),
     (c) küçük elle kürasyon tablosu (MB'yi yalnız referans al, otomatik kopyalama yok).
     AÇIK KARARLAR: A/B-hibrit politika + gecikme kabulü (8 yeni-sanatçı soğuk ≈16-18sn). KOD YOK.
+  - ✅ ÇÖZÜLDÜ (ea0629d, push edildi): tema gerilemesi (latin→gothic, gospel→gothic, soundtrack→gothic, world→gothic) — 23-wiring alias-re-target sonrası SCENE_KEYWORDS keyword'ü olmayan türler gothic'a düşüyordu; genre→tema override map (latin→synth, gospel→soul, soundtrack/acoustic, world→acoustic) + title/artist fallback'i etkilenmeyen `sceneThemeForGenre` ile çözüldü; sceneThemeFor ≡ resolver aynı fonksiyondan.
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
