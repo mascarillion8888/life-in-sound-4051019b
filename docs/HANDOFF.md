@@ -14,11 +14,13 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main'den 2 commit AYRIK (aşağıda; PUSH EDİLMEDİ, göz onayı bekliyor)
+Dal:        main — origin/main ile SENKRON (a4eaa30, 0ed0b05, e0c701f push edildi 2026-10-10; göz onayı VERİLDİ)
 HEAD:       0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY (derived
             GenreId×mood, 207 paths) — GenreId +9, GENRE_ALIASES re-target (classical→classical,
             metal→metal, latin→latin, country→country, folk→folk, world→world, soundtrack→soundtrack,
             gospel→gospel, r&b/rb→rnb, opera→timeless-opera) + registry/alias-target tests"
+            e0c701f — "docs(handoff): 23 genre backdrop wiring kapandı (207 yol, derived registry) —
+            HEAD 0ed0b05; kural-10 göz onayı bekliyor" (PUSH EDİLDİ; metindeki "bekliyor" bu tarihte GEÇERSİZ — göz onayı verildi)
             a4eaa30 — "assets: add 14 new genre backdrop folders (23 total, 207 jpg 832x1248) —
             acoustic classical country folk gospel gothic grunge latin metal rnb soundtrack
             synth timeless-opera world"
@@ -34,9 +36,18 @@ Testler:    70 dosya, 774 passed / 2 skipped, 0 failed (776) — vitest v4.1.11,
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-10)
 Lint:       `npx eslint src scripts --rule 'prettier/prettier: off'` = 0 hata (2026-10-10)
 Build:      exit 0 (2026-10-10 doğrulandı)
-⚠ PUSH:     KURAL-10 (görünür arkaplan tür başına değişti) → GÖZ ONAYI GEREKLİ. Tarayıcı
-            doğrulaması YAPILDI (metal/country/latin/synth/soundtrack/world/folk... kendi
-            klasöründen HTTP 200 backdrop; 23 klasörün hepsi 200) — ama göz onayı SENIN.
+Push:       ✅ 2026-10-10 — a4eaa30, 0ed0b05, e0c701f origin/main'e PUSH EDİLDİ (kural-10 göz onayı
+            VERİLDİ, kullanıcı onayıyla). Worktree temiz, origin/main ile birebir senkron.
+
+AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
+  - 4 eşleşmeyen iTunes etiketi: Classical Crossover, Electronic, Chinese, Vocal → GenreId YOK,
+    nötr `pop/` fallback'e düşüyor. ALIAS EKLEMEME KARARI (2026-10-10; kullanıcı onayı).
+    (Önerilen hedefler kataloglandı: ClassicalCrossover→classical, Electronic→synth, Chinese→world,
+    Vocal→jazz — uygulanmadı.) DETAY: HANDOFF öncesi turun analizi.
+  - ulaşılabilirlik: funk/rnb/gospel Klasörleri var ama iTunes üzerinden nadiren tetikleniyor —
+    iTunes bu şarkıları soul/country etiketliyor (James Brown→R&B/Soul→soul, SZA→R&B/Soul→soul,
+    Amazing Grace→Country→country). Doğrudan o genre girilirse klasör DOĞRU; motor hatası DEĞİL.
+    (b/c seçeneği = sanatçı-override/mode-aggregation — KARAR VERİLMEDİ.)
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
