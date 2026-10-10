@@ -48,6 +48,12 @@ AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
     iTunes bu şarkıları soul/country etiketliyor (James Brown→R&B/Soul→soul, SZA→R&B/Soul→soul,
     Amazing Grace→Country→country). Doğrudan o genre girilirse klasör DOĞRU; motor hatası DEĞİL.
     (b/c seçeneği = sanatçı-override/mode-aggregation — KARAR VERİLMEDİ.)
+  - İş 1 (MusicBrainz çoklu-kaynak genre) DURDURULDU (2026-10-10): MB `genre`/`tag` verisi CC0 DEĞİL,
+    CC BY-NC-SA "supplementary data" — ticari kullanım için uygun değil (core data/sanatçı adı CC0;
+    yalnız genres[] verisi BY-NC-SA). MB genre'ı production'da doğrudan tüketmek lisans uymaz.
+    ASKIDA: (a) MetaBrainz ticari lisansı, (b) lisansı-temiz başka kaynak (Wikidata/Discogs — ayrı doğrulanacak),
+    (c) küçük elle kürasyon tablosu (MB'yi yalnız referans al, otomatik kopyalama yok).
+    AÇIK KARARLAR: A/B-hibrit politika + gecikme kabulü (8 yeni-sanatçı soğuk ≈16-18sn). KOD YOK.
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
