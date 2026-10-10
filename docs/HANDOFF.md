@@ -182,7 +182,7 @@ Sanatçı düzeyi üst-üste binmeler ileride music map işinde manuel ele alın
 ### AÇIK görsel iş (kullanıcı onaylı, asset üretimi kullanıcıda)
 1. ~~BUG 2 — eski `mood-backdrop-*.png` seti metinli~~ **ÇÖZÜLDÜ (2026-09-29 restructure, 3fa5ec0):** text-laden eski `.png` seti kaldırıldı; yerini genre klasörlerinde (`pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae`) metinsiz `mood-backdrop-<mood>.jpg` setleri aldı.
 2. ~~Soul 3 dosya oran uyuşmazlığı~~ **ÇÖZÜLDÜ:** yeni `.jpg` seti uniform **832×1248 (2:3)**, oran tutarsızlığı yok (2026-09-30 doğrulandı, §3).
-3. **Asset Registry genişlemesi:** ✅ **2026-09-30 — 9 genre kapalı (81 satır, pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae × 9 mood, hepsi dönemsiz).** Yeni `genre × decade × mood` kombinasyonu ürettikçe manuel kayıt (yalnız onayla; kartezyen matris YOK §10). Yeni exact asset = kural-10 YENİDEN AÇILIR. **Not:** henüz klasörsüz genre'ler: metal (rock'a alias), synth, gothic, grunge.
+3. **Asset Registry genişlemesi:** ✅ **2026-09-30 — 9 genre kapalı (81 satır, pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae × 9 mood, hepsi dönemsiz).** Sonraki genişletme 2026-10-10'da 23 genre × 9 mood = 207 satıra taşıdı (derived registry; metal/synth/gothic/grunge da dahil — artık klasörsüz genre kalmadı). Yeni `genre × decade × mood` kombinasyonu ürettikçe manuel kayıt (yalnız onayla; kartezyen matris YOK §10). Yeni exact asset = kural-10 YENİDEN AÇILIR.
 4. **Kart overlay v2:** gerçek `card-templates/*.png` yükle + `CARD_TEMPLATES` eşlemesi; aktifleşince kural-10 aç.
 
 ### Taksonomi / kürasyon (kod hatası değil)
