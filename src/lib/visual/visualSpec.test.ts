@@ -4,10 +4,17 @@
  * Kanonik karar (STATE KARARLAR): mood+genre+decade interactive; eksik eksen deterministik
  * fallback'e iner; uydurma yok. Mevcut `moodBackdropUrl` davranışı korunur.
  */
+import { existsSync } from "fs";
+import { resolve as resolvePath } from "path";
 import { describe, expect, it } from "vitest";
 
+import {
+  ALL_GENRES,
+  GENRE_ALIASES,
+  normalizeGenre,
+  SCENE_ASSET_REGISTRY,
+} from "./assetRegistry";
 import { resolveSceneVisualSpec } from "./visualResolver";
-import { normalizeGenre } from "./assetRegistry";
 
 describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () => {
   it("same mood + different decade → differentiatable via eraStyle/eraTheme (not identical visuals)", () => {
@@ -32,16 +39,17 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
   });
 
   it("same mood + different genre → differentiatable via sceneThemeId/palette", () => {
-    // İki kayıtsız genre (registry'de asset klasörü YOK): Doom Metal (→ gothic
-    // keyword) ile Grunge (→ grunge theme). İkisi de nötr mood-wall fallback'ine
-    // düşer, ama sceneThemeId ile ayrışırlar.
+    // Doom Metal (registry'de yok → nötr pop mood-wall + gothic theme) ile
+    // Grunge (artık KAYITLI — kendi grunge/ klasöründen backdrop alır).
+    // Arkaplan artık farklıdır (grunge kendi folder'ından), tema da farklıdır.
     const goth = resolveSceneVisualSpec({ mood: "Dark", genre: "Doom Metal", releaseYear: 1990 });
     const grunge = resolveSceneVisualSpec({ mood: "Dark", genre: "Grunge", releaseYear: 1990 });
 
     expect(goth.sceneThemeId).not.toBe(grunge.sceneThemeId);
-    // mood ekseni etkilenmez (aynı mood + kayıtsız genre → aynı nötr backdrop):
-    expect(goth.backdropUrl).toBe(grunge.backdropUrl);
-    });
+    // grunge artık kendi asset'ine sahip → backdrop'lar farklılaşır
+    // (Doom Metal nötr pop wall'a iner, Grunge grunge/ klasörüne):
+    expect(goth.backdropUrl).not.toBe(grunge.backdropUrl);
+  });
 
   it("missing mood → NO backdrop fallback (backdropUrl undefined), genre/decade still work", () => {
     const { backdropUrl, sceneThemeId } = resolveSceneVisualSpec({
@@ -119,11 +127,13 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(res.backdropUrl).toContain("mood-backdrop-energetic");
   });
 
-  it("genre eşleşmezse (Grunge-1985, klasörsüz/registry'siz) → exactAssetRef undefined, exact-match izi yok", () => {
-    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "Grunge", releaseYear: 1985 });
+  it("genre eşleşmezse (Doom Metal — registry dışı) → exactAssetRef undefined, exact-match izi yok", () => {
+    // Doom Metal bir GenreId DEĞİL ve GENRE_ALIASES'te yok → küçük-harfli orijinal
+    // kalır, hiçbir registry satırıyla eşleşmez.
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "Doom Metal", releaseYear: 1985 });
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
-    });
+  });
 
   it("pop artık dönemsiz — 1990s'te de exact match eder", () => {
     const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1992 });
@@ -187,13 +197,13 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     expect(eighties.fallbackTrace.join("|")).toContain("exact-match:pop-energetic");
   });
 
-  it("kayıtlı dokuz genre kapalı — set dışı genre'de (grunge) exact asset seçilmez", () => {
-    // pop/punk/rock/soul/funk/hiphop/jazz/new-age/reggae'nin 9 mood'unun tamamı registry'de.
-    // grunge klasörsüz/registry'siz (GenreId var ama asset yok):
-    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "grunge", releaseYear: 2002 });
+  it("kayıtlı 23 genre kapalı — registry dışı genre'de (doom metal) exact asset seçilmez", () => {
+    // 23 türün 9 mood'unun tamamı registry'de. doom metal aliased değil/GenreId değil
+    // → küçük-harfli orijinal kalır, hiçbir satırla eşleşmez.
+    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "doom metal", releaseYear: 2002 });
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
-    });
+  });
 
   it("provider genre'si normalize edilir — iTunes 'R&B/Soul' → soul exact asset", () => {
     // Gerçek provider değeri registry anahtarıyla birebir aynı değildir:
@@ -212,20 +222,20 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
   it("normalizeGenre — bilinen eşanlamlılar tek kimliğe iner, bilinmeyen aynen kalır", () => {
     const cases: [string, string][] = [
       ["R&B/Soul", "soul"],
-      ["rhythm and blues", "soul"],
+      ["rhythm and blues", "rnb"],
       ["soul/funk", "soul"],
-      ["R&B", "soul"],
+      ["R&B", "rnb"],
       ["Hip-Hop", "hiphop"],
       ["New Wave", "synth"],
       ["Pop", "pop"], // eşanlamlı yok → kimlik döner (klasör pop/)
       ["Rock", "rock"], // klasör rock/
       ["Punk", "punk"], // klasör punk/
-      // rock/metal ailesi → rock klasörü (2026-09-29 alias eklendi)
+      // rock ailesi → rock; metal ailesi → metal (2026-10-10 ayrıştı)
       ["Hard Rock", "rock"],
-      ["Heavy Metal", "rock"],
-      ["Metal", "rock"],
-      ["Hard Rock & Metal", "rock"],
-      ["Hard Rock and Metal", "rock"],
+      ["Heavy Metal", "metal"],
+      ["Metal", "metal"],
+      ["Hard Rock & Metal", "metal"],
+      ["Hard Rock and Metal", "metal"],
       ["Classic Rock", "rock"],
       ["Rock & Roll", "rock"],
       ["German Rock", "rock"],
@@ -255,5 +265,41 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
     }
     expect(normalizeGenre(null)).toBeNull();
     expect(normalizeGenre("  ")).toBeNull();
+  });
+});
+
+describe("registry integritesi — 23 genre × 9 mood = 207 yol (2026-10-10)", () => {
+  const FOLDER_OVERRIDE: Record<string, string> = { hiphop: "hip-hop" };
+
+  it("207 satır: 23 genre × 9 mood, hepsi kendi klasöründe (kalıbında)", () => {
+    expect(ALL_GENRES).toHaveLength(23);
+    expect(SCENE_ASSET_REGISTRY).toHaveLength(23 * 9);
+    // her satır gerçek GenreId kullanır (uydurma yok), metadata ilk öğeden türetilir
+    const genreIds = new Set(ALL_GENRES);
+    const refs = SCENE_ASSET_REGISTRY.map((e) => e.assetRef);
+    expect(new Set(refs)).toHaveLength(refs.length); // kopya yok
+    for (const e of SCENE_ASSET_REGISTRY) {
+      expect(genreIds.has(e.genre)).toBe(true);
+      const folder = FOLDER_OVERRIDE[e.genre] ?? e.genre;
+      expect(e.assetRef.startsWith(`${folder}/`)).toBe(true);
+      expect(e.assetRef.endsWith(`mood-backdrop-${e.mood.toLowerCase()}.jpg`)).toBe(true);
+    }
+  });
+
+  it("her assetRef diske karşılık gelir (src/assets/<folder>/mood-backdrop-<mood>.jpg)", () => {
+    // Dosya SİSTEMİNDE varlığı gerçekten doğrulanır (uydurulmuş ref yok). Test
+    // çalışma dizini = repo kökü (vitest); assets/ köke göre src/assets/'tir.
+    const assetsDir = resolvePath(process.cwd(), "src", "assets");
+    for (const e of SCENE_ASSET_REGISTRY) {
+      const local = resolvePath(assetsDir, e.assetRef);
+      expect({ assetRef: e.assetRef, exists: existsSync(local) }).toHaveProperty("exists", true);
+    }
+  });
+
+  it("her GENRE_ALIASES hedefi geçerli bir GenreId'dir (belirlenmiş 23 küme içinde)", () => {
+    const genreIds: Set<string> = new Set(ALL_GENRES);
+    for (const [alias, target] of Object.entries(GENRE_ALIASES)) {
+      expect({ alias, target }).toSatisfy((x: { target: string }) => genreIds.has(x.target));
+    }
   });
 });

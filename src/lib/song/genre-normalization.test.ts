@@ -39,7 +39,7 @@ const TEST_CASES: TestCase[] = [
   { artist: "The Beatles", title: "Here Comes The Sun", primaryGenreName: "Rock", expectedGenreId: "rock" },
   { artist: "Led Zeppelin", title: "Stairway to Heaven", primaryGenreName: "Rock", expectedGenreId: "rock" },
   { artist: "Led Zeppelin", title: "Whole Lotta Love", primaryGenreName: "Hard Rock", expectedGenreId: "rock" },
-  { artist: "Metallica", title: "Enter Sandman", primaryGenreName: "Metal", expectedGenreId: "rock" },
+  { artist: "Metallica", title: "Enter Sandman", primaryGenreName: "Metal", expectedGenreId: "metal" },
   { artist: "AC/DC", title: "Back In Black", primaryGenreName: "Hard Rock", expectedGenreId: "rock" },
   { artist: "Nirvana", title: "Smells Like Teen Spirit", primaryGenreName: "Rock", expectedGenreId: "rock" },
   { artist: "Nirvana", title: "Heart-Shaped Box", primaryGenreName: "Alternative", expectedGenreId: "grunge" },
@@ -51,15 +51,15 @@ const TEST_CASES: TestCase[] = [
   // HIP-HOP / RAP family
   { artist: "Run-D.M.C.", title: "It's Tricky", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
   { artist: "Kendrick Lamar", title: "HUMBLE.", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
-  { artist: "Eminem", title: "Lose Yourself", primaryGenreName: "Soundtrack", expectedGenreId: "acoustic" },
+  { artist: "Eminem", title: "Lose Yourself", primaryGenreName: "Soundtrack", expectedGenreId: "soundtrack" },
   { artist: "Eminem", title: "Without Me", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
   { artist: "Snoop Dogg", title: "Snoop Dogg (What's My Name, Pt. 2)", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
-  { artist: "Bad Bunny", title: "NUEVAYoL", primaryGenreName: "Latin", expectedGenreId: "synth" },
-  { artist: "Bad Bunny", title: "LA CANCIÓN", primaryGenreName: "Urbano latino", expectedGenreId: "synth" },
+  { artist: "Bad Bunny", title: "NUEVAYoL", primaryGenreName: "Latin", expectedGenreId: "latin" },
+  { artist: "Bad Bunny", title: "LA CANCIÓN", primaryGenreName: "Urbano latino", expectedGenreId: "latin" },
 
   // REGGAE family
   { artist: "Bob Marley", title: "Three Little Birds", primaryGenreName: "Reggae", expectedGenreId: "reggae" },
-  { artist: "Buena Vista Social Club", title: "Chan Chan", primaryGenreName: "Worldwide", expectedGenreId: "acoustic" },
+  { artist: "Buena Vista Social Club", title: "Chan Chan", primaryGenreName: "Worldwide", expectedGenreId: "world" },
 
   // JAZZ family
   { artist: "Miles Davis", title: "So What", primaryGenreName: "Jazz", expectedGenreId: "jazz" },
@@ -75,10 +75,10 @@ const TEST_CASES: TestCase[] = [
   { artist: "Amy Winehouse", title: "You Know I'm No Good", primaryGenreName: "Pop", expectedGenreId: "pop" },
 
   // COUNTRY / FOLK / ACOUSTIC family
-  { artist: "Johnny Cash", title: "Ring of Fire", primaryGenreName: "Country", expectedGenreId: "acoustic" },
+  { artist: "Johnny Cash", title: "Ring of Fire", primaryGenreName: "Country", expectedGenreId: "country" },
   { artist: "Bob Dylan", title: "Like a Rolling Stone", primaryGenreName: "Rock", expectedGenreId: "rock" },
   { artist: "Bob Dylan", title: "Tangled Up In Blue", primaryGenreName: "Singer/Songwriter", expectedGenreId: "acoustic" },
-  { artist: "Bob Dylan", title: "Blowin' In the Wind", primaryGenreName: "Contemporary Folk", expectedGenreId: "acoustic" },
+  { artist: "Bob Dylan", title: "Blowin' In the Wind", primaryGenreName: "Contemporary Folk", expectedGenreId: "folk" },
   { artist: "Neil Young", title: "Heart of Gold", primaryGenreName: "Rock", expectedGenreId: "rock" },
 
   // CLASSICAL / INSTRUMENTAL / NEW AGE
@@ -135,19 +135,23 @@ describe("normalizeGenre() direct unit tests (edge cases)", () => {
     expect(normalizeGenre("Some Weird Genre")).toBe("some weird genre");
   });
 
-  it("newly added aliases resolve correctly", () => {
-    expect(normalizeGenre("Country")).toBe("acoustic");
-    expect(normalizeGenre("Folk")).toBe("acoustic");
+  it("newly added aliases resolve correctly (2026-10-10 23-tür map)", () => {
+    expect(normalizeGenre("Country")).toBe("country");
+    expect(normalizeGenre("Folk")).toBe("folk");
     expect(normalizeGenre("Singer/Songwriter")).toBe("acoustic");
-    expect(normalizeGenre("Classical")).toBe("new age");
+    expect(normalizeGenre("Classical")).toBe("classical");
     expect(normalizeGenre("Instrumental")).toBe("new age");
     expect(normalizeGenre("Holiday")).toBe("new age");
-    expect(normalizeGenre("Latin")).toBe("synth");
-    expect(normalizeGenre("Urbano latino")).toBe("synth");
+    expect(normalizeGenre("Latin")).toBe("latin");
+    expect(normalizeGenre("Urbano latino")).toBe("latin");
     expect(normalizeGenre("K-Pop")).toBe("pop");
-    expect(normalizeGenre("World")).toBe("acoustic");
-    expect(normalizeGenre("Soundtrack")).toBe("acoustic");
+    expect(normalizeGenre("World")).toBe("world");
+    expect(normalizeGenre("Soundtrack")).toBe("soundtrack");
     expect(normalizeGenre("Blues")).toBe("jazz");
-    expect(normalizeGenre("Gospel")).toBe("soul");
+    expect(normalizeGenre("Gospel")).toBe("gospel");
+    expect(normalizeGenre("Opera")).toBe("timeless-opera");
+    expect(normalizeGenre("Heavy Metal")).toBe("metal");
+    expect(normalizeGenre("R&B")).toBe("rnb");
+    expect(normalizeGenre("R&B/Soul")).toBe("soul");
   });
 });
