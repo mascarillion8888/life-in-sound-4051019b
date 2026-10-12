@@ -301,7 +301,7 @@ resolver mimarisi yanlış kurulmuş demektir.
 modelin sadece İKİ tanesini karşılıyor. `Generation/Birth Cohort`,
 `Culture/Place`, `Media/Technology`, `Personal Memory` için
 **Song modelinde veya kullanıcı profilinde HİÇBİR alan yok**. Bu
-bölümdeki hiçbir boyut, önce P0-P1 (bkz. §8) tamamlanmadan koda
+bölümdeki hiçbir boyut, önce P0 ve P1'in mood/genre bacağı (bkz. §8) tamamlanmadan koda
 yazılmaya başlanmamalı — sıra: önce genre/mood gerçek veriyle
 doldurulacak, ancak ondan sonra Generation/Culture/Memory katmanları
 tasarlanacak.
@@ -351,15 +351,17 @@ onaysız değiştirilmemeli.
 ## 8. Öncelik Sırası (P0 → P5)
 
 ```
-P0 — Music DNA:        Song[] → SongFeatures → gerçek Music DNA
-P1 — Metadata enrichment: genre, era, artist metadata, musical
-                        characteristics — gerçek kaynaktan, uydurma yok
-                        → mood inference + gate tamamlandı ✅ (13 Eylül).
-                        Kalan: çoklu-kaynak genre (iTunes tekelini kır),
-                        artist metadata, musical characteristics
-P2 — Life Story:        Music DNA + 8 songs + 8 life contexts
-                        → Grounded Life Story
-P3 — Emotional Timeline: gerçek Music DNA üzerinden yeniden üretilmeli
+P0 — Music DNA:        Song[] → SongFeatures → gerçek Music DNA  ✅ TAMAMLANDI
+P1 — Metadata enrichment: mood inference + gate + genre normalization (single
+                        point) ✅ TAMAMLANDI (13 Eylül + 2026-10-03/10).
+                        MusicBrainz kaynaklı bacak (çoklu-kaynak genre, artist
+                        metadata, musical characteristics) LİSANS BACKLOG'u
+                        (MB genre/tag CC BY-NC-SA — ticari değil) ve P4/P5'i
+                        ENGELLEMEZ.
+P2 — Life Story:        ✅ CANLI — lifeStoryEngine (pipeline.ts:258); kullanıcı
+                        Life Feed metni contextText'ten akar (655ddae)
+P3 — Emotional Timeline:✅ CANLI — emotionalTimelineEngine, node'lar şarkı
+                        mood'undan (pipeline.ts:259)
 P4 — Song-specific visual scenes: Song meaning + user context +
                         Music DNA → fine-art scene
 P5 — Master Poster:     mevcut güçlü sistem yeni analitik çıktılarla
@@ -367,8 +369,10 @@ P5 — Master Poster:     mevcut güçlü sistem yeni analitik çıktılarla
 ```
 
 **Kural:** Yeni özellik eklemek yerine önce mevcut MVP'nin analitik
-çekirdeği (P0) düzeltilmeli. P4/P5'e (görsel/poster) P0-P1
-tamamlanmadan geçilmemeli.
+çekirdeği (P0) düzeltilmeli. P1'in mood/genre bacağı tamamlandı; MusicBrainz
+kaynaklı bacak lisans (CC BY-NC-SA) nedeniyle backlog'dur ve P4/P5'i
+engellemez. Yeni metadata kaynakları ticari-lisans kontrollü eklenir; §0
+uydurma yasağı korunur.
 
 ---
 
