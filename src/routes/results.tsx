@@ -37,7 +37,9 @@ import { deterministicPoeticAnalysis, type PoeticAnalysis } from "@/lib/llm/poet
 import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
 import { GeneratedPoster } from "@/components/results/GeneratedPoster";
+import { heroForMood } from "@/lib/ai/posterHero";
 import { posterToDataUrl } from "@/lib/ai/posterRenderer";
+import type { Mood } from "@/lib/ai/moodInference";
 import posterBackdrop from "@/assets/pop/mood-backdrop-dreamy.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -497,18 +499,26 @@ function ResultsPage() {
         : undefined,
     [profile, songs],
   );
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const session = useSession();
+  const localeForPoster = (language === "tr" ? "tr" : "en") as "tr" | "en";
 
-  // Dilim 1 (İş 3): single seam for the poster model handed to every renderer
+  // Dilim 2 (İş 3): single seam for the poster model handed to every renderer
   // (GeneratedPoster canvas, the DOM overlay block, PosterLightbox, PNG
-  // download). `hero` is intentionally NEVER populated in this dilim — it
-  // stays `undefined`, so every renderer keeps the exact legacy PosterModel
-  // and there is NO visual change. Dilim 2+ attaches the grounded-derived
-  // hero line to this single object. Hook-order safe: profiles is resolved
-  // above, no conditional return before this point.
-  const posterForRender = useMemo(() => profile?.poster ?? null, [profile]);
+  // download). The hero line is derived ONLY from a real inferred mood
+  // (grounded.dna.musicalIdentity.topMoods[0] — a MOOD_SET member by
+  // construction). It stays absent when grounded hasn't resolved yet, when
+  // the mood is null/unmapped, or when the vibe is "Unclassified" (N8): the
+  // model keeps its EXACT legacy shape and there is NO visual change.
+  // Hook-order safe: profile/grounded resolved above, no conditional return.
+  const posterForRender = useMemo(() => {
+    if (!profile?.poster) return null;
+    const mood = grounded?.dna.musicalIdentity.topMoods?.[0] ?? null;
+    const hero =
+      mood && mood !== "Unclassified" ? heroForMood(mood as Mood, localeForPoster) : null;
+    return hero ? { ...profile.poster, hero } : profile.poster;
+  }, [profile, grounded, localeForPoster]);
 
   // Always-available clean restart: wipes the journey (local + remote), the
   // Life Feed and every cached artifact, then lands on Question 1 of 8.
