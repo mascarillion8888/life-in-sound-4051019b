@@ -56,8 +56,11 @@ scoring sorulara önceden atanmış boyutlardan geliyor" tespiti o dönem doğru
 `Song[]{releaseYear, artist, genre, mood}`'u doğrudan tüketir (temporal +
 identity şarkıdan çıkar). Cevaplar DNA'ya katılmaz — legacy "kişilik profili"
 (`analyzeUserJourney`) ayrı bir katman olarak poster/sosyal paylaşımı besler;
-`LifeContext.contextText` Life Story'e taşınır (production'da henüz kullanılmıyor,
-açık iş). Yani hedef `Music DNA = Actual Music Selection DNA` büyük ölçüde
+`LifeContext.contextText` Life Story'e TAŞINIR ve production'da CANLI (655ddae,
+`results.tsx:463` → `buildGroundedLifeContexts(grown, lifeFeedMemories(feed))`;
+kullanıcının Life Feed serbest metni grounded Life Story narrative'ine + Emotional
+Timeline'a akar — 2026-09-27 doğrulandı, Kural-10 onayı VERİLDİ). Yani hedef
+`Music DNA = Actual Music Selection DNA` büyük ölçüde
 CANLI'dır; eksik kalan `LIFE CONTEXT` katmanıdır (§4, 🔵).
 
 ```
@@ -73,15 +76,20 @@ Kalan:     Life Context (cevapların anlatıya akışı) — §4 tasarım, uygul
 `title`, `artist`, `album`, `artworkUrl`, `releaseYear`, `previewUrl`,
 `isrc`, `provider`, `providerId`, `verified`
 
-### 🔴 EKSİK — genre
-`Song` modelinde `genre` güvenilir birinci sınıf alan **değil**.
-iTunes API'den `primaryGenreName` muhtemelen geliyor ama mapping'e
-girmiyor — doğrulanmalı, sonra gerçek kaynaktan eklenmeli.
-**Genre uydurulmayacak.**
+### 🟢 CANLI — genre
+`Song.genre` İLK SINIF alandır ve provider'dan gerçek kaynakla doldurulur:
+iTunes `primaryGenreName` → `trackToSong`'da `normalizeGenre` (itunes-mapping.ts:215,
+`GENRE_ALIASES` + `normalizeGenre` from assetRegistry.ts) — downstream (scene theme,
+backdrop registry, visual resolver) TÜMÜ bu normalize değeri tüketir. Nötr/boş
+genre durumları deterministik fallback'e iner; **genre uydurulmaz** (§0).
+Açık kalan: çoklu-kaynak genre (iTunes tekeli) — P1 backlog, lisans nedeniyle askıda.
 
-### 🔴 EKSİK — mood
-Hiçbir veri kaynağı yok. LLM inference ile üretilmesi planlanan bir
-sonraki fazın konusu. Şu an production'da **yok**.
+### 🟢 CANLI — mood
+`Song.mood` LLM inference ile üretilir (`inferMood` → `moodInference.ts`, OpenRouter
+primary `google/gemini-2.5-flash-lite`), MOOD_SET'teki 9 kapalı mood'den BİRİ veya
+`null` döner (uydurma olmaz). Güvenilir çıkarım yoksa null kalır (deterministik
+fallback). Production'da canlı ve persist edilir (MOOD FREEZE kararı — bir kez
+hesaplanır, yeniden infer edilmez).
 
 ### Persistence kuralı
 `Song`'un TÜM alanları (releaseYear, previewUrl, genre, mood dahil)
@@ -327,8 +335,8 @@ onaysız değiştirilmemeli.
 | 30 sn preview altyapısı | 🟢 CANLI — previewUrl `SONG_FIELDS` whitelist'inde + `COERCE_TO_PERSISTED`'te; local (`journey-storage`) ve remote (`journey-remote`) tier aynı whitelist; round-trip testleri var (2026-09-24 doğrulandı) |
 | Journey persistence | 🟢 |
 | Music DNA | 🟢 song-tabanlı (13 Eylül) — genre > mood katmanlı gate; metadata-yoksa dürüst "Unclassified" (P0 A(a)) |
-| Life Story | 🟡 mimari doğru, veri temeli güçlendirilmeli |
-| Emotional Timeline | 🟡 mevcut, Music DNA düzeltmesi sonrası yeniden beslenmeli |
+| Life Story | 🟢 CANLI — `lifeStoryEngine.generateGroundedLifeStory` (pipeline.ts:258); kullanıcı Life Feed serbest metni `contextText`'ten akar (655ddae) |
+| Emotional Timeline | 🟢 CANLI — `emotionalTimelineEngine.generateEmotionalTimeline` (pipeline.ts:259); node'lar şarkı mood'undan (mood-driven, `results.tsx:747` render) |
 | Cinematic Poster | 🟢 teknik olarak güçlü |
 | Card Gallery | 🟡 Supabase migration/RLS bağımlılığı var |
 | Music Memory | 🟢 doğru şekilde Future (henüz yapılmaması doğru) |
