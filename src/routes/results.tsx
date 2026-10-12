@@ -501,6 +501,15 @@ function ResultsPage() {
   const navigate = useNavigate();
   const session = useSession();
 
+  // Dilim 1 (İş 3): single seam for the poster model handed to every renderer
+  // (GeneratedPoster canvas, the DOM overlay block, PosterLightbox, PNG
+  // download). `hero` is intentionally NEVER populated in this dilim — it
+  // stays `undefined`, so every renderer keeps the exact legacy PosterModel
+  // and there is NO visual change. Dilim 2+ attaches the grounded-derived
+  // hero line to this single object. Hook-order safe: profiles is resolved
+  // above, no conditional return before this point.
+  const posterForRender = useMemo(() => profile?.poster ?? null, [profile]);
+
   // Always-available clean restart: wipes the journey (local + remote), the
   // Life Feed and every cached artifact, then lands on Question 1 of 8.
   const startOver = () => {
@@ -511,9 +520,9 @@ function ResultsPage() {
 
   // Re-renders the poster off-screen and downloads it as a PNG.
   const downloadPosterPng = () => {
-    if (!profile?.poster) return;
+    if (!posterForRender) return;
     const url = posterToDataUrl(
-      profile.poster,
+      posterForRender,
       songs.map((s) => ({ title: s.title, artist: s.artist })),
     );
     if (!url) return;
@@ -805,9 +814,9 @@ function ResultsPage() {
               title={t.results.posterTitle}
             />
             <div className="group relative mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
-              {profile?.poster ? (
+              {posterForRender ? (
                 <GeneratedPoster
-                  model={profile.poster}
+                  model={posterForRender}
                   songs={songs.map((s) => ({ title: s.title, artist: s.artist }))}
                   alt={t.results.posterAlt}
                 />
@@ -826,18 +835,21 @@ function ResultsPage() {
               >
                 <Maximize className="h-5 w-5" />
               </button>
-              {profile?.poster ? (
+              {posterForRender ? (
                 <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-6 pt-12">
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                    {profile.poster.paletteLabel}
+                    {posterForRender.paletteLabel}
                   </p>
                   <h3 className="text-xl font-bold text-white sm:text-2xl">
-                    {profile.poster.headline}
+                    {posterForRender.headline}
                   </h3>
-                  <p className="text-sm text-white/80">{profile.poster.subheadline}</p>
-                  {profile.poster.keywords.length > 0 ? (
+                  <p className="text-sm text-white/80">{posterForRender.subheadline}</p>
+                  {posterForRender.hero ? (
+                    <p className="text-sm italic text-white/70">{posterForRender.hero}</p>
+                  ) : null}
+                  {posterForRender.keywords.length > 0 ? (
                     <ul className="mt-1 flex flex-wrap gap-2">
-                      {profile.poster.keywords.map((keyword) => (
+                      {posterForRender.keywords.map((keyword) => (
                         <li
                           key={keyword}
                           className="rounded-full border border-white/30 bg-white/10 px-3 py-0.5 text-xs font-medium text-white"
@@ -869,7 +881,7 @@ function ResultsPage() {
           <Suspense fallback={null}>
             <PosterLightbox
               theme={posterTheme}
-              model={profile?.poster ?? null}
+              model={posterForRender}
               songs={songs.map((s) => ({ title: s.title, artist: s.artist }))}
               alt={t.results.posterAlt}
               onClose={() => setPosterOpen(false)}
