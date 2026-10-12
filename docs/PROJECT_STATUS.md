@@ -204,12 +204,8 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
   Life Story'e akıyor** (Kural-10 göz onayı alındı). OpenRouter key canlılığı da doğrulandı (HTTP 200).
 
 ### Kısmen Tamamlanan / Devam Eden
-- **FAZ 4c — renk/tema kaynağı kararı (açık):** sahne, kendi tema kaynağından renk
-  alıyor; çözücünün renk/tema çıktısı henüz render'da kullanılmıyor. İki kaynak
-  farklı türetiyor (2010-sonrası ayrışma riski) — karar verilmemiş.
-- **Asset Registry genişlemesi:** yeni tür/dönem/duygu kombinasyonları manuel
-  eklenmeyi bekliyor (onayla). **9 tür kapanmış durumda (2026-09-30);** henüz
-  klasörsüz: metal (rock'a gider), synth, gothic, grunge.
+- **FAZ 4c — tema KAYNAĞI birleşti (ea0629d, 2026-10-10):** hem `sceneThemeFor` (render) hem `visualResolver` artık aynı `sceneThemeForGenre`'den karar verir (GENRE_THEME_OVERRIDE + SCENE_KEYWORDS) — temadaki resolver-vs-scene ayrışması giderildi (latin/gospel/soundtrack/world geri yüklendi). **Kalan tek karar: PALETTE render kaynağı** — SceneRoom renkleri kendi `SCENE_PALETTES[themeId]`'inden alıyor; resolver'ın `palette` çıktısı render'da tüketilmiyor. İki palette kaynağı nasıl türetiyorsa (sceneThemeFor vs resolver decadeTheme) hâlâ ayrışabildiği bilinen nokta; karar verilmedi.
+- **Asset Registry (DERIVED, 2026-10-10):** 23 tür × 9 mood = 207 yol, HEPSİ klasörlü — `SCENE_ASSET_REGISTRY` artık `ALL_GENRES.flatMap`'ten türetiliyor (elle bakım yok). ~100 GENRE_ALIASES + tek normalization noktası (`normalizeGenre`) CANLI. Yeni kombinasyonlar manuel üretilip onaylanırsa eklenir (kural-10 yeniden açılır).
 - **Kart çerçevesi overlay (v1):** altyapı kuruldu, varsayılan kapalı; gerçek
   çerçeve görselleri + eşleme hâlâ bekliyor.
 - ~~Soul görsellerinin oran tutarsızlığı~~ **ÇÖZÜLDÜ (2026-09-30):** yeni `.jpg` seti uniform **832×1248 (2:3)**; oran tutarsızlığı yok.
@@ -223,7 +219,7 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 ### Kısa Vade (bu hafta/gün)
 - **POSTER/MUSIC MAP ARKA PLAN sistemi (büyük açık iş):** metinsiz sahne + CSS metin, runtime üretim yok, 10-15 dominantVibe kombinasyonu için önceden üretilmiş Asset Registry sahnesi; üretim kullanıcı manuel. ✅ **Görsel-API fizibilitesi denendi + VAZGEÇİLDİ (2026-09-27):** gerçek görsel-üretim API'si (openai/gpt-5-image) teknik olarak mümkündü ama maliyet (~$0.25/görsel), süre (~45-50sn/görsel) ve tutarsız kalite nedeniyle bu yola girmeme kararı verildi; kullanıcı kendi elle üreteceği assetlerle devam edecek.
 - **Teknik borç:** `cardArtwork.server.ts:28` Imagen modeli bu API'de 404 (üretim zinciri hep 2. tier'a düşüyor) — ayrı gün ele alın.
-- FAZ 4c renk/tema kaynağı kararı (görsel değişiklik → göz onayı gerekir).
+- FAZ 4c PALETTE kaynağı kararı (görsel değişiklik → göz onayı gerekir).
 - ~~Eski genel `mood-backdrop` setini metinsiz yeniden üret~~ **ÇÖZÜLDÜ (2026-09-29/30):** yerini genre klasörlerindeki metinsiz `.jpg` setleri aldı.
 - Kart çerçevesi overlay v2: gerçek çerçeve görselleri + eşleme (aktifleşince göz doğrulaması gerekir).
 - **Music map / artist kürasyonu:** funk-adjacent isimlerin (örn. Fat Larry's Band) iTunes "R&B/Soul" etiketiyle soul görseli alması kabul edilmiş taksonomi kararıdır; sanatçı-özel üst üste binmeler ileride music map işinde manuel ele alınacak.
@@ -238,8 +234,7 @@ yeni AI görseli üretilmez (yalnız kart artwork'ü için geçici istisna var).
 
 ## 6. Bilinen Riskler / Açık Kararlar
 
-- **FAZ 4c renk/tema kaynağı** için kanonik kaynak seçilmedi (çözücü vs sahne;
-  post-2010 ayrışması bilinen risk). **Karar henüz verilmedi.**
+- **FAZ 4c PALETTE kaynağı** için kanonik kaynak seçilmedi — TEMA kaynağı çözüldü (ea0629d, `sceneThemeFor` ≡ resolver); kalan yalnız SceneRoom'un `SCENE_PALETTES` vs resolver.palette arasında hangisini render'da kullanacağı. **Karar henüz verilmedi** (görsel değişiklik → göz onayı gerekir).
 - **CrisisGuard TR pattern sınırlaması:** `canımı\s+(yak|almak)` olumsuz kullanımda
   ("canımı yakma") yanlış-pozitif tetikleyebilir — bilinçli recall lehine bırakıldı
   (kriz güvenliği önceliği). Gelecekte negation-aware pattern ile iyileştirilebilir.
