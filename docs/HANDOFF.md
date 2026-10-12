@@ -14,14 +14,17 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main ile SENKRON (a4eaa30, 0ed0b05, e0c701f push edildi 2026-10-10; göz onayı VERİLDİ)
-HEAD:       0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY (derived
-            GenreId×mood, 207 paths) — GenreId +9, GENRE_ALIASES re-target (classical→classical,
-            metal→metal, latin→latin, country→country, folk→folk, world→world, soundtrack→soundtrack,
-            gospel→gospel, r&b/rb→rnb, opera→timeless-opera) + registry/alias-target tests"
-            e0c701f — "docs(handoff): 23 genre backdrop wiring kapandı (207 yol, derived registry) —
-            HEAD 0ed0b05; kural-10 göz onayı bekliyor" (PUSH EDİLDİ; metindeki "bekliyor" bu tarihte GEÇERSİZ — göz onayı verildi)
-            a4eaa30 — "assets: add 14 new genre backdrop folders (23 total, 207 jpg 832x1248) —
+Dal:        main — origin/main ile SENKRON (d8e90e3, 53e0fec, 27bb48b, ea0629d, b5c1f3b push edildi 2026-10-10; göz onayı VERİLDİ)
+HEAD:       b5c1f3b — "docs(handoff): note theme regression (latin/gospel/soundtrack/world) fixed in ea0629d"
+            ea0629d — "fix(scene): restore pre-wiring theme for latin/gospel/soundtrack/world after alias re-target"
+            27bb48b — "docs(handoff): note Iş 1 (MusicBrainz multi-source genre) SUSPENDED — MB genre/tag is CC BY-NC-SA; open: A/B-hybrid policy + latency decision"
+            53e0fec — "docs(handoff): drop stale 'henuz klasorsuz genrelar' note — all 23 genres now have folders (207 rows)"
+            d8e90e3 — "docs(handoff): mark 23-genre wiring as pushed and approved"
+            (23-genre wiring commit'lerinin detayı — alttaki tarihler geçerli)
+            ≥ 0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY (derived GenreId×mood,
+            207 paths) — GenreId +9, GENRE_ALIASES re-target + registry/alias-target tests"
+            ≥ e0c701f — "docs(handoff): 23 genre backdrop wiring kapandı (PUSH EDİLDİ; "bekliyor" GEÇERSİZ — göz onayı verildi)"
+            ≥ a4eaa30 — "assets: add 14 new genre backdrop folders (23 total, 207 jpg 832x1248) —
             acoustic classical country folk gospel gothic grunge latin metal rnb soundtrack
             synth timeless-opera world"
             309e7d7 — Vercel build risk RESOLVED (react-start 1.168.60, CVE-2026-102989)
@@ -31,8 +34,7 @@ HEAD:       0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY 
             81→207: metal/synth/gothic/grunge/acoustic artık kendi klasörüne (eskiden fallback),
             9 YENİ tür eklendi: classical, country, folk, gospel, latin, rnb, soundtrack,
             timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
-Testler:    70 dosya, 774 passed / 2 skipped, 0 failed (776) — vitest v4.1.11, `npm test` exit 0
-            (2026-10-10 doğrulandı; +3: registry integritesi 207-yol + alias-validite)
+Testler:    71 dosya, 821 passed / 2 skipped, 0 failed (823) — vitest v4.1.11, `npm test` exit 0
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-10)
 Lint:       `npx eslint src scripts --rule 'prettier/prettier: off'` = 0 hata (2026-10-10)
 Build:      exit 0 (2026-10-10 doğrulandı)
