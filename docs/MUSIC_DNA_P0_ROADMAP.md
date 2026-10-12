@@ -1,6 +1,23 @@
 # P0 — Music DNA Implementation Roadmap
 
-**Status:** 🔴 IN PROGRESS (Sep 1, 2026)  
+> ## 🏁 ARCHIVE — TAMAMLANDI (2026-10-12)
+> Bu roadmap "IN PROGRESS" halinin çağ öncesi planıdır; iş tamamlanmış ve kod
+> bu planı aşmıştır. Silinmez (tarihsel kayıt), durum arşiv olarak işaretlendi.
+> **CANLI gerçek artık** (kod, roadmap değil, esastır — ANA_YASA girişi):
+> - `src/engine/musicDnaEngine.ts` şarkı-tabanlı, `Song[]{releaseYear, artist,
+>   genre, mood}` tüketir (temporal + identity şarkıdan çıkar; cevaplar DNA'ya
+>   katılmaz). `dominantVibe` gerçek genre+mood'dan (mood≥%60 / genre≥%50 gate),
+>   yetersiz sinyalde dürüst `"Unclassified"` (eski "Eclectic Explorer"/"Focused
+>   Nostalgic" diversity etiketleri kaldırıldı — ANA_YASA §0).
+> - Pipeline CANLI: `pipeline.ts → generateGroundedAnalysis(songs, contexts?)`
+>   → `lifeStoryEngine` + `emotionalTimelineEngine`; kullanıcı Life Feed serbest
+>   metni `contextText`'ten Life Story + Emotional Timeline'a akar (655ddae, Kural-10).
+> - Emotional Timeline node'ları şarkının kendi mood'undan (mood-driven).
+> Planlı tip/modül adlarından sapan yerler oldu (feature-extraction vs derived),
+> son kod, bu dokümanın ilerideki arka planı değil. Güncel mimari için:
+> `docs/ANA_YASA.md`, `docs/TECH/ARCHITECTURE.md`, `docs/HANDOFF.md`.
+
+**Status:** 🏁 ARCHIVED — Tamamlandı (2026-10-12; roadmap planı, kod aştı)
 **Priority:** P0 CRITICAL  
 **Backup Branch:** `backup/pre-music-dna-rewrite-2026-09-01`  
 **Target Branch:** `main`
