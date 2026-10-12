@@ -180,6 +180,36 @@ describe("generateCardArtworkCore", () => {
     expect(url).toContain("gemini-2.5-flash-image:generateContent");
   });
 
+  it.each([404, 500])(
+    "returns null on a non-OK HTTP %s (no cross-provider fallback)",
+    async (status) => {
+      process.env.GEMINI_API_KEY = "test-key";
+      const fetchImpl = vi.fn().mockResolvedValue(new Response("error", { status }));
+      const image = await generateCardArtworkCore(
+        { trackKey: "itunes:97", artist: "Adele", title: "Hello" },
+        { fetchImpl: fetchImpl as unknown as typeof fetch },
+      );
+      expect(image).toBeNull();
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each([
+    ["empty candidates", JSON.stringify({ candidates: [] })],
+    [
+      "candidates without inlineData",
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: "no image" }] } }] }),
+    ],
+  ])("returns null when the 200 body has no image data (%s)", async (_label, body) => {
+    process.env.GEMINI_API_KEY = "test-key";
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(body, { status: 200 }));
+    const image = await generateCardArtworkCore(
+      { trackKey: "itunes:96", artist: "X", title: "Y" },
+      { fetchImpl: fetchImpl as unknown as typeof fetch },
+    );
+    expect(image).toBeNull();
+  });
+
   it("memoizes by track key — a second render never re-calls the API", async () => {
     process.env.GEMINI_API_KEY = "test-key";
     const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
