@@ -6,10 +6,11 @@
  * on an Era Card face is a purpose-made gothic oil painting generated from
  * the song's artist + title — never the provider's square album cover.
  *
- * Provider chain (first success wins): Imagen → Gemini native image.
- * Both tiers need `GEMINI_API_KEY`; with no key at all the UI keeps its
+ * Provider: Gemini native image generation.
+ * Needs `GEMINI_API_KEY`; with no key at all the UI keeps its
  * dark gothic placeholder. (Former Hugging Face Inference third tier was
- * removed — see HANDOFF "HF Runtime Kapatma".)
+ * removed — see HANDOFF "HF Runtime Kapatma". A dead Imagen `:predict` tier
+ * was also removed 2026-10-12 — `imagen-3.0-generate-002` 404s in v1beta.)
  *
  * SECURITY:
  *   - Key is read from `GEMINI_API_KEY` — a server-only env var, NEVER
@@ -23,9 +24,6 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 
-const IMAGEN_MODEL = () =>
-  (typeof process !== "undefined" && process.env?.GEMINI_IMAGE_MODEL?.trim()) ||
-  "imagen-3.0-generate-002";
 const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 /** Image generation is slow — cap it hard so a hung call never stalls a card. */
@@ -320,40 +318,13 @@ function getGeminiServerKey(): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-type ImagenPredictResponse = {
-  predictions?: { bytesBase64Encoded?: string; mimeType?: string }[];
-};
-
 type GeminiImageResponse = {
   candidates?: {
     content?: { parts?: { inlineData?: { data?: string; mimeType?: string } }[] };
   }[];
 };
 
-/** Primary: Imagen `:predict` (dedicated image model). Null on any failure. */
-async function tryImagen(
-  prompt: string,
-  apiKey: string,
-  fetchImpl: typeof fetch,
-  signal: AbortSignal,
-): Promise<string | null> {
-  const response = await fetchImpl(`${API_BASE}/${IMAGEN_MODEL()}:predict`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
-    signal,
-    body: JSON.stringify({
-      instances: [{ prompt }],
-      parameters: { sampleCount: 1, aspectRatio: "1:1" },
-    }),
-  });
-  if (!response.ok) return null;
-  const payload = (await response.json()) as ImagenPredictResponse;
-  const prediction = payload.predictions?.[0];
-  if (!prediction?.bytesBase64Encoded) return null;
-  return `data:${prediction.mimeType ?? "image/png"};base64,${prediction.bytesBase64Encoded}`;
-}
-
-/** Fallback: Gemini native image generation via `generateContent`. */
+/** Gemini native image generation via `generateContent`. */
 async function tryGeminiImage(
   prompt: string,
   apiKey: string,
@@ -414,15 +385,13 @@ export async function generateCardArtworkCore(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   try {
-    // Provider chain: Imagen → Gemini native image. Each tier returns null on
-    // failure; the first painting wins. Both tiers need GEMINI_API_KEY.
-    const image =
-      (apiKey
-        ? await tryImagen(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
-        : null) ??
-      (apiKey
-        ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
-        : null);
+    // Provider: Gemini native image generation. The former Imagen `:predict`
+    // tier was removed 2026-10-12 — `imagen-3.0-generate-002` returns 404
+    // (NOT_FOUND) in v1beta, so the chain was already always Gemini anyway.
+    // Needs GEMINI_API_KEY.
+    const image = apiKey
+      ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
+      : null;
     if (image) SERVER_ART_CACHE.set(cacheKey, image);
     return image;
   } catch {

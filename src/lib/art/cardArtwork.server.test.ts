@@ -7,13 +7,6 @@ import {
   generateCardArtworkCore,
 } from "./cardArtwork.server";
 
-function imagenOk(b64 = "aGVsbG8=") {
-  return new Response(
-    JSON.stringify({ predictions: [{ bytesBase64Encoded: b64, mimeType: "image/png" }] }),
-    { status: 200 },
-  );
-}
-
 function geminiImageOk(b64 = "d29ybGQ=") {
   return new Response(
     JSON.stringify({
@@ -136,24 +129,24 @@ describe("generateCardArtworkCore", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("generates via Imagen and returns a data URL", async () => {
+  it("generates via Gemini native image generation and returns a data URL", async () => {
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk("aGVsbG8=")));
     const image = await generateCardArtworkCore(
       { trackKey: "itunes:42", artist: "Sting", title: "Fragile" },
       { fetchImpl: fetchImpl as unknown as typeof fetch },
     );
     expect(image).toBe("data:image/png;base64,aGVsbG8=");
     const url = (fetchImpl.mock.calls[0] as unknown[])[0] as string;
-    expect(url).toContain(":predict");
+    expect(url).toContain("gemini-2.5-flash-image:generateContent");
     const init = (fetchImpl.mock.calls[0] as unknown[])[1] as { body: string };
-    const body = JSON.parse(init.body) as { instances: { prompt: string }[] };
-    expect(body.instances[0].prompt).toContain("typographic vinyl sleeve echoing Sting");
+    const body = JSON.parse(init.body) as { contents: { parts: { text: string }[] }[] };
+    expect(body.contents[0].parts[0].text).toContain("typographic vinyl sleeve echoing Sting");
   });
 
   it("scopes the memoization by scene — a new aesthetic regenerates the track", async () => {
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
     const base = { trackKey: "itunes:42", artist: "Sting", title: "Fragile" };
     await generateCardArtworkCore(
       { ...base, aesthetic: "gothic folk" },
@@ -173,25 +166,23 @@ describe("generateCardArtworkCore", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it("falls back to Gemini native image generation when Imagen fails", async () => {
+  it("Gemini is the sole provider — a non-OK response yields null (no cross-provider fallback)", async () => {
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValueOnce(new Response("quota", { status: 429 }))
-      .mockResolvedValueOnce(geminiImageOk());
+    const fetchImpl = vi.fn().mockResolvedValue(new Response("quota", { status: 429 }));
     const image = await generateCardArtworkCore(
       { trackKey: "itunes:99", artist: "Adele", title: "Rolling in the Deep" },
       { fetchImpl: fetchImpl as unknown as typeof fetch },
     );
-    expect(image).toBe("data:image/png;base64,d29ybGQ=");
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    const url = (fetchImpl.mock.calls[1] as unknown[])[0] as string;
+    expect(image).toBeNull();
+    // One provider path only — a 429 does not fan out to a second tier.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const url = (fetchImpl.mock.calls[0] as unknown[])[0] as string;
     expect(url).toContain("gemini-2.5-flash-image:generateContent");
   });
 
   it("memoizes by track key — a second render never re-calls the API", async () => {
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
     const input = { trackKey: "itunes:42", artist: "Sting", title: "Fragile" };
     const first = await generateCardArtworkCore(input, {
       fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -211,7 +202,7 @@ describe("generateCardArtworkCore", () => {
     // must share one generation. A "::card" suffix on the card route would make
     // the second call miss the cache and paint twice.
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
     const artworkCall = { trackKey: "itunes:42", artist: "Sting", title: "Fragile" };
     const cardRouteCall = {
       trackKey: "itunes:42", // same key — the card route must NOT add "::card"
@@ -238,7 +229,7 @@ describe("generateCardArtworkCore", () => {
     // gallery). With the shared trackKey, each card's two server calls hit the
     // same cache entry → exactly 8 provider calls total (one per scene), not 16.
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
     const cards = [
       { trackKey: "itunes:1", artist: "Sting", title: "Fragile" },
       { trackKey: "itunes:2", artist: "Nirvana", title: "Lithium" },
@@ -268,7 +259,7 @@ describe("generateCardArtworkCore", () => {
     // ever reintroduces a suffix, it generates a second painting. This is the
     // failure mode Bulgu 2 was reporting — kept as a canary.
     process.env.GEMINI_API_KEY = "test-key";
-    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(imagenOk()));
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
     await generateCardArtworkCore(
       { trackKey: "itunes:42", artist: "Sting", title: "Fragile" },
       { fetchImpl: fetchImpl as unknown as typeof fetch },
@@ -288,7 +279,7 @@ describe("generateCardArtworkCore", () => {
       await generateCardArtworkCore(input, { fetchImpl: fetchImpl as unknown as typeof fetch }),
     ).toBeNull();
     // Failure is not memoized — a later retry reaches the network again.
-    fetchImpl.mockResolvedValueOnce(imagenOk());
+    fetchImpl.mockResolvedValueOnce(geminiImageOk("aGVsbG8="));
     expect(
       await generateCardArtworkCore(input, { fetchImpl: fetchImpl as unknown as typeof fetch }),
     ).toBe("data:image/png;base64,aGVsbG8=");
