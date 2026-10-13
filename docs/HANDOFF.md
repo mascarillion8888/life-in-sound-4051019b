@@ -14,8 +14,11 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main ile SENKRON (d8e90e3, 53e0fec, 27bb48b, ea0629d, b5c1f3b push edildi 2026-10-10; göz onayı VERİLDİ)
-HEAD:       b5c1f3b — "docs(handoff): note theme regression (latin/gospel/soundtrack/world) fixed in ea0629d"
+Dal:        main — origin/main'den AHEAD 2 (21135fe + c545879 YERELDE, PUSH EDİLMEDİ; göz onayı bekleniyor). origin/main tipi = 7f71bad (Vercel deploy SUCCESS 2026-10-12)
+HEAD:       c545879 — "feat(poster): İş 3 Dilim 2 — hero line from real inferred mood (posterHero.ts, tr|en, list-framed)" [YEREL, puşlanmadı]
+            21135fe — "feat(poster): Dilim 1 — computePosterLayout seam + hero?: string (always undefined) + posterForRender binding" [YEREL, puşlanmadı]
+            ───── aşağısı PUSH'LU / tarihsel zincir ─────
+            b5c1f3b — "docs(handoff): note theme regression (latin/gospel/soundtrack/world) fixed in ea0629d"
             ea0629d — "fix(scene): restore pre-wiring theme for latin/gospel/soundtrack/world after alias re-target"
             27bb48b — "docs(handoff): note Iş 1 (MusicBrainz multi-source genre) SUSPENDED — MB genre/tag is CC BY-NC-SA; open: A/B-hybrid policy + latency decision"
             53e0fec — "docs(handoff): drop stale 'henuz klasorsuz genrelar' note — all 23 genres now have folders (207 rows)"
@@ -34,12 +37,16 @@ HEAD:       b5c1f3b — "docs(handoff): note theme regression (latin/gospel/soun
             81→207: metal/synth/gothic/grunge/acoustic artık kendi klasörüne (eskiden fallback),
             9 YENİ tür eklendi: classical, country, folk, gospel, latin, rnb, soundtrack,
             timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
-Testler:    71 dosya, 821 passed / 2 skipped, 0 failed (823) — vitest v4.1.11, `npm test` exit 0
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-10)
-Lint:       `npx eslint src scripts --rule 'prettier/prettier: off'` = 0 hata (2026-10-10)
-Build:      exit 0 (2026-10-10 doğrulandı)
-Push:       ✅ 2026-10-10 — a4eaa30, 0ed0b05, e0c701f origin/main'e PUSH EDİLDİ (kural-10 göz onayı
-            VERİLDİ, kullanıcı onayıyla). Worktree temiz, origin/main ile birebir senkron.
+Testler:    74 dosya, 845 passed / 2 skipped, 0 failed (847) — vitest v4.1.11, `npm test` exit 0 (2026-10-13 doğrulandı)
+tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-13 doğrulandı)
+Lint:       TARİHLİ BULGU (2026-10-13): ham `npm run lint` (prettier açık) = 150 prettier hatası,
+            15 ESKİ dosyada (62 CRLF + ~88 girinti/satır-bölme drift). İş 3'ün dokunduğu dosyalarda 0
+            (posterHero/posterRenderer/types/results temiz) → İş 3 KAYNAKLI DEĞİL, önceden var olan borç;
+            Linux canonical "0/0" iddiası ayrı bir checkout'ta tekrar doğrulanmadan sürer.
+Build:      exit 0 (2026-10-13 doğrulandı)
+Push:       ✅ ESKİ 2026-10-10 — a4eaa30, 0ed0b05, e0c701f origin/main'e PUSH EDİLDİ (kural-10 göz onayı
+            VERİLDİ). ✅ 7f71bad da push'lu (test(art): Gemini null paths). Worktree TEMİZ; AMA 2 yerel
+            commit (21135fe, c545879) PUSH EDİLMEDİ — origin/main = 7f71bad.
 
 AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
   - 4 eşleşmeyen iTunes etiketi: Classical Crossover, Electronic, Chinese, Vocal → GenreId YOK,
@@ -60,6 +67,51 @@ AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
+
+---
+
+## 1b. ARŞİTEKTÜR KARARI — SİNEMATİK YAŞAM POSTERİ (Karar B) [KARAR VERİLDİ — UYGULANMADI, KULLANICI ONAYI GEREKİR]
+
+**KARAR:** `Dynamic Music Map` / `poeticPoster` altyapısı temel alınarak sinematik yaşam posteri geliştirilecek. Karar VERİLDİ; uygulama ONAYLANMADI (henüz kod/commit yok).
+
+Hedef: yaşam dönemleri + gerçek kullanıcı şarkı/sanatçı/tür/duygu verisini tek bir uzun, sinematik, deterministik kompozisyonda birleştirmek; başlık + bölüm metinleri + semboller + görsel katmanlar + duygusal akışı tek posterde sunmak; uygun boyutta PNG üretmek. Kompozisyon kullanıcının hikâyesine göre deterministik değişir.
+
+Mimari ilkeler (bağlayıcı):
+- 207 manuel mood arka planı KORUNUR (yeni asset üretimi yok bu kararla).
+- Varsayılan hatta runtime AI görsel üretimi EKLENMEZ (ANA_YASA §9).
+- Kullanıcı verisinde olmayan yaş/duygu/olay/şarkı ilişkisi UYDURULMAZ (ANA_YASA §0).
+- Lisansı doğrulanmamış grup logosu/albüm görseli varsayılan postere GÖMÜLMEZ; dış albüm kapağı yalnız RUNTIME URL + harmanizasyon (artworkHarmonize) ile, repo'ya gömülmez; yüklenemezse deterministik yer tutucu (♪ / genre motif), asla kırık kutu.
+- Mevcut `GeneratedPoster` YALNIZCA bu yeni karar yüzünden silinmez/değiştirilmez (İş 3 hero hâlâ orada).
+- Gereksiz ikinci poster motoru OLUŞTURULMAZ — varsa `poeticPoster`/`MasterPoster` halihazırda uzun kompozisyon çiziyor, onu genişlet.
+
+### 1b.1 Mevcut üç poster yüzeyi (inceleme bulgusu, 2026-10-13)
+1. `GeneratedPoster` (`src/components/results/GeneratedPoster.tsx`) + `renderPoster` (`src/lib/ai/posterRenderer.ts`): 1400×2000 canvas, tek görünüm — arketip + başlık + mood subheadline (+ İş 3 hero) + 8 şarkı + keywords + "LIFE IN A SOUND". İş 3'ün hero hedefi BUDUR.
+2. `MasterPosterSheet` (`src/components/results/MasterPosterSheet.tsx`) + `MasterPosterCanvas`: DOM/CSS "Dynamic Music Map" görsel yüzeyi; 1024×1536 logical, 2048×3072 html-to-image export; header+era badge'leri, early/peak panel, master albüm çerçevesi, 4 portal, emosyonel dalga (SVG), tracklist, mühür.
+3. `poeticPoster.ts` (`src/lib/soundmap/poeticPoster.ts`): uzun PNG (2400 geniş × akış; min 3600) canvas — Hayat Ağacı, albüm kapaklı bölüm portalları (drawHarmonizedArtwork), çok renkli duygu çizgisi, yaşam playlist'i, life-card grid'i, kapanış alıntıları; seed-deterministik (mulberry32) + EXTRAS_BY_THEME. **Ana geliştirme ADAYI.**
+
+Not: yukarıdaki tanımlar mevcut inceleme bulgusudur (salt-okunur); kaynak koddan yeniden doğrulanmayan işlev, "kesinleşmiş gerçek" diye sunulmamıştır.
+
+**SONRAKİ ADIM (bir sonraki AI oturumunun İLK işi):** Aşama 0 — salt-okunur teknik inceleme + kullanıcıya sunulacak onay taslağı (bkz. aşağı "SONRAKİ ADIM" bölümü). Uygulama için kullanıcı onayı ŞART; onay olmadan kod/commit/push yok.
+
+---
+
+## 1c. POSTER BOŞ EKRAN BULGUSU (İş 3, teşhis 2026-10-13) — KOD HATASI OLARAK GENİŞLETİLMEZ
+
+Salt-okunur teşhisin sonucu (dosya/satır referanslı):
+- `GeneratedPoster` canvas'ı SSR'da boş üretilir; çizim client-side `useEffect` (GeneratedPoster.tsx:19-23) içinde — tasarım gereği (SSR boş çerçeve). `renderPoster` `!ctx` ise erken döner (posterRenderer.ts:140) — gerçek tarayıcıda 2D context her zaman vardır; yalnız jsdom/test ortamında "getContext not implemented" (o yüzden otomatik testler canvas PİKSELİ doğrulayamaz — testler hesaplama/layout doğrular).
+- `results.tsx` çağrı zinciri CANLI: results.tsx:827-832 → `posterForRender ? <GeneratedPoster> : <img posterBackdrop fallback>`; profile null (answered===0) OLSA BİLE fallback IMG gelir (boş ekran değil, pipeline.ts:82).
+- İş 3 hero (Dilim 1+2) boş poster regresyonu: DOĞRULANMIŞ YOK. Dilim 1 heroLines=0'da legacy koordinatları birebir döndürür (posterRenderer.test.ts:15-30); Dilim 2 hero yalnız gerçek infer-edilmiş MOOD_SET mood'undan (results.tsx:517-520; heroForMood uyumsuzu → null). Grounded async çözülmeden hero=null → legacy geçerli poster.
+- GERÇEK ÜRETİMDE kalıcı boşluk güncel tarayıcı ölçümüyle DOĞRULANMADI. Önerilen tek doğrulama: canlı tarayıcıda hidrasyon sonrası `getImageData` + canvas atr (1400×2000) + boundingRect 0.7 + ≥2 zaman ayırmış kararlı örnek + satır profili (Tek nonZeroRatio DELİL DEĞİL — delil demeti). Önceki kapanış (BULGU 1, 2026-09-24): local+prod ikisinde de canvas doluydu, "kalıcı boş" üretilemedi → hidrasyon zamanlaması.
+- Bu bulgu "kod hatası kesin olarak yoktur" diye genişletilmez; yeni kanıt yoksa koda dokunulmaz.
+
+---
+
+## SONRAKİ ADIM (bir sonraki AI oturumunun ilk okuyacağı) — Aşama 0: Salt-okunur teknik inceleme + onay taslağı
+
+1. **Doğrula:** `git fetch origin && git log origin/main..HEAD` — beklenen AHEAD 2 (21135fe, c545879); origin/main=7f71bad; worktree TEMİZ. HEAD dokümandakiyle uyuşmuyorsa git'e güven.
+2. **Salt-okunur incele** (dosya değiştirme YOK): `src/lib/soundmap/poeticPoster.ts` (uzun PNG motoru), `src/components/results/MasterPosterSheet.tsx` (DOM yüzeyi) + kullandıkları içerik/tip/yardımcı modüller (`poetic-analyzer.ts` deterministicPoeticAnalysis, `masterPosterContent.ts` RENDER_LABELS, `posterTheme.ts`, `artworkHarmonize.ts`, `lifeCards.ts`, `dynamicThemes.ts`), `results.tsx` bağlantısı (MasterPosterCanvas@results.tsx:708-734), mevcut PNG dışa aktarımı (`html-to-image` MasterPosterCanvas.tsx:34-42 / poeticPoster canvas export), ilgili testler + 207 mood-backdrop varlığı.
+3. **5 soruyu yanıtla:** (1) gerçekte hangi üretim+dışa aktarma zinciri çalışıyor; (2) hangi bileşenler yeniden kullanılabilir; (3) veriler hangi tip/fonksiyon üzerinden geliyor (bu teşhis: data = deterministicPoeticAnalysis chapters{ageRange,narrative,mood} + grounded.dna{topGenres,topArtists,topMoods}/timeline.nodes + posterSongs); (4) ilk prototip için en küçük dosya-değişikliği kümesi; (5) testler+kabul kriterleri. **İnceleme raporu KANIT + dosya yolu + satır numarası içersin.**
+4. **Onay bekle:** Elde edilen inceleme + tasarım önerisini kullanıcıya sun; Kod/commit/push yalnızca kullanıcı "uygula/onaylandı" dedikten sonra. (Karar B kaydı yukarı §1b.)
 
 ---
 
