@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
-import { __clearCardArtworkMemoryCache } from "@/lib/art/useCardArtwork";
+import { __clearCardArtworkMemoryCache, cardArtworkKey } from "@/lib/art/useCardArtwork";
 import { isInCollection, loadCollection } from "@/lib/collection";
 import type { Song } from "@/lib/song/types";
 
@@ -15,7 +15,7 @@ vi.mock("@/lib/card/cardTemplates", () => ({
   CARD_TEMPLATES: [],
 }));
 
-// Audio playback is stubbed — jsdom cannot play media.
+// Audio playback is stubbed: jsdom cannot play media.
 vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
 vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
 
@@ -35,178 +35,80 @@ function song(overrides: Partial<Song> = {}): Song {
 }
 
 const cards = buildLifeCards();
+const cardId = `quiz-card-${cards[0].songIndex}`;
 
-describe("QuizCard", () => {
+describe("QuizCard (player-card layout)", () => {
   beforeEach(() => {
     __clearCardArtworkMemoryCache();
     window.localStorage.clear();
   });
 
-  it("locks the simplified template: centered header, square art window, dark lore box, footer with track signature (no score chip)", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    // 1 · Centered gold header: AGE | dynamic TITLE | ERA NAME.
-    const header = screen.getByTestId("card-header");
-    expect(header.textContent).toContain("Ages 5-9");
-    expect(header.textContent).toMatch(/DISCOVERY & [A-Z]+/);
-    expect(header.textContent).toContain("FIRST SPARK");
-    expect(header.className).toContain("text-center");
-    // Removed layers stay gone.
-    expect(screen.queryByTestId("card-banner")).toBeNull();
-    expect(screen.queryByTestId("card-sequence")).toBeNull();
-    expect(screen.queryByTestId("card-credit")).toBeNull();
-    // 3 · Dark inset lore box.
-    const loreBox = screen.getByTestId("card-lore-box");
-    expect(loreBox.textContent).toMatch(/vast and soft/);
-    expect(loreBox.textContent).toMatch(/carried by Fragile by Sting/);
-    expect(loreBox.className).toContain("bg-[#161920]");
-    // The fabricated hash-score chip was removed — no score badge is rendered.
-    expect(screen.queryByTestId("card-score-badge")).toBeNull();
-  });
-
-  it("embeds the iTunes cover inside the black window — no skeleton when a cover exists", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    const cover = screen.getByTestId("card-art-cover") as HTMLImageElement;
-    expect(cover.src).toContain("art.jpg");
-    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
-    expect(screen.queryByTestId("card-art-ai")).toBeNull();
-  });
-
-  it("cross-fades the AI painting over the cover when one is ready", () => {
-    window.localStorage.setItem(
-      "soundmap.card-art.v1",
-      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
-    );
-    render(<QuizCard card={cards[0]} song={song()} />);
-    // The cover stays underneath; the painting fades in on top.
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
-    const ai = screen.getByTestId("card-art-ai") as HTMLImageElement;
-    expect(ai.src).toContain("data:image/png;base64,AA==");
-    expect(ai.className).toContain("fade-in");
-  });
-
-  it("keeps the cover when AI generation fails or no key exists", () => {
-    // No cache, no key — generation resolves unavailable; the iTunes cover
-    // remains the window's imagery.
-    render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
-    expect(screen.queryByTestId("card-art-ai")).toBeNull();
-  });
-
-  it("falls back to the gothic woodcut skeleton only for coverless songs", () => {
-    render(<QuizCard card={cards[0]} song={song({ artworkUrl: null })} />);
-    expect(screen.queryByTestId("card-art-cover")).toBeNull();
-    const skeleton = screen.getByTestId("card-art-skeleton");
-    expect(skeleton.dataset.generating).toBe("true");
-    // Spinner + i18n generation caption appear while the painting generates.
-    expect(skeleton.querySelector("svg.animate-spin")).toBeTruthy();
-    expect(skeleton.textContent).toContain("Etched ink art generating…");
-  });
-
-  it("signs the parchment footer with artist — title (year)", () => {
+  it("renders meta line, cover, title, artist, lore, badge, era, mood and progress", () => {
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
-    expect(screen.getByText(/Sting — Fragile \(1987\)/)).toBeTruthy();
+    const meta = screen.getByTestId("card-meta").textContent ?? "";
+    expect(meta).toContain("Ages 5-9");
+    expect(meta).toContain("FIRST SPARK");
+    expect(meta).toMatch(/\d+\/100/);
+    expect((screen.getByTestId("card-art-cover") as HTMLImageElement).src).toContain("art.jpg");
+    expect(screen.getByTestId("card-title").textContent).toBe("Fragile");
+    expect(screen.getByTestId("card-artist").textContent).toBe("Sting");
+    expect(screen.getByTestId("card-lore").textContent).toMatch(/vast and soft/);
+    const badge = screen.getByTestId("card-badge").textContent ?? "";
+    expect(badge).toMatch(/\d+\/10/);
+    expect(badge).toContain("DISCOVERY");
+    expect(screen.getByTestId("card-era").textContent).toContain("1980s");
+    expect(screen.getByTestId("card-mood").textContent).toContain("NOSTALGIC");
+    expect(screen.getByTestId("card-progress").getAttribute("aria-valuenow")).toBe("0");
   });
 
-  it("adapts the artwork scene to the song's era via the mount attribute", () => {
-    const { rerender } = render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
-    expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("cassette-desk");
-
-    rerender(<QuizCard card={cards[0]} song={song({ releaseYear: 1974 })} />);
-    expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("vinyl-sleeve");
-
-    // No release year → mount falls back to the card's journey position.
-    rerender(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.getByTestId("quiz-card-1").dataset.mount).toBe("vinyl-sleeve");
+  it("falls back to the era's age range when the song has no release year", () => {
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: undefined })} />);
+    expect(screen.getByTestId("card-era").textContent).toContain("Ages 5-9");
   });
 
-  it("renders an empty dark frame — no fabricated artwork — when the song is missing", () => {
+  it("applies the genre family and mood as theme attributes", () => {
+    const metal = { ...song({ genre: "Metal" }), mood: "Dark" } as unknown as Song;
+    render(<QuizCard card={cards[0]} song={metal} />);
+    const root = screen.getByTestId(cardId);
+    expect(root.getAttribute("data-family")).toBe("gothic");
+    expect(root.getAttribute("data-mood")).toBe("Dark");
+    expect(screen.getByTestId("card-mood").textContent).toContain("DARK");
+  });
+
+  it("maps hip-hop songs to the hiphop family", () => {
+    render(<QuizCard card={cards[0]} song={song({ genre: "Hip-Hop" })} />);
+    expect(screen.getByTestId(cardId).getAttribute("data-family")).toBe("hiphop");
+  });
+
+  it("toggles the collection through the collect button", () => {
+    const s = song();
+    render(<QuizCard card={cards[0]} song={s} />);
+    const btn = screen.getByTestId("card-collect");
+    expect(btn.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(btn);
+    expect(btn.getAttribute("aria-pressed")).toBe("true");
+    expect(isInCollection(loadCollection(), cardArtworkKey(s))).toBe(true);
+  });
+
+  it("enables play when a preview exists and disables it when not", () => {
+    const { unmount } = render(<QuizCard card={cards[0]} song={song()} />);
+    expect((screen.getByTestId("card-play") as HTMLButtonElement).disabled).toBe(false);
+    unmount();
+    render(<QuizCard card={cards[0]} song={song({ previewUrl: null })} />);
+    expect((screen.getByTestId("card-play") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("renders without a song: no fabricated cover, collect does nothing", () => {
     render(<QuizCard card={cards[1]} song={null} />);
-    expect(screen.queryByRole("img")).toBeNull();
-    expect(screen.queryByText(/Fragile/)).toBeNull();
-    // Fallbacks stay deterministic: era tag in header, narrative in the box.
-    expect(screen.getByTestId("card-header").textContent).toContain("FIRST IDENTITY");
-    expect(screen.getByTestId("card-lore-box").textContent).toMatch(/threshold/);
+    expect(screen.queryByTestId("card-art-cover")).toBeNull();
+    expect(screen.getByTestId("card-title").textContent).toBe(cards[1].eraTitle);
+    const btn = screen.getByTestId("card-collect");
+    fireEvent.click(btn);
+    expect(btn.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("carries the simplified frame: responsive 340px, serif typeface, carved border", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    const article = screen.getByTestId("quiz-card-1");
-    // Simplified frame — responsive (no fixed pixel width), serif, carved border.
-    expect(article.className).toContain("font-serif");
-    expect(article.className).toContain("max-w-[340px]");
-    expect(article.style.borderColor).toBe("rgb(201, 169, 97)"); // #c9a961
-  });
-
-  it("wraps the whole card in a double gold frame with four corner brackets", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    const article = screen.getByTestId("quiz-card-1");
-    // Outer 2px gold border on the article itself.
-    expect(article.className).toContain("border-2");
-    expect(article.style.borderColor).toBe("rgb(201, 169, 97)"); // #c9a961
-    // Inset darker-gold hairline (#8a6d3b) hugging the outer border.
-    const inset = screen.getByTestId("card-frame-inset");
-    expect(inset.className).toContain("border-[#8a6d3b]");
-    // Four 20×20 L-shaped brackets — one per corner, decorative only.
-    for (const v of ["top", "bottom"]) {
-      for (const h of ["left", "right"]) {
-        const corner = screen.getByTestId(`card-frame-corner-${v}-${h}`);
-        expect(corner.className).toContain("h-5");
-        expect(corner.className).toContain("w-5");
-        expect(corner.className).toContain("border-[#c9a961]");
-        // The two edges facing inward stay invisible — only the outer L shows.
-        expect(corner.style.borderTopWidth).toBe(v === "top" ? "2px" : "0px");
-        expect(corner.style.borderBottomWidth).toBe(v === "bottom" ? "2px" : "0px");
-        expect(corner.style.borderLeftWidth).toBe(h === "left" ? "2px" : "0px");
-        expect(corner.style.borderRightWidth).toBe(h === "right" ? "2px" : "0px");
-      }
-    }
-  });
-
-  it("enables the preview button only when the song carries a real preview URL, with a visible localized label", () => {
-    const { rerender } = render(<QuizCard card={cards[0]} song={song()} />);
-    const toggle = screen.getByRole("button", { name: /play preview/i });
-    expect((toggle as HTMLButtonElement).disabled).toBe(false);
-    // The affordance is explicit: the icon is paired with visible localized text.
-    expect(toggle.textContent).toMatch(/Play preview/i);
-
-    rerender(<QuizCard card={cards[0]} song={song({ previewUrl: null })} />);
-    const disabled = screen.getByRole("button", { name: /preview unavailable/i });
-    expect((disabled as HTMLButtonElement).disabled).toBe(true);
-    expect(disabled.textContent).toMatch(/preview unavailable/i);
-  });
-
-  it("toggles the song into the personal collection (journey-independent) and back", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    const toggle = screen.getByRole("button", { name: /add to collection/i });
-    expect((toggle as HTMLButtonElement).getAttribute("aria-pressed")).toBe("false");
-    expect(isInCollection(loadCollection(), "itunes:42")).toBe(false);
-
-    fireEvent.click(toggle);
-    // The button flips to "In Collection" and the track persists to localStorage.
-    expect(screen.getByRole("button", { name: /in collection/i })).toBeTruthy();
-    expect(isInCollection(loadCollection(), "itunes:42")).toBe(true);
-
-    fireEvent.click(screen.getByRole("button", { name: /in collection/i }));
-    expect(screen.getByRole("button", { name: /add to collection/i })).toBeTruthy();
-    expect(isInCollection(loadCollection(), "itunes:42")).toBe(false);
-  });
-
-  it("does not render a collect button when the song is missing", () => {
-    render(<QuizCard card={cards[1]} song={null} />);
-    expect(screen.queryByRole("button", { name: /collection/i })).toBeNull();
-  });
-
-  it("renders no frame template by default (opt-in - current look unchanged)", () => {
-    render(<QuizCard card={cards[0]} song={song()} />);
-    expect(screen.queryByTestId("card-art-template")).toBeNull();
-    // Existing imagery is untouched - the cover stays the window base.
-    expect(screen.getByTestId("card-art-cover")).toBeTruthy();
-  });
-
-  it("draws an uploaded frame template over the artwork window when one is set", () => {
+  it("draws the optional frame template over the artwork", () => {
     render(<QuizCard card={cards[0]} song={song()} templateFile="frame-gothic.png" />);
-    const tpl = screen.getByTestId("card-art-template") as HTMLImageElement;
-    expect(tpl.src).toContain("data:image/png;base64");
-    expect(tpl.className).toContain("pointer-events-none");
+    expect((screen.getByTestId("card-art-template") as HTMLImageElement).src).toContain("data:image/png");
   });
 });

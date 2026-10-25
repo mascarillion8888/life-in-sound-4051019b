@@ -21,6 +21,7 @@ import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
 import { loadRemoteJourney, saveRemoteJourney } from "@/lib/supabase/journey-remote";
 import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
+import { verifySongArtwork, songCacheKey } from "@/lib/song/artworkVerify";
 import { collectUnverifiedManualSongs, songVerifyKey } from "@/lib/song/enrich-songs";
 import { spotifySuggestSongs } from "@/lib/song/spotify.server";
 import type { Song } from "@/lib/song/types";
@@ -145,6 +146,10 @@ function JourneyPage() {
   const [suggestions, setSuggestions] = useState<Record<number, { text: string; songs: Song[] }>>(
     {},
   );
+  // Artwork verification status per question (for QuizCard skeleton/loading states)
+  const [artStatus, setArtStatus] = useState<
+    Record<number, "idle" | "loading" | "ok" | "notfound">
+  >({});
   const question = questions[current - 1];
   const isLast = current === total;
   const { fresh } = Route.useSearch();
@@ -267,6 +272,9 @@ function JourneyPage() {
   // is committed it is requested ONCE here, and the verification completes in
   // the background even if the user has already moved to the next question — so
   // a fast first submission still gets its iTunes match / album art (QA Bug 2).
+  // Uses the shared verifySongArtwork which caches by song identity across Journey + Results.
+  // Stale response protection: uses songCacheKey (hash of title|artist) so a late
+  // response for "Fragile - Sting" doesn't apply to "Fragile - Someone Else".
   const verifyRequestedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!restored || completed) return;
@@ -274,8 +282,24 @@ function JourneyPage() {
       songs,
       verifyRequestedRef.current,
     )) {
-      verifyRequestedRef.current.add(songVerifyKey(questionId, song.title));
-      void runVerification(questionId, song.title);
+      const songKey = songCacheKey(song);
+      verifyRequestedRef.current.add(songKey);
+      void (async () => {
+        setArtStatus((prev) => ({ ...prev, [questionId]: "loading" }));
+        const patch = await verifySongArtwork(song);
+        if (!patch) {
+          setArtStatus((prev) => ({ ...prev, [questionId]: "notfound" }));
+          return;
+        }
+        setArtStatus((prev) => ({ ...prev, [questionId]: "ok" }));
+        setSongs((prev) => {
+          const latest = prev[questionId];
+          // Stale response guard: compare songCacheKey (hash of title|artist)
+          if (!latest || latest.provider !== "manual" || songCacheKey(latest) !== songKey)
+            return prev;
+          return { ...prev, [questionId]: { ...latest, ...patch } };
+        });
+      })();
     }
   }, [restored, completed, songs]);
 
@@ -405,6 +429,7 @@ function JourneyPage() {
             <EraCardReveal
               card={lifeCards[current - 1]}
               song={songs[question.id] ?? null}
+              artStatus={artStatus[question.id] ?? "idle"}
               isLast={isLast}
               onContinue={() => {
                 // Unmounting the reveal fades out the preview (audio

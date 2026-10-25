@@ -41,10 +41,10 @@ describe("EraCardReveal", () => {
     // The reveal no longer renders its own header text (position line and
     // era-title h2 were both removed 2026-09-29) — the card face carries the
     // per-track title and the card-face tag (REBELLION & <CAPTION>).
-    expect(screen.getByText(/REBELLION & [A-Z]+/)).toBeInTheDocument();
+    expect(screen.getByTestId("card-title").textContent).toBe("Painkiller");
     // The dynamic English narrative lives on the card face.
     expect(screen.getByText(/volume ran higher than feeling/)).toBeInTheDocument();
-    expect(screen.getByText(/Judas Priest — Painkiller/)).toBeInTheDocument();
+    expect(screen.getByTestId("card-artist").textContent).toBe("Judas Priest");
   });
 
   it("labels the advance action 'Next Era / Continue' until the last card", () => {
@@ -79,5 +79,68 @@ describe("EraCardReveal", () => {
     render(<EraCardReveal card={cards[4]} song={null} isLast={false} onContinue={() => {}} />);
     expect(screen.queryByRole("img")).toBeNull();
     expect(screen.getByText(/the tempering/i)).toBeInTheDocument();
+  });
+
+  it("shows loading skeleton when artStatus is loading", () => {
+    render(
+      <EraCardReveal
+        card={cards[4]}
+        song={{
+          ...song(),
+          artworkUrl: null,
+          provider: "manual",
+          providerId: "manual-1",
+          artist: "",
+        }}
+        artStatus="loading"
+        isLast={false}
+        onContinue={() => {}}
+      />,
+    );
+    const skeleton = screen.getByTestId("card-art-skeleton");
+    expect(skeleton).toBeInTheDocument();
+    expect(skeleton.dataset.generating).toBe("true");
+    // Breathing animation should be active
+    expect(skeleton.querySelector(".animate-pulse")).toBeInTheDocument();
+  });
+
+  it("shows notfound skeleton (no breathing animation) when artStatus is notfound", () => {
+    render(
+      <EraCardReveal
+        card={cards[4]}
+        song={{
+          ...song(),
+          artworkUrl: null,
+          provider: "manual",
+          providerId: "manual-1",
+          artist: "",
+        }}
+        artStatus="notfound"
+        isLast={false}
+        onContinue={() => {}}
+      />,
+    );
+    const skeleton = screen.getByTestId("card-art-skeleton");
+    expect(skeleton).toBeInTheDocument();
+    expect(skeleton.dataset.notfound).toBe("true");
+    // Breathing animation should NOT be active for notfound
+    expect(skeleton.querySelector(".animate-pulse")).not.toBeInTheDocument();
+  });
+
+  it("renders album cover <img> when artwork arrives (artStatus ok)", () => {
+    render(
+      <EraCardReveal
+        card={cards[4]}
+        song={song({ artworkUrl: "https://example.com/late-cover.jpg" })}
+        artStatus="ok"
+        isLast={false}
+        onContinue={() => {}}
+      />,
+    );
+    const cover = screen.getByTestId("card-art-cover") as HTMLImageElement;
+    expect(cover).toBeInTheDocument();
+    expect(cover.src).toContain("late-cover.jpg");
+    // Skeleton should not be present
+    expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
   });
 });

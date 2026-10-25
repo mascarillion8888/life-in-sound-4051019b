@@ -24,12 +24,15 @@ import { eraThemeForYear } from "@/lib/visual/eraThemes";
 export function EraCardReveal({
   card,
   song,
+  artStatus,
   isLast,
   onContinue,
 }: {
   card: LifeCard;
   /** The song just committed for this era — artwork + preview come only from here. */
   song: Song | null;
+  /** Artwork verification status (for QuizCard skeleton breathing animation) */
+  artStatus?: "idle" | "loading" | "ok" | "notfound";
   isLast: boolean;
   /** Advance to the next era (or the Master Poster when isLast). */
   onContinue: () => void;
@@ -63,7 +66,13 @@ export function EraCardReveal({
           {eraTheme.overlayClasses && (
             <div aria-hidden="true" className={eraTheme.overlayClasses} />
           )}
-          <QuizCard card={card} song={song} autoPlayPreview templateFile={null} />
+          <QuizCard
+            card={card}
+            song={song}
+            autoPlayPreview
+            templateFile={null}
+            artStatus={artStatus}
+          />
         </div>
 
         <Button

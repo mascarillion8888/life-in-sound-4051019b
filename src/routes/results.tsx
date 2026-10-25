@@ -15,6 +15,7 @@ import {
 } from "@/lib/life-feed";
 import type { Song } from "@/lib/song/types";
 import { searchSongs } from "@/lib/song/searchSong.server";
+import { verifySongArtwork, songCacheKey } from "@/lib/song/artworkVerify";
 import type { GroundedLifeStory } from "@/types/lifeStory";
 import type { LifeContext } from "@/types/musicDna";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -366,10 +367,10 @@ function ResultsPage() {
 
   // Results-side telafi (QA Bug 2): if a song still arrives as a manual entry
   // without artwork (persisted from an old session, or a verification was
-  // missed), re-verify it once and carry ONLY artwork/album/year/preview onto
-  // the SONG — keeping provider identity unchanged so the content fingerprint
-  // (and the grounded mood pipeline) is NOT re-triggered. `artStatus` drives a
-  // loading skeleton / "no match" state per card instead of a silent disc.
+  // missed), re-verify it once using the shared verifySongArtwork which caches
+  // by song identity across Journey + Results. `artStatus` drives a loading
+  // skeleton / "no match" state per card. Patches are collected in artPatch
+  // and merged into posterSongs / SongUniverseCard so all consumers see enriched data.
   const [artStatus, setArtStatus] = useState<
     Record<number, "idle" | "loading" | "ok" | "notfound">
   >({});
@@ -377,10 +378,10 @@ function ResultsPage() {
     Record<
       number,
       {
-        artworkUrl?: string | null;
-        album?: string | null;
-        releaseYear?: number | null;
-        previewUrl?: string | null;
+        artworkUrl: string | null;
+        album: string | null;
+        releaseYear: number | null;
+        previewUrl: string | null;
       }
     >
   >({});
@@ -390,51 +391,31 @@ function ResultsPage() {
     for (const [i, song] of songs.entries()) {
       if (song.provider !== "manual" || song.artworkUrl || !song.title.trim()) continue;
       const qid = i + 1;
-      const key = `${qid}:${song.title.toLowerCase()}`;
+      const songKey = songCacheKey(song);
+      const key = `${qid}:${songKey}`;
       if (artVerifyRef.current.has(key)) continue;
       artVerifyRef.current.add(key);
-      // NOTE: artStatus/artPatch are keyed by the 0-based `i` below — the
-      // SongUniverseCard consume `artPatch[i]`/`artStatus[i]` (0-based). Using
-      // `qid` here would write to 1-based keys that no reader reads (Purple Rain
-      // stays a silent disc, and Back In Black's frame shows the previous song's
-      // cover). The qid is used ONLY for the dedupe key above.
+      // NOTE: artStatus/artPatch are keyed by the 0-based `i` — SongUniverseCard consumes
+      // `artStatus[i]`/`artPatch[i]` (0-based). Using `qid` here would write to 1-based keys
+      // that no reader reads.
       setArtStatus((p) => ({ ...p, [i]: "loading" }));
       void (async () => {
-        try {
-          const out = await searchSongs({
-            // Include the artist so iTunes confidence matching can pass: the
-            // matcher requires BOTH a title and an artist token in the query,
-            // so a title-only query ("Purple Rain") can never verify. This
-            // makes manual-song artwork verification actually resolve.
-            data: { query: [song.title, song.artist].filter(Boolean).join(" ") },
-          });
-          const match = out.results[0] ?? null;
-          if (!match) {
-            setArtStatus((p) => ({ ...p, [i]: "notfound" }));
-            return;
-          }
-          setArtPatch((p) => ({
-            ...p,
-            [i]: {
-              artworkUrl: match.artworkUrl ?? null,
-              album: match.album ?? null,
-              releaseYear: match.releaseYear ?? null,
-              previewUrl: match.previewUrl ?? null,
-            },
-          }));
-          setArtStatus((p) => ({ ...p, [i]: "ok" }));
-        } catch {
+        const patch = await verifySongArtwork(song);
+        if (!patch) {
           setArtStatus((p) => ({ ...p, [i]: "notfound" }));
+          return;
         }
+        // Stale response guard: compare songCacheKey (hash of title|artist)
+        const currentSong = songs[i];
+        if (!currentSong || songCacheKey(currentSong) !== songKey) return;
+        setArtPatch((p) => ({ ...p, [i]: patch }));
+        setArtStatus((p) => ({ ...p, [i]: "ok" }));
       })();
     }
   }, [songs, answers]);
-  // (1) Master-frame fix — the QA artPatch carries the VERIFIED artwork for
-  // manual/doğrulanmış-olmayan songs, but it was only applied to SongUniverseCard,
-  // so a manual song's master-frame stayed an empty placeholder even after
-  // verification. Apply the same patch here so the poster/map frame, tracklist and
-  // panel use the verified artwork too. Kept separate from `songs` so the grounded
-  // mood pipeline (content-fingerprint) is NOT re-triggered by artwork changes.
+  // posterSongs merges the verified patches so all consumers see enriched data.
+  // Kept separate from `songs` so the grounded mood pipeline (content-fingerprint) is NOT
+  // re-triggered by artwork changes.
   const posterSongs = useMemo(
     () =>
       songs.map((s, i) => ({
@@ -442,6 +423,7 @@ function ResultsPage() {
         artworkUrl: artPatch[i]?.artworkUrl ?? s.artworkUrl ?? null,
         album: artPatch[i]?.album ?? s.album ?? null,
         releaseYear: artPatch[i]?.releaseYear ?? s.releaseYear ?? null,
+        previewUrl: artPatch[i]?.previewUrl ?? s.previewUrl ?? null,
       })),
     [songs, artPatch],
   );
@@ -696,7 +678,7 @@ function ResultsPage() {
               {songs.map((song, i) => (
                 <SongUniverseCard
                   key={`${song.providerId}-${i}`}
-                  song={{ ...song, artworkUrl: artPatch[i]?.artworkUrl ?? song.artworkUrl ?? null }}
+                  song={song}
                   index={i}
                   artStatus={artStatus[i] ?? "idle"}
                 />
