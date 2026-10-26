@@ -10,6 +10,58 @@ export type PosterSong = { title: string; artist?: string | null };
 export const POSTER_WIDTH = 1400;
 export const POSTER_HEIGHT = 2000;
 
+/** Hero line: hard cap, trimmed. PII/crisis filtering happens upstream (Dilim 2). */
+export function normalizeHeroText(hero: string): string {
+  return hero.trim().slice(0, 90);
+}
+
+/**
+ * Pure layout computation — no canvas. Returns the same coordinates the legacy
+ * renderer used verbatim when `heroLines === 0` (divider +80, song list +170
+ * from headlineBottom). When a hero line is present it shifts divider + song
+ * list down by one hero block so the deterministic poster never collides.
+ */
+export type PosterLayout = {
+  archetypeY: number;
+  headlineTop: number;
+  headlineLineHeight: number;
+  headlineBottom: number;
+  /** Baseline of the first hero line, or null when no hero is rendered. */
+  heroFirstY: number | null;
+  heroLineHeight: number;
+  subtitleY: number;
+  dividerY: number;
+  songStartY: number;
+  songStep: number;
+  /** Song list must not push past this y (keywords footer). */
+  songBottomLimit: number;
+  keywordsY: number;
+  paletteY: number;
+  brandY: number;
+};
+
+export function computePosterLayout(headlineLines: number, heroLines: number): PosterLayout {
+  const headlineBottom = 320 + Math.min(headlineLines, 3) * 96;
+  // One hero block (line + breathing room) shifts the divider + song list down.
+  const heroBlock = heroLines > 0 ? 14 + heroLines * 32 : 0;
+  return {
+    archetypeY: 190,
+    headlineTop: 320,
+    headlineLineHeight: 96,
+    headlineBottom,
+    heroFirstY: heroLines > 0 ? headlineBottom + 62 : null,
+    heroLineHeight: 32,
+    subtitleY: headlineBottom + 20,
+    dividerY: headlineBottom + 80 + heroBlock,
+    songStartY: headlineBottom + 170 + heroBlock,
+    songStep: 110,
+    songBottomLimit: POSTER_HEIGHT - 210,
+    keywordsY: POSTER_HEIGHT - 190,
+    paletteY: POSTER_HEIGHT - 130,
+    brandY: POSTER_HEIGHT - 70,
+  };
+}
+
 function withAlpha(hex: string, alpha: number): string {
   const clean = hex.replace("#", "");
   const r = parseInt(clean.slice(0, 2), 16);
@@ -139,24 +191,40 @@ export function renderPoster(
     ctx.fillText(line, W / 2, 320 + i * 96);
   });
 
-  const headlineBottom = 320 + Math.min(lines.length, 3) * 96;
+  const headlineLines = lines.length;
+
+  // Hero line wrapping (≤2 lines) — only when hero is set; undefined => none.
+  const hero = model.hero ? normalizeHeroText(model.hero) : "";
+  const heroLines = hero ? wrapHero(ctx, hero, W - 260).length : 0;
+
+  const layout = computePosterLayout(headlineLines, heroLines);
 
   // Mood subheadline
   ctx.fillStyle = v.text;
   ctx.font = "500 36px Inter, sans-serif";
-  ctx.fillText(model.subheadline, W / 2, headlineBottom + 20);
+  ctx.fillText(model.subheadline, W / 2, layout.subtitleY);
+
+  // Hero line — subtle, under the mood. Drawn only when present.
+  if (heroLines > 0 && layout.heroFirstY !== null) {
+    ctx.fillStyle = withAlpha(v.accent, 0.85);
+    ctx.font = "500 26px Inter, sans-serif";
+    const heroLinesSplit = wrapHero(ctx, hero, W - 260);
+    heroLinesSplit.slice(0, 2).forEach((line, i) => {
+      ctx.fillText(line, W / 2, layout.heroFirstY! + i * layout.heroLineHeight);
+    });
+  }
 
   // Divider
   ctx.strokeStyle = withAlpha(v.accent, 0.4);
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(200, headlineBottom + 80);
-  ctx.lineTo(W - 200, headlineBottom + 80);
+  ctx.moveTo(200, layout.dividerY);
+  ctx.lineTo(W - 200, layout.dividerY);
   ctx.stroke();
 
   // Song list
   ctx.textAlign = "left";
-  let y = headlineBottom + 170;
+  let y = layout.songStartY;
   songs.slice(0, 8).forEach((song, i) => {
     ctx.fillStyle = withAlpha(v.accent, 0.7);
     ctx.font = "700 28px Inter, sans-serif";
@@ -187,6 +255,23 @@ export function renderPoster(
   ctx.fillStyle = v.textMuted;
   ctx.font = "500 26px Inter, sans-serif";
   ctx.fillText("LIFE IN A SOUND", W / 2, H - 70);
+}
+
+/** Word-wrap within a max width; returns up to 2 lines (hero is a headline helper). */
+function wrapHero(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const out: string[] = [];
+  let current = "";
+  text.split(" ").forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (ctx.measureText(next).width > maxWidth && current) {
+      out.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+  if (current) out.push(current);
+  return out.slice(0, 2);
 }
 
 /** Renders the poster off-screen and returns a PNG data URL. */

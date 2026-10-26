@@ -15,6 +15,7 @@ import {
 } from "@/lib/life-feed";
 import type { Song } from "@/lib/song/types";
 import { searchSongs } from "@/lib/song/searchSong.server";
+import { verifySongArtwork, songCacheKey } from "@/lib/song/artworkVerify";
 import type { GroundedLifeStory } from "@/types/lifeStory";
 import type { LifeContext } from "@/types/musicDna";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -37,7 +38,9 @@ import { deterministicPoeticAnalysis, type PoeticAnalysis } from "@/lib/llm/poet
 import { generatePoeticAnalysis } from "@/lib/llm/generateAnalysis.server";
 import { themeFromAnalysis } from "@/lib/soundmap/posterTheme";
 import { GeneratedPoster } from "@/components/results/GeneratedPoster";
+import { heroForMood } from "@/lib/ai/posterHero";
 import { posterToDataUrl } from "@/lib/ai/posterRenderer";
+import type { Mood } from "@/lib/ai/moodInference";
 import posterBackdrop from "@/assets/pop/mood-backdrop-dreamy.jpg";
 
 const PosterLightbox = lazy(() => import("@/components/results/PosterLightbox"));
@@ -364,10 +367,10 @@ function ResultsPage() {
 
   // Results-side telafi (QA Bug 2): if a song still arrives as a manual entry
   // without artwork (persisted from an old session, or a verification was
-  // missed), re-verify it once and carry ONLY artwork/album/year/preview onto
-  // the SONG — keeping provider identity unchanged so the content fingerprint
-  // (and the grounded mood pipeline) is NOT re-triggered. `artStatus` drives a
-  // loading skeleton / "no match" state per card instead of a silent disc.
+  // missed), re-verify it once using the shared verifySongArtwork which caches
+  // by song identity across Journey + Results. `artStatus` drives a loading
+  // skeleton / "no match" state per card. Patches are collected in artPatch
+  // and merged into posterSongs / SongUniverseCard so all consumers see enriched data.
   const [artStatus, setArtStatus] = useState<
     Record<number, "idle" | "loading" | "ok" | "notfound">
   >({});
@@ -375,10 +378,10 @@ function ResultsPage() {
     Record<
       number,
       {
-        artworkUrl?: string | null;
-        album?: string | null;
-        releaseYear?: number | null;
-        previewUrl?: string | null;
+        artworkUrl: string | null;
+        album: string | null;
+        releaseYear: number | null;
+        previewUrl: string | null;
       }
     >
   >({});
@@ -388,51 +391,31 @@ function ResultsPage() {
     for (const [i, song] of songs.entries()) {
       if (song.provider !== "manual" || song.artworkUrl || !song.title.trim()) continue;
       const qid = i + 1;
-      const key = `${qid}:${song.title.toLowerCase()}`;
+      const songKey = songCacheKey(song);
+      const key = `${qid}:${songKey}`;
       if (artVerifyRef.current.has(key)) continue;
       artVerifyRef.current.add(key);
-      // NOTE: artStatus/artPatch are keyed by the 0-based `i` below — the
-      // SongUniverseCard consume `artPatch[i]`/`artStatus[i]` (0-based). Using
-      // `qid` here would write to 1-based keys that no reader reads (Purple Rain
-      // stays a silent disc, and Back In Black's frame shows the previous song's
-      // cover). The qid is used ONLY for the dedupe key above.
+      // NOTE: artStatus/artPatch are keyed by the 0-based `i` — SongUniverseCard consumes
+      // `artStatus[i]`/`artPatch[i]` (0-based). Using `qid` here would write to 1-based keys
+      // that no reader reads.
       setArtStatus((p) => ({ ...p, [i]: "loading" }));
       void (async () => {
-        try {
-          const out = await searchSongs({
-            // Include the artist so iTunes confidence matching can pass: the
-            // matcher requires BOTH a title and an artist token in the query,
-            // so a title-only query ("Purple Rain") can never verify. This
-            // makes manual-song artwork verification actually resolve.
-            data: { query: [song.title, song.artist].filter(Boolean).join(" ") },
-          });
-          const match = out.results[0] ?? null;
-          if (!match) {
-            setArtStatus((p) => ({ ...p, [i]: "notfound" }));
-            return;
-          }
-          setArtPatch((p) => ({
-            ...p,
-            [i]: {
-              artworkUrl: match.artworkUrl ?? null,
-              album: match.album ?? null,
-              releaseYear: match.releaseYear ?? null,
-              previewUrl: match.previewUrl ?? null,
-            },
-          }));
-          setArtStatus((p) => ({ ...p, [i]: "ok" }));
-        } catch {
+        const patch = await verifySongArtwork(song);
+        if (!patch) {
           setArtStatus((p) => ({ ...p, [i]: "notfound" }));
+          return;
         }
+        // Stale response guard: compare songCacheKey (hash of title|artist)
+        const currentSong = songs[i];
+        if (!currentSong || songCacheKey(currentSong) !== songKey) return;
+        setArtPatch((p) => ({ ...p, [i]: patch }));
+        setArtStatus((p) => ({ ...p, [i]: "ok" }));
       })();
     }
   }, [songs, answers]);
-  // (1) Master-frame fix — the QA artPatch carries the VERIFIED artwork for
-  // manual/doğrulanmış-olmayan songs, but it was only applied to SongUniverseCard,
-  // so a manual song's master-frame stayed an empty placeholder even after
-  // verification. Apply the same patch here so the poster/map frame, tracklist and
-  // panel use the verified artwork too. Kept separate from `songs` so the grounded
-  // mood pipeline (content-fingerprint) is NOT re-triggered by artwork changes.
+  // posterSongs merges the verified patches so all consumers see enriched data.
+  // Kept separate from `songs` so the grounded mood pipeline (content-fingerprint) is NOT
+  // re-triggered by artwork changes.
   const posterSongs = useMemo(
     () =>
       songs.map((s, i) => ({
@@ -440,6 +423,7 @@ function ResultsPage() {
         artworkUrl: artPatch[i]?.artworkUrl ?? s.artworkUrl ?? null,
         album: artPatch[i]?.album ?? s.album ?? null,
         releaseYear: artPatch[i]?.releaseYear ?? s.releaseYear ?? null,
+        previewUrl: artPatch[i]?.previewUrl ?? s.previewUrl ?? null,
       })),
     [songs, artPatch],
   );
@@ -497,9 +481,26 @@ function ResultsPage() {
         : undefined,
     [profile, songs],
   );
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const session = useSession();
+  const localeForPoster = (language === "tr" ? "tr" : "en") as "tr" | "en";
+
+  // Dilim 2 (İş 3): single seam for the poster model handed to every renderer
+  // (GeneratedPoster canvas, the DOM overlay block, PosterLightbox, PNG
+  // download). The hero line is derived ONLY from a real inferred mood
+  // (grounded.dna.musicalIdentity.topMoods[0] — a MOOD_SET member by
+  // construction). It stays absent when grounded hasn't resolved yet, when
+  // the mood is null/unmapped, or when the vibe is "Unclassified" (N8): the
+  // model keeps its EXACT legacy shape and there is NO visual change.
+  // Hook-order safe: profile/grounded resolved above, no conditional return.
+  const posterForRender = useMemo(() => {
+    if (!profile?.poster) return null;
+    const mood = grounded?.dna.musicalIdentity.topMoods?.[0] ?? null;
+    const hero =
+      mood && mood !== "Unclassified" ? heroForMood(mood as Mood, localeForPoster) : null;
+    return hero ? { ...profile.poster, hero } : profile.poster;
+  }, [profile, grounded, localeForPoster]);
 
   // Always-available clean restart: wipes the journey (local + remote), the
   // Life Feed and every cached artifact, then lands on Question 1 of 8.
@@ -511,9 +512,9 @@ function ResultsPage() {
 
   // Re-renders the poster off-screen and downloads it as a PNG.
   const downloadPosterPng = () => {
-    if (!profile?.poster) return;
+    if (!posterForRender) return;
     const url = posterToDataUrl(
-      profile.poster,
+      posterForRender,
       songs.map((s) => ({ title: s.title, artist: s.artist })),
     );
     if (!url) return;
@@ -677,7 +678,7 @@ function ResultsPage() {
               {songs.map((song, i) => (
                 <SongUniverseCard
                   key={`${song.providerId}-${i}`}
-                  song={{ ...song, artworkUrl: artPatch[i]?.artworkUrl ?? song.artworkUrl ?? null }}
+                  song={song}
                   index={i}
                   artStatus={artStatus[i] ?? "idle"}
                 />
@@ -805,9 +806,9 @@ function ResultsPage() {
               title={t.results.posterTitle}
             />
             <div className="group relative mt-8 overflow-hidden rounded-[2rem] border border-border/50 bg-card/60 p-4 backdrop-blur-xl">
-              {profile?.poster ? (
+              {posterForRender ? (
                 <GeneratedPoster
-                  model={profile.poster}
+                  model={posterForRender}
                   songs={songs.map((s) => ({ title: s.title, artist: s.artist }))}
                   alt={t.results.posterAlt}
                 />
@@ -826,18 +827,21 @@ function ResultsPage() {
               >
                 <Maximize className="h-5 w-5" />
               </button>
-              {profile?.poster ? (
+              {posterForRender ? (
                 <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-6 pt-12">
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                    {profile.poster.paletteLabel}
+                    {posterForRender.paletteLabel}
                   </p>
                   <h3 className="text-xl font-bold text-white sm:text-2xl">
-                    {profile.poster.headline}
+                    {posterForRender.headline}
                   </h3>
-                  <p className="text-sm text-white/80">{profile.poster.subheadline}</p>
-                  {profile.poster.keywords.length > 0 ? (
+                  <p className="text-sm text-white/80">{posterForRender.subheadline}</p>
+                  {posterForRender.hero ? (
+                    <p className="text-sm italic text-white/70">{posterForRender.hero}</p>
+                  ) : null}
+                  {posterForRender.keywords.length > 0 ? (
                     <ul className="mt-1 flex flex-wrap gap-2">
-                      {profile.poster.keywords.map((keyword) => (
+                      {posterForRender.keywords.map((keyword) => (
                         <li
                           key={keyword}
                           className="rounded-full border border-white/30 bg-white/10 px-3 py-0.5 text-xs font-medium text-white"
@@ -869,7 +873,7 @@ function ResultsPage() {
           <Suspense fallback={null}>
             <PosterLightbox
               theme={posterTheme}
-              model={profile?.poster ?? null}
+              model={posterForRender}
               songs={songs.map((s) => ({ title: s.title, artist: s.artist }))}
               alt={t.results.posterAlt}
               onClose={() => setPosterOpen(false)}

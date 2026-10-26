@@ -51,6 +51,13 @@ export type PosterModel = {
   paletteLabel: string;
   keywords: string[];
   visual: PosterVisual;
+  /**
+   * Optional single-line emotional hero line rendered under the mood
+   * subheadline (İş 3 — grounded user notes → poster). Undefined =
+   * traditional deterministic poster → EXACT legacy layout (no hero line,
+   * divider +80, song list +170). Must never carry PII/crisis (see Dilim 2).
+   */
+  hero?: string;
 };
 
 export type PersonalityProfile = {
