@@ -36,7 +36,7 @@ export interface PlayerCardProps {
 
 const CSS = `
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Cinzel:wght@600;700&family=Special+Elite&family=Playfair+Display:wght@600;700&family=Poiret+One&family=Righteous&family=Bungee&family=Rajdhani:wght@500;700&display=swap");
-.pc{box-sizing:border-box;position:relative;width:100%;max-width:400px;padding:var(--frameW);border-radius:34px;background:var(--frameGradient);box-shadow:var(--frameGlow),0 24px 50px rgba(0,0,0,.6),var(--bevel);font-family:var(--body);color:var(--text)}
+.pc{box-sizing:border-box;position:relative;width:100%;max-width:440px;padding:var(--frameW);border-radius:34px;background:var(--frameGradient);box-shadow:var(--frameGlow),0 24px 50px rgba(0,0,0,.6),var(--bevel);font-family:var(--body);color:var(--text)}
 .pc *{box-sizing:border-box}
 .pc-in{border-radius:calc(34px - var(--frameW));background:var(--bodyBg);padding:16px 16px 14px;box-shadow:inset 0 0 22px rgba(0,0,0,.45)}
 .pc-meta{display:flex;justify-content:space-between;align-items:center;font:600 12px var(--display);letter-spacing:.14em;color:var(--sub);margin:0 2px 10px}
@@ -57,7 +57,7 @@ const CSS = `
 .pc-stat{display:flex;align-items:center;gap:9px;min-width:0}
 .pc-stat svg{width:34px;height:34px;flex:none;color:var(--sub);filter:drop-shadow(0 0 5px currentColor)}
 .pc-stat small{display:block;font:600 10px var(--display);letter-spacing:.14em;color:var(--sub)}
-.pc-stat strong{display:block;font:700 22px/1 var(--display);color:var(--accent);text-shadow:var(--glowTxt);overflow-wrap:anywhere}
+.pc-stat strong{display:block;font:700 22px/1 var(--display);color:var(--accent);text-shadow:var(--glowTxt);white-space:nowrap}
 .pc-sep{width:1px;height:40px;background:var(--line)}
 .pc-wave{display:flex;align-items:center;justify-content:center;gap:3px;height:36px;margin:8px 0 14px}
 .pc-wave span{width:3px;border-radius:2px;background:linear-gradient(180deg,var(--btn1),var(--btn2));opacity:.9}

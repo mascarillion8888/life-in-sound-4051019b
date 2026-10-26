@@ -62,7 +62,7 @@ export function EraCardReveal({
 
       <div className="relative z-10 my-auto flex flex-col items-center gap-6">
         {/* The card stands on the desk. */}
-        <div className="relative isolate w-full max-w-xs animate-in fade-in zoom-in-95 duration-500">
+        <div className="relative isolate w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
           {eraTheme.overlayClasses && (
             <div aria-hidden="true" className={eraTheme.overlayClasses} />
           )}
