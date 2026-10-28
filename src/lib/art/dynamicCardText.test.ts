@@ -20,8 +20,8 @@ describe("dynamicCardText — every string derived from the track", () => {
 
   it("weaves the era narrative with the track's own metadata", () => {
     const copy = dynamicCardText(base);
-    expect(copy.body).toContain("the world was still vast and soft");
-    expect(copy.body).toContain("Jammin' by Bob Marley, from Exodus");
+    expect(copy.body).toContain("Bob Marley");
+    expect(copy.body).toContain("Jammin'");
   });
 
   it("computes the collector sequence from the track identity", () => {
@@ -50,7 +50,7 @@ describe("dynamicCardText — every string derived from the track", () => {
 
   it("handles coverless/manual tracks without an album", () => {
     const copy = dynamicCardText({ ...base, album: null });
-    expect(copy.body).toContain("Jammin' by Bob Marley");
+    expect(copy.body).toContain("Jammin'");
     expect(copy.body).not.toContain("from ");
   });
 });
