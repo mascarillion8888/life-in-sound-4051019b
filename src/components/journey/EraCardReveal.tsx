@@ -60,7 +60,7 @@ export function EraCardReveal({
         releaseYear={song?.releaseYear ?? null}
       />
 
-      <div className="relative z-10 my-auto flex flex-col items-center gap-6">
+      <div className="relative z-10 mt-auto flex flex-col items-center gap-4">
         {/* The card stands on the desk. */}
         <div className="relative isolate w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
           {eraTheme.overlayClasses && (
