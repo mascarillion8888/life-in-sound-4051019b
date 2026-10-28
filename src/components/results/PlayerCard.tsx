@@ -39,7 +39,7 @@ const CSS = `
 .pc{box-sizing:border-box;position:relative;width:100%;max-width:440px;padding:var(--frameW);border-radius:34px;background:var(--frameGradient);box-shadow:var(--frameGlow),0 24px 50px rgba(0,0,0,.6),var(--bevel);font-family:var(--body);color:var(--text)}
 .pc *{box-sizing:border-box}
 .pc-in{border-radius:calc(34px - var(--frameW));background:var(--bodyBg);padding:16px 16px 14px;box-shadow:inset 0 0 22px rgba(0,0,0,.45)}
-.pc-meta{display:flex;justify-content:space-between;align-items:center;font:600 12px var(--display);letter-spacing:.14em;color:var(--sub);margin:0 2px 10px}
+.pc-meta{display:flex;justify-content:space-between;align-items:center;font:700 15px var(--display);letter-spacing:.08em;color:var(--sub);margin:0 2px 12px}
 .pc-meta em{font-style:normal;color:var(--accent);text-shadow:var(--glowTxt)}
 .pc-cw{position:relative}
 .pc-cover{position:relative;aspect-ratio:1/1;border-radius:16px;overflow:hidden;border:3px solid var(--coverBorder);filter:var(--coverFilter);box-shadow:0 0 22px rgba(0,0,0,.5);background:linear-gradient(180deg,#3a7fd0 0%,#ff7ab0 55%,#ffb05a 100%)}
@@ -59,12 +59,7 @@ const CSS = `
 .pc-stat small{display:block;font:600 10px var(--display);letter-spacing:.14em;color:var(--sub)}
 .pc-stat strong{display:block;font:700 22px/1 var(--display);color:var(--accent);text-shadow:var(--glowTxt);white-space:nowrap}
 .pc-sep{width:1px;height:40px;background:var(--line)}
-.pc-wave{display:flex;align-items:center;justify-content:center;gap:3px;height:36px;margin:8px 0 14px}
 .pc-wave span{width:3px;border-radius:2px;background:linear-gradient(180deg,var(--btn1),var(--btn2));opacity:.9}
-.pc-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border-radius:14px;font:700 18px var(--display);letter-spacing:.05em;padding:15px 12px;cursor:pointer;background:transparent;color:#fff}
-.pc-btn:disabled{opacity:.4;cursor:not-allowed}
-.pc-btn.p{border:2px solid var(--btn1);background:linear-gradient(180deg,color-mix(in srgb,var(--btn1) 35%,transparent),color-mix(in srgb,var(--btn1) 12%,transparent));box-shadow:0 0 14px color-mix(in srgb,var(--btn1) 70%,transparent),inset 0 0 14px color-mix(in srgb,var(--btn1) 30%,transparent)}
-.pc-btn.s{margin-top:12px;font-size:16px;padding:13px 12px;border:2px solid var(--btn2);color:var(--btn2);box-shadow:0 0 12px color-mix(in srgb,var(--btn2) 55%,transparent),inset 0 0 12px color-mix(in srgb,var(--btn2) 18%,transparent)}
 `;
 
 export function PlayerCard(p: PlayerCardProps) {
@@ -105,29 +100,30 @@ export function PlayerCard(p: PlayerCardProps) {
         </div>
         <div className="pc-times"><span>{p.timeLeft ?? "0:00"}</span><span>{p.timeRight ?? "0:30"}</span></div>
 
-        <div className="pc-stats">
-          <div className="pc-stat" data-testid="card-era">
-            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="10" width="40" height="28" rx="4" /><circle cx="16" cy="24" r="4.5" /><circle cx="32" cy="24" r="4.5" /><path d="M16 32h16" /></svg>
-            <div><small>{p.eraTitle}</small><strong>{p.eraValue}</strong></div>
-          </div>
-          <span className="pc-sep" />
-          <div className="pc-stat" data-testid="card-mood">
-            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="24" cy="24" r="19" /><circle cx="17" cy="19" r="2.2" fill="currentColor" /><circle cx="31" cy="19" r="2.2" fill="currentColor" /><path d="M14 29c3 7 17 7 20 0" /></svg>
-            <div><small>{p.moodTitle}</small><strong>{p.moodValue}</strong></div>
-          </div>
-        </div>
-
         <div className="pc-wave" aria-hidden="true">
           {bars.map((h, i) => (<span key={i} style={{ height: h }} />))}
         </div>
 
-        <button type="button" className="pc-btn p" data-testid="card-play" disabled={!p.canPlay} onClick={p.onPlay}>
-          {p.playing ? "❚❚" : "▶"} {p.playLabel}
-        </button>
-        <button type="button" className="pc-btn s" data-testid="card-collect" aria-pressed={!!p.collected} onClick={p.onCollect}>
-          {p.collected ? "✓" : "＋"} {p.collectLabel}
-        </button>
-      </div>
+        <div className="pc-deck">
+          <div className="pc-keywrap">
+            <svg className="pc-cap" viewBox="0 0 150 26" aria-hidden="true">
+              <defs><path id="pc-arc-col" d="M 6 4 Q 75 28 144 4" /></defs>
+              <text><textPath href="#pc-arc-col" startOffset="50%" textAnchor="middle">{p.collectLabel}</textPath></text>
+            </svg>
+            <button type="button" className="pc-key s" data-testid="card-collect" aria-pressed={!!p.collected} aria-label={p.collectLabel} onClick={p.onCollect}>
+              <span className="pc-key-ico" aria-hidden="true">{p.collected ? "✓" : "＋"}</span>
+            </button>
+          </div>
+          <div className="pc-keywrap lg">
+            <svg className="pc-cap" viewBox="0 0 150 26" aria-hidden="true">
+              <defs><path id="pc-arc-play" d="M 6 4 Q 75 28 144 4" /></defs>
+              <text><textPath href="#pc-arc-play" startOffset="50%" textAnchor="middle">{p.playLabel}</textPath></text>
+            </svg>
+            <button type="button" className="pc-key lg" data-testid="card-play" disabled={!p.canPlay} onClick={p.onPlay} aria-label={p.playLabel}>
+              <span className="pc-key-ico" aria-hidden="true">{p.playing ? "❚❚" : "▶"}</span>
+            </button>
+          </div>
+        </div></div>
     </article>
   );
 }
