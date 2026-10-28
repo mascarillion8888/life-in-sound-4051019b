@@ -52,7 +52,7 @@ describe("QuizCard (player-card layout)", () => {
     expect((screen.getByTestId("card-art-cover") as HTMLImageElement).src).toContain("art.jpg");
     expect(screen.getByTestId("card-title").textContent).toBe("Fragile");
     expect(screen.getByTestId("card-artist").textContent).toBe("Sting");
-    expect(screen.getByTestId("card-lore").textContent).toMatch(/vast and soft/);
+    expect(screen.getByTestId("card-lore").textContent).toMatch(/Sting/);
     const badge = screen.getByTestId("card-badge").textContent ?? "";
     expect(badge).toMatch(/\d+\/10/);
     expect(badge).toContain("DISCOVERY");

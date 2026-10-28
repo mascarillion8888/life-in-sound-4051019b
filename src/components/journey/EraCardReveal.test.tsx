@@ -43,7 +43,7 @@ describe("EraCardReveal", () => {
     // per-track title and the card-face tag (REBELLION & <CAPTION>).
     expect(screen.getByTestId("card-title").textContent).toBe("Painkiller");
     // The dynamic English narrative lives on the card face.
-    expect(screen.getByText(/Painkiller/, { selector: "[data-testid=card-lore]" })).toBeInTheDocument();
+        expect(screen.getByTestId("card-lore")).toHaveTextContent(/Painkiller/);
     expect(screen.getByTestId("card-artist").textContent).toBe("Judas Priest");
   });
 
