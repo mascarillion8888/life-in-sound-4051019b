@@ -63,7 +63,12 @@ export function QuizCard({
 
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
+  const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
+  const encounterAge = ageNums.length
+    ? Math.round(ageNums.reduce((a, b) => a + b, 0) / ageNums.length)
+    : null;
   const lore = useCardLore(song, {
+    encounterAge,
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
