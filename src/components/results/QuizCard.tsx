@@ -21,6 +21,7 @@ import type { LifeCard } from "@/lib/soundmap/lifeCards";
 import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
 import { cardTemplateUrl } from "@/lib/card/cardTemplates";
 import type { Song } from "@/lib/song/types";
+import { usePreviewSpectrum } from "@/lib/soundmap/previewSpectrum";
 import { PlayerCard } from "./PlayerCard";
 
 /** Tiny deterministic string hash (no external dependency). */
@@ -54,6 +55,7 @@ export function QuizCard({
 }) {
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
+  const spectrum = usePreviewSpectrum(song?.previewUrl ?? null);
 
   const collectionKey = song ? cardArtworkKey(song) : "";
   const [saved, setSaved] = useState(
@@ -175,6 +177,8 @@ export function QuizCard({
       moodValue={(mood ?? "Nostalgic").toUpperCase()}
       coverSlot={coverSlot}
       progress={preview.progress}
+      spectrum={spectrum}
+      getTime={preview.getTime}
       timeLeft={fmtTime(preview.currentTime)}
       timeRight={fmtTime(preview.duration)}
       canPlay={preview.available}

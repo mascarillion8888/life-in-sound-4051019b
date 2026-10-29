@@ -64,6 +64,8 @@ export type AudioPreviewState = {
   progress: number;
   /** Seconds played so far. */
   currentTime: number;
+  /** Live playback position in seconds — cheap to call from rAF loops. */
+  getTime: () => number;
   /** Preview length in seconds (30 until the real duration is known). */
   duration: number;
 };
@@ -130,6 +132,8 @@ export function useAudioPreview(
     return () => clearInterval(id);
   }, [playing]);
 
+  const getTime = useCallback(() => audioRef.current?.currentTime ?? 0, []);
+
   const toggle = useCallback(() => {
     if (playing) stop();
     else play();
@@ -146,5 +150,5 @@ export function useAudioPreview(
   }, [previewUrl]);
 
   const progress = playing || time.cur > 0 ? Math.max(0, Math.min(1, time.cur / time.dur)) : 0;
-  return { available, playing, toggle, progress, currentTime: time.cur, duration: time.dur };
+  return { available, playing, toggle, progress, currentTime: time.cur, duration: time.dur, getTime };
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import { resolveCardVars } from "@/lib/art/cardThemeV3";
+import type { Spectrum } from "@/lib/soundmap/previewSpectrum";
 
 export interface PlayerCardProps {
   genre?: string | null;
@@ -33,8 +34,10 @@ export interface PlayerCardProps {
   collectLabel: string;
   /** Optional override for the life-stage chip (e.g. "Childhood"). Derived from metaLeft when omitted. */
   stageLabel?: string;
-  /** Optional Web Audio analyser; when given the waveform follows the real signal. */
-  analyser?: AnalyserNode | null;
+  /** Offline spectrum of the preview; with `getTime` the equalizer follows the real music. */
+  spectrum?: Spectrum | null;
+  /** Live playback position in seconds. */
+  getTime?: () => number;
   "data-testid"?: string;
 }
 
@@ -70,13 +73,15 @@ const CSS = `
 .pc-times{display:flex;justify-content:space-between;font:500 12px var(--display);opacity:.8;margin-top:7px}
 .pc-tag{display:flex;justify-content:flex-start;margin:0 0 10px}
 .pc-tag span{display:inline-flex;gap:6px;align-items:center;padding:4px 11px;border-radius:999px;border:1px solid var(--sub);background:rgba(0,0,0,.3);color:var(--sub);font:700 11px var(--display);letter-spacing:.12em;text-transform:uppercase;text-shadow:var(--glowTxt)}
-.pc-wave{display:flex;align-items:center;justify-content:space-between;height:34px;margin-top:10px}
-.pc-wave span{display:block;width:3px;height:34px;border-radius:2px;background:linear-gradient(180deg,var(--btn1),var(--btn2));opacity:.9;transform:scaleY(var(--h));transform-origin:center;will-change:transform}
-.pc-wave.on span{animation:pc-bounce var(--t,.8s) ease-in-out var(--d,0s) infinite alternate}
-.pc-wave.live span{animation:none}
-@keyframes pc-bounce{from{transform:scaleY(var(--h))}to{transform:scaleY(calc(var(--h)*.3 + .6))}}
-@media (prefers-reduced-motion:reduce){.pc-wave.on span{animation:none}}
-.pc-stats{display:flex;align-items:center;justify-content:space-around;gap:8px;margin-top:12px;padding:8px 6px;border-radius:12px;background:rgba(0,0,0,.28)}
+@property --lv{syntax:"<number>";inherits:false;initial-value:0}
+.pc-eq{display:flex;align-items:flex-end;justify-content:space-between;gap:3px;height:48px;margin:12px 0 20px;-webkit-box-reflect:below 1px linear-gradient(transparent 58%,rgba(255,255,255,.26))}
+.pc-eq .c{position:relative;flex:1 1 0;height:100%;-webkit-mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px);mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px)}
+.pc-eq .c i{--lv:var(--h);position:absolute;left:0;right:0;bottom:0;height:calc(var(--lv)*100%);background:linear-gradient(to top,var(--btn2),var(--sub));box-shadow:0 0 8px color-mix(in srgb,var(--btn2) 55%,transparent)}
+.pc-eq .c b{position:absolute;left:0;right:0;bottom:calc(var(--pk,0)*4px);height:4px;background:#eafffb;opacity:0}
+.pc-eq.on:not(.live) .c i{animation:pc-eq var(--t,.8s) steps(12,end) var(--d,0s) infinite alternate}
+@keyframes pc-eq{from{--lv:var(--h)}to{--lv:calc(var(--h)*.3 + .12)}}
+@media (prefers-reduced-motion:reduce){.pc-eq.on:not(.live) .c i{animation:none}}
+.pc-stats{display:flex;align-items:center;justify-content:space-around;gap:8px;margin-top:0;padding:8px 6px;border-radius:12px;background:rgba(0,0,0,.28)}
 .pc-stat{display:flex;align-items:center;gap:9px;min-width:0}
 .pc-stat svg{width:30px;height:30px;flex:none;filter:drop-shadow(0 0 5px currentColor)}
 .pc-stat.era svg{color:var(--sub)}
@@ -105,39 +110,58 @@ const CheckIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 const CassetteIcon = () => (<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="3" /><rect x="9" y="12" width="14" height="6" rx="3" /><circle cx="12.5" cy="15" r="1.4" fill="currentColor" /><circle cx="19.5" cy="15" r="1.4" fill="currentColor" /><path d="M9 25l2-4h10l2 4" /></svg>);
 const SmileIcon = () => (<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor" fillOpacity=".18" /><circle cx="11.5" cy="13" r="1.3" fill="currentColor" /><circle cx="20.5" cy="13" r="1.3" fill="currentColor" /><path d="M9.5 18.5c1.6 3.2 4 4.5 6.5 4.5s4.9-1.3 6.5-4.5" /></svg>);
 
+const EQ_BARS = 24;
+const EQ_SEGS = 12;
+
 export function PlayerCard(p: PlayerCardProps) {
   const theme = useMemo(() => resolveCardVars(p.genre ?? null, p.mood ?? null), [p.genre, p.mood]);
-    const bars = useMemo(
+  const eq = useMemo(
     () =>
-      Array.from({ length: 56 }, (_, i) => {
-        const h = 4 + Math.round(28 * Math.pow(Math.abs(Math.sin(i * 0.5) * Math.cos(i * 0.19)), 1.6));
-        return { h: h / 34, d: -((i * 37) % 100) / 100, t: 0.55 + ((i * 53) % 40) / 100 };
+      Array.from({ length: EQ_BARS }, (_, i) => {
+        const h = 0.2 + 0.8 * Math.pow(Math.abs(Math.sin(i * 0.55 + 0.6) * Math.cos(i * 0.21)), 1.3);
+        return { h: Math.ceil(h * EQ_SEGS) / EQ_SEGS, d: -((i * 37) % 100) / 100, t: 0.5 + ((i * 53) % 50) / 100 };
       }),
     [],
   );
-  const waveRef = useRef<HTMLDivElement>(null);
-  const live = !!(p.playing && p.analyser);
+  const eqRef = useRef<HTMLDivElement>(null);
+  const live = !!(p.playing && p.spectrum && p.getTime);
   useEffect(() => {
-    if (!live || !p.analyser || !waveRef.current) return;
-    const an = p.analyser;
-    const nodes = Array.from(waveRef.current.children) as HTMLElement[];
-    const data = new Uint8Array(an.frequencyBinCount);
+    if (!live || !p.spectrum || !p.getTime || !eqRef.current) return;
+    const sp = p.spectrum;
+    const getTime = p.getTime;
+    const cols = Array.from(eqRef.current.children) as HTMLElement[];
+    const fills = cols.map((c) => c.firstElementChild as HTMLElement);
+    const caps = cols.map((c) => c.lastElementChild as HTMLElement);
+    const level = new Float32Array(cols.length);
+    const peak = new Float32Array(cols.length);
     let raf = 0;
-    const tick = () => {
-      an.getByteFrequencyData(data);
-      const step = Math.max(1, Math.floor((data.length * 0.7) / nodes.length));
-      nodes.forEach((n, i) => {
-        const v = data[i * step] / 255;
-        n.style.transform = `scaleY(${Math.max(0.12, v)})`;
-      });
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      const f = Math.min(sp.frames - 1, Math.max(0, Math.floor(getTime() * sp.fps)));
+      for (let i = 0; i < cols.length; i++) {
+        const band = Math.min(sp.bands - 1, Math.floor((i * sp.bands) / cols.length));
+        const target = sp.data[f * sp.bands + band] / 255;
+        level[i] = target > level[i] ? target : Math.max(target, level[i] - dt * 2.4);
+        const seg = Math.ceil(level[i] * EQ_SEGS - 1e-6);
+        fills[i].style.setProperty("--lv", String(seg / EQ_SEGS));
+        peak[i] = Math.max(seg, peak[i] - dt * 9);
+        caps[i].style.setProperty("--pk", String(Math.max(0, Math.round(peak[i]) - 1)));
+        caps[i].style.opacity = peak[i] > 0.6 ? "0.9" : "0";
+      }
       raf = requestAnimationFrame(tick);
     };
-    tick();
+    raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      nodes.forEach((n) => (n.style.transform = ""));
+      fills.forEach((el) => el.style.removeProperty("--lv"));
+      caps.forEach((el) => {
+        el.style.removeProperty("--pk");
+        el.style.opacity = "";
+      });
     };
-  }, [live, p.analyser]);
+  }, [live, p.spectrum, p.getTime]);
   const stage = p.stageLabel ?? lifeStage(p.metaLeft);
   const pct = p.progress == null ? 0 : Math.max(0, Math.min(1, p.progress)) * 100;
   const score = Math.max(0, Math.min(10, Math.round(p.score)));
@@ -173,9 +197,12 @@ export function PlayerCard(p: PlayerCardProps) {
           </div>
           <div className="pc-times"><span>{p.timeLeft ?? "0:00"}</span><span>{p.timeRight ?? "0:30"}</span></div>
 
-          <div ref={waveRef} className={`pc-wave${p.playing ? " on" : ""}${live ? " live" : ""}`} aria-hidden="true">
-            {bars.map((b, i) => (
-              <span key={i} style={{ "--h": b.h, "--d": `${b.d}s`, "--t": `${b.t}s` } as CSSProperties} />
+          <div ref={eqRef} className={`pc-eq${p.playing ? " on" : ""}${live ? " live" : ""}`} aria-hidden="true">
+            {eq.map((b, i) => (
+              <span className="c" key={i}>
+                <i style={{ "--h": b.h, "--t": `${b.t}s`, "--d": `${b.d}s` } as CSSProperties} />
+                <b />
+              </span>
             ))}
           </div>
           <div className="pc-stats">
