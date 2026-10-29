@@ -61,7 +61,7 @@ const CSS = `
 .pc{position:relative;width:100%;padding:var(--frameW);border-radius:34px;background:var(--frameGradient);box-shadow:var(--frameGlow),0 24px 50px rgba(0,0,0,.6),var(--bevel);font-family:var(--body);color:var(--text)}
 .pc-in{border-radius:calc(34px - var(--frameW));background:var(--bodyBg);padding:16px 16px 16px;box-shadow:inset 0 0 22px rgba(0,0,0,.45)}
 .pc-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.pc-cover{position:relative;aspect-ratio:16/11;border-radius:16px;overflow:hidden;border:3px solid var(--coverBorder);filter:var(--coverFilter);box-shadow:0 0 22px rgba(0,0,0,.5);background:linear-gradient(180deg,#3a7fd0 0%,#ff7ab0 55%,#ffb05a 100%)}
+.pc-cover{position:relative;aspect-ratio:1/1;width:min(100%,max(200px,calc(100dvh - 560px)));margin-inline:auto;border-radius:16px;overflow:hidden;border:3px solid var(--coverBorder);filter:var(--coverFilter);box-shadow:0 0 22px rgba(0,0,0,.5);background:linear-gradient(180deg,#3a7fd0 0%,#ff7ab0 55%,#ffb05a 100%)}
 .pc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:16px}
 .pc-titles{min-width:0}
 .pc h2{margin:0;font:600 28px/1.1 var(--display);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -99,7 +99,7 @@ const CSS = `
 .pc-btn.col svg{width:22px;height:22px}
 .pc-story{margin:0;padding:12px 14px;border-radius:14px;background:rgba(10,6,30,.82);color:#fff;font:400 14px/1.45 var(--body,inherit);backdrop-filter:blur(6px);max-height:calc(1.45em*3 + 24px);overflow:hidden}
 .pc-story span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
-@media (max-height:700px){.pc-cover{aspect-ratio:2/1}.pc-in{padding:12px}.pc-head{margin-top:12px}.pc-btn{height:48px}.pc-btn.col{height:44px}}
+@media (max-height:700px){.pc-in{padding:12px}.pc-head{margin-top:12px}.pc-btn{height:48px}.pc-btn.col{height:44px}}
 `;
 
 const PlayIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>);
