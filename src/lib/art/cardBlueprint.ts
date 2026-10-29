@@ -32,6 +32,8 @@ export type CardEncounter = {
   releaseYear?: number | null;
   /** Optional personal memory fragment woven into the atmosphere. */
   userMemory?: string | null;
+  /** Journey position (0-based) — life-stage fallback when the age is unknown. */
+  cardIndex?: number | null;
 };
 
 /** birthYear + encounterAge → the historical year of the encounter. */
@@ -231,15 +233,151 @@ function stableHash(value: string): number {
   return h >>> 0;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Life stages — the lore's tone follows the listener's age at the encounter  */
+/* -------------------------------------------------------------------------- */
+
+export type LifeStage = {
+  /** Journey-era index 0..7 (matches the eight life cards). */
+  index: number;
+  /** Who the lore is about, for the LLM prompt ("a teenager"). */
+  subject: string;
+  /** Emotional tone brief for the LLM prompt. */
+  tone: string;
+  /** Deterministic poetic lines; {t} = song title, {a} = artist. Each is 2 sentences. */
+  lines: readonly string[];
+};
+
+const LIFE_STAGES: readonly LifeStage[] = [
+  {
+    index: 0,
+    subject: "a young child",
+    tone:
+      "pure enchantment: the first time a sound wraps around the soul, nameless feelings rising, the whole world soft and vast",
+    lines: [
+      "The first time {t} played, {a}'s voice wrapped around a small soul and would not let go. Feelings with no names yet began to rise.",
+      "A child heard {a} sing {t}, and the whole room turned to light. Something nameless woke up inside.",
+      "{t} arrived like a spell, and {a}'s voice settled over a young heart. Wonder, wide and nameless, filled the room.",
+    ],
+  },
+  {
+    index: 1,
+    subject: "a child growing into their own taste",
+    tone:
+      "the first threshold where taste becomes a mirror: choosing a sound that is truly theirs, a first private identity",
+    lines: [
+      "With {t}, a sound became truly theirs for the first time. {a} turned into a mirror, and a new self looked back.",
+      "Somewhere between childhood and the wide world, {t} became a tiny flag. {a} was the first voice chosen all alone.",
+      "Pressing play on {t}, a young listener felt that {a}'s music belonged to them. It was the first line of a signature.",
+    ],
+  },
+  {
+    index: 2,
+    subject: "a teenager",
+    tone:
+      "rebellion and refuge: volume louder than feeling, restless heartbeats finding an anthem, identity forged in sound",
+    lines: [
+      "{t} turned up the volume on everything unsaid. With {a} nearby, every restless heartbeat found an anthem.",
+      "The world was too loud and too quiet at once, until {a} played {t}. A wild young heart finally had a banner to carry.",
+      "All lightning and questions, a teenager found thunder in {a}'s {t}. Louder felt like truer.",
+    ],
+  },
+  {
+    index: 3,
+    subject: "a young adult at the edge of everything",
+    tone:
+      "open doors and more questions than answers: new cities, uncertainty turning into courage, the road wide open",
+    lines: [
+      "Doors opened everywhere, and {t} played softly behind every question. {a} gave no answers, only the courage to keep asking.",
+      "New cities, new faces, old songs: {a}'s {t} walked through the great unknown. Each question made the road feel braver.",
+      "Questions gathered like stars, and {a}'s {t} lit a few of them. The sky of possibilities stayed wide open.",
+    ],
+  },
+  {
+    index: 4,
+    subject: "a grown listener finding their strength",
+    tone:
+      "fragility wrought into armor: resilience, hard mornings, steadiness found in a song",
+    lines: [
+      "Life asked for strength, and {t} answered in {a}'s voice. What once felt fragile quietly became armor.",
+      "Standing tall on shaky ground, a heart kept time with {a}'s {t}. Soft turned out to be a kind of steel.",
+      "Every hard morning had a soundtrack, and {a}'s {t} said keep going. The heart listened, and grew stronger.",
+    ],
+  },
+  {
+    index: 5,
+    subject: "an adult in the quieter, darker hours",
+    tone:
+      "sound arriving before light: long nights, comfort, a song that keeps the silence company until morning",
+    lines: [
+      "In the long dark hours, {t} arrived before the dawn did. {a} kept the silence company until the light found its way back.",
+      "When the lights went out, the sound stayed: {a} singing {t}. In that gentle dark, breathing felt possible again.",
+      "Some nights are only bearable with one song, and {a}'s {t} was the one. It carried the hours until morning.",
+    ],
+  },
+  {
+    index: 6,
+    subject: "a seasoned listener with a long memory",
+    tone:
+      "longing and memory: loss made portable through music, people and places living inside a melody",
+    lines: [
+      "{t} carries every goodbye ever whispered. In {a}'s voice, loss became something to hold gently.",
+      "Time took a few things and left {t} behind. {a} showed that what is missed can travel, folded inside a melody.",
+      "The people and places long gone live inside {t}. Press play, and {a} opens the door to them once more.",
+    ],
+  },
+  {
+    index: 7,
+    subject: "a listener at peace with the journey",
+    tone:
+      "acceptance: inquiry and peace meeting in one melody, the whole story finally making quiet sense",
+    lines: [
+      "Now {t} sounds like peace after a long journey. {a} sings what is finally understood: every question was part of the melody.",
+      "After all these years, {t} still finds its listener. With {a} humming along, the whole story makes quiet sense.",
+      "Here, in the present, {t} feels like coming home. {a} plays the last chord, and nothing is missing.",
+    ],
+  },
+];
+
+/**
+ * Life stage for one encounter: from the listener's age when known, otherwise
+ * from the journey position (the last card, "Now", has no age). Null when
+ * neither signal exists — callers then keep their generic wording.
+ */
+export function lifeStageFor(encounter: CardEncounter): LifeStage | null {
+  const age = encounter.encounterAge;
+  if (typeof age === "number" && Number.isFinite(age) && age > 0) {
+    const a = Math.floor(age);
+    const i = a <= 9 ? 0 : a <= 12 ? 1 : a <= 17 ? 2 : a <= 22 ? 3 : a <= 29 ? 4 : a <= 39 ? 5 : 6;
+    return LIFE_STAGES[i];
+  }
+  const idx = encounter.cardIndex;
+  if (typeof idx === "number" && Number.isFinite(idx) && idx >= 0 && idx < LIFE_STAGES.length) {
+    return LIFE_STAGES[Math.floor(idx)];
+  }
+  return null;
+}
+
 /**
  * Deterministic 2-sentence lore fallback. Track-seeded so the same song
  * always reads the same snippet; used whenever the LLM lore path is absent
- * or fails — the card never ships an empty lore box.
+ * or fails — the card never ships an empty lore box. With a known life stage
+ * the poetry follows it and names the song and artist; without one the
+ * generic bedroom lines are kept.
  */
 export function deterministicLore(encounter: CardEncounter): string {
   const hash = stableHash(
     `${encounter.artist}::${encounter.songTitle}::${encounter.encounterAge ?? ""}`,
   );
+  const stage = lifeStageFor(encounter);
+  if (stage) {
+    const line = stage.lines[hash % stage.lines.length];
+    const song = encounter.songTitle.trim()
+      ? `\u201C${encounter.songTitle.trim()}\u201D`
+      : "this song";
+    const artist = encounter.artist.trim() || "the music";
+    return line.replace(/\{t\}/g, song).replace(/\{a\}/g, artist);
+  }
   const opener = LORE_OPENERS[hash % LORE_OPENERS.length];
   const closer = LORE_CLOSERS[Math.floor(hash / LORE_OPENERS.length) % LORE_CLOSERS.length];
   return `${opener} ${closer}`;

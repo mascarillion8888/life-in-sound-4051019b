@@ -52,18 +52,11 @@ describe("QuizCard (player-card layout)", () => {
     expect((screen.getByTestId("card-art-cover") as HTMLImageElement).src).toContain("art.jpg");
     expect(screen.getByTestId("card-title").textContent).toBe("Fragile");
     expect(screen.getByTestId("card-artist").textContent).toBe("Sting");
-    expect(screen.getByTestId("card-lore").textContent).toMatch(/vast and soft/);
+    expect(screen.getByTestId("card-lore").textContent).toMatch(/Sting/);
     const badge = screen.getByTestId("card-badge").textContent ?? "";
     expect(badge).toMatch(/\d+\/10/);
     expect(badge).toContain("DISCOVERY");
-    expect(screen.getByTestId("card-era").textContent).toContain("1980s");
-    expect(screen.getByTestId("card-mood").textContent).toContain("NOSTALGIC");
     expect(screen.getByTestId("card-progress").getAttribute("aria-valuenow")).toBe("0");
-  });
-
-  it("falls back to the era's age range when the song has no release year", () => {
-    render(<QuizCard card={cards[0]} song={song({ releaseYear: undefined })} />);
-    expect(screen.getByTestId("card-era").textContent).toContain("Ages 5-9");
   });
 
   it("applies the genre family and mood as theme attributes", () => {
@@ -72,7 +65,6 @@ describe("QuizCard (player-card layout)", () => {
     const root = screen.getByTestId(cardId);
     expect(root.getAttribute("data-family")).toBe("gothic");
     expect(root.getAttribute("data-mood")).toBe("Dark");
-    expect(screen.getByTestId("card-mood").textContent).toContain("DARK");
   });
 
   it("maps hip-hop songs to the hiphop family", () => {

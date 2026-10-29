@@ -36,6 +36,7 @@ import {
   cardArtworkSceneForGenre,
   deterministicLore,
   historicalEraYear,
+  lifeStageFor,
   type CardEncounter,
 } from "./cardBlueprint";
 
@@ -80,11 +81,19 @@ export function buildLorePrompt(encounter: CardEncounter): string {
   if (encounter.userMemory?.trim()) {
     parts.push(`Personal memory to honour: ${encounter.userMemory.trim()}.`);
   }
+  const stage = lifeStageFor(encounter);
+  if (stage) {
+    parts.push(
+      `Life stage of the listener at that moment: ${stage.subject}. Let the feeling match it: ${stage.tone}.`,
+    );
+  }
   parts.push(
-    "Warm, gentle, second-person-free prose about a child absorbed in music. " +
+    `Warm, gentle, second-person-free prose about ${stage ? stage.subject : "a child"} absorbed in music. ` +
+      "Tone: poetic, epic yet friendly, like a gentle storyteller. " +
+      "Name the song title and the artist plainly in the text (no lyrics, no quotation of lines). " +
       "This is a friend's memory, not a clinical case — never diagnose, label, or pathologize the listener or their feelings. " +
       "Write something specific and warm, never a generic fortune-cookie compliment. " +
-      "No artist face descriptions, no lyrics, no quotes. Reply with ONLY the 2 sentences.",
+      "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. Reply with ONLY the 2 sentences.",
   );
   return parts.join(" ");
 }

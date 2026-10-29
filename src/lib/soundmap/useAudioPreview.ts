@@ -60,7 +60,18 @@ export type AudioPreviewState = {
   playing: boolean;
   /** Gothic mute/play toggle — no-op when no preview exists. */
   toggle: () => void;
+  /** Playback position as 0..1 (0 when stopped or no preview). */
+  progress: number;
+  /** Seconds played so far. */
+  currentTime: number;
+  /** Live playback position in seconds — cheap to call from rAF loops. */
+  getTime: () => number;
+  /** Preview length in seconds (30 until the real duration is known). */
+  duration: number;
 };
+
+const DEFAULT_DURATION = 30;
+const TIME_TICK_MS = 200;
 
 export function useAudioPreview(
   song: Song | null | undefined,
@@ -70,6 +81,7 @@ export function useAudioPreview(
   const available = typeof previewUrl === "string" && previewUrl.length > 0;
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [time, setTime] = useState({ cur: 0, dur: DEFAULT_DURATION });
 
   const stop = useCallback(() => {
     if (active?.audio === audioRef.current) {
@@ -88,6 +100,12 @@ export function useAudioPreview(
     audioRef.current = audio;
     audio.src = previewUrl;
     audio.volume = 0;
+    audio.onended = () => {
+      if (active?.audio === audio) active = null;
+      setPlaying(false);
+      setTime((t) => ({ ...t, cur: t.dur }));
+    };
+    setTime({ cur: 0, dur: DEFAULT_DURATION });
     active = { audio, onInactive: () => setPlaying(false) };
     const p = audio.play();
     // jsdom returns undefined; browsers return a promise that may reject on
@@ -101,6 +119,20 @@ export function useAudioPreview(
     setPlaying(true);
     rampVolume(audio, 1, FADE_IN_MS, () => {});
   }, [available, previewUrl]);
+
+  // Position ticker: only runs while this card is playing.
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      const a = audioRef.current;
+      if (!a) return;
+      const dur = Number.isFinite(a.duration) && a.duration > 0 ? a.duration : DEFAULT_DURATION;
+      setTime({ cur: Math.min(a.currentTime, dur), dur });
+    }, TIME_TICK_MS);
+    return () => clearInterval(id);
+  }, [playing]);
+
+  const getTime = useCallback(() => audioRef.current?.currentTime ?? 0, []);
 
   const toggle = useCallback(() => {
     if (playing) stop();
@@ -117,5 +149,6 @@ export function useAudioPreview(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewUrl]);
 
-  return { available, playing, toggle };
+  const progress = playing || time.cur > 0 ? Math.max(0, Math.min(1, time.cur / time.dur)) : 0;
+  return { available, playing, toggle, progress, currentTime: time.cur, duration: time.dur, getTime };
 }

@@ -21,6 +21,7 @@ import type { LifeCard } from "@/lib/soundmap/lifeCards";
 import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
 import { cardTemplateUrl } from "@/lib/card/cardTemplates";
 import type { Song } from "@/lib/song/types";
+import { usePreviewSpectrum } from "@/lib/soundmap/previewSpectrum";
 import { PlayerCard } from "./PlayerCard";
 
 /** Tiny deterministic string hash (no external dependency). */
@@ -28,6 +29,11 @@ function hashString(value: string): number {
   let h = 0;
   for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) >>> 0;
   return h;
+}
+
+function fmtTime(sec: number): string {
+  const s = Math.max(0, Math.floor(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
 export function QuizCard({
@@ -49,6 +55,7 @@ export function QuizCard({
 }) {
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
+  const spectrum = usePreviewSpectrum(song?.previewUrl ?? null);
 
   const collectionKey = song ? cardArtworkKey(song) : "";
   const [saved, setSaved] = useState(
@@ -63,7 +70,12 @@ export function QuizCard({
 
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
+  const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
+  const encounterAge = ageNums.length
+    ? Math.round(ageNums.reduce((a, b) => a + b, 0) / ageNums.length)
+    : null;
   const lore = useCardLore(song, {
+    encounterAge,
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
@@ -164,7 +176,11 @@ export function QuizCard({
       moodTitle="MOOD"
       moodValue={(mood ?? "Nostalgic").toUpperCase()}
       coverSlot={coverSlot}
-      progress={null}
+      progress={preview.progress}
+      spectrum={spectrum}
+      getTime={preview.getTime}
+      timeLeft={fmtTime(preview.currentTime)}
+      timeRight={fmtTime(preview.duration)}
       canPlay={preview.available}
       playing={preview.playing}
       onPlay={preview.toggle}
