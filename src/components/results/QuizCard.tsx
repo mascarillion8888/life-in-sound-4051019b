@@ -173,7 +173,6 @@ export function QuizCard({
       canPlay={preview.available}
       playing={preview.playing}
       onPlay={preview.toggle}
-      analyser={preview.analyser}
       playLabel={playLabel}
       collected={saved}
       onCollect={toggleSaved}

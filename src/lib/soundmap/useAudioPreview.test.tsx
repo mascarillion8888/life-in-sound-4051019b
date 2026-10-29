@@ -101,11 +101,3 @@ describe("useAudioPreview", () => {
     expect(HTMLMediaElement.prototype.pause).toHaveBeenCalled();
   });
 });
-
-  it("analyser is null when AudioContext is unavailable (jsdom)", () => {
-    // jsdom has no AudioContext, so analyser should be null
-    const { result } = renderHook(() =>
-      useAudioPreview(songWith("https://x/p.m4a"))
-    );
-    expect(result.current.analyser).toBeNull();
-  });
