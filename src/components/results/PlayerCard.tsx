@@ -65,7 +65,7 @@ const CSS = `
 .pc-artist{font:500 19px var(--display);color:var(--sub);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pc-heart{flex:none;width:30px;height:30px;margin-top:4px;color:var(--sub);filter:drop-shadow(0 0 5px currentColor)}
 .pc-bar{margin-top:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.18);position:relative}
-.pc-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,var(--btn1),var(--sub))}
+.pc-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;transition:width .22s linear;background:linear-gradient(90deg,var(--btn1),var(--sub))}
 .pc-bar i::after{content:"";position:absolute;right:-6px;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--sub)}
 .pc-times{display:flex;justify-content:space-between;font:500 12px var(--display);opacity:.8;margin-top:7px}
 .pc-tag{display:flex;justify-content:flex-start;margin:0 0 10px}

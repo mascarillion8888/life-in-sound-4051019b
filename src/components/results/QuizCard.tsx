@@ -30,6 +30,11 @@ function hashString(value: string): number {
   return h;
 }
 
+function fmtTime(sec: number): string {
+  const s = Math.max(0, Math.floor(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 export function QuizCard({
   card,
   song,
@@ -169,7 +174,9 @@ export function QuizCard({
       moodTitle="MOOD"
       moodValue={(mood ?? "Nostalgic").toUpperCase()}
       coverSlot={coverSlot}
-      progress={null}
+      progress={preview.progress}
+      timeLeft={fmtTime(preview.currentTime)}
+      timeRight={fmtTime(preview.duration)}
       canPlay={preview.available}
       playing={preview.playing}
       onPlay={preview.toggle}
