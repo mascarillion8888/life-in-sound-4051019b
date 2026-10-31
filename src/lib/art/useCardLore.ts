@@ -58,12 +58,6 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       setState({ key: "", lore: null });
       return;
     }
-    const cached = LORE_CACHE.get(key);
-    if (cached) {
-      setState({ key, lore: cached });
-      return;
-    }
-
     let active = true;
     setState({ key, lore: null });
 
@@ -71,12 +65,22 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     // RLS context server-side; anonymous/no-session users simply skip it.
     void (async () => {
       let accessToken: string | null = null;
+      let userId: string | null = null;
       try {
         const supabase = getSupabase();
         const session = supabase ? (await supabase.auth.getSession()).data.session : null;
         accessToken = session?.access_token ?? null;
+        userId = session?.user.id ?? null;
       } catch {
         accessToken = null;
+      }
+
+      if (!accessToken || !userId) return;
+      const cacheKey = `${userId}:${key}`;
+      const cached = LORE_CACHE.get(cacheKey);
+      if (cached) {
+        if (active) setState({ key, lore: cached });
+        return;
       }
 
       try {
@@ -96,7 +100,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
         });
         if (!active) return;
         if (out.lore) {
-          LORE_CACHE.set(key, out.lore);
+          LORE_CACHE.set(cacheKey, out.lore);
           setState({ key, lore: out.lore });
         }
         // A persisted card wrote a new `cards` row — bust the in-memory list
