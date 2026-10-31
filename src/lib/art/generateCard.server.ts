@@ -29,6 +29,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
 import { runRole } from "@/lib/llm/orchestra";
+import { callOpenRouter } from "@/lib/openrouter.server";
 
 import { generateCardArtworkCore } from "./cardArtwork.server";
 import {
@@ -119,6 +120,33 @@ function cleanLore(raw: string | null | undefined): string {
   return (raw ?? "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
 }
 
+const LORE_SYSTEM_PROMPT =
+  "You are the narrator of a music-memory app. You write one short, poetic, warm piece of lore (2 sentences, plain prose, English only) about a listener meeting a song at a certain age. Be concrete and specific, never generic. Never quote lyrics, never invent people, places or events from the listener's life, never diagnose or give advice. Output only the lore text.";
+
+/**
+ * Provider chain for lore: OpenRouter (Gemini) first, then the Groq
+ * `summarizer` role. Returns null when neither is configured or both fail,
+ * so the caller can fall back to the deterministic lines.
+ */
+async function writeLoreText(
+  userPrompt: string,
+  fetchImpl?: typeof fetch,
+): Promise<string | null> {
+  try {
+    const viaOpenRouter = await callOpenRouter(
+      [
+        { role: "system", content: LORE_SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      { temperature: 0.9, maxTokens: 300, fetchImpl },
+    );
+    if (viaOpenRouter != null) return viaOpenRouter;
+  } catch {
+    /* fall through to Groq */
+  }
+  return runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 300, fetchImpl });
+}
+
 /**
  * LLM lore with deterministic fallback — never null, never throws. Output that
  * is too long or leans on stock phrases gets exactly one rewrite attempt; a
@@ -131,12 +159,11 @@ export async function generateCardLoreCore(
   const prompt = buildLorePrompt(encounter);
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const llm = await runRole(
-        "summarizer",
+      const llm = await writeLoreText(
         attempt === 0
           ? prompt
           : `${prompt} Your previous answer used stock phrases or was too long: write it fresher, more specific and shorter.`,
-        { temperature: 0.9, maxTokens: 300, fetchImpl: options.fetchImpl },
+        options.fetchImpl,
       );
       if (llm == null) break; // no provider/key configured — retrying cannot help
       const cleaned = cleanLore(llm);
