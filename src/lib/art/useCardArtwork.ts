@@ -20,6 +20,7 @@
 import { useEffect, useState } from "react";
 
 import type { Song } from "@/lib/song/types";
+import { getSupabase } from "@/lib/supabase/client";
 
 import { generateCardArtwork } from "./cardArtwork.server";
 
@@ -109,44 +110,50 @@ export function useCardArtwork(
       return;
     }
 
-    const memory = MEMORY_CACHE.get(key);
-    if (memory) {
-      setState({ key, imageUrl: memory, status: "ready" });
-      return;
-    }
-    const persisted = readPersisted()[key];
-    if (persisted) {
-      MEMORY_CACHE.set(key, persisted);
-      setState({ key, imageUrl: persisted, status: "ready" });
-      return;
-    }
-
     let active = true;
     setState({ key, imageUrl: null, status: "loading" });
-    const fail = () => {
+
+    void (async () => {
+      const supabase = getSupabase();
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+      const userId = session?.user.id;
+      const accessToken = session?.access_token;
+      if (!userId || !accessToken) {
+        if (active) setState({ key, imageUrl: null, status: "unavailable" });
+        return;
+      }
+
+      const scopedKey = `${userId}:${key}`;
+      const memory = MEMORY_CACHE.get(scopedKey);
+      if (memory) {
+        if (active) setState({ key, imageUrl: memory, status: "ready" });
+        return;
+      }
+      const persisted = readPersisted()[scopedKey];
+      if (persisted) {
+        MEMORY_CACHE.set(scopedKey, persisted);
+        if (active) setState({ key, imageUrl: persisted, status: "ready" });
+        return;
+      }
+
+      try {
+        const out = await generateCardArtwork({
+          data: { trackKey: key, artist, title, album, releaseYear, cardIndex, accessToken },
+        });
+        if (!active) return;
+        if (out.image) {
+          MEMORY_CACHE.set(scopedKey, out.image);
+          writePersisted(scopedKey, out.image);
+          setState({ key, imageUrl: out.image, status: "ready" });
+        } else {
+          setState({ key, imageUrl: null, status: "unavailable" });
+        }
+      } catch {
+        if (active) setState({ key, imageUrl: null, status: "unavailable" });
+      }
+    })().catch(() => {
       if (active) setState({ key, imageUrl: null, status: "unavailable" });
-    };
-    try {
-      // Era + genre context travels with the request so the server builds
-      // the adaptive scene prompt (reggae wood / gothic candlelight / 80s
-      // neon / jazz club) instead of one static aesthetic.
-      void generateCardArtwork({
-        data: { trackKey: key, artist, title, album, releaseYear, cardIndex },
-      })
-        .then((out) => {
-          if (!active) return;
-          if (out.image) {
-            MEMORY_CACHE.set(key, out.image);
-            writePersisted(key, out.image);
-            setState({ key, imageUrl: out.image, status: "ready" });
-          } else {
-            setState({ key, imageUrl: null, status: "unavailable" });
-          }
-        })
-        .catch(fail);
-    } catch {
-      fail();
-    }
+    });
 
     return () => {
       active = false;
