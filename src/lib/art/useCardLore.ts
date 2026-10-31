@@ -39,6 +39,7 @@ export type CardLoreContext = {
   encounterAge?: number | null;
   genre?: string | null;
   userMemory?: string | null;
+  mood?: string | null;
 };
 
 export function useCardLore(song: Song | null, context: CardLoreContext = {}): string | null {
@@ -46,7 +47,9 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
   const artist = song?.artist ?? "";
   const title = song?.title ?? "";
   const releaseYear = song?.releaseYear ?? null;
-  const { cardIndex, birthYear, encounterAge, genre, userMemory } = context;
+  const { cardIndex, birthYear, encounterAge, genre, userMemory, mood } = context;
+  // The same track can read differently per life stage / memory / mood.
+  const cacheKey = key ? `${key}|${encounterAge ?? ""}|${mood ?? ""}|${userMemory ?? ""}` : "";
 
   const [state, setState] = useState<{ key: string; lore: string | null }>({
     key: "",
@@ -58,7 +61,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       setState({ key: "", lore: null });
       return;
     }
-    const cached = LORE_CACHE.get(key);
+    const cached = LORE_CACHE.get(cacheKey);
     if (cached) {
       setState({ key, lore: cached });
       return;
@@ -91,12 +94,13 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
             encounterAge: encounterAge ?? null,
             genre: genre ?? null,
             userMemory: userMemory ?? null,
+            mood: mood ?? null,
             accessToken,
           },
         });
         if (!active) return;
         if (out.lore) {
-          LORE_CACHE.set(key, out.lore);
+          LORE_CACHE.set(cacheKey, out.lore);
           setState({ key, lore: out.lore });
         }
         // A persisted card wrote a new `cards` row — bust the in-memory list
@@ -111,7 +115,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     return () => {
       active = false;
     };
-  }, [key, artist, title, releaseYear, cardIndex, birthYear, encounterAge, genre, userMemory]);
+  }, [key, cacheKey, artist, title, releaseYear, cardIndex, birthYear, encounterAge, genre, userMemory, mood]);
 
   if (!song || state.key !== key) return null;
   return state.lore;

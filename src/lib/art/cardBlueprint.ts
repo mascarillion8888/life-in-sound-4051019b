@@ -34,6 +34,8 @@ export type CardEncounter = {
   userMemory?: string | null;
   /** Journey position (0-based) — life-stage fallback when the age is unknown. */
   cardIndex?: number | null;
+  /** The song's mood (e.g. "Nostalgic", "Joy") — colours the lore's feeling. */
+  mood?: string | null;
 };
 
 /** birthYear + encounterAge → the historical year of the encounter. */
@@ -253,7 +255,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
     index: 0,
     subject: "a young child",
     tone:
-      "pure enchantment: the first time a sound wraps around the soul, nameless feelings rising, the whole world soft and vast",
+      "pure enchantment: the first time a sound feels like magic, feelings too new for words, everything soft and vast",
     lines: [
       "The first time {t} played, {a}'s voice wrapped around a small soul and would not let go. Feelings with no names yet began to rise.",
       "A child heard {a} sing {t}, and the whole room turned to light. Something nameless woke up inside.",

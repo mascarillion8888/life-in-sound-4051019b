@@ -78,6 +78,7 @@ export function buildLorePrompt(encounter: CardEncounter): string {
   if (eraYear) parts.push(`(around ${eraYear})`);
   parts.push(".");
   if (encounter.genre) parts.push(`Genre: ${encounter.genre}.`);
+  if (encounter.mood?.trim()) parts.push(`Mood of the song: ${encounter.mood.trim()}.`);
   if (encounter.userMemory?.trim()) {
     parts.push(`Personal memory to honour: ${encounter.userMemory.trim()}.`);
   }
@@ -93,26 +94,56 @@ export function buildLorePrompt(encounter: CardEncounter): string {
       "Name the song title and the artist plainly in the text (no lyrics, no quotation of lines). " +
       "This is a friend's memory, not a clinical case — never diagnose, label, or pathologize the listener or their feelings. " +
       "Write something specific and warm, never a generic fortune-cookie compliment. " +
-      "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. Reply with ONLY the 2 sentences.",
+      "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. " +
+      "Sentence 1: one concrete, specific detail only THIS song could give (its real theme, sound, album or era; use real knowledge of the song if you have it, otherwise stay with the facts above). " +
+      "Sentence 2: the emotional turn for this life stage. " +
+      "Avoid stock phrases such as \"wrapped around\", \"small soul\", \"nameless feelings\", \"whole world\", \"journey\", \"tapestry\", \"echoes of\", \"whispers of\", \"time stood still\", \"never alone\". " +
+      "Never invent people, places, events or memories the listener did not give. Reply with ONLY the 2 sentences.",
   );
   return parts.join(" ");
 }
 
-/** LLM lore with deterministic fallback — never null, never throws. */
+/** Stock phrases a fresh, personal line should not lean on. */
+const GENERIC_LORE =
+  /wrapped around|small soul|nameless|whole world|tapestry|journey|echoes of|whispers? of|time stood still|never alone|symphony of|dance of/i;
+/** The story panel clamps at three lines; far longer text is cut off. */
+const MAX_LORE_CHARS = 320;
+
+/** True when generated lore is too long or leans on stock phrases. */
+export function isGenericLore(text: string): boolean {
+  return text.length > MAX_LORE_CHARS || GENERIC_LORE.test(text);
+}
+
+/** Strip reasoning blocks some models emit before the answer. */
+function cleanLore(raw: string | null | undefined): string {
+  return (raw ?? "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+}
+
+/**
+ * LLM lore with deterministic fallback — never null, never throws. Output that
+ * is too long or leans on stock phrases gets exactly one rewrite attempt; a
+ * missing key (null) or any failure goes straight to the deterministic lines.
+ */
 export async function generateCardLoreCore(
   encounter: CardEncounter,
   options: { fetchImpl?: typeof fetch } = {},
 ): Promise<string> {
-  try {
-    const llm = await runRole("summarizer", buildLorePrompt(encounter), {
-      temperature: 0.8,
-      maxTokens: 160,
-      fetchImpl: options.fetchImpl,
-    });
-    const cleaned = llm?.trim();
-    if (cleaned && cleaned.length >= 20 && cleaned.length <= 600) return cleaned;
-  } catch {
-    /* fall through to deterministic */
+  const prompt = buildLorePrompt(encounter);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const llm = await runRole(
+        "summarizer",
+        attempt === 0
+          ? prompt
+          : `${prompt} Your previous answer used stock phrases or was too long: write it fresher, more specific and shorter.`,
+        { temperature: 0.9, maxTokens: 300, fetchImpl: options.fetchImpl },
+      );
+      if (llm == null) break; // no provider/key configured — retrying cannot help
+      const cleaned = cleanLore(llm);
+      if (cleaned.length >= 20 && cleaned.length <= 600 && !isGenericLore(cleaned)) return cleaned;
+    } catch {
+      break;
+    }
   }
   return deterministicLore(encounter);
 }
@@ -228,6 +259,7 @@ export const generateCard = createServerFn({ method: "POST" })
       typeof input.encounterAge === "number" && Number.isFinite(input.encounterAge)
         ? Math.floor(input.encounterAge)
         : null,
+    mood: typeof input.mood === "string" ? input.mood.slice(0, 40) : null,
     userMemory: typeof input.userMemory === "string" ? input.userMemory.slice(0, 500) : null,
     cardIndex:
       typeof input.cardIndex === "number" && Number.isFinite(input.cardIndex)
