@@ -23,6 +23,7 @@
  * a second, persistent tier (localStorage) so a reload does not re-generate.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { authorizeCardGeneration } from "./generation-security.server";
 
 const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -51,6 +52,8 @@ export type CardArtworkInput = {
    * brief; the scene is still resolved for cache identity.
    */
   promptOverride?: string | null;
+  /** Supabase JWT for the anonymous or registered caller. */
+  accessToken?: string | null;
 };
 
 export type CardArtworkOutput = {
@@ -351,6 +354,7 @@ export type GenerateCardArtworkOptions = {
   /** Injectable fetch (for tests). Defaults to global fetch. */
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  userId?: string;
 };
 
 /**
@@ -374,7 +378,9 @@ export async function generateCardArtworkCore(
   const scene = built.scene;
   // The scene is part of the cache identity — the same track re-imagined in
   // a different aesthetic must generate a new painting, never reuse the old.
-  const cacheKey = `${input.trackKey}::${scene}`;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(prompt));
+  const fingerprint = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  const cacheKey = `${options.userId ?? "unscoped"}::${input.trackKey}::${scene}::${fingerprint}`;
 
   const cached = SERVER_ART_CACHE.get(cacheKey);
   if (cached) return cached;
@@ -392,7 +398,13 @@ export async function generateCardArtworkCore(
     const image = apiKey
       ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
       : null;
-    if (image) SERVER_ART_CACHE.set(cacheKey, image);
+    if (image) {
+      SERVER_ART_CACHE.set(cacheKey, image);
+      if (SERVER_ART_CACHE.size > 100) {
+        const oldest = SERVER_ART_CACHE.keys().next().value;
+        if (oldest) SERVER_ART_CACHE.delete(oldest);
+      }
+    }
     return image;
   } catch {
     return null;
@@ -423,9 +435,12 @@ export const generateCardArtwork = createServerFn({ method: "POST" })
     aesthetic: typeof input.aesthetic === "string" ? input.aesthetic.slice(0, 100) : null,
     promptOverride:
       typeof input.promptOverride === "string" ? input.promptOverride.slice(0, 2000) : null,
+    accessToken: typeof input.accessToken === "string" ? input.accessToken.slice(0, 4096) : null,
   }))
   .handler(async ({ data }): Promise<CardArtworkOutput> => {
     if (!data.trackKey || !data.title) return { image: null };
-    const image = await generateCardArtworkCore(data);
+    const access = await authorizeCardGeneration(data.accessToken, data.trackKey);
+    if (!access) return { image: null };
+    const image = await generateCardArtworkCore(data, { userId: access.userId });
     return { image };
   });
