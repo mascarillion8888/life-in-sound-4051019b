@@ -20,7 +20,7 @@ const BUCKET = "card-artworks";
 /** Signed-URL lifetime: one hour — enough for a gallery session. */
 const SIGNED_URL_TTL_S = 3600;
 /** Cache key for the newest-first row list (see loadRemoteCards). */
-const CARDS_CACHE_KEY = "cards:all";
+const CARDS_CACHE_KEY = "cards:";
 
 /** One persisted era card, mirrors the columns of migration 0003. */
 export type CardRow = {
@@ -83,7 +83,7 @@ export function toCardRow(raw: unknown): CardRow | null {
  * showing stale rows for up to the 30s TTL.
  */
 export function invalidateCardsCache(): void {
-  dbCache.invalidate(CARDS_CACHE_KEY);
+  dbCache.invalidate();
 }
 
 /**
@@ -96,14 +96,17 @@ export function invalidateCardsCache(): void {
  * the entry after a mutation.
  */
 export async function loadRemoteCards(): Promise<CardRow[]> {
-  const cached = dbCache.get<CardRow[]>(CARDS_CACHE_KEY);
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) return [];
+  const cacheKey = `${CARDS_CACHE_KEY}${userId}`;
+  const cached = dbCache.get<CardRow[]>(cacheKey);
   if (cached) return cached;
 
-  const supabase = getSupabase();
   let rows: CardRow[];
-  if (!supabase) {
-    rows = [];
-  } else {
+  {
     try {
       const { data, error } = await supabase
         .from(TABLE)
@@ -120,7 +123,7 @@ export async function loadRemoteCards(): Promise<CardRow[]> {
       rows = [];
     }
   }
-  dbCache.set(CARDS_CACHE_KEY, rows);
+  dbCache.set(cacheKey, rows);
   return rows;
 }
 
