@@ -1,9 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-export type GenerationAccess = {
-  userId: string;
-  supabase: ReturnType<typeof createClient>;
-};
+export type GenerationAccess = { userId: string };
 
 /**
  * Validate the caller's Supabase JWT and reserve one distinct track slot
@@ -44,7 +41,7 @@ export async function authorizeCardGeneration(
     );
     if (reserveError || reserved !== true) return null;
 
-    return { userId, supabase };
+    return { userId };
   } catch {
     return null;
   }
