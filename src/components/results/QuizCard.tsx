@@ -83,7 +83,11 @@ export function QuizCard({
         cardIndex: card.index,
       })
     : null;
-  const art = useCardArtwork(song, {\n    cardIndex: card.index,\n    promptOverride: artPrompt,\n    aesthetic: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,\n  });
+  const art = useCardArtwork(song, {
+    cardIndex: card.index,
+    promptOverride: artPrompt,
+    aesthetic: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
+  });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   const lore = useCardLore(song, {
     encounterAge,
