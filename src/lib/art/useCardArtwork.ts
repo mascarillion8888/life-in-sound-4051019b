@@ -131,13 +131,13 @@ export function useCardArtwork(
       const scopedKey = `${userId}:${cacheIdentity}`;
       const memory = MEMORY_CACHE.get(scopedKey);
       if (memory) {
-        if (active) setState({ key, imageUrl: memory, status: "ready" });
+        if (active) setState({ key: cacheIdentity, imageUrl: memory, status: "ready" });
         return;
       }
       const persisted = readPersisted()[scopedKey];
       if (persisted) {
         MEMORY_CACHE.set(scopedKey, persisted);
-        if (active) setState({ key, imageUrl: persisted, status: "ready" });
+        if (active) setState({ key: cacheIdentity, imageUrl: persisted, status: "ready" });
         return;
       }
 
@@ -149,15 +149,15 @@ export function useCardArtwork(
         if (out.image) {
           MEMORY_CACHE.set(scopedKey, out.image);
           writePersisted(scopedKey, out.image);
-          setState({ key, imageUrl: out.image, status: "ready" });
+          setState({ key: cacheIdentity, imageUrl: out.image, status: "ready" });
         } else {
-          setState({ key, imageUrl: null, status: "unavailable" });
+          setState({ key: cacheIdentity, imageUrl: null, status: "unavailable" });
         }
       } catch {
-        if (active) setState({ key, imageUrl: null, status: "unavailable" });
+        if (active) setState({ key: cacheIdentity, imageUrl: null, status: "unavailable" });
       }
     })().catch(() => {
-      if (active) setState({ key, imageUrl: null, status: "unavailable" });
+      if (active) setState({ key: cacheIdentity, imageUrl: null, status: "unavailable" });
     });
 
     return () => {
