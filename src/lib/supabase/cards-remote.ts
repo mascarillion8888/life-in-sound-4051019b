@@ -107,17 +107,17 @@ export async function loadRemoteCards(): Promise<CardRow[]> {
 
   let rows: CardRow[];
   try {
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select(
-          "id, track_key, title, artist, genre, release_year, birth_year, encounter_age, " +
-            "era_year, user_memory, scene, lore, image_path, created_at",
-        )
-        .order("created_at", { ascending: false });
-      rows =
-        error || !Array.isArray(data)
-          ? []
-          : data.map(toCardRow).filter((r): r is CardRow => r !== null);
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select(
+        "id, track_key, title, artist, genre, release_year, birth_year, encounter_age, " +
+          "era_year, user_memory, scene, lore, image_path, created_at",
+      )
+      .order("created_at", { ascending: false });
+    rows =
+      error || !Array.isArray(data)
+        ? []
+        : data.map(toCardRow).filter((r): r is CardRow => r !== null);
   } catch {
     rows = [];
   }
