@@ -84,7 +84,7 @@ export function __clearCardArtworkMemoryCache(): void {
 
 export function useCardArtwork(
   song: Song | null,
-  context: { cardIndex?: number } = {},
+  context: { cardIndex?: number; promptOverride?: string | null } = {},
 ): {
   imageUrl: string | null;
   status: CardArtworkStatus;
@@ -97,6 +97,8 @@ export function useCardArtwork(
   const album = song?.album ?? null;
   const releaseYear = song?.releaseYear ?? null;
   const cardIndex = context.cardIndex;
+  const promptOverride = context.promptOverride ?? null;
+  const cacheIdentity = promptOverride ? `${key}:${promptOverride}` : key;
 
   const [state, setState] = useState<{
     key: string;
@@ -123,7 +125,7 @@ export function useCardArtwork(
         return;
       }
 
-      const scopedKey = `${userId}:${key}`;
+      const scopedKey = `${userId}:${cacheIdentity}`;
       const memory = MEMORY_CACHE.get(scopedKey);
       if (memory) {
         if (active) setState({ key, imageUrl: memory, status: "ready" });
@@ -138,7 +140,7 @@ export function useCardArtwork(
 
       try {
         const out = await generateCardArtwork({
-          data: { trackKey: key, artist, title, album, releaseYear, cardIndex, accessToken },
+          data: { trackKey: key, artist, title, album, releaseYear, cardIndex, accessToken, promptOverride },
         });
         if (!active) return;
         if (out.image) {
@@ -158,7 +160,7 @@ export function useCardArtwork(
     return () => {
       active = false;
     };
-  }, [key, artist, title, album, releaseYear, cardIndex]);
+  }, [key, artist, title, album, releaseYear, cardIndex, promptOverride]);
 
   // A song change renders the placeholder synchronously — never a stale
   // painting from the previous track while the new one generates.
