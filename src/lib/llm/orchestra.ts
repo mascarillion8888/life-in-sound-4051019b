@@ -41,6 +41,7 @@ type ProviderSpec = {
 };
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+const DEFAULT_TIMEOUT_MS = 12_000;
 
 /**
  * Role → provider/model/key mapping. Only `summarizer` is mapped; it is the
@@ -124,15 +125,20 @@ export async function runRole(
   const maxTokens = options.maxTokens ?? 512;
   const fetchImpl = options.fetchImpl ?? fetch;
 
-  let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  const abortFromCaller = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  else options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+
   try {
-    response = await fetchImpl(spec.endpoint, {
+    const response = await fetchImpl(spec.endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
         authorization: `Bearer ${apiKey}`,
       },
-      signal: options.signal,
+      signal: controller.signal,
       body: JSON.stringify({
         model: spec.model,
         messages: [
@@ -143,18 +149,14 @@ export async function runRole(
         max_tokens: maxTokens,
       }),
     });
-  } catch {
-    return null; // network error → fallback
-  }
 
-  if (!response.ok) return null;
-
-  let payload: unknown;
-  try {
-    payload = await response.json();
+    if (!response.ok) return null;
+    const payload: unknown = await response.json();
+    return extractContent(payload);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abortFromCaller);
   }
-
-  return extractContent(payload);
 }
