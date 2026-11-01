@@ -116,7 +116,7 @@ export async function callOpenRouter(
     // error — try the fallback once.
     console.warn(
       `[openrouter] ${primaryModel} ağ hatası → fallback deneniyor: ${fallbackModel}`,
-      (err as Error).message,
+      "network failure",
     );
     result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
     usedModel = fallbackModel;
@@ -137,17 +137,16 @@ export async function callOpenRouter(
   if (!(result.status >= 200 && result.status < 300)) {
     // Transient hatalar fallback'ten sonra da geldiyse, ya da istemci hatası
     // (400/401/…) varsa — fallback anlamsız; fırlat. (isteğe bağlı: anlamlı log)
-    const detail = result.text.slice(0, 200).replace(/\n/g, " ");
     if (result.status === 429 || result.status >= 500) {
       console.error(
-        `[openrouter] hata model=${result.model} status=${result.status} gövde=${detail}`,
+        `[openrouter] hata model=${result.model} status=${result.status}`,
       );
       throw new Error(
         `OpenRouter ${result.model} başarısız: HTTP ${result.status} (fallback de başarısız)`,
       );
     }
     console.error(
-      `[openrouter] istemci hatası model=${usedModel} status=${result.status} gövde=${detail}`,
+      `[openrouter] istemci hatası model=${usedModel} status=${result.status}`,
     );
     throw new Error(`OpenRouter isteği reddedildi: HTTP ${result.status}`);
   }
@@ -155,7 +154,7 @@ export async function callOpenRouter(
   const content = parseContent(result.text);
   if (content === null) {
     console.error(
-      `[openrouter] parse edilemeyen yanıt model=${usedModel} gövde=${result.text.slice(0, 120).replace(/\n/g, " ")}`,
+      `[openrouter] parse edilemeyen yanıt model=${usedModel}`,
     );
     return null;
   }
