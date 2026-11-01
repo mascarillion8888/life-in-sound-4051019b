@@ -9,7 +9,13 @@ import type { Song } from "@/lib/song/types";
 // can be exercised deterministically.
 const generateMock = vi.fn();
 vi.mock("@/lib/supabase/client", () => ({
-  getSupabase: () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: "user-1" }, access_token: "test-token" } } }) } }),
+  getSupabase: () => ({
+    auth: {
+      getSession: async () => ({
+        data: { session: { user: { id: "user-1" }, access_token: "test-token" } },
+      }),
+    },
+  }),
 }));
 vi.mock("./cardArtwork.server", () => ({
   generateCardArtwork: (args: unknown) => generateMock(args),
