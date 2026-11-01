@@ -8,6 +8,9 @@ import type { Song } from "@/lib/song/types";
 // cardArtwork.server.test.ts. Here it is stubbed so the hook's cache tiers
 // can be exercised deterministically.
 const generateMock = vi.fn();
+vi.mock("@/lib/supabase/client", () => ({
+  getSupabase: () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: "user-1" }, access_token: "test-token" } } }) } }),
+}));
 vi.mock("./cardArtwork.server", () => ({
   generateCardArtwork: (args: unknown) => generateMock(args),
 }));
@@ -54,7 +57,7 @@ describe("useCardArtwork", () => {
   it("serves a persisted painting instantly — no API call", () => {
     window.localStorage.setItem(
       "soundmap.card-art.v1",
-      JSON.stringify({ "itunes:42": "data:image/png;base64,AA==" }),
+      JSON.stringify({ "user-1:itunes:42": "data:image/png;base64,AA==" }),
     );
     const { result } = renderHook(() => useCardArtwork(song()));
     expect(result.current.status).toBe("ready");
@@ -73,7 +76,7 @@ describe("useCardArtwork", () => {
     const persisted = JSON.parse(
       window.localStorage.getItem("soundmap.card-art.v1") ?? "{}",
     ) as Record<string, string>;
-    expect(persisted["itunes:42"]).toBe("data:image/png;base64,BB==");
+    expect(persisted["user-1:itunes:42"]).toBe("data:image/png;base64,BB==");
 
     // A second mount is instant and does not spend another API call.
     const second = renderHook(() => useCardArtwork(song()));
