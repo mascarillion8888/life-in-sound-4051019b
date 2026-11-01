@@ -85,10 +85,6 @@ export function QuizCard({
     : null;
   const art = useCardArtwork(song, { cardIndex: card.index, promptOverride: artPrompt });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
-  const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
-  const encounterAge = ageNums.length
-    ? Math.round(ageNums.reduce((a, b) => a + b, 0) / ageNums.length)
-    : null;
   const lore = useCardLore(song, {
     encounterAge,
     cardIndex: card.index,
