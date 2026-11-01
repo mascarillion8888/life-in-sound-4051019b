@@ -13,6 +13,7 @@ export type GenerationAccess = {
 export async function authorizeCardGeneration(
   accessToken: string | null | undefined,
   trackKey: string,
+  promptIdentity = "",
 ): Promise<GenerationAccess | null> {
   const token = accessToken?.trim();
   const url = process.env.VITE_SUPABASE_URL;
@@ -28,9 +29,16 @@ export async function authorizeCardGeneration(
     const userId = data.user?.id;
     if (error || !userId) return null;
 
+    // Store only a one-way digest, never a raw memory or prompt, in the quota table.
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`${trackKey}::${promptIdentity}`),
+    );
+    const fingerprint = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+    const reservationKey = `${trackKey.slice(0, 120)}:${fingerprint}`;
     const { data: reserved, error: reserveError } = await supabase.rpc(
       "reserve_card_generation",
-      { p_track_key: trackKey },
+      { p_track_key: reservationKey },
     );
     if (reserveError || reserved !== true) return null;
 
