@@ -224,40 +224,61 @@ describe("generateCardArtworkCore", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("shares one cache entry between the artwork hook and the card route (no ::card suffix)", async () => {
-    // Regression guard for the double-paint bug: useCardArtwork and useCardLore
-    // (via generateCard.server.ts) must land on the SAME `trackKey::scene` key.
-    // The card route passes a blueprint promptOverride and a different cardinal
-    // context, but the cache identity is trackKey+scene only — so both calls
-    // must share one generation. A "::card" suffix on the card route would make
-    // the second call miss the cache and paint twice.
+  it("shares one cache entry for the same user and personalized prompt", async () => {
     process.env.GEMINI_API_KEY = "test-key";
     const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
-    const artworkCall = { trackKey: "itunes:42", artist: "Sting", title: "Fragile" };
-    const cardRouteCall = {
-      trackKey: "itunes:42", // same key — the card route must NOT add "::card"
+    const prompt = "A multidimensional blueprint prompt with candlelight and a typographic sleeve.";
+    const artworkCall = {
+      trackKey: "itunes:42",
       artist: "Sting",
       title: "Fragile",
-      promptOverride:
-        "A multidimensional blueprint prompt with candlelight and a typographic sleeve.",
+      promptOverride: prompt,
     };
+    const cardRouteCall = { ...artworkCall };
     const first = await generateCardArtworkCore(artworkCall, {
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      userId: "user-1",
     });
     const second = await generateCardArtworkCore(cardRouteCall, {
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      userId: "user-1",
     });
     expect(first).toBe(second);
-    // Exactly one provider call across both hooks — the second call hit the
-    // shared process-level cache instead of regenerating.
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("an 8-card journey spends exactly ONE generation per track (shared between hooks)", async () => {
-    // End-to-end call-count contract for the audit finding: 8 cards, each
-    // rendered by BOTH useCardArtwork (screen) and useCardLore (persist to
-    // gallery). With the shared trackKey, each card's two server calls hit the
-    // same cache entry → exactly 8 provider calls total (one per scene), not 16.
+  it("does not share personalized artwork across users or prompt variants", async () => {
+    process.env.GEMINI_API_KEY = "test-key";
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
+    const base = { trackKey: "itunes:42", artist: "Sting", title: "Fragile" };
+    await generateCardArtworkCore({ ...base, promptOverride: "memory A" }, {
+      fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-1",
+    });
+    await generateCardArtworkCore({ ...base, promptOverride: "memory B" }, {
+      fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-1",
+    });
+    await generateCardArtworkCore({ ...base, promptOverride: "memory A" }, {
+      fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-2",
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it("deduplicates concurrent requests for the same personalized artwork", async () => {
+    process.env.GEMINI_API_KEY = "test-key";
+    let resolveImage!: (response: Response) => void;
+    const fetchImpl = vi.fn(() => new Promise<Response>((resolve) => { resolveImage = resolve; }));
+    const input = { trackKey: "itunes:43", artist: "Adele", title: "Hello", promptOverride: "same prompt" };
+    const options = { fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-1" };
+    const first = generateCardArtworkCore(input, options);
+    const second = generateCardArtworkCore(input, options);
+    await Promise.resolve();
+    resolveImage(geminiImageOk());
+    const [one, two] = await Promise.all([first, second]);
+    expect(one).toBe(two);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("an 8-card journey spends exactly eight image generations when both paths share prompts", async () => {
     process.env.GEMINI_API_KEY = "test-key";
     const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(geminiImageOk()));
     const cards = [
@@ -271,15 +292,13 @@ describe("generateCardArtworkCore", () => {
       { trackKey: "itunes:8", artist: "Miles Davis", title: "So What" },
     ];
     for (const card of cards) {
-      // useCardArtwork path (no promptOverride).
-      await generateCardArtworkCore(card, {
-        fetchImpl: fetchImpl as unknown as typeof fetch,
+      const promptOverride = `personalized prompt for ${card.trackKey}`;
+      await generateCardArtworkCore({ ...card, promptOverride }, {
+        fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-1",
       });
-      // useCardLore → generateCard path (blueprint promptOverride, same key).
-      await generateCardArtworkCore(
-        { ...card, promptOverride: "card blueprint override prompt" },
-        { fetchImpl: fetchImpl as unknown as typeof fetch },
-      );
+      await generateCardArtworkCore({ ...card, promptOverride }, {
+        fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-1",
+      });
     }
     expect(fetchImpl).toHaveBeenCalledTimes(8);
   });
