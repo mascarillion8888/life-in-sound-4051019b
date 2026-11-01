@@ -84,7 +84,7 @@ export function __clearCardArtworkMemoryCache(): void {
 
 export function useCardArtwork(
   song: Song | null,
-  context: { cardIndex?: number; promptOverride?: string | null } = {},
+  context: { cardIndex?: number; promptOverride?: string | null; aesthetic?: string | null } = {},
 ): {
   imageUrl: string | null;
   status: CardArtworkStatus;
@@ -98,6 +98,7 @@ export function useCardArtwork(
   const releaseYear = song?.releaseYear ?? null;
   const cardIndex = context.cardIndex;
   const promptOverride = context.promptOverride ?? null;
+  const aesthetic = context.aesthetic ?? null;
   const promptHash = promptOverride
     ? Array.from(promptOverride).reduce((hash, char) => Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0, 2166136261).toString(36)
     : "";
@@ -143,7 +144,7 @@ export function useCardArtwork(
 
       try {
         const out = await generateCardArtwork({
-          data: { trackKey: key, artist, title, album, releaseYear, cardIndex, accessToken, promptOverride },
+          data: { trackKey: key, artist, title, album, releaseYear, cardIndex, accessToken, promptOverride, aesthetic },
         });
         if (!active) return;
         if (out.image) {
@@ -163,7 +164,7 @@ export function useCardArtwork(
     return () => {
       active = false;
     };
-  }, [key, cacheIdentity, artist, title, album, releaseYear, cardIndex, promptOverride]);
+  }, [key, cacheIdentity, artist, title, album, releaseYear, cardIndex, promptOverride, aesthetic]);
 
   // A song change renders the placeholder synchronously — never a stale
   // painting from the previous track while the new one generates.
