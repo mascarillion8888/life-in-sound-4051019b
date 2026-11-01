@@ -87,7 +87,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       const cacheKey = `${userId}:${key}:${loreContextFingerprint(contextKey)}`;
       const cached = LORE_CACHE.get(cacheKey);
       if (cached) {
-        if (active) setState({ key, lore: cached });
+        if (active) setState({ key: stateKey, lore: cached });
         return;
       }
 
@@ -109,7 +109,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
         if (!active) return;
         if (out.lore) {
           LORE_CACHE.set(cacheKey, out.lore);
-          setState({ key, lore: out.lore });
+          setState({ key: stateKey, lore: out.lore });
         }
         // A persisted card wrote a new `cards` row — bust the in-memory list
         // cache (30s TTL) so the next gallery load shows it immediately
