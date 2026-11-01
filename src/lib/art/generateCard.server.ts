@@ -238,12 +238,10 @@ export const generateCard = createServerFn({ method: "POST" })
     const prompt = buildMultidimensionalPrompt(encounter);
 
     // Lore + painting are independent — run both, degrade each separately.
-    // The painting uses the SAME trackKey as the artwork hook
-    // (useCardArtwork → cardArtwork.server.ts), so both share one process-level
-    // cache entry per `trackKey::scene`. The generated painting is persisted to
-    // the gallery, and the QuizCard face shows it from the same cache tier —
-    // a "::card" suffix would mint a second key and silently double image
-    // generation (and archive a painting that differs from the on-screen one).
+    // The painting uses the SAME trackKey and personalized blueprint prompt
+    // as the artwork hook (useCardArtwork → cardArtwork.server.ts). The
+    // user-scoped prompt cache and in-flight registry make both paths share
+    // one provider call; the gallery persists the same image shown on-card.
     const [lore, image] = await Promise.all([
       generateCardLoreCore(encounter),
       generateCardArtworkCore({
