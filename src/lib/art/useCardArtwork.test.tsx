@@ -54,13 +54,13 @@ describe("useCardArtwork", () => {
     expect(generateMock).not.toHaveBeenCalled();
   });
 
-  it("serves a persisted painting instantly — no API call", () => {
+  it("serves a user-scoped persisted painting after resolving the anonymous session", async () => {
     window.localStorage.setItem(
       "soundmap.card-art.v1",
       JSON.stringify({ "user-1:itunes:42": "data:image/png;base64,AA==" }),
     );
     const { result } = renderHook(() => useCardArtwork(song()));
-    expect(result.current.status).toBe("ready");
+    await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(result.current.imageUrl).toBe("data:image/png;base64,AA==");
     expect(generateMock).not.toHaveBeenCalled();
   });
@@ -80,7 +80,7 @@ describe("useCardArtwork", () => {
 
     // A second mount is instant and does not spend another API call.
     const second = renderHook(() => useCardArtwork(song()));
-    expect(second.result.current.status).toBe("ready");
+    await waitFor(() => expect(second.result.current.status).toBe("ready"));
     expect(generateMock).toHaveBeenCalledTimes(1);
   });
 
