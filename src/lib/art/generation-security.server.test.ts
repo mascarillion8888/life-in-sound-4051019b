@@ -16,7 +16,10 @@ describe("authorizeCardGeneration", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
-    mocks.getUser.mockReset().mockResolvedValue({ data: { user: { id: "anonymous-user-1" } }, error: null });
+    mocks.getUser.mockReset().mockResolvedValue({
+      data: { user: { id: "anonymous-user-1" } },
+      error: null,
+    });
     mocks.rpc.mockReset().mockResolvedValue({ data: true, error: null });
     mocks.createClient.mockReset().mockImplementation(() => ({
       auth: { getUser: mocks.getUser },
@@ -41,7 +44,9 @@ describe("authorizeCardGeneration", () => {
 
   it("rejects a user after the atomic quota reservation denies the request", async () => {
     mocks.rpc.mockResolvedValueOnce({ data: false, error: null });
-    await expect(authorizeCardGeneration("valid-token", "itunes:42", "private prompt")).resolves.toBeNull();
+    await expect(
+      authorizeCardGeneration("valid-token", "itunes:42", "private prompt"),
+    ).resolves.toBeNull();
   });
 
   it("accepts anonymous Supabase identities and reserves a one-way prompt fingerprint", async () => {
