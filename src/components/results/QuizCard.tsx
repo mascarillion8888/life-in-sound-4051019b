@@ -77,6 +77,7 @@ export function QuizCard({
     ? buildMultidimensionalPrompt({
         artist: song.artist,
         songTitle: song.title,
+        releaseYear: song.releaseYear,
         genre: `${song.title} ${song.artist} ${song.album ?? ""}`,
         encounterAge,
         cardIndex: card.index,
