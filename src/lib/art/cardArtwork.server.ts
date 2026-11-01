@@ -63,6 +63,7 @@ export type CardArtworkOutput = {
 
 /** Process-level cache — successes only (transient failures stay retryable). */
 const SERVER_ART_CACHE = new Map<string, string>();
+const SERVER_ART_INFLIGHT = new Map<string, Promise<string | null>>();
 
 /* -------------------------------------------------------------------------- */
 /* Dynamic scene selection — user preference, then genre, then era            */
@@ -355,6 +356,7 @@ export type GenerateCardArtworkOptions = {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   userId?: string;
+  promptIdentity?: string;
 };
 
 /**
@@ -384,7 +386,10 @@ export async function generateCardArtworkCore(
 
   const cached = SERVER_ART_CACHE.get(cacheKey);
   if (cached) return cached;
+  const pending = SERVER_ART_INFLIGHT.get(cacheKey);
+  if (pending) return pending;
 
+  const generation = (async (): Promise<string | null> => {
   const apiKey = getGeminiServerKey();
   const fetchImpl = options.fetchImpl ?? fetch;
 
@@ -411,11 +416,19 @@ export async function generateCardArtworkCore(
   } finally {
     clearTimeout(timeout);
   }
+  })();
+  SERVER_ART_INFLIGHT.set(cacheKey, generation);
+  try {
+    return await generation;
+  } finally {
+    SERVER_ART_INFLIGHT.delete(cacheKey);
+  }
 }
 
 /** Test-only: reset the process-level memoization. */
 export function __clearCardArtworkServerCache(): void {
   SERVER_ART_CACHE.clear();
+  SERVER_ART_INFLIGHT.clear();
 }
 
 export const generateCardArtwork = createServerFn({ method: "POST" })
@@ -439,7 +452,7 @@ export const generateCardArtwork = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<CardArtworkOutput> => {
     if (!data.trackKey || !data.title) return { image: null };
-    const access = await authorizeCardGeneration(data.accessToken, data.trackKey);
+    const access = await authorizeCardGeneration(data.accessToken, data.trackKey, data.promptOverride ?? "generic-art");
     if (!access) return { image: null };
     const image = await generateCardArtworkCore(data, { userId: access.userId });
     return { image };
