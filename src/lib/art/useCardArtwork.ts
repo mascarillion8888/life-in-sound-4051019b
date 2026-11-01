@@ -124,7 +124,7 @@ export function useCardArtwork(
       const userId = session?.user.id;
       const accessToken = session?.access_token;
       if (!userId || !accessToken) {
-        if (active) setState({ key, imageUrl: null, status: "unavailable" });
+        if (active) setState({ key: cacheIdentity, imageUrl: null, status: "unavailable" });
         return;
       }
 
