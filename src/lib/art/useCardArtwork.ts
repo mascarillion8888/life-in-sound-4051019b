@@ -100,7 +100,12 @@ export function useCardArtwork(
   const promptOverride = context.promptOverride ?? null;
   const aesthetic = context.aesthetic ?? null;
   const promptHash = promptOverride
-    ? Array.from(promptOverride).reduce((hash, char) => Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0, 2166136261).toString(36)
+    ? Array.from(promptOverride)
+        .reduce(
+          (hash, char) => Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0,
+          2166136261,
+        )
+        .toString(36)
     : "";
   const cacheIdentity = promptHash ? `${key}:${promptHash}` : key;
 
@@ -144,7 +149,17 @@ export function useCardArtwork(
 
       try {
         const out = await generateCardArtwork({
-          data: { trackKey: key, artist, title, album, releaseYear, cardIndex, accessToken, promptOverride, aesthetic },
+          data: {
+            trackKey: key,
+            artist,
+            title,
+            album,
+            releaseYear,
+            cardIndex,
+            accessToken,
+            promptOverride,
+            aesthetic,
+          },
         });
         if (!active) return;
         if (out.image) {
