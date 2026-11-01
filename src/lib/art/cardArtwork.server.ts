@@ -64,6 +64,26 @@ export type CardArtworkOutput = {
 /** Process-level cache — successes only (transient failures stay retryable). */
 const SERVER_ART_CACHE = new Map<string, string>();
 const SERVER_ART_INFLIGHT = new Map<string, Promise<string | null>>();
+const MAX_CONCURRENT_ARTWORK = 3;
+const MAX_QUEUED_ARTWORK = 10;
+let activeArtwork = 0;
+const artworkWaiters: Array<() => void> = [];
+
+async function acquireArtworkSlot(): Promise<boolean> {
+  if (activeArtwork < MAX_CONCURRENT_ARTWORK) {
+    activeArtwork += 1;
+    return true;
+  }
+  if (artworkWaiters.length >= MAX_QUEUED_ARTWORK) return false;
+  await new Promise<void>((resolve) => artworkWaiters.push(resolve));
+  return true;
+}
+
+function releaseArtworkSlot(): void {
+  const next = artworkWaiters.shift();
+  if (next) next();
+  else activeArtwork = Math.max(0, activeArtwork - 1);
+}
 
 /* -------------------------------------------------------------------------- */
 /* Dynamic scene selection — user preference, then genre, then era            */
@@ -390,6 +410,8 @@ export async function generateCardArtworkCore(
   if (pending) return pending;
 
   const generation = (async (): Promise<string | null> => {
+  const acquired = await acquireArtworkSlot();
+  if (!acquired) return null;
   const apiKey = getGeminiServerKey();
   const fetchImpl = options.fetchImpl ?? fetch;
 
@@ -415,6 +437,7 @@ export async function generateCardArtworkCore(
     return null;
   } finally {
     clearTimeout(timeout);
+    releaseArtworkSlot();
   }
   })();
   SERVER_ART_INFLIGHT.set(cacheKey, generation);
@@ -429,6 +452,8 @@ export async function generateCardArtworkCore(
 export function __clearCardArtworkServerCache(): void {
   SERVER_ART_CACHE.clear();
   SERVER_ART_INFLIGHT.clear();
+  artworkWaiters.length = 0;
+  activeArtwork = 0;
 }
 
 export const generateCardArtwork = createServerFn({ method: "POST" })
