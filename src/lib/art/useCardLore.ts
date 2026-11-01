@@ -28,6 +28,12 @@ import { cardArtworkKey } from "./useCardArtwork";
 
 const LORE_CACHE = new Map<string, string>();
 
+function loreContextFingerprint(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) hash = Math.imul(hash ^ value.charCodeAt(i), 16777619);
+  return (hash >>> 0).toString(36);
+}
+
 /** Test-only: reset the session tier. */
 export function __clearCardLoreCache(): void {
   LORE_CACHE.clear();
@@ -76,7 +82,8 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       }
 
       if (!accessToken || !userId) return;
-      const cacheKey = `${userId}:${key}`;
+      const contextKey = JSON.stringify({ cardIndex, birthYear, encounterAge, genre, userMemory });
+      const cacheKey = `${userId}:${key}:${loreContextFingerprint(contextKey)}`;
       const cached = LORE_CACHE.get(cacheKey);
       if (cached) {
         if (active) setState({ key, lore: cached });
