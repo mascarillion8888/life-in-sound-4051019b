@@ -106,8 +106,7 @@ export async function loadRemoteCards(): Promise<CardRow[]> {
   if (cached) return cached;
 
   let rows: CardRow[];
-  {
-    try {
+  try {
       const { data, error } = await supabase
         .from(TABLE)
         .select(
@@ -119,9 +118,8 @@ export async function loadRemoteCards(): Promise<CardRow[]> {
         error || !Array.isArray(data)
           ? []
           : data.map(toCardRow).filter((r): r is CardRow => r !== null);
-    } catch {
-      rows = [];
-    }
+  } catch {
+    rows = [];
   }
   dbCache.set(cacheKey, rows);
   return rows;
