@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { parseBirthYear } from "@/lib/supabase/birthYear";
 
 type Props = {
@@ -18,7 +19,7 @@ export function BirthYearPrompt({ onSave, onSkip }: Props) {
     event.preventDefault();
     const year = parseBirthYear(value);
     if (year == null) {
-      setError(`Enter a four-digit year, like 1985.`);
+      setError("Enter a four-digit year, like 1985.");
       return;
     }
     setError(null);
@@ -26,11 +27,15 @@ export function BirthYearPrompt({ onSave, onSkip }: Props) {
   };
 
   return (
-    <form onSubmit={submit} data-testid="birth-year-prompt" style={{ display: "grid", gap: 12, maxWidth: 360 }}>
-      <label htmlFor="birth-year-input" style={{ fontSize: 18 }}>
+    <form
+      onSubmit={submit}
+      data-testid="birth-year-prompt"
+      className="grid w-full max-w-sm gap-4 text-center"
+    >
+      <label htmlFor="birth-year-input" className="text-2xl font-semibold tracking-tight">
         Which year were you born?
       </label>
-      <p style={{ margin: 0, opacity: 0.7, fontSize: 14 }}>
+      <p className="text-sm text-muted-foreground">
         Your songs are told for the age you were when you first heard them. Only the year is kept.
       </p>
       <input
@@ -44,20 +49,26 @@ export function BirthYearPrompt({ onSave, onSkip }: Props) {
         onChange={(e) => setValue(e.target.value.replace(/\D/g, ""))}
         aria-invalid={error != null}
         aria-describedby={error ? "birth-year-error" : undefined}
-        style={{ padding: "10px 12px", fontSize: 18, borderRadius: 10 }}
+        className="rounded-xl border border-border bg-card px-4 py-3 text-center text-2xl tracking-widest text-foreground outline-none focus:border-primary"
       />
       {error && (
-        <div id="birth-year-error" role="alert" style={{ color: "#c0392b", fontSize: 14 }}>
+        <div id="birth-year-error" role="alert" className="text-sm text-destructive">
           {error}
         </div>
       )}
-      <div style={{ display: "flex", gap: 10 }}>
-        <button type="submit" data-testid="birth-year-save">
+      <div className="flex justify-center gap-3">
+        <Button type="submit" data-testid="birth-year-save" className="rounded-full px-8">
           Continue
-        </button>
-        <button type="button" data-testid="birth-year-skip" onClick={onSkip}>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="birth-year-skip"
+          onClick={onSkip}
+          className="rounded-full px-6"
+        >
           Skip for now
-        </button>
+        </Button>
       </div>
     </form>
   );

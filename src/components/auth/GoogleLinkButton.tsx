@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { getSupabase } from "@/lib/supabase/client";
 
 /**
@@ -31,12 +32,19 @@ export function GoogleLinkButton({ isAnonymous }: { isAnonymous: boolean }) {
   };
 
   return (
-    <div>
-      <button type="button" data-testid="google-link" onClick={onClick} disabled={busy}>
+    <div className="flex flex-col items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        data-testid="google-link"
+        onClick={onClick}
+        disabled={busy}
+        className="rounded-full px-6"
+      >
         {busy ? "Opening Google…" : "Save my cards with Google"}
-      </button>
+      </Button>
       {error && (
-        <div role="alert" style={{ color: "#c0392b", fontSize: 14 }}>
+        <div role="alert" className="text-sm text-destructive">
           {error}
         </div>
       )}

@@ -22,6 +22,7 @@ import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
 import { cardTemplateUrl } from "@/lib/card/cardTemplates";
 import type { Song } from "@/lib/song/types";
 import { usePreviewSpectrum } from "@/lib/soundmap/previewSpectrum";
+import { useBirthYear } from "@/lib/supabase/birth-year-store";
 import { PlayerCard } from "./PlayerCard";
 
 /** Tiny deterministic string hash (no external dependency). */
@@ -56,6 +57,7 @@ export function QuizCard({
   const { t } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
   const spectrum = usePreviewSpectrum(song?.previewUrl ?? null);
+  const birthYear = useBirthYear();
 
   const collectionKey = song ? cardArtworkKey(song) : "";
   const [saved, setSaved] = useState(
@@ -76,6 +78,7 @@ export function QuizCard({
     : null;
   const lore = useCardLore(song, {
     encounterAge,
+    birthYear,
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
