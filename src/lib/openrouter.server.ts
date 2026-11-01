@@ -118,7 +118,7 @@ export async function callOpenRouter(
       `[openrouter] ${primaryModel} ağ hatası → fallback deneniyor: ${fallbackModel}`,
       "network failure",
     );
-    result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
+    result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, signal: controller.signal, fetchImpl });
     usedModel = fallbackModel;
     didFallback = true;
   }
