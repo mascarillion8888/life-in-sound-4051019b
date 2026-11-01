@@ -37,6 +37,9 @@ begin
   -- from both observing the same remaining slot.
   perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
 
+  delete from public.card_generation_reservations
+  where user_id = v_user_id and created_at < now() - interval '24 hours';
+
   select created_at into v_created_at
   from public.card_generation_reservations
   where user_id = v_user_id and track_key = p_track_key;
