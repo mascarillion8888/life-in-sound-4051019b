@@ -34,6 +34,7 @@ type CardsSelectChain = {
 };
 
 type CardsFake = {
+  auth: { getSession: () => Promise<{ data: { session: { user: { id: string } } } }> };
   from: (table: string) => CardsSelectChain;
   calls: string[];
 };
@@ -46,6 +47,11 @@ function makeCardsFake(opts: {
   const calls: string[] = [];
   const authUid = opts.pretendAuth ?? "uid-caller";
   const fake: CardsFake = {
+    auth: {
+      getSession: async () => ({
+        data: { session: { user: { id: authUid } } },
+      }),
+    },
     calls,
     from: (table) => {
       calls.push(`from:${table}@anon-${authUid}`);
