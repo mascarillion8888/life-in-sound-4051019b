@@ -69,7 +69,20 @@ export function QuizCard({
     setSaved(isInCollection(next, collectionKey));
   };
 
-  const artPrompt = song ? buildMultidimensionalPrompt({\n    artist: song.artist,\n    songTitle: song.title,\n    genre: `${song.title} ${song.artist} ${song.album ?? ""}`,\n    encounterAge,\n    cardIndex: card.index,\n  }) : null;\n  const art = useCardArtwork(song, { cardIndex: card.index, promptOverride: artPrompt });
+  const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
+  const encounterAge = ageNums.length
+    ? Math.round(ageNums.reduce((a, b) => a + b, 0) / ageNums.length)
+    : null;
+  const artPrompt = song
+    ? buildMultidimensionalPrompt({
+        artist: song.artist,
+        songTitle: song.title,
+        genre: `${song.title} ${song.artist} ${song.album ?? ""}`,
+        encounterAge,
+        cardIndex: card.index,
+      })
+    : null;
+  const art = useCardArtwork(song, { cardIndex: card.index, promptOverride: artPrompt });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
   const encounterAge = ageNums.length
