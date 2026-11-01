@@ -26,8 +26,5 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm test
-      # The repository-wide lint command currently reports 216 pre-existing
-      # formatting violations across unrelated files. Lint the new Phase 1
-      # security modules here; the full-project cleanup is tracked separately.
-      - name: Lint Phase 1 security modules
-        run: npx eslint src/lib/art/generation-security.server.ts src/lib/art/generation-security.server.test.ts src/lib/llm/orchestra.test.ts
+      - name: Lint
+        run: npm run lint
