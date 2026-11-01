@@ -376,7 +376,6 @@ export type GenerateCardArtworkOptions = {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   userId?: string;
-  promptIdentity?: string;
 };
 
 /**
@@ -410,35 +409,37 @@ export async function generateCardArtworkCore(
   if (pending) return pending;
 
   const generation = (async (): Promise<string | null> => {
-  const acquired = await acquireArtworkSlot();
-  if (!acquired) return null;
-  const apiKey = getGeminiServerKey();
-  const fetchImpl = options.fetchImpl ?? fetch;
+    const acquired = await acquireArtworkSlot();
+    if (!acquired) return null;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  try {
-    // Provider: Gemini native image generation. The former Imagen `:predict`
-    // tier was removed 2026-10-12 — `imagen-3.0-generate-002` returns 404
-    // (NOT_FOUND) in v1beta, so the chain was already always Gemini anyway.
-    // Needs GEMINI_API_KEY.
-    const image = apiKey
-      ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
-      : null;
-    if (image) {
-      SERVER_ART_CACHE.set(cacheKey, image);
-      if (SERVER_ART_CACHE.size > 100) {
-        const oldest = SERVER_ART_CACHE.keys().next().value;
-        if (oldest) SERVER_ART_CACHE.delete(oldest);
+    const apiKey = getGeminiServerKey();
+    const fetchImpl = options.fetchImpl ?? fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    );
+
+    try {
+      // Gemini native image generation. No fallback provider is invoked.
+      const image = apiKey
+        ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
+        : null;
+
+      if (image) {
+        SERVER_ART_CACHE.set(cacheKey, image);
+        if (SERVER_ART_CACHE.size > 100) {
+          const oldest = SERVER_ART_CACHE.keys().next().value;
+          if (oldest) SERVER_ART_CACHE.delete(oldest);
+        }
       }
+      return image;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
+      releaseArtworkSlot();
     }
-    return image;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-    releaseArtworkSlot();
-  }
   })();
   SERVER_ART_INFLIGHT.set(cacheKey, generation);
   try {
@@ -477,7 +478,11 @@ export const generateCardArtwork = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<CardArtworkOutput> => {
     if (!data.trackKey || !data.title) return { image: null };
-    const access = await authorizeCardGeneration(data.accessToken, data.trackKey, data.promptOverride ?? "generic-art");
+    const access = await authorizeCardGeneration(
+      data.accessToken,
+      data.trackKey,
+      data.promptOverride ?? "generic-art",
+    );
     if (!access) return { image: null };
     const image = await generateCardArtworkCore(data, { userId: access.userId });
     return { image };
