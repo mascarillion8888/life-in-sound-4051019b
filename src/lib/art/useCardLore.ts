@@ -53,6 +53,8 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
   const title = song?.title ?? "";
   const releaseYear = song?.releaseYear ?? null;
   const { cardIndex, birthYear, encounterAge, genre, userMemory } = context;
+  const contextKey = JSON.stringify({ cardIndex, birthYear, encounterAge, genre, userMemory });
+  const stateKey = key ? `${key}:${loreContextFingerprint(contextKey)}` : "";
 
   const [state, setState] = useState<{ key: string; lore: string | null }>({
     key: "",
@@ -65,7 +67,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       return;
     }
     let active = true;
-    setState({ key, lore: null });
+    setState({ key: stateKey, lore: null });
 
     // The caller's own session token — persistence runs under that user's
     // RLS context server-side; anonymous/no-session users simply skip it.
@@ -82,7 +84,6 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       }
 
       if (!accessToken || !userId) return;
-      const contextKey = JSON.stringify({ cardIndex, birthYear, encounterAge, genre, userMemory });
       const cacheKey = `${userId}:${key}:${loreContextFingerprint(contextKey)}`;
       const cached = LORE_CACHE.get(cacheKey);
       if (cached) {
@@ -124,6 +125,6 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     };
   }, [key, artist, title, releaseYear, cardIndex, birthYear, encounterAge, genre, userMemory]);
 
-  if (!song || state.key !== key) return null;
+  if (!song || state.key !== stateKey) return null;
   return state.lore;
 }
