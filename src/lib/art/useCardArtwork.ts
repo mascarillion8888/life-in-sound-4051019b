@@ -98,7 +98,10 @@ export function useCardArtwork(
   const releaseYear = song?.releaseYear ?? null;
   const cardIndex = context.cardIndex;
   const promptOverride = context.promptOverride ?? null;
-  const cacheIdentity = promptOverride ? `${key}:${promptOverride}` : key;
+  const promptHash = promptOverride
+    ? Array.from(promptOverride).reduce((hash, char) => Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0, 2166136261).toString(36)
+    : "";
+  const cacheIdentity = promptHash ? `${key}:${promptHash}` : key;
 
   const [state, setState] = useState<{
     key: string;
@@ -113,7 +116,7 @@ export function useCardArtwork(
     }
 
     let active = true;
-    setState({ key, imageUrl: null, status: "loading" });
+    setState({ key: cacheIdentity, imageUrl: null, status: "loading" });
 
     void (async () => {
       const supabase = getSupabase();
@@ -160,11 +163,11 @@ export function useCardArtwork(
     return () => {
       active = false;
     };
-  }, [key, artist, title, album, releaseYear, cardIndex, promptOverride]);
+  }, [key, cacheIdentity, artist, title, album, releaseYear, cardIndex, promptOverride]);
 
   // A song change renders the placeholder synchronously — never a stale
   // painting from the previous track while the new one generates.
   if (!song) return { imageUrl: null, status: "idle" };
-  if (state.key !== key) return { imageUrl: null, status: "loading" };
+  if (state.key !== cacheIdentity) return { imageUrl: null, status: "loading" };
   return { imageUrl: state.imageUrl, status: state.status };
 }
