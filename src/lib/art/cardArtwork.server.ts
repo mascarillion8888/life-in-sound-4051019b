@@ -399,8 +399,13 @@ export async function generateCardArtworkCore(
   const scene = built.scene;
   // The scene is part of the cache identity — the same track re-imagined in
   // a different aesthetic must generate a new painting, never reuse the old.
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(prompt));
-  const fingerprint = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(prompt),
+  );
+  const fingerprint = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
   const cacheKey = `${options.userId ?? "unscoped"}::${input.trackKey}::${scene}::${fingerprint}`;
 
   const cached = SERVER_ART_CACHE.get(cacheKey);
