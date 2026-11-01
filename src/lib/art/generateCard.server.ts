@@ -230,7 +230,7 @@ export const generateCard = createServerFn({ method: "POST" })
       return { lore: "", image: null, scene: "gothic", persisted: false };
     }
 
-    const access = await authorizeCardGeneration(data.accessToken, data.trackKey);
+    const access = await authorizeCardGeneration(data.accessToken, data.trackKey, buildMultidimensionalPrompt(data));
     if (!access) return { lore: "", image: null, scene: "gothic", persisted: false };
 
     const encounter: CardEncounter = data;
