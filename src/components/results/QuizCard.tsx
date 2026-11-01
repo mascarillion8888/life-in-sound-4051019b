@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
+import { buildMultidimensionalPrompt } from "@/lib/art/cardBlueprint";
 import {
   isInCollection,
   loadCollection,
@@ -68,12 +69,26 @@ export function QuizCard({
     setSaved(isInCollection(next, collectionKey));
   };
 
-  const art = useCardArtwork(song, { cardIndex: card.index });
-  const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
   const encounterAge = ageNums.length
     ? Math.round(ageNums.reduce((a, b) => a + b, 0) / ageNums.length)
     : null;
+  const artPrompt = song
+    ? buildMultidimensionalPrompt({
+        artist: song.artist,
+        songTitle: song.title,
+        releaseYear: song.releaseYear,
+        genre: `${song.title} ${song.artist} ${song.album ?? ""}`,
+        encounterAge,
+        cardIndex: card.index,
+      })
+    : null;
+  const art = useCardArtwork(song, {
+    cardIndex: card.index,
+    promptOverride: artPrompt,
+    aesthetic: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
+  });
+  const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   const lore = useCardLore(song, {
     encounterAge,
     cardIndex: card.index,

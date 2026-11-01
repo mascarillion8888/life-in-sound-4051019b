@@ -12,12 +12,21 @@ type SelectChain = {
   };
 };
 
-type FakeSupabase = { from: (table: string) => SelectChain; calls: string[] };
+type FakeSupabase = {
+  auth: { getSession: () => Promise<{ data: { session: { user: { id: string } } } }> };
+  from: (table: string) => SelectChain;
+  calls: string[];
+};
 
 function makeFakeSupabase(opts: { rows?: unknown[]; error?: unknown }): FakeSupabase {
   const calls: string[] = [];
   const { rows = [], error } = opts;
   const fake: FakeSupabase = {
+    auth: {
+      getSession: async () => ({
+        data: { session: { user: { id: "cache-test-user" } } },
+      }),
+    },
     calls,
     from: (table) => {
       calls.push(`from:${table}`);

@@ -28,6 +28,12 @@ import { cardArtworkKey } from "./useCardArtwork";
 
 const LORE_CACHE = new Map<string, string>();
 
+function loreContextFingerprint(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) hash = Math.imul(hash ^ value.charCodeAt(i), 16777619);
+  return (hash >>> 0).toString(36);
+}
+
 /** Test-only: reset the session tier. */
 export function __clearCardLoreCache(): void {
   LORE_CACHE.clear();
@@ -47,6 +53,8 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
   const title = song?.title ?? "";
   const releaseYear = song?.releaseYear ?? null;
   const { cardIndex, birthYear, encounterAge, genre, userMemory } = context;
+  const contextKey = JSON.stringify({ cardIndex, birthYear, encounterAge, genre, userMemory });
+  const stateKey = key ? `${key}:${loreContextFingerprint(contextKey)}` : "";
 
   const [state, setState] = useState<{ key: string; lore: string | null }>({
     key: "",
@@ -58,25 +66,29 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
       setState({ key: "", lore: null });
       return;
     }
-    const cached = LORE_CACHE.get(key);
-    if (cached) {
-      setState({ key, lore: cached });
-      return;
-    }
-
     let active = true;
-    setState({ key, lore: null });
+    setState({ key: stateKey, lore: null });
 
     // The caller's own session token — persistence runs under that user's
     // RLS context server-side; anonymous/no-session users simply skip it.
     void (async () => {
       let accessToken: string | null = null;
+      let userId: string | null = null;
       try {
         const supabase = getSupabase();
         const session = supabase ? (await supabase.auth.getSession()).data.session : null;
         accessToken = session?.access_token ?? null;
+        userId = session?.user.id ?? null;
       } catch {
         accessToken = null;
+      }
+
+      if (!accessToken || !userId) return;
+      const cacheKey = `${userId}:${key}:${loreContextFingerprint(contextKey)}`;
+      const cached = LORE_CACHE.get(cacheKey);
+      if (cached) {
+        if (active) setState({ key: stateKey, lore: cached });
+        return;
       }
 
       try {
@@ -96,8 +108,8 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
         });
         if (!active) return;
         if (out.lore) {
-          LORE_CACHE.set(key, out.lore);
-          setState({ key, lore: out.lore });
+          LORE_CACHE.set(cacheKey, out.lore);
+          setState({ key: stateKey, lore: out.lore });
         }
         // A persisted card wrote a new `cards` row — bust the in-memory list
         // cache (30s TTL) so the next gallery load shows it immediately
@@ -113,6 +125,6 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     };
   }, [key, artist, title, releaseYear, cardIndex, birthYear, encounterAge, genre, userMemory]);
 
-  if (!song || state.key !== key) return null;
+  if (!song || state.key !== stateKey) return null;
   return state.lore;
 }

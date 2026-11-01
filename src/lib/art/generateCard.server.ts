@@ -28,6 +28,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
 import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
+import { authorizeCardGeneration } from "./generation-security.server";
 import { runRole } from "@/lib/llm/orchestra";
 
 import { generateCardArtworkCore } from "./cardArtwork.server";
@@ -59,8 +60,6 @@ export type GenerateCardOutput = {
   /** True when the card row + painting were persisted to Supabase. */
   persisted: boolean;
 };
-
-const DAILY_LIMIT = 20; // ported from card-studio's per-user quota
 
 /* -------------------------------------------------------------------------- */
 /* Lore                                                                        */
@@ -160,15 +159,6 @@ export async function persistCardCore(
     const userId = (await supabase.auth.getUser(token)).data.user?.id;
     if (!userId) return false;
 
-    // Daily quota — same rule as card-studio's DAILY_LIMIT, enforced here
-    // because RLS counts rows, not rate.
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await supabase
-      .from("cards")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since);
-    if ((count ?? 0) >= DAILY_LIMIT) return false;
-
     const cardId = crypto.randomUUID();
     let imagePath: string | null = null;
 
@@ -240,17 +230,22 @@ export const generateCard = createServerFn({ method: "POST" })
       return { lore: "", image: null, scene: "gothic", persisted: false };
     }
 
+    const access = await authorizeCardGeneration(
+      data.accessToken,
+      data.trackKey,
+      buildMultidimensionalPrompt(data),
+    );
+    if (!access) return { lore: "", image: null, scene: "gothic", persisted: false };
+
     const encounter: CardEncounter = data;
     const scene = cardArtworkSceneForGenre(encounter);
     const prompt = buildMultidimensionalPrompt(encounter);
 
     // Lore + painting are independent — run both, degrade each separately.
-    // The painting uses the SAME trackKey as the artwork hook
-    // (useCardArtwork → cardArtwork.server.ts), so both share one process-level
-    // cache entry per `trackKey::scene`. The generated painting is persisted to
-    // the gallery, and the QuizCard face shows it from the same cache tier —
-    // a "::card" suffix would mint a second key and silently double image
-    // generation (and archive a painting that differs from the on-screen one).
+    // The painting uses the SAME trackKey and personalized blueprint prompt
+    // as the artwork hook (useCardArtwork → cardArtwork.server.ts). The
+    // user-scoped prompt cache and in-flight registry make both paths share
+    // one provider call; the gallery persists the same image shown on-card.
     const [lore, image] = await Promise.all([
       generateCardLoreCore(encounter),
       generateCardArtworkCore({
@@ -261,7 +256,7 @@ export const generateCard = createServerFn({ method: "POST" })
         cardIndex: data.cardIndex,
         aesthetic: data.genre,
         promptOverride: prompt,
-      }),
+      }, { userId: access.userId }),
     ]);
 
     const persisted = await persistCardCore(data, lore, scene, image);

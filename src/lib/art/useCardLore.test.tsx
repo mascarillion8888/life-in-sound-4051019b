@@ -12,7 +12,13 @@ vi.mock("./generateCard.server", () => ({
   generateCard: (args: unknown) => generateMock(args),
 }));
 vi.mock("@/lib/supabase/client", () => ({
-  getSupabase: () => null,
+  getSupabase: () => ({
+    auth: {
+      getSession: async () => ({
+        data: { session: { user: { id: "user-1" }, access_token: "test-token" } },
+      }),
+    },
+  }),
 }));
 
 const invalidateMock = vi.fn();

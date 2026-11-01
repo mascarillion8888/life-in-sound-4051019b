@@ -1,0 +1,48 @@
+import { createClient } from "@supabase/supabase-js";
+
+export type GenerationAccess = { userId: string };
+
+/**
+ * Validate the caller's Supabase JWT and reserve one distinct track slot
+ * before any paid provider work begins. Anonymous Supabase users have the
+ * authenticated database role, so no registration is required.
+ */
+export async function authorizeCardGeneration(
+  accessToken: string | null | undefined,
+  trackKey: string,
+  promptIdentity = "",
+): Promise<GenerationAccess | null> {
+  const token = accessToken?.trim();
+  const url = process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!token || !url || !anonKey || !trackKey || trackKey.length > 200) return null;
+
+  try {
+    const supabase = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data, error } = await supabase.auth.getUser(token);
+    const userId = data.user?.id;
+    if (error || !userId) return null;
+
+    // Store only a one-way digest, never a raw memory or prompt, in the quota table.
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(`${trackKey}::${promptIdentity}`),
+    );
+    const fingerprint = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    const reservationKey = `${trackKey.slice(0, 120)}:${fingerprint}`;
+    const { data: reserved, error: reserveError } = await supabase.rpc(
+      "reserve_card_generation",
+      { p_track_key: reservationKey },
+    );
+    if (reserveError || reserved !== true) return null;
+
+    return { userId };
+  } catch {
+    return null;
+  }
+}

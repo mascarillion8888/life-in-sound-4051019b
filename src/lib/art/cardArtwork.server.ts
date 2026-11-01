@@ -18,11 +18,12 @@
  *   - No key is ever returned; failures map to `{ image: null }` so the UI
  *     keeps its dark gothic placeholder — never a fabricated image.
  *
- * Caching: generated paintings are expensive, so successes are memoized
- * server-side per process (keyed by track id / artist). The client hook adds
- * a second, persistent tier (localStorage) so a reload does not re-generate.
+ * Caching: generated paintings are memoized by user, track, scene and a
+ * SHA-256 prompt fingerprint. Concurrent identical requests share one call;
+ * the client adds a user-scoped localStorage tier.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { authorizeCardGeneration } from "./generation-security.server";
 
 const GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -51,6 +52,8 @@ export type CardArtworkInput = {
    * brief; the scene is still resolved for cache identity.
    */
   promptOverride?: string | null;
+  /** Supabase JWT for the anonymous or registered caller. */
+  accessToken?: string | null;
 };
 
 export type CardArtworkOutput = {
@@ -60,6 +63,27 @@ export type CardArtworkOutput = {
 
 /** Process-level cache — successes only (transient failures stay retryable). */
 const SERVER_ART_CACHE = new Map<string, string>();
+const SERVER_ART_INFLIGHT = new Map<string, Promise<string | null>>();
+const MAX_CONCURRENT_ARTWORK = 3;
+const MAX_QUEUED_ARTWORK = 10;
+let activeArtwork = 0;
+const artworkWaiters: Array<() => void> = [];
+
+async function acquireArtworkSlot(): Promise<boolean> {
+  if (activeArtwork < MAX_CONCURRENT_ARTWORK) {
+    activeArtwork += 1;
+    return true;
+  }
+  if (artworkWaiters.length >= MAX_QUEUED_ARTWORK) return false;
+  await new Promise<void>((resolve) => artworkWaiters.push(resolve));
+  return true;
+}
+
+function releaseArtworkSlot(): void {
+  const next = artworkWaiters.shift();
+  if (next) next();
+  else activeArtwork = Math.max(0, activeArtwork - 1);
+}
 
 /* -------------------------------------------------------------------------- */
 /* Dynamic scene selection — user preference, then genre, then era            */
@@ -351,6 +375,7 @@ export type GenerateCardArtworkOptions = {
   /** Injectable fetch (for tests). Defaults to global fetch. */
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  userId?: string;
 };
 
 /**
@@ -374,36 +399,67 @@ export async function generateCardArtworkCore(
   const scene = built.scene;
   // The scene is part of the cache identity — the same track re-imagined in
   // a different aesthetic must generate a new painting, never reuse the old.
-  const cacheKey = `${input.trackKey}::${scene}`;
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(prompt),
+  );
+  const fingerprint = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  const cacheKey = `${options.userId ?? "unscoped"}::${input.trackKey}::${scene}::${fingerprint}`;
 
   const cached = SERVER_ART_CACHE.get(cacheKey);
   if (cached) return cached;
+  const pending = SERVER_ART_INFLIGHT.get(cacheKey);
+  if (pending) return pending;
 
-  const apiKey = getGeminiServerKey();
-  const fetchImpl = options.fetchImpl ?? fetch;
+  const generation = (async (): Promise<string | null> => {
+    const acquired = await acquireArtworkSlot();
+    if (!acquired) return null;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    const apiKey = getGeminiServerKey();
+    const fetchImpl = options.fetchImpl ?? fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    );
+
+    try {
+      // Gemini native image generation. No fallback provider is invoked.
+      const image = apiKey
+        ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
+        : null;
+
+      if (image) {
+        SERVER_ART_CACHE.set(cacheKey, image);
+        if (SERVER_ART_CACHE.size > 100) {
+          const oldest = SERVER_ART_CACHE.keys().next().value;
+          if (oldest) SERVER_ART_CACHE.delete(oldest);
+        }
+      }
+      return image;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
+      releaseArtworkSlot();
+    }
+  })();
+  SERVER_ART_INFLIGHT.set(cacheKey, generation);
   try {
-    // Provider: Gemini native image generation. The former Imagen `:predict`
-    // tier was removed 2026-10-12 — `imagen-3.0-generate-002` returns 404
-    // (NOT_FOUND) in v1beta, so the chain was already always Gemini anyway.
-    // Needs GEMINI_API_KEY.
-    const image = apiKey
-      ? await tryGeminiImage(prompt, apiKey, fetchImpl, controller.signal).catch(() => null)
-      : null;
-    if (image) SERVER_ART_CACHE.set(cacheKey, image);
-    return image;
-  } catch {
-    return null;
+    return await generation;
   } finally {
-    clearTimeout(timeout);
+    SERVER_ART_INFLIGHT.delete(cacheKey);
   }
 }
 
 /** Test-only: reset the process-level memoization. */
 export function __clearCardArtworkServerCache(): void {
   SERVER_ART_CACHE.clear();
+  SERVER_ART_INFLIGHT.clear();
+  artworkWaiters.length = 0;
+  activeArtwork = 0;
 }
 
 export const generateCardArtwork = createServerFn({ method: "POST" })
@@ -423,9 +479,16 @@ export const generateCardArtwork = createServerFn({ method: "POST" })
     aesthetic: typeof input.aesthetic === "string" ? input.aesthetic.slice(0, 100) : null,
     promptOverride:
       typeof input.promptOverride === "string" ? input.promptOverride.slice(0, 2000) : null,
+    accessToken: typeof input.accessToken === "string" ? input.accessToken.slice(0, 4096) : null,
   }))
   .handler(async ({ data }): Promise<CardArtworkOutput> => {
     if (!data.trackKey || !data.title) return { image: null };
-    const image = await generateCardArtworkCore(data);
+    const access = await authorizeCardGeneration(
+      data.accessToken,
+      data.trackKey,
+      data.promptOverride ?? "generic-art",
+    );
+    if (!access) return { image: null };
+    const image = await generateCardArtworkCore(data, { userId: access.userId });
     return { image };
   });
