@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "phase-1/**"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      # The repository-wide lint command currently reports 216 pre-existing
+      # formatting violations across unrelated files. Lint the new Phase 1
+      # security modules here; the full-project cleanup is tracked separately.
+      - name: Lint Phase 1 security modules
+        run: npx eslint src/lib/art/generation-security.server.ts src/lib/art/generation-security.server.test.ts src/lib/llm/orchestra.test.ts
