@@ -128,7 +128,7 @@ export async function callOpenRouter(
       console.warn(
         `[openrouter] ${primaryModel} → ${result.status} (rate limit / sunucu), fallback deneniyor: ${fallbackModel}`,
       );
-      result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
+      result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, signal: controller.signal, fetchImpl });
       usedModel = fallbackModel;
       didFallback = true;
     }
