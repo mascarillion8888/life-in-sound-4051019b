@@ -97,14 +97,21 @@ export async function callOpenRouter(
   const primaryModel = getEnv("OPENROUTER_PRIMARY_MODEL") ?? "google/gemini-2.5-flash-lite";
   const fallbackModel = getEnv("OPENROUTER_FALLBACK_MODEL") ?? "openrouter/free";
   const fetchImpl = options.fetchImpl ?? fetch;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 18_000);
+  const abortFromCaller = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  else options.signal?.addEventListener("abort", abortFromCaller, { once: true });
 
+  try {
   let result: AttemptResult;
   let usedModel = primaryModel;
   let didFallback = false;
 
   try {
-    result = await attempt(apiKey, baseUrl, primaryModel, messages, { ...options, fetchImpl });
+    result = await attempt(apiKey, baseUrl, primaryModel, messages, { ...options, signal: controller.signal, fetchImpl });
   } catch (err) {
+    if (controller.signal.aborted) throw new Error("OpenRouter request timed out or was cancelled");
     // Network-level failure (thrown by fetch): treat like a transient provider
     // error — try the fallback once.
     console.warn(
@@ -155,4 +162,8 @@ export async function callOpenRouter(
 
   console.log(`[openrouter] OK model=${usedModel}${didFallback ? " (fallback)" : ""}`);
   return content;
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abortFromCaller);
+  }
 }
