@@ -18,9 +18,9 @@
  *   - No key is ever returned; failures map to `{ image: null }` so the UI
  *     keeps its dark gothic placeholder — never a fabricated image.
  *
- * Caching: generated paintings are expensive, so successes are memoized
- * server-side per process (keyed by track id / artist). The client hook adds
- * a second, persistent tier (localStorage) so a reload does not re-generate.
+ * Caching: generated paintings are memoized by user, track, scene and a
+ * SHA-256 prompt fingerprint. Concurrent identical requests share one call;
+ * the client adds a user-scoped localStorage tier.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { authorizeCardGeneration } from "./generation-security.server";
