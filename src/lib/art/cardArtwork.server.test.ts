@@ -271,7 +271,7 @@ describe("generateCardArtworkCore", () => {
     const options = { fetchImpl: fetchImpl as unknown as typeof fetch, userId: "user-1" };
     const first = generateCardArtworkCore(input, options);
     const second = generateCardArtworkCore(input, options);
-    await Promise.resolve();
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(1));
     resolveImage(geminiImageOk());
     const [one, two] = await Promise.all([first, second]);
     expect(one).toBe(two);
