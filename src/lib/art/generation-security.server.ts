@@ -34,7 +34,9 @@ export async function authorizeCardGeneration(
       "SHA-256",
       new TextEncoder().encode(`${trackKey}::${promptIdentity}`),
     );
-    const fingerprint = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+    const fingerprint = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
     const reservationKey = `${trackKey.slice(0, 120)}:${fingerprint}`;
     const { data: reserved, error: reserveError } = await supabase.rpc(
       "reserve_card_generation",
