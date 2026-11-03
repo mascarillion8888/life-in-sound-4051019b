@@ -162,10 +162,12 @@ function JourneyPage() {
 
   // Birth year (profile): asked once, skippable. Feeds the era year and life
   // stage on every card through birthYearStore.
-  const profile = useProfile(userId);
+  const profile = useProfile(userId, session.status !== "loading");
+  const [editingBirthYear, setEditingBirthYear] = useState(false);
   const isAnonymousUser = session.status === "anonymous" && session.user?.is_anonymous === true;
   const needsBirthYear =
-    restored && !profile.loading && profile.birthYear == null && !profile.skipped && reveal === null;
+    (restored && !profile.loading && profile.birthYear == null && !profile.skipped && reveal === null) ||
+    (editingBirthYear && reveal === null);
   useEffect(() => {
     birthYearStore.set(profile.birthYear);
   }, [profile.birthYear]);
@@ -433,13 +435,13 @@ function JourneyPage() {
       {needsBirthYear ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/95 px-5">
           <div className="flex w-full flex-col items-center gap-6">
-            <BirthYearPrompt onSave={profile.save} onSkip={profile.skip} />
+            <BirthYearPrompt initialValue={profile.birthYear} onSave={async (year) => { await profile.save(year); setEditingBirthYear(false); }} onSkip={() => { if (editingBirthYear) setEditingBirthYear(false); else void profile.skip(); }} />
             <GoogleLinkButton isAnonymous={isAnonymousUser} />
           </div>
         </div>
       ) : null}
       <div className="absolute right-5 top-5 z-20 sm:right-6 sm:top-6">
-        <div className="flex items-center gap-3"><GoogleLinkButton isAnonymous={isAnonymousUser} /><LanguageSwitcher /></div>
+        <div className="flex items-center gap-3">{profile.birthYear != null ? (<button type="button" data-testid="change-birth-year" onClick={() => setEditingBirthYear(true)} className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Change birth year</button>) : null}<GoogleLinkButton isAnonymous={isAnonymousUser} /><LanguageSwitcher /></div>
       </div>
       <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-16 sm:px-6 md:py-24">
         <div className="w-full max-w-2xl">

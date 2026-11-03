@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { parseBirthYear } from "@/lib/supabase/birthYear";
 
 type Props = {
+  /** Prefills the field when the listener is changing an existing year. */
+  initialValue?: number | null;
   onSave: (year: number) => void | Promise<void>;
   onSkip: () => void;
 };
@@ -11,8 +13,8 @@ type Props = {
  * One question, one field: which year were you born? Skippable. Only the year
  * is asked for, never a full date.
  */
-export function BirthYearPrompt({ onSave, onSkip }: Props) {
-  const [value, setValue] = useState("");
+export function BirthYearPrompt({ initialValue, onSave, onSkip }: Props) {
+  const [value, setValue] = useState(initialValue != null ? String(initialValue) : "");
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (event: React.FormEvent) => {

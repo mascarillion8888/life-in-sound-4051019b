@@ -2,6 +2,10 @@
  * Listener profile (birth year). Backed by `public.profiles` when Supabase is
  * configured, with a localStorage fallback so the app still works without it.
  * Never throws into the UI.
+ *
+ * `ready` is false while the auth session is still resolving. Until it flips to
+ * true the hook stays in `loading` and decides nothing, so the birth-year
+ * prompt cannot flash before we know whether a year already exists.
  */
 import { useCallback, useEffect, useState } from "react";
 import { getSupabase, isSupabaseConfigured } from "./client";
@@ -19,10 +23,9 @@ function readLocal(): number | null {
   }
 }
 
-function writeLocal(year: number | null): void {
+function writeLocal(year: number): void {
   try {
-    if (year == null) window.localStorage.removeItem(LS_KEY);
-    else window.localStorage.setItem(LS_KEY, String(year));
+    window.localStorage.setItem(LS_KEY, String(year));
   } catch {
     /* storage unavailable: keep in memory only */
   }
@@ -36,37 +39,47 @@ function readSkipped(): boolean {
   }
 }
 
-function writeSkipped(value: boolean): void {
+function writeSkipped(): void {
   try {
-    if (value) window.localStorage.setItem(LS_SKIP_KEY, "1");
-    else window.localStorage.removeItem(LS_SKIP_KEY);
+    window.localStorage.setItem(LS_SKIP_KEY, "1");
   } catch {
-    /* storage unavailable: keep in memory only */
+    /* in-memory only */
   }
 }
 
 export type ProfileState = {
   loading: boolean;
   birthYear: number | null;
+  /** True when the listener chose to skip the birth-year question. */
   skipped: boolean;
   save: (year: number) => Promise<void>;
   skip: () => Promise<void>;
 };
 
-export function useProfile(userId: string | null | undefined): ProfileState {
+export function useProfile(userId: string | null | undefined, ready: boolean): ProfileState {
   const [loading, setLoading] = useState(true);
   const [birthYear, setBirthYear] = useState<number | null>(null);
   const [skipped, setSkipped] = useState(false);
 
   useEffect(() => {
+    // Session still resolving: stay in loading and decide nothing.
+    if (!ready) {
+      setLoading(true);
+      return;
+    }
+
     let active = true;
     const supabase = isSupabaseConfigured() ? getSupabase() : null;
+
+    // No backend or no user: the local copy is the source of truth.
     if (!supabase || !userId) {
       setBirthYear(readLocal());
       setSkipped(readSkipped());
       setLoading(false);
       return;
     }
+
+    setLoading(true);
     (async () => {
       try {
         const { data } = await supabase
@@ -76,12 +89,9 @@ export function useProfile(userId: string | null | undefined): ProfileState {
           .maybeSingle();
         if (!active) return;
         const remote = typeof data?.birth_year === "number" ? data.birth_year : null;
+        if (remote != null) writeLocal(remote);
         setBirthYear(remote ?? readLocal());
-        // If there's a remote birth_year, we consider it not skipped
-        // Only check localStorage skip flag if no remote birth_year
-        if (!remote) {
-          setSkipped(readSkipped());
-        }
+        setSkipped(readSkipped());
       } catch {
         if (active) {
           setBirthYear(readLocal());
@@ -91,17 +101,17 @@ export function useProfile(userId: string | null | undefined): ProfileState {
         if (active) setLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, ready]);
 
   const save = useCallback(
     async (year: number) => {
       setBirthYear(year);
       setSkipped(false);
       writeLocal(year);
-      writeSkipped(false);
       const supabase = isSupabaseConfigured() ? getSupabase() : null;
       if (!supabase || !userId) return;
       try {
@@ -109,30 +119,16 @@ export function useProfile(userId: string | null | undefined): ProfileState {
           .from("profiles")
           .upsert({ user_id: userId, birth_year: year }, { onConflict: "user_id" });
       } catch {
-        /* local copy already saved; remote retry happens on next save */
+        /* local copy already saved */
       }
     },
     [userId],
   );
 
-  const skip = useCallback(
-    async () => {
-      setSkipped(true);
-      setBirthYear(null);
-      writeLocal(null);
-      writeSkipped(true);
-      const supabase = isSupabaseConfigured() ? getSupabase() : null;
-      if (!supabase || !userId) return;
-      try {
-        await supabase
-          .from("profiles")
-          .upsert({ user_id: userId, birth_year: null }, { onConflict: "user_id" });
-      } catch {
-        /* local copy already saved; remote retry happens on next save */
-      }
-    },
-    [userId],
-  );
+  const skip = useCallback(async () => {
+    setSkipped(true);
+    writeSkipped();
+  }, []);
 
   return { loading, birthYear, skipped, save, skip };
 }
