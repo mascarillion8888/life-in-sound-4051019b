@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { __clearCardArtworkMemoryCache, cardArtworkKey } from "@/lib/art/useCardArtwork";
 import { isInCollection, loadCollection } from "@/lib/collection";
+import { birthYearStore } from "@/lib/supabase/birth-year-store";
 import type { Song } from "@/lib/song/types";
 
 import { QuizCard } from "./QuizCard";
@@ -41,6 +42,7 @@ describe("QuizCard (player-card layout)", () => {
   beforeEach(() => {
     __clearCardArtworkMemoryCache();
     window.localStorage.clear();
+    act(() => birthYearStore.set(null));
   });
 
   it("renders meta line, cover, title, artist, lore, badge, era, mood and progress", () => {
@@ -101,6 +103,24 @@ describe("QuizCard (player-card layout)", () => {
 
   it("draws the optional frame template over the artwork", () => {
     render(<QuizCard card={cards[0]} song={song()} templateFile="frame-gothic.png" />);
-    expect((screen.getByTestId("card-art-template") as HTMLImageElement).src).toContain("data:image/png");
+    expect((screen.getByTestId("card-art-template") as HTMLImageElement).src).toContain(
+      "data:image/png",
+    );
+  });
+
+  it("shows the real age in the meta line and the derived stage when a birth year is known", () => {
+    act(() => birthYearStore.set(1967));
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    const meta = screen.getByTestId("card-meta").textContent ?? "";
+    expect(meta).toContain("Age 20");
+    expect(meta).toContain("FIRST SPARK");
+    expect(screen.getByTestId("card-stage").textContent).toBe("Youth");
+  });
+
+  it("keeps the card's age band in the meta line when no birth year is known", () => {
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    const meta = screen.getByTestId("card-meta").textContent ?? "";
+    expect(meta).toContain("Ages 5-9");
+    expect(meta).not.toContain("Age 20");
   });
 });
