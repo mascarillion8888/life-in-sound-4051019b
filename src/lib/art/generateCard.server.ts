@@ -29,6 +29,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
 import { runRole } from "@/lib/llm/orchestra";
+import { callOpenRouter } from "@/lib/openrouter.server";
 
 import { generateCardArtworkCore } from "./cardArtwork.server";
 import {
@@ -78,6 +79,7 @@ export function buildLorePrompt(encounter: CardEncounter): string {
   if (eraYear) parts.push(`(around ${eraYear})`);
   parts.push(".");
   if (encounter.genre) parts.push(`Genre: ${encounter.genre}.`);
+  if (encounter.mood?.trim()) parts.push(`Mood of the song: ${encounter.mood.trim()}.`);
   if (encounter.userMemory?.trim()) {
     parts.push(`Personal memory to honour: ${encounter.userMemory.trim()}.`);
   }
@@ -93,26 +95,82 @@ export function buildLorePrompt(encounter: CardEncounter): string {
       "Name the song title and the artist plainly in the text (no lyrics, no quotation of lines). " +
       "This is a friend's memory, not a clinical case — never diagnose, label, or pathologize the listener or their feelings. " +
       "Write something specific and warm, never a generic fortune-cookie compliment. " +
-      "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. Reply with ONLY the 2 sentences.",
+      "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. " +
+      "Sentence 1: one concrete, specific detail only THIS song could give (its real theme, sound, album or era; use real knowledge of the song if you have it, otherwise stay with the facts above). " +
+      "Sentence 2: the emotional turn for this life stage. " +
+      "Avoid stock phrases such as \"wrapped around\", \"small soul\", \"nameless feelings\", \"whole world\", \"journey\", \"tapestry\", \"echoes of\", \"whispers of\", \"time stood still\", \"never alone\". " +
+      "Never invent people, places, events or memories the listener did not give. Reply with ONLY the 2 sentences.",
   );
   return parts.join(" ");
 }
 
-/** LLM lore with deterministic fallback — never null, never throws. */
+/** Stock phrases a fresh, personal line should not lean on. */
+const GENERIC_LORE =
+  /wrapped around|small soul|nameless|whole world|tapestry|journey|echoes of|whispers? of|time stood still|never alone|symphony of|dance of/i;
+/** The story panel clamps at three lines; far longer text is cut off. */
+const MAX_LORE_CHARS = 320;
+
+/** True when generated lore is too long or leans on stock phrases. */
+export function isGenericLore(text: string): boolean {
+  return text.length > MAX_LORE_CHARS || GENERIC_LORE.test(text);
+}
+
+/** Strip reasoning blocks some models emit before the answer. */
+function cleanLore(raw: string | null | undefined): string {
+  return (raw ?? "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+}
+
+const LORE_SYSTEM_PROMPT =
+  "You are the narrator of a music-memory app. You write one short, poetic, warm piece of lore (2 sentences, plain prose, English only) about a listener meeting a song at a certain age. Be concrete and specific, never generic. Never quote lyrics, never invent people, places or events from the listener's life, never diagnose or give advice. Output only the lore text.";
+
+/**
+ * Provider chain for lore: OpenRouter (Gemini) first, then the Groq
+ * `summarizer` role. Returns null when neither is configured or both fail,
+ * so the caller can fall back to the deterministic lines.
+ */
+async function writeLoreText(
+  userPrompt: string,
+  fetchImpl?: typeof fetch,
+): Promise<string | null> {
+  try {
+    const viaOpenRouter = await callOpenRouter(
+      [
+        { role: "system", content: LORE_SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      { temperature: 0.9, maxTokens: 300, fetchImpl },
+    );
+    if (viaOpenRouter != null) return viaOpenRouter;
+  } catch {
+    /* fall through to Groq */
+  }
+  return runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 300, fetchImpl });
+}
+
+/**
+ * LLM lore with deterministic fallback — never null, never throws. Output that
+ * is too long or leans on stock phrases gets exactly one rewrite attempt; a
+ * missing key (null) or any failure goes straight to the deterministic lines.
+ */
 export async function generateCardLoreCore(
   encounter: CardEncounter,
   options: { fetchImpl?: typeof fetch } = {},
 ): Promise<string> {
-  try {
-    const llm = await runRole("summarizer", buildLorePrompt(encounter), {
-      temperature: 0.8,
-      maxTokens: 160,
-      fetchImpl: options.fetchImpl,
-    });
-    const cleaned = llm?.trim();
-    if (cleaned && cleaned.length >= 20 && cleaned.length <= 600) return cleaned;
-  } catch {
-    /* fall through to deterministic */
+  const prompt = buildLorePrompt(encounter);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const llm = await writeLoreText(
+        attempt === 0
+          ? prompt
+          : `${prompt} Your previous answer used stock phrases or was too long: write it fresher, more specific and shorter.`,
+        options.fetchImpl,
+      );
+      if (llm == null) break; // no provider/key configured — retrying cannot help
+      const cleaned = cleanLore(llm);
+      if (cleaned.length >= 20 && cleaned.length <= 600 && !isGenericLore(cleaned)) return cleaned;
+    } catch {
+      break;
+    }
   }
   return deterministicLore(encounter);
 }
@@ -228,6 +286,7 @@ export const generateCard = createServerFn({ method: "POST" })
       typeof input.encounterAge === "number" && Number.isFinite(input.encounterAge)
         ? Math.floor(input.encounterAge)
         : null,
+    mood: typeof input.mood === "string" ? input.mood.slice(0, 40) : null,
     userMemory: typeof input.userMemory === "string" ? input.userMemory.slice(0, 500) : null,
     cardIndex:
       typeof input.cardIndex === "number" && Number.isFinite(input.cardIndex)
