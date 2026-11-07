@@ -79,6 +79,7 @@ export function QuizCard({
   const lore = useCardLore(song, {
     encounterAge,
     birthYear,
+    mood: (song as { mood?: string | null } | null)?.mood ?? null,
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
   });
