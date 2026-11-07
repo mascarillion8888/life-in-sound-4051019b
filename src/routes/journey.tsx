@@ -19,6 +19,10 @@ import { loadJourney, saveJourney } from "@/lib/journey-storage";
 import { resetJourneySession } from "@/lib/reset-session";
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
+import { useProfile } from "@/lib/supabase/use-profile";
+import { birthYearStore } from "@/lib/supabase/birth-year-store";
+import { BirthYearPrompt } from "@/components/auth/BirthYearPrompt";
+import { GoogleLinkButton } from "@/components/auth/GoogleLinkButton";
 import { loadRemoteJourney, saveRemoteJourney } from "@/lib/supabase/journey-remote";
 import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
 import { verifySongArtwork, songCacheKey } from "@/lib/song/artworkVerify";
@@ -155,6 +159,18 @@ function JourneyPage() {
   const { fresh } = Route.useSearch();
 
   const userId = session.status === "anonymous" && session.user ? session.user.id : null;
+
+  // Birth year (profile): asked once, skippable. Feeds the era year and life
+  // stage on every card through birthYearStore.
+  const profile = useProfile(userId, session.status !== "loading");
+  const [editingBirthYear, setEditingBirthYear] = useState(false);
+  const isAnonymousUser = session.status === "anonymous" && session.user?.is_anonymous === true;
+  const needsBirthYear =
+    (restored && !profile.loading && profile.birthYear == null && !profile.skipped && reveal === null) ||
+    (editingBirthYear && reveal === null);
+  useEffect(() => {
+    birthYearStore.set(profile.birthYear);
+  }, [profile.birthYear]);
 
   // Restore progress once the session resolves. Uses the server copy when the
   // user is authenticated (reconciled with the local cache), otherwise the
@@ -416,8 +432,16 @@ function JourneyPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 glow-gold opacity-60" />
+      {needsBirthYear ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/95 px-5">
+          <div className="flex w-full flex-col items-center gap-6">
+            <BirthYearPrompt initialValue={profile.birthYear} onSave={async (year) => { await profile.save(year); setEditingBirthYear(false); }} onSkip={() => { if (editingBirthYear) setEditingBirthYear(false); else void profile.skip(); }} />
+            <GoogleLinkButton isAnonymous={isAnonymousUser} />
+          </div>
+        </div>
+      ) : null}
       <div className="absolute right-5 top-5 z-20 sm:right-6 sm:top-6">
-        <LanguageSwitcher />
+        <div className="flex items-center gap-3">{profile.birthYear != null ? (<button type="button" data-testid="change-birth-year" onClick={() => setEditingBirthYear(true)} className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">Change birth year</button>) : null}<GoogleLinkButton isAnonymous={isAnonymousUser} /><LanguageSwitcher /></div>
       </div>
       <main className="relative z-10 mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 py-16 sm:px-6 md:py-24">
         <div className="w-full max-w-2xl">

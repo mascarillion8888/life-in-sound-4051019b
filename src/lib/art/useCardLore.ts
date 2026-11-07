@@ -49,7 +49,9 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
   const releaseYear = song?.releaseYear ?? null;
   const { cardIndex, birthYear, encounterAge, genre, userMemory, mood } = context;
   // The same track can read differently per life stage / memory / mood.
-  const cacheKey = key ? `${key}|${encounterAge ?? ""}|${mood ?? ""}|${userMemory ?? ""}` : "";
+  const cacheKey = key
+    ? `${key}|${birthYear ?? ""}|${encounterAge ?? ""}|${mood ?? ""}|${userMemory ?? ""}`
+    : "";
 
   const [state, setState] = useState<{ key: string; lore: string | null }>({
     key: "",
