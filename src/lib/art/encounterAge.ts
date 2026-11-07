@@ -1,11 +1,11 @@
 /**
  * Resolve the listener's age when they encountered a song.
  *
- * The card's `ageRange` is the fallback: a coarse life-stage band. When both the
- * listener's birth year and the song's release year are known, the real age
- * (releaseYear - birthYear) is more truthful — but only when it plausibly fits
- * the card's band (±2 years). Outside that window the song is simply not from
- * that life stage, so the band's midpoint is kept.
+ * When both the listener's birth year and the song's release year are known, the
+ * real age (releaseYear - birthYear) is the truth — a listener can be any age, so
+ * the card's life-stage band does NOT constrain it. The band is only a fallback:
+ * when a year is missing, or the derived age falls outside a plausible lifetime
+ * (0–100), the band's midpoint is used instead.
  */
 export type EncounterAgeInput = {
   /** Human label such as "Ages 18-24", "40+", or "Now". */
@@ -14,20 +14,19 @@ export type EncounterAgeInput = {
   releaseYear?: number | null;
 };
 
-/** Allowed lifetime bounds — a resolved age is never negative or over 100. */
+export type EncounterAge = {
+  /** The resolved age in years, or null when the band carries no number. */
+  value: number | null;
+  /** True when `value` came from releaseYear - birthYear rather than the band. */
+  derived: boolean;
+};
+
+/** A derived age outside this lifetime range is rejected. */
 const AGE_MIN = 0;
 const AGE_MAX = 100;
-/** Tolerance around the card's band before the derived age is rejected. */
-const WINDOW = 2;
 
 function numbersIn(ageRange: string): number[] {
   return ageRange.match(/\d+/g)?.map(Number) ?? [];
-}
-
-function bandBounds(ageRange: string): { min: number; max: number } | null {
-  const nums = numbersIn(ageRange);
-  if (nums.length === 0) return null;
-  return { min: Math.min(...nums), max: Math.max(...nums) };
 }
 
 function bandMidpoint(ageRange: string): number | null {
@@ -40,15 +39,10 @@ export function resolveEncounterAge({
   ageRange,
   birthYear,
   releaseYear,
-}: EncounterAgeInput): number | null {
-  const bounds = bandBounds(ageRange);
-
-  if (bounds && typeof birthYear === "number" && typeof releaseYear === "number") {
+}: EncounterAgeInput): EncounterAge {
+  if (typeof birthYear === "number" && typeof releaseYear === "number") {
     const derived = releaseYear - birthYear;
-    const withinBand = derived >= bounds.min - WINDOW && derived <= bounds.max + WINDOW;
-    const withinLife = derived >= AGE_MIN && derived <= AGE_MAX;
-    if (withinBand && withinLife) return derived;
+    if (derived >= AGE_MIN && derived <= AGE_MAX) return { value: derived, derived: true };
   }
-
-  return bandMidpoint(ageRange);
+  return { value: bandMidpoint(ageRange), derived: false };
 }

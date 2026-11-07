@@ -11,6 +11,7 @@ import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { resolveEncounterAge } from "@/lib/art/encounterAge";
+import { stageLabelForAge } from "@/lib/art/lifeStageLabel";
 import {
   isInCollection,
   loadCollection,
@@ -55,7 +56,7 @@ export function QuizCard({
   /** Background cover verification state (journey). */
   artStatus?: "idle" | "loading" | "ok" | "notfound";
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
   const spectrum = usePreviewSpectrum(song?.previewUrl ?? null);
   const birthYear = useBirthYear();
@@ -73,11 +74,19 @@ export function QuizCard({
 
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
-  const encounterAge = resolveEncounterAge({
+  const { value: encounterAge, derived: ageIsDerived } = resolveEncounterAge({
     ageRange: card.ageRange,
     birthYear,
     releaseYear: song?.releaseYear ?? null,
   });
+  // A real age (from birth year + release year) replaces the card's coarse band
+  // in both the meta line ("Age 20" / "20 Yaş") and the life-stage chip.
+  const metaLeft =
+    ageIsDerived && encounterAge != null
+      ? `${language === "tr" ? `${encounterAge} Yaş` : `Age ${encounterAge}`} · ${card.eraTitle}`
+      : `${card.ageRange} · ${card.eraTitle}`;
+  const stageLabel =
+    ageIsDerived && encounterAge != null ? stageLabelForAge(encounterAge) : undefined;
   const lore = useCardLore(song, {
     encounterAge,
     birthYear,
@@ -174,7 +183,8 @@ export function QuizCard({
       data-testid={`quiz-card-${card.songIndex}`}
       genre={song?.genre ?? null}
       mood={mood}
-      metaLeft={`${card.ageRange} · ${card.eraTitle}`}
+      metaLeft={metaLeft}
+      stageLabel={stageLabel}
       sequence={sequence}
       title={song?.title ?? card.eraTitle}
       artist={song?.artist ?? card.tag}
