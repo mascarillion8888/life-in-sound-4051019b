@@ -80,7 +80,7 @@ export function useProfile(userId: string | null | undefined, ready: boolean): P
     }
 
     setLoading(true);
-    (async () => {
+    void (async () => {
       try {
         const { data } = await supabase
           .from("profiles")
