@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
+import { resolveEncounterAge } from "@/lib/art/encounterAge";
 import {
   isInCollection,
   loadCollection,
@@ -72,10 +73,11 @@ export function QuizCard({
 
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
-  const ageNums = card.ageRange.match(/\d+/g)?.map(Number) ?? [];
-  const encounterAge = ageNums.length
-    ? Math.round(ageNums.reduce((a, b) => a + b, 0) / ageNums.length)
-    : null;
+  const encounterAge = resolveEncounterAge({
+    ageRange: card.ageRange,
+    birthYear,
+    releaseYear: song?.releaseYear ?? null,
+  });
   const lore = useCardLore(song, {
     encounterAge,
     birthYear,
@@ -103,7 +105,9 @@ export function QuizCard({
   // Placeholder score: deterministic 6–10 from the track identity.
   // Replace with a real discovery score when one exists.
   const score = song ? 6 + (hashString(collectionKey) % 5) : 6;
-  const generating = song ? (artStatus === "loading" || art.status === "loading") && artStatus !== "notfound" : false;
+  const generating = song
+    ? (artStatus === "loading" || art.status === "loading") && artStatus !== "notfound"
+    : false;
 
   const playLabel = preview.available
     ? preview.playing
@@ -132,7 +136,9 @@ export function QuizCard({
         >
           {generating ? (
             <>
-              <span className="animate-pulse" aria-hidden><Loader2 className="h-8 w-8 animate-spin" aria-hidden /></span>
+              <span className="animate-pulse" aria-hidden>
+                <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
+              </span>
               <span className="px-2 text-center text-xs opacity-80">
                 {t.quizCard.artGenerating}
               </span>
