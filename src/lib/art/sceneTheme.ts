@@ -62,20 +62,8 @@ export const SCENE_KEYWORDS: { id: SceneThemeId; keywords: string[] }[] = [
       "alternative",
     ],
   },
-  {
-    id: "jazz",
-    keywords: [
-      "jazz",
-      "blues",
-      "swing",
-      "bebop",
-      "lounge",
-      "crooner",
-      "latin jazz",
-      "vocal jazz",
-      "big band",
-    ],
-  },
+  // prettier-ignore
+  { id: "jazz", keywords: ["jazz", "blues", "swing", "bebop", "lounge", "crooner", "latin jazz", "vocal jazz", "big band"] },
   {
     id: "soul",
     keywords: [
