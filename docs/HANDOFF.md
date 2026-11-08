@@ -14,47 +14,39 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main'den AHEAD 3 (39ab4bd docs + 21135fe + c545879 YERELDE, PUSH EDİLMEDİ; İş 3 hero göz onayı bekleniyor). origin/main tipi = 7f71bad (Vercel deploy SUCCESS 2026-10-12)
-HEAD:       c545879 — "feat(poster): İş 3 Dilim 2 — hero line from real inferred mood (posterHero.ts, tr|en, list-framed)" [YEREL, puşlanmadı]
-            21135fe — "feat(poster): Dilim 1 — computePosterLayout seam + hero?: string (always undefined) + posterForRender binding" [YEREL, puşlanmadı]
-            ───── bugün (2026-10-12/13) PUSH EDİLENLER — origin/main = 7f71bad ─────
-                        7f71bad — test(art): Gemini null paths (HTTP 404/500, 200-with-no-image)
-                        5756daa — docs(ana-yasa): §8 P1 mood/genre bacağı tamamlandı + MusicBrainz lisans backlog (non-blocking); §5.5 gate daraltıldı
-                        01ee852 — docs(handoff): Imagen tier kaldırma (item 13) CLOSED (624b650 doğrulandı)
-                        624b650 — refactor(art): remove dead Imagen tier (404 NOT_FOUND)
-                        d5f5fa2 — docs(music-dna-p0-roadmap): arşiv (completed — kod planı aştı; silme, tarihsel)
-                        f0ba59a — docs(project-status): Asset Registry 23-genre derived + FAZ 4c palette render kaynağı
-                        ───── aşağısı eski PUSH'LU / tarihsel zincir ─────
-                        b5c1f3b — "docs(handoff): note theme regression (latin/gospel/soundtrack/world) fixed in ea0629d"
-            ea0629d — "fix(scene): restore pre-wiring theme for latin/gospel/soundtrack/world after alias re-target"
-            27bb48b — "docs(handoff): note Iş 1 (MusicBrainz multi-source genre) SUSPENDED — MB genre/tag is CC BY-NC-SA; open: A/B-hybrid policy + latency decision"
-            53e0fec — "docs(handoff): drop stale 'henuz klasorsuz genrelar' note — all 23 genres now have folders (207 rows)"
-            d8e90e3 — "docs(handoff): mark 23-genre wiring as pushed and approved"
-            (23-genre wiring commit'lerinin detayı — alttaki tarihler geçerli)
-            ≥ 0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY (derived GenreId×mood,
-            207 paths) — GenreId +9, GENRE_ALIASES re-target + registry/alias-target tests"
-            ≥ e0c701f — "docs(handoff): 23 genre backdrop wiring kapandı (PUSH EDİLDİ; "bekliyor" GEÇERSİZ — göz onayı verildi)"
-            ≥ a4eaa30 — "assets: add 14 new genre backdrop folders (23 total, 207 jpg 832x1248) —
-            acoustic classical country folk gospel gothic grunge latin metal rnb soundtrack
-            synth timeless-opera world"
-            309e7d7 — Vercel build risk RESOLVED (react-start 1.168.60, CVE-2026-102989)
-            ≥ 0d96969: 5 yeni genre klasörü (funk/hip-hop/jazz/new age/reggae), registry 81 satır
-            ≥ 2026-10-10: 23 genre × 9 mood = 207 satır, SCENE_ASSET_REGISTRY ARTIK DERIVED
-            (GenreId × MOOD_SET, elle bakım yok — yeni tür eklemek GenreId+GENRE_ALIASES yeterli).
-            81→207: metal/synth/gothic/grunge/acoustic artık kendi klasörüne (eskiden fallback),
-            9 YENİ tür eklendi: classical, country, folk, gospel, latin, rnb, soundtrack,
-            timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
-Testler:    74 dosya, 845 passed / 2 skipped, 0 failed (847) — vitest v4.1.11, `npm test` exit 0 (2026-10-13 doğrulandı)
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-13 doğrulandı)
-Lint:       TARİHLİ BULGU (2026-10-13): ham `npm run lint` (prettier açık) = 150 prettier hatası,
-            15 ESKİ dosyada (62 CRLF + ~88 girinti/satır-bölme drift). İş 3'ün dokunduğu dosyalarda 0
-            (posterHero/posterRenderer/types/results temiz) → İş 3 KAYNAKLI DEĞİL, önceden var olan borç;
-            Linux canonical "0/0" iddiası ayrı bir checkout'ta tekrar doğrulanmadan sürer.
-Build:      exit 0 (2026-10-13 doğrulandı)
-Push:       ✅ Push'lu: a4eaa30/0ed0b05/e0c701f (2026-10-10, kural-10 göz onayı VERİLDİ) + 624b650/01ee852/
-            5756daa/7f71bad + d5f5fa2/f0ba59a (2026-10-12/13 belge hizalaması + Imagen ölü katman kaldırma +
-            Gemini null-yol testleri). Worktree TEMİZ; AMA 3 yerel commit (21135fe, c545879, 39ab4bd docs) PUSH
-            EDİLMEDİ — origin/main = 7f71bad.
+Dal:        main — origin/main ile senkron (AHEAD 0). origin/main tipi = eeff871 "Merge pull request #14"
+HEAD:       eeff871 (origin/main). Bu HANDOFF güncellemesi ayrı bir docs PR'ı olarak gelir.
+            ───── son birleşen PR'lar (hepsi MERGED) ─────
+            #14 chore/ci-ignore-scripts — "ci: install dependencies with --ignore-scripts"
+            #13 feat/real-age-from-birth-year — "feat(lore): use real age from birth year and release year"
+            #12 feat/personal-lore — personal lore via OpenRouter Gemini
+            #10 feat/auth-birth-year — ask birth year once, Change birth year link, Google link button
+Testler:    84 dosya passed / 1 skipped (85); 896 passed / 2 skipped (898) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
+tsc:        temiz (`npm run typecheck` = 0 hata, 2026-11-08 doğrulandı)
+Lint:       AÇIK BORÇ (2026-11-08): ham `npm run lint` = 158 prettier hatası (147'si otomatik düzeltilebilir).
+            CI `verify` işi tam olarak bu adımda düşer. Bu borç HENÜZ KAPATILMADI — hiçbir PR lint'i
+            kapatmadı. (NOT: "lint borcu bu PR'da kapatıldı" ifadesi DOĞRU DEĞİL; `npm run format`
+            ile ayrı bir PR'da kapatılabilir. Ölçüm: `npm run lint` → 158 problem, exit 1.)
+Build:      exit 0 (2026-11-08 doğrulandı)
+Push:       origin/main = eeff871; #14 (`ci.yml` → `npm ci --ignore-scripts`) MERGED ve main'de. Worktree temiz.
+
+BURADAN İTİBAREN GÜNCEL GERÇEK (2026-11-08):
+  - Gerçek yaş = yayın yılı − doğum yılı. `resolveEncounterAge` (src/lib/art/encounterAge.ts) her iki yıl
+    varsa doğrudan farkı döner (0–100); eksik/negatif/>100 ise kart bandının ortasına düşer. PR #13 MERGED.
+  - `profiles` tablosu Supabase'de VAR (supabase/migrations/0004_profiles.sql: user_id PK → auth.users,
+    birth_year 1900–2100, RLS owner-scoped + updated_at trigger). Birth-year akışı bu tabloyu kullanır
+    (localStorage fallback anahtarı: `lis.birthYear`).
+  - SonarCloud güvenlik: #14'ün `ci.yml` → `npm ci --ignore-scripts` değişikliğiyle "Security Rating on New
+    Code" C → A döndü (new_security_rating = 1.0). `npx` kullanımı YOK; package.json'da `latest`/`*` YOK.
+
+AÇIK İŞLER (2026-11-08 güncel kısa liste — yeni maddeler):
+  - Google girişi: `GoogleLinkButton` (supabase.auth.linkIdentity, provider "google") kodu hazır; ancak
+    Supabase Auth'ta Google provider + "Allow manual linking" açılmasını bekliyor. Anonim kullanıcıda
+    uçtan uca bağlama akışı doğrulanmadı.
+  - Kalp düğmesi: "Add to Collection" favori katmanı (`src/lib/collection.ts`, localStorage
+    `soundmap.collection.v1`) mevcut; ama UI'da kalp düğmesi BAĞLI DEĞİL (results/player kartında buton yok).
+  - Supabase `profiles` satırı: tablo + RLS migration hazır; canlı projede login sonrası satırın gerçekten
+    oluşması/görünürlüğü uçtan uca doğrulanmadı.
 
 AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
   - 4 eşleşmeyen iTunes etiketi: Classical Crossover, Electronic, Chinese, Vocal → GenreId YOK,
@@ -427,5 +419,5 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 
 ---
 
-_Artık son güncelleme: Hermes (2026-10-03) — tüm session fixes CANLI (production): genre→jazz (Robert Johnson `scene-room-jazz`) + 2:3 backdrop kutusu (3 viewport doğrulandı) + Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60, deploy SUCCESS). Yerel: 771/2, tsc 0, build ok._
+_Artık son güncelleme: OpenHands (2026-11-08) — §1 "şu an neredeyiz" güncellendi: PR #13 (gerçek yaş = yayın − doğum yılı) ve PR #14 (`ci.yml` → `npm ci --ignore-scripts`, Sonar Security C→A) MERGED; `profiles` tablosu Supabase'de; açık işler: Google girişi, kalp düğmesi, profiles satırı doğrulaması. Önceki kayıt: Hermes (2026-10-03) — Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60). Yerel: 896/2 test, tsc 0, build ok; lint 158 açık borç._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
