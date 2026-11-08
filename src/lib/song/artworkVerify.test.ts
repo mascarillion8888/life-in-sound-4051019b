@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, vi, type Mock } from "vitest";
 import {
   verifySongArtwork,
   clearArtworkCache,
@@ -8,7 +8,8 @@ import {
   isConfidentMatch,
   type CacheValue,
 } from "./artworkVerify";
-import type { Song } from "./types";
+import type { ITunesTrack } from "./itunes-mapping";
+import type { SearchSongsInput, Song } from "./types";
 
 // Mock searchSongsLogic
 vi.mock("./searchSong.server", () => ({
@@ -16,6 +17,15 @@ vi.mock("./searchSong.server", () => ({
 }));
 
 const { searchSongsLogic } = await import("./searchSong.server");
+
+/**
+ * `verifySongArtwork` reads raw iTunes track fields off the search result (it
+ * casts each element to `ITunesTrack`), so the mock resolves raw iTunes tracks
+ * rather than the mapped `Song` shape the public signature declares.
+ */
+const mockedSearchSongs = vi.mocked(searchSongsLogic) as unknown as Mock<
+  (input: SearchSongsInput) => Promise<{ results: ITunesTrack[] }>
+>;
 
 const mockManualSong = (overrides: Partial<Song> = {}): Song => ({
   provider: "manual",
@@ -90,7 +100,7 @@ describe("artworkVerify", () => {
     it("calls iTunes on cache miss and caches successful patch", async () => {
       const song = mockManualSong();
 
-      (searchSongsLogic as any).mockResolvedValue({
+      mockedSearchSongs.mockResolvedValue({
         results: [
           {
             wrapperType: "track",
@@ -123,7 +133,7 @@ describe("artworkVerify", () => {
     it("returns null and caches no-match for 10 min when iTunes returns no results", async () => {
       const song = mockManualSong();
 
-      (searchSongsLogic as any).mockResolvedValue({ results: [] });
+      mockedSearchSongs.mockResolvedValue({ results: [] });
 
       const result = await verifySongArtwork(song);
       expect(result).toBeNull();
@@ -137,7 +147,7 @@ describe("artworkVerify", () => {
     it("returns null and does NOT cache on network error", async () => {
       const song = mockManualSong();
 
-      (searchSongsLogic as any).mockRejectedValue(new Error("Network error"));
+      mockedSearchSongs.mockRejectedValue(new Error("Network error"));
 
       const result = await verifySongArtwork(song);
       expect(result).toBeNull();
@@ -151,7 +161,7 @@ describe("artworkVerify", () => {
       const song = mockManualSong({ title: "Fragile", artist: "Sting" });
 
       // Return a different song (weak match)
-      (searchSongsLogic as any).mockResolvedValue({
+      mockedSearchSongs.mockResolvedValue({
         results: [
           {
             wrapperType: "track",
@@ -190,7 +200,7 @@ describe("artworkVerify", () => {
     it("evicts oldest entries when exceeding 100", async () => {
       const song = mockManualSong();
 
-      (searchSongsLogic as any).mockResolvedValue({
+      mockedSearchSongs.mockResolvedValue({
         results: [
           {
             wrapperType: "track",
@@ -223,7 +233,7 @@ describe("artworkVerify", () => {
       const song = mockManualSong();
 
       // First call: no match
-      (searchSongsLogic as any).mockResolvedValue({ results: [] });
+      mockedSearchSongs.mockResolvedValue({ results: [] });
       await verifySongArtwork(song);
       expect(searchSongsLogic).toHaveBeenCalledTimes(1);
 
@@ -239,7 +249,7 @@ describe("artworkVerify", () => {
       saveCache(cache);
 
       // Third call after TTL: should re-verify
-      (searchSongsLogic as any).mockResolvedValue({
+      mockedSearchSongs.mockResolvedValue({
         results: [
           {
             wrapperType: "track",
@@ -276,7 +286,7 @@ describe("artworkVerify integration with Journey/Results flow", () => {
     const song = mockManualSong();
 
     // Simulate Journey verification
-    (searchSongsLogic as any).mockResolvedValue({
+    mockedSearchSongs.mockResolvedValue({
       results: [
         {
           wrapperType: "track",
@@ -307,7 +317,7 @@ describe("artworkVerify integration with Journey/Results flow", () => {
     const song1 = mockManualSong({ title: "Fragile", artist: "Sting" });
     const song2 = mockManualSong({ title: "Fragile", artist: "Someone Else" });
 
-    (searchSongsLogic as any).mockResolvedValue({
+    mockedSearchSongs.mockResolvedValue({
       results: [
         {
           wrapperType: "track",
@@ -340,7 +350,7 @@ describe("artworkVerify integration with Journey/Results flow", () => {
     expect(key1).not.toBe(key2); // Different cache keys
 
     // First verify song1 (Sting)
-    (searchSongsLogic as any).mockResolvedValueOnce({
+    mockedSearchSongs.mockResolvedValueOnce({
       results: [
         {
           wrapperType: "track",
@@ -365,7 +375,7 @@ describe("artworkVerify integration with Journey/Results flow", () => {
     ).toContain("sting");
 
     // Then verify song2 (Someone Else) - returns different artist
-    (searchSongsLogic as any).mockResolvedValueOnce({
+    mockedSearchSongs.mockResolvedValueOnce({
       results: [
         {
           wrapperType: "track",

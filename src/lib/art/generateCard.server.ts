@@ -98,7 +98,7 @@ export function buildLorePrompt(encounter: CardEncounter): string {
       "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. " +
       "Sentence 1: one concrete, specific detail only THIS song could give (its real theme, sound, album or era; use real knowledge of the song if you have it, otherwise stay with the facts above). " +
       "Sentence 2: the emotional turn for this life stage. " +
-      "Avoid stock phrases such as \"wrapped around\", \"small soul\", \"nameless feelings\", \"whole world\", \"journey\", \"tapestry\", \"echoes of\", \"whispers of\", \"time stood still\", \"never alone\". " +
+      'Avoid stock phrases such as "wrapped around", "small soul", "nameless feelings", "whole world", "journey", "tapestry", "echoes of", "whispers of", "time stood still", "never alone". ' +
       "Never invent people, places, events or memories the listener did not give. Reply with ONLY the 2 sentences.",
   );
   return parts.join(" ");
@@ -128,10 +128,7 @@ const LORE_SYSTEM_PROMPT =
  * `summarizer` role. Returns null when neither is configured or both fail,
  * so the caller can fall back to the deterministic lines.
  */
-async function writeLoreText(
-  userPrompt: string,
-  fetchImpl?: typeof fetch,
-): Promise<string | null> {
+async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Promise<string | null> {
   try {
     const viaOpenRouter = await callOpenRouter(
       [

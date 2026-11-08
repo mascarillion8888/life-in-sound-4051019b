@@ -218,16 +218,10 @@ export async function generateGroundedAnalysis(
  * a generic stage name instead of repeating "Acceptance", so their emotion falls
  * to the engine's DEFAULT_STAGE_RULE rather than masquerading as the final era.
  */
-export function buildGroundedLifeContexts(
-  songs: Song[],
-  notes?: (string | null)[],
-): LifeContext[] {
+export function buildGroundedLifeContexts(songs: Song[], notes?: (string | null)[]): LifeContext[] {
   return songs.map((song, index) => ({
     questionId: index + 1,
-    stageName:
-      index < GROUNDED_STAGE_NAMES.length
-        ? GROUNDED_STAGE_NAMES[index]
-        : "New Chapter",
+    stageName: index < GROUNDED_STAGE_NAMES.length ? GROUNDED_STAGE_NAMES[index] : "New Chapter",
     song,
     contextText: notes?.[index]?.trim() ? notes[index].trim() : undefined,
   }));

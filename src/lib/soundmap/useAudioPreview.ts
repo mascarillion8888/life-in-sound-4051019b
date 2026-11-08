@@ -150,5 +150,13 @@ export function useAudioPreview(
   }, [previewUrl]);
 
   const progress = playing || time.cur > 0 ? Math.max(0, Math.min(1, time.cur / time.dur)) : 0;
-  return { available, playing, toggle, progress, currentTime: time.cur, duration: time.dur, getTime };
+  return {
+    available,
+    playing,
+    toggle,
+    progress,
+    currentTime: time.cur,
+    duration: time.dur,
+    getTime,
+  };
 }

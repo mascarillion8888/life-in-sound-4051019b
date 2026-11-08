@@ -254,8 +254,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 0,
     subject: "a young child",
-    tone:
-      "pure enchantment: the first time a sound feels like magic, feelings too new for words, everything soft and vast",
+    tone: "pure enchantment: the first time a sound feels like magic, feelings too new for words, everything soft and vast",
     lines: [
       "The first time {t} played, {a}'s voice wrapped around a small soul and would not let go. Feelings with no names yet began to rise.",
       "A child heard {a} sing {t}, and the whole room turned to light. Something nameless woke up inside.",
@@ -265,8 +264,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 1,
     subject: "a child growing into their own taste",
-    tone:
-      "the first threshold where taste becomes a mirror: choosing a sound that is truly theirs, a first private identity",
+    tone: "the first threshold where taste becomes a mirror: choosing a sound that is truly theirs, a first private identity",
     lines: [
       "With {t}, a sound became truly theirs for the first time. {a} turned into a mirror, and a new self looked back.",
       "Somewhere between childhood and the wide world, {t} became a tiny flag. {a} was the first voice chosen all alone.",
@@ -276,8 +274,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 2,
     subject: "a teenager",
-    tone:
-      "rebellion and refuge: volume louder than feeling, restless heartbeats finding an anthem, identity forged in sound",
+    tone: "rebellion and refuge: volume louder than feeling, restless heartbeats finding an anthem, identity forged in sound",
     lines: [
       "{t} turned up the volume on everything unsaid. With {a} nearby, every restless heartbeat found an anthem.",
       "The world was too loud and too quiet at once, until {a} played {t}. A wild young heart finally had a banner to carry.",
@@ -287,8 +284,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 3,
     subject: "a young adult at the edge of everything",
-    tone:
-      "open doors and more questions than answers: new cities, uncertainty turning into courage, the road wide open",
+    tone: "open doors and more questions than answers: new cities, uncertainty turning into courage, the road wide open",
     lines: [
       "Doors opened everywhere, and {t} played softly behind every question. {a} gave no answers, only the courage to keep asking.",
       "New cities, new faces, old songs: {a}'s {t} walked through the great unknown. Each question made the road feel braver.",
@@ -298,8 +294,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 4,
     subject: "a grown listener finding their strength",
-    tone:
-      "fragility wrought into armor: resilience, hard mornings, steadiness found in a song",
+    tone: "fragility wrought into armor: resilience, hard mornings, steadiness found in a song",
     lines: [
       "Life asked for strength, and {t} answered in {a}'s voice. What once felt fragile quietly became armor.",
       "Standing tall on shaky ground, a heart kept time with {a}'s {t}. Soft turned out to be a kind of steel.",
@@ -309,8 +304,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 5,
     subject: "an adult in the quieter, darker hours",
-    tone:
-      "sound arriving before light: long nights, comfort, a song that keeps the silence company until morning",
+    tone: "sound arriving before light: long nights, comfort, a song that keeps the silence company until morning",
     lines: [
       "In the long dark hours, {t} arrived before the dawn did. {a} kept the silence company until the light found its way back.",
       "When the lights went out, the sound stayed: {a} singing {t}. In that gentle dark, breathing felt possible again.",
@@ -320,8 +314,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 6,
     subject: "a seasoned listener with a long memory",
-    tone:
-      "longing and memory: loss made portable through music, people and places living inside a melody",
+    tone: "longing and memory: loss made portable through music, people and places living inside a melody",
     lines: [
       "{t} carries every goodbye ever whispered. In {a}'s voice, loss became something to hold gently.",
       "Time took a few things and left {t} behind. {a} showed that what is missed can travel, folded inside a melody.",
@@ -331,8 +324,7 @@ const LIFE_STAGES: readonly LifeStage[] = [
   {
     index: 7,
     subject: "a listener at peace with the journey",
-    tone:
-      "acceptance: inquiry and peace meeting in one melody, the whole story finally making quiet sense",
+    tone: "acceptance: inquiry and peace meeting in one melody, the whole story finally making quiet sense",
     lines: [
       "Now {t} sounds like peace after a long journey. {a} sings what is finally understood: every question was part of the melody.",
       "After all these years, {t} still finds its listener. With {a} humming along, the whole story makes quiet sense.",

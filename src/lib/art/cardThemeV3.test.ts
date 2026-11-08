@@ -37,7 +37,16 @@ describe("cardThemeV3", () => {
     for (const [genre] of SAMPLES) {
       for (const mood of CARD_MOODS) {
         const { vars } = resolveCardVars(genre, mood);
-        for (const key of ["--frameGradient", "--btn1", "--btn2", "--sub", "--accent", "--bodyBg", "--text", "--badgeBg"]) {
+        for (const key of [
+          "--frameGradient",
+          "--btn1",
+          "--btn2",
+          "--sub",
+          "--accent",
+          "--bodyBg",
+          "--text",
+          "--badgeBg",
+        ]) {
           expect(vars[key as `--${string}`], `${genre}/${mood}/${key}`).toBeTruthy();
         }
         expect(vars["--frameGradient"]).not.toMatch(/f0d878|d4af37/i);

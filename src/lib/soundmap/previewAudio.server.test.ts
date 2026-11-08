@@ -13,10 +13,19 @@ describe("preview audio proxy", () => {
 
   it("returns base64 for an allowed clip and never throws", async () => {
     const ok = (async () =>
-      new Response(new Uint8Array([1, 2, 3]), { headers: { "content-type": "audio/mp4" } })) as typeof fetch;
-    expect(await fetchPreviewAudioCore("https://x.mzstatic.com/a.m4a", ok)).toEqual({ ok: true, base64: "AQID" });
-    const boom = (async () => { throw new Error("net"); }) as typeof fetch;
-    expect(await fetchPreviewAudioCore("https://x.mzstatic.com/a.m4a", boom)).toEqual({ ok: false });
+      new Response(new Uint8Array([1, 2, 3]), {
+        headers: { "content-type": "audio/mp4" },
+      })) as typeof fetch;
+    expect(await fetchPreviewAudioCore("https://x.mzstatic.com/a.m4a", ok)).toEqual({
+      ok: true,
+      base64: "AQID",
+    });
+    const boom = (async () => {
+      throw new Error("net");
+    }) as typeof fetch;
+    expect(await fetchPreviewAudioCore("https://x.mzstatic.com/a.m4a", boom)).toEqual({
+      ok: false,
+    });
     expect(await fetchPreviewAudioCore("https://evil.com/a.m4a", ok)).toEqual({ ok: false });
   });
 });

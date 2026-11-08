@@ -79,7 +79,8 @@ export function analyzeSamples(
     sin[i] = Math.sin((2 * Math.PI * i) / FFT_SIZE);
   }
   const win = new Float64Array(FFT_SIZE);
-  for (let i = 0; i < FFT_SIZE; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (FFT_SIZE - 1));
+  for (let i = 0; i < FFT_SIZE; i++)
+    win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (FFT_SIZE - 1));
 
   // Log-spaced band edges (bins), 50 Hz .. 14 kHz.
   const binHz = sampleRate / FFT_SIZE;

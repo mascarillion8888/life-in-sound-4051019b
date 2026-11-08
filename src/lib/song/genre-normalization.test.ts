@@ -23,72 +23,277 @@ interface TestCase {
 const TEST_CASES: TestCase[] = [
   // POP family
   { artist: "Madonna", title: "Like a Prayer", primaryGenreName: "Pop", expectedGenreId: "pop" },
-  { artist: "Taylor Swift", title: "Shake It Off", primaryGenreName: "Pop", expectedGenreId: "pop" },
-  { artist: "Michael Jackson", title: "Billie Jean", primaryGenreName: "Pop", expectedGenreId: "pop" },
+  {
+    artist: "Taylor Swift",
+    title: "Shake It Off",
+    primaryGenreName: "Pop",
+    expectedGenreId: "pop",
+  },
+  {
+    artist: "Michael Jackson",
+    title: "Billie Jean",
+    primaryGenreName: "Pop",
+    expectedGenreId: "pop",
+  },
   { artist: "Bee Gees", title: "Stayin' Alive", primaryGenreName: "Pop", expectedGenreId: "pop" },
-  { artist: "Whitney Houston", title: "I Will Always Love You", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
-  { artist: "The Weeknd", title: "Blinding Lights", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
-  { artist: "Stevie Wonder", title: "Superstition", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
+  {
+    artist: "Whitney Houston",
+    title: "I Will Always Love You",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
+  {
+    artist: "The Weeknd",
+    title: "Blinding Lights",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
+  {
+    artist: "Stevie Wonder",
+    title: "Superstition",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
   { artist: "Prince", title: "Purple Rain", primaryGenreName: "Pop", expectedGenreId: "pop" },
-  { artist: "Prince", title: "I Wanna Be Your Lover", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
-  { artist: "Daft Punk", title: "One More Time", primaryGenreName: "Dance", expectedGenreId: "synth" },
+  {
+    artist: "Prince",
+    title: "I Wanna Be Your Lover",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
+  {
+    artist: "Daft Punk",
+    title: "One More Time",
+    primaryGenreName: "Dance",
+    expectedGenreId: "synth",
+  },
   { artist: "Daft Punk", title: "Get Lucky", primaryGenreName: "Pop", expectedGenreId: "pop" },
   { artist: "Enya", title: "Only Time", primaryGenreName: "Pop", expectedGenreId: "pop" }, // known mislabel; new age fallback missing
 
   // ROCK / METAL family
-  { artist: "The Beatles", title: "Here Comes The Sun", primaryGenreName: "Rock", expectedGenreId: "rock" },
-  { artist: "Led Zeppelin", title: "Stairway to Heaven", primaryGenreName: "Rock", expectedGenreId: "rock" },
-  { artist: "Led Zeppelin", title: "Whole Lotta Love", primaryGenreName: "Hard Rock", expectedGenreId: "rock" },
-  { artist: "Metallica", title: "Enter Sandman", primaryGenreName: "Metal", expectedGenreId: "metal" },
-  { artist: "AC/DC", title: "Back In Black", primaryGenreName: "Hard Rock", expectedGenreId: "rock" },
-  { artist: "Nirvana", title: "Smells Like Teen Spirit", primaryGenreName: "Rock", expectedGenreId: "rock" },
-  { artist: "Nirvana", title: "Heart-Shaped Box", primaryGenreName: "Alternative", expectedGenreId: "grunge" },
-  { artist: "Green Day", title: "Basket Case", primaryGenreName: "Alternative", expectedGenreId: "grunge" },
-  { artist: "Pink Floyd", title: "Wish You Were Here", primaryGenreName: "Rock", expectedGenreId: "rock" },
+  {
+    artist: "The Beatles",
+    title: "Here Comes The Sun",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
+  {
+    artist: "Led Zeppelin",
+    title: "Stairway to Heaven",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
+  {
+    artist: "Led Zeppelin",
+    title: "Whole Lotta Love",
+    primaryGenreName: "Hard Rock",
+    expectedGenreId: "rock",
+  },
+  {
+    artist: "Metallica",
+    title: "Enter Sandman",
+    primaryGenreName: "Metal",
+    expectedGenreId: "metal",
+  },
+  {
+    artist: "AC/DC",
+    title: "Back In Black",
+    primaryGenreName: "Hard Rock",
+    expectedGenreId: "rock",
+  },
+  {
+    artist: "Nirvana",
+    title: "Smells Like Teen Spirit",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
+  {
+    artist: "Nirvana",
+    title: "Heart-Shaped Box",
+    primaryGenreName: "Alternative",
+    expectedGenreId: "grunge",
+  },
+  {
+    artist: "Green Day",
+    title: "Basket Case",
+    primaryGenreName: "Alternative",
+    expectedGenreId: "grunge",
+  },
+  {
+    artist: "Pink Floyd",
+    title: "Wish You Were Here",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
   { artist: "David Bowie", title: "Heroes", primaryGenreName: "Pop", expectedGenreId: "pop" }, // known mislabel
-  { artist: "Elvis Presley", title: "Jailhouse Rock", primaryGenreName: "Rock", expectedGenreId: "rock" },
+  {
+    artist: "Elvis Presley",
+    title: "Jailhouse Rock",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
 
   // HIP-HOP / RAP family
-  { artist: "Run-D.M.C.", title: "It's Tricky", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
-  { artist: "Kendrick Lamar", title: "HUMBLE.", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
-  { artist: "Eminem", title: "Lose Yourself", primaryGenreName: "Soundtrack", expectedGenreId: "soundtrack" },
-  { artist: "Eminem", title: "Without Me", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
-  { artist: "Snoop Dogg", title: "Snoop Dogg (What's My Name, Pt. 2)", primaryGenreName: "Hip-Hop/Rap", expectedGenreId: "hiphop" },
+  {
+    artist: "Run-D.M.C.",
+    title: "It's Tricky",
+    primaryGenreName: "Hip-Hop/Rap",
+    expectedGenreId: "hiphop",
+  },
+  {
+    artist: "Kendrick Lamar",
+    title: "HUMBLE.",
+    primaryGenreName: "Hip-Hop/Rap",
+    expectedGenreId: "hiphop",
+  },
+  {
+    artist: "Eminem",
+    title: "Lose Yourself",
+    primaryGenreName: "Soundtrack",
+    expectedGenreId: "soundtrack",
+  },
+  {
+    artist: "Eminem",
+    title: "Without Me",
+    primaryGenreName: "Hip-Hop/Rap",
+    expectedGenreId: "hiphop",
+  },
+  {
+    artist: "Snoop Dogg",
+    title: "Snoop Dogg (What's My Name, Pt. 2)",
+    primaryGenreName: "Hip-Hop/Rap",
+    expectedGenreId: "hiphop",
+  },
   { artist: "Bad Bunny", title: "NUEVAYoL", primaryGenreName: "Latin", expectedGenreId: "latin" },
-  { artist: "Bad Bunny", title: "LA CANCIÓN", primaryGenreName: "Urbano latino", expectedGenreId: "latin" },
+  {
+    artist: "Bad Bunny",
+    title: "LA CANCIÓN",
+    primaryGenreName: "Urbano latino",
+    expectedGenreId: "latin",
+  },
 
   // REGGAE family
-  { artist: "Bob Marley", title: "Three Little Birds", primaryGenreName: "Reggae", expectedGenreId: "reggae" },
-  { artist: "Buena Vista Social Club", title: "Chan Chan", primaryGenreName: "Worldwide", expectedGenreId: "world" },
+  {
+    artist: "Bob Marley",
+    title: "Three Little Birds",
+    primaryGenreName: "Reggae",
+    expectedGenreId: "reggae",
+  },
+  {
+    artist: "Buena Vista Social Club",
+    title: "Chan Chan",
+    primaryGenreName: "Worldwide",
+    expectedGenreId: "world",
+  },
 
   // JAZZ family
   { artist: "Miles Davis", title: "So What", primaryGenreName: "Jazz", expectedGenreId: "jazz" },
-  { artist: "John Coltrane", title: "My Favorite Things", primaryGenreName: "Jazz", expectedGenreId: "jazz" },
-  { artist: "Billie Holiday", title: "Strange Fruit", primaryGenreName: "Jazz", expectedGenreId: "jazz" },
+  {
+    artist: "John Coltrane",
+    title: "My Favorite Things",
+    primaryGenreName: "Jazz",
+    expectedGenreId: "jazz",
+  },
+  {
+    artist: "Billie Holiday",
+    title: "Strange Fruit",
+    primaryGenreName: "Jazz",
+    expectedGenreId: "jazz",
+  },
   { artist: "Frank Sinatra", title: "My Way", primaryGenreName: "Jazz", expectedGenreId: "jazz" },
 
   // SOUL / FUNK / R&B family
-  { artist: "Aretha Franklin", title: "Respect", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
-  { artist: "Aretha Franklin", title: "I Say a Little Prayer", primaryGenreName: "Rock", expectedGenreId: "rock" }, // known mislabel
-  { artist: "James Brown", title: "I Feel Good", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
-  { artist: "Amy Winehouse", title: "Rehab", primaryGenreName: "R&B/Soul", expectedGenreId: "soul" },
-  { artist: "Amy Winehouse", title: "You Know I'm No Good", primaryGenreName: "Pop", expectedGenreId: "pop" },
+  {
+    artist: "Aretha Franklin",
+    title: "Respect",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
+  {
+    artist: "Aretha Franklin",
+    title: "I Say a Little Prayer",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  }, // known mislabel
+  {
+    artist: "James Brown",
+    title: "I Feel Good",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
+  {
+    artist: "Amy Winehouse",
+    title: "Rehab",
+    primaryGenreName: "R&B/Soul",
+    expectedGenreId: "soul",
+  },
+  {
+    artist: "Amy Winehouse",
+    title: "You Know I'm No Good",
+    primaryGenreName: "Pop",
+    expectedGenreId: "pop",
+  },
 
   // COUNTRY / FOLK / ACOUSTIC family
-  { artist: "Johnny Cash", title: "Ring of Fire", primaryGenreName: "Country", expectedGenreId: "country" },
-  { artist: "Bob Dylan", title: "Like a Rolling Stone", primaryGenreName: "Rock", expectedGenreId: "rock" },
-  { artist: "Bob Dylan", title: "Tangled Up In Blue", primaryGenreName: "Singer/Songwriter", expectedGenreId: "acoustic" },
-  { artist: "Bob Dylan", title: "Blowin' In the Wind", primaryGenreName: "Contemporary Folk", expectedGenreId: "folk" },
-  { artist: "Neil Young", title: "Heart of Gold", primaryGenreName: "Rock", expectedGenreId: "rock" },
+  {
+    artist: "Johnny Cash",
+    title: "Ring of Fire",
+    primaryGenreName: "Country",
+    expectedGenreId: "country",
+  },
+  {
+    artist: "Bob Dylan",
+    title: "Like a Rolling Stone",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
+  {
+    artist: "Bob Dylan",
+    title: "Tangled Up In Blue",
+    primaryGenreName: "Singer/Songwriter",
+    expectedGenreId: "acoustic",
+  },
+  {
+    artist: "Bob Dylan",
+    title: "Blowin' In the Wind",
+    primaryGenreName: "Contemporary Folk",
+    expectedGenreId: "folk",
+  },
+  {
+    artist: "Neil Young",
+    title: "Heart of Gold",
+    primaryGenreName: "Rock",
+    expectedGenreId: "rock",
+  },
 
   // CLASSICAL / INSTRUMENTAL / NEW AGE
-  { artist: "Mozart", title: "Eine Kleine Nachtmusik", primaryGenreName: "Instrumental", expectedGenreId: "new age" },
-  { artist: "Mozart", title: "Turkish March", primaryGenreName: "New Age", expectedGenreId: "new age" },
+  {
+    artist: "Mozart",
+    title: "Eine Kleine Nachtmusik",
+    primaryGenreName: "Instrumental",
+    expectedGenreId: "new age",
+  },
+  {
+    artist: "Mozart",
+    title: "Turkish March",
+    primaryGenreName: "New Age",
+    expectedGenreId: "new age",
+  },
 
   // K-POP / WORLD
   { artist: "BTS", title: "Boy With Luv", primaryGenreName: "K-Pop", expectedGenreId: "pop" },
-  { artist: "Billie Eilish", title: "Bad Guy", primaryGenreName: "Alternative", expectedGenreId: "grunge" },
-  { artist: "Radiohead", title: "Creep", primaryGenreName: "Alternative", expectedGenreId: "grunge" },
+  {
+    artist: "Billie Eilish",
+    title: "Bad Guy",
+    primaryGenreName: "Alternative",
+    expectedGenreId: "grunge",
+  },
+  {
+    artist: "Radiohead",
+    title: "Creep",
+    primaryGenreName: "Alternative",
+    expectedGenreId: "grunge",
+  },
 ];
 
 function makeTrack(tc: TestCase) {

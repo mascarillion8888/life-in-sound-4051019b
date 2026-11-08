@@ -46,10 +46,10 @@ HEAD:       c545879 — "feat(poster): İş 3 Dilim 2 — hero line from real in
             timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
 Testler:    74 dosya, 845 passed / 2 skipped, 0 failed (847) — vitest v4.1.11, `npm test` exit 0 (2026-10-13 doğrulandı)
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-13 doğrulandı)
-Lint:       TARİHLİ BULGU (2026-10-13): ham `npm run lint` (prettier açık) = 150 prettier hatası,
-            15 ESKİ dosyada (62 CRLF + ~88 girinti/satır-bölme drift). İş 3'ün dokunduğu dosyalarda 0
-            (posterHero/posterRenderer/types/results temiz) → İş 3 KAYNAKLI DEĞİL, önceden var olan borç;
-            Linux canonical "0/0" iddiası ayrı bir checkout'ta tekrar doğrulanmadan sürer.
+Lint:       ✅ KAPATILDI (2026-11-08, PR chore/lint-debt): ham `npm run lint` (prettier açık) = 0 hata
+            (147 prettier drift + 11 no-explicit-any; eslint-disable EKLENMEDEN gerçek tiplerle düzeltildi).
+            Önceki tarihli bulgu (2026-10-13: 150 prettier hatası / 15 eski dosya) İş 3 kaynaklı DEĞİL,
+            önceden var olan repo-geneli borçtu — bu PR ile kapatıldı.
 Build:      exit 0 (2026-10-13 doğrulandı)
 Push:       ✅ Push'lu: a4eaa30/0ed0b05/e0c701f (2026-10-10, kural-10 göz onayı VERİLDİ) + 624b650/01ee852/
             5756daa/7f71bad + d5f5fa2/f0ba59a (2026-10-12/13 belge hizalaması + Imagen ölü katman kaldırma +
