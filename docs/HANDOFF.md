@@ -14,77 +14,47 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main'den AHEAD 3 (39ab4bd docs + 21135fe + c545879 YERELDE, PUSH EDİLMEDİ; İş 3 hero göz onayı bekleniyor). origin/main tipi = 7f71bad (Vercel deploy SUCCESS 2026-10-12)
-HEAD:       c545879 — "feat(poster): İş 3 Dilim 2 — hero line from real inferred mood (posterHero.ts, tr|en, list-framed)" [YEREL, puşlanmadı]
-            21135fe — "feat(poster): Dilim 1 — computePosterLayout seam + hero?: string (always undefined) + posterForRender binding" [YEREL, puşlanmadı]
-            ───── bugün (2026-10-12/13) PUSH EDİLENLER — origin/main = 7f71bad ─────
-                        7f71bad — test(art): Gemini null paths (HTTP 404/500, 200-with-no-image)
-                        5756daa — docs(ana-yasa): §8 P1 mood/genre bacağı tamamlandı + MusicBrainz lisans backlog (non-blocking); §5.5 gate daraltıldı
-                        01ee852 — docs(handoff): Imagen tier kaldırma (item 13) CLOSED (624b650 doğrulandı)
-                        624b650 — refactor(art): remove dead Imagen tier (404 NOT_FOUND)
-                        d5f5fa2 — docs(music-dna-p0-roadmap): arşiv (completed — kod planı aştı; silme, tarihsel)
-                        f0ba59a — docs(project-status): Asset Registry 23-genre derived + FAZ 4c palette render kaynağı
-                        ───── aşağısı eski PUSH'LU / tarihsel zincir ─────
-                        b5c1f3b — "docs(handoff): note theme regression (latin/gospel/soundtrack/world) fixed in ea0629d"
-            ea0629d — "fix(scene): restore pre-wiring theme for latin/gospel/soundtrack/world after alias re-target"
-            27bb48b — "docs(handoff): note Iş 1 (MusicBrainz multi-source genre) SUSPENDED — MB genre/tag is CC BY-NC-SA; open: A/B-hybrid policy + latency decision"
-            53e0fec — "docs(handoff): drop stale 'henuz klasorsuz genrelar' note — all 23 genres now have folders (207 rows)"
-            d8e90e3 — "docs(handoff): mark 23-genre wiring as pushed and approved"
-            (23-genre wiring commit'lerinin detayı — alttaki tarihler geçerli)
-            ≥ 0ed0b05 — "feat(visual): wire 23 genres into SCENE_ASSET_REGISTRY (derived GenreId×mood,
-            207 paths) — GenreId +9, GENRE_ALIASES re-target + registry/alias-target tests"
-            ≥ e0c701f — "docs(handoff): 23 genre backdrop wiring kapandı (PUSH EDİLDİ; "bekliyor" GEÇERSİZ — göz onayı verildi)"
-            ≥ a4eaa30 — "assets: add 14 new genre backdrop folders (23 total, 207 jpg 832x1248) —
-            acoustic classical country folk gospel gothic grunge latin metal rnb soundtrack
-            synth timeless-opera world"
-            309e7d7 — Vercel build risk RESOLVED (react-start 1.168.60, CVE-2026-102989)
-            ≥ 0d96969: 5 yeni genre klasörü (funk/hip-hop/jazz/new age/reggae), registry 81 satır
-            ≥ 2026-10-10: 23 genre × 9 mood = 207 satır, SCENE_ASSET_REGISTRY ARTIK DERIVED
-            (GenreId × MOOD_SET, elle bakım yok — yeni tür eklemek GenreId+GENRE_ALIASES yeterli).
-            81→207: metal/synth/gothic/grunge/acoustic artık kendi klasörüne (eskiden fallback),
-            9 YENİ tür eklendi: classical, country, folk, gospel, latin, rnb, soundtrack,
-            timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
-Testler:    84 dosya passed / 1 skipped (85); 900 passed / 2 skipped (902) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-13 doğrulandı)
-Lint:       ✅ KAPATILDI (2026-11-08, PR chore/lint-debt): ham `npm run lint` (prettier açık) = 0 hata
-            (147 prettier drift + 11 no-explicit-any; eslint-disable EKLENMEDEN gerçek tiplerle düzeltildi).
-            Önceki tarihli bulgu (2026-10-13: 150 prettier hatası / 15 eski dosya) İş 3 kaynaklı DEĞİL,
-            önceden var olan repo-geneli borçtu — bu PR ile kapatıldı.
+Dal:        main — origin/main ile eşit (AHEAD 0). origin/main tipi = 5791309
+HEAD:       5791309 — "Merge pull request #18 from mascarillion8888/feat/google-link-status"
+            dd7cdf3 — "feat(auth): show why Google link is unavailable" (PR #18 gövdesi)
+            a0c488c — "Merge pull request #17 from mascarillion8888/feat/card-heart-and-stage-label"
+            19d7d42 — "feat(card): working favorite heart and centered, larger stage label"
+            6baf947 — "fix(card): use existing collectLabel for heart aria-label (no new i18n keys)"
+            0151dbf — "Merge pull request #16 from mascarillion8888/chore/lint-debt"
+            09eb7b5 — "chore: fix repo-wide lint debt (prettier + no-explicit-any)"
+            (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #10 auth-birth-year, #12 personal-lore)
+Testler:    85 dosya passed / 1 skipped (86); 907 passed / 2 skipped (909) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
+tsc:        temiz (`npm run typecheck` = 0 hata, 2026-11-08 doğrulandı)
+Lint:       ✅ 0 hata — `npm run lint` exit 0 (2026-11-08 doğrulandı). Repo-geneli prettier borcu PR #16 (chore/lint-debt) ile kapatıldı.
+Sonar/CI:   ✅ temiz — PR #17 ve #18'de SonarCloud Code Analysis + CI/verify + Vercel tümü başarılı.
 Build:      exit 0 (2026-11-08 doğrulandı)
-Push:       ✅ Push'lu: a4eaa30/0ed0b05/e0c701f (2026-10-10, kural-10 göz onayı VERİLDİ) + 624b650/01ee852/
-            5756daa/7f71bad + d5f5fa2/f0ba59a (2026-10-12/13 belge hizalaması + Imagen ölü katman kaldırma +
-            Gemini null-yol testleri). Worktree TEMİZ; AMA 3 yerel commit (21135fe, c545879, 39ab4bd docs) PUSH
-            EDİLMEDİ — origin/main = 7f71bad.
+Push:       ✅ Worktree TEMİZ; main = origin/main (5791309). PR #17 ve #18 MERGED (kuyrukta push edilmemiş yerel commit yok).
 
-GÜNCEL AÇIK İŞ (2026-11-08): kalp düğmesi ✅ ÇALIŞIR — PR "feat(card): working favorite heart and centered, larger stage label":
-  PlayerCard'daki kalp artık gerçek `<button type="button">` (aria-pressed, aria-label mevcut `collectLabel` — "Add to
-  Collection" / "In Collection ✓", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` (localStorage
-  `soundmap.collection.v1`) üzerinden kalıcı; tıklama `e.stopPropagation()` ile kartın ana tıklamasını tetiklemez.
-  Aşama etiketi (`.pc-tag`) yatayda ortalandı + 11px→13px büyütüldü. HÂLÂ AÇIK: Google girişi + Supabase `profiles`
-  satırı uçtan uca doğrulaması.
-AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
-  - 4 eşleşmeyen iTunes etiketi: Classical Crossover, Electronic, Chinese, Vocal → GenreId YOK,
-    nötr `pop/` fallback'e düşüyor. ALIAS EKLEMEME KARARI (2026-10-10; kullanıcı onayı).
-    (Önerilen hedefler kataloglandı: ClassicalCrossover→classical, Electronic→synth, Chinese→world,
-        Vocal→jazz — uygulanmadı.) DETAY: HANDOFF öncesi turun analizi.
-          - ✅ KABUL (2026-10-10): iTunes etiket tutarsızlıkları (Enya "Orinoco Flow" albüm sürümüne göre Pop↔New Age;
-            Mozart çok-genre'li/cover; Eminem) olduğu gibi BIRAKILDI — per-artist override EKLENMEDİ (GENRE_ALIASES değil;
-            ileride music map işinde elle kürasyon).
-  - ulaşılabilirlik: funk/rnb/gospel Klasörleri var ama iTunes üzerinden nadiren tetikleniyor —
-    iTunes bu şarkıları soul/country etiketliyor (James Brown→R&B/Soul→soul, SZA→R&B/Soul→soul,
-    Amazing Grace→Country→country). Doğrudan o genre girilirse klasör DOĞRU; motor hatası DEĞİL.
-    (b/c seçeneği = sanatçı-override/mode-aggregation — KARAR VERİLMEDİ.)
-  - İş 1 (MusicBrainz çoklu-kaynak genre) DURDURULDU (2026-10-10): MB `genre`/`tag` verisi CC0 DEĞİL,
-    CC BY-NC-SA "supplementary data" — ticari kullanım için uygun değil (core data/sanatçı adı CC0;
-    yalnız genres[] verisi BY-NC-SA). MB genre'ı production'da doğrudan tüketmek lisans uymaz.
-    ASKIDA: (a) MetaBrainz ticari lisansı, (b) lisansı-temiz başka kaynak (Wikidata/Discogs — ayrı doğrulanacak),
-    (c) küçük elle kürasyon tablosu (MB'yi yalnız referans al, otomatik kopyalama yok).
-    AÇIK KARARLAR: A/B-hibrit politika + gecikme kabulü (8 yeni-sanatçı soğuk ≈16-18sn). KOD YOK.
-  - ✅ ÇÖZÜLDÜ (ea0629d, push edildi): tema gerilemesi (latin→gothic, gospel→gothic, soundtrack→gothic, world→gothic) — 23-wiring alias-re-target sonrası SCENE_KEYWORDS keyword'ü olmayan türler gothic'a düşüyordu; genre→tema override map (latin→synth, gospel→soul, soundtrack/acoustic, world→acoustic) + title/artist fallback'i etkilenmeyen `sceneThemeForGenre` ile çözüldü; sceneThemeFor ≡ resolver aynı fonksiyondan.
-  - ✅ ÇÖZÜLDÜ (ea0629d, push edildi): FAZ 4c TEMA KAYNAĞI RESOLVED — sceneThemeFor ≡ resolver, ikisi de aynı
-    fonksiyona (sceneThemeForGenre) bağlandı; 23 genre bulunan kombinasyonda eşit karar verir. KALAN KARAR tek:
-    PALETTE'nin render kaynağı (sceneThemeFor kanonik; resolver'ın palette çıktısı render'da tüketilmiyor —
-    bilinen küçük sapma, FAZ 4c kararı kolay).
+GÜNCEL DURUM (2026-11-08):
+  - ✅ KALP DÜĞMESİ + ORTALANMIŞ AŞAMA YAZISI (PR #17, MERGED): PlayerCard'daki kalp gerçek
+    `<button type="button">` (aria-pressed, aria-label mevcut `collectLabel` — "Add to Collection" /
+    "In Collection ✓", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` üzerinden
+    kalıcı (localStorage `soundmap.collection.v1`); tıklama `e.stopPropagation()` ile kartın ana
+    tıklamasını tetiklemez. Aşama etiketi (`.pc-tag`) yatayda ortalandı + 11px→13px büyütüldü.
+  - ✅ GOOGLE İLE HESAP BAĞLAMA (PR #18, MERGED): `GoogleLinkButton` artık sessizce gizlenmiyor;
+    oturum durumuna göre kısa durum metni gösteriyor (unavailable → "Account sync is off (no server
+    session)."; anonim-olmayan kullanıcı → "Signed in as <email>" / "Already signed in"; anonim →
+    mevcut düğme). Supabase tarafında Google sağlayıcısı, "Allow manual linking" ve URL ayarları yapıldı.
+  - ✅ profiles TABLOSU: doğum yılı `profiles.birth_year`'a yazılıyor (migration 0004_profiles.sql;
+    RLS owner-scoped, set_updated_at trigger).
+
+AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
+  - Favorilerin Supabase hesabına bağlanması: kalp/favori katmanı ŞU AN yalnızca tarayıcıda
+    (localStorage `soundmap.collection.v1`); oturumlar/cihazlar arası kalıcılık için Supabase'e
+    taşınmalı (cards/profiles gibi RLS'li tablo).
+  - Kalp aria-label'ının büyük harfle okunması: küçük erişilebilirlik notu — etiket ekran
+    okuyucuda büyük harfle duyulabiliyor; metin/kaynak gözden geçirilmeli.
+  - Sonar'daki eski bakım maddeleri: `parseInt` (radix belirtilmeyen çağrılar), regex kullanımları,
+    `journey.tsx` floating promise uyarıları.
+  - TR çeviri kapsamı: bazı kullanıcı-yüzü metinler hâlâ yalnızca İngilizce sabit (ör. auth
+    bileşenleri — GoogleLinkButton durum metinleri, BirthYearPrompt hata metni); sözlüğe taşınmalı.
+  - (Geçmiş, hâlâ geçerli) 4 eşleşmeyen iTunes etiketi + MusicBrainz genre lisansı askısı —
+    HANDOFF öncesi turların kaydı; aksiyon yok.
 ```
 
 Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
