@@ -10,7 +10,8 @@ function signal(): Float32Array {
   const out = new Float32Array(SR * 6);
   for (let i = 0; i < out.length; i++) {
     const t = i / SR;
-    if (t >= 2 && t < 4) out[i] = 0.8 * Math.sin(2 * Math.PI * 440 * t); // tone
+    if (t >= 2 && t < 4)
+      out[i] = 0.8 * Math.sin(2 * Math.PI * 440 * t); // tone
     else if (t >= 4) out[i] = (Math.random() * 2 - 1) * 0.5; // noise
   }
   return out;
@@ -18,7 +19,11 @@ function signal(): Float32Array {
 
 describe("analyzeSamples", () => {
   const sp = analyzeSamples(signal(), SR);
-  const at = (sec: number) => sp.data.subarray(Math.floor(sec * sp.fps) * sp.bands, Math.floor(sec * sp.fps) * sp.bands + sp.bands);
+  const at = (sec: number) =>
+    sp.data.subarray(
+      Math.floor(sec * sp.fps) * sp.bands,
+      Math.floor(sec * sp.fps) * sp.bands + sp.bands,
+    );
 
   it("has the expected shape", () => {
     expect(sp.bands).toBe(24);

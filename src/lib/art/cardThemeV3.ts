@@ -124,15 +124,87 @@ interface MoodSpec {
 }
 
 const MOODS: Record<CardMood, MoodSpec> = {
-  Nostalgic: { btn2: "#ffd9a8", sub: "#ffb76b", accent: "#e0b070", glow: "rgba(255,160,90,.45)", filter: "sepia(.2) contrast(1.05)", frame: ["#ffb76b", "#c26a3a", "#6b3a24"], body: ["#2a1810", "#120a06"] },
-  Energetic: { btn2: "#ffc24d", sub: "#ff6b3d", accent: "#ff9a2e", glow: "rgba(255,90,30,.5)", filter: "saturate(1.3) contrast(1.12)", frame: ["#ff8a3d", "#ff3d2e", "#8f1d3d"], body: ["#3a1408", "#150704"] },
-  Euphoric: { btn2: "#2ad0ff", sub: "#ff7ce8", accent: "#ffe81a", glow: "rgba(255,61,240,.5)", filter: "saturate(1.2) contrast(1.06)", frame: ["#ff4fd8", "#8f3dff", "#2ad0ff"], body: ["#20105c", "#0d0728"] },
-  Playful: { btn2: "#3d9bff", sub: "#ff8fd0", accent: "#3ddc97", glow: "rgba(61,220,151,.45)", filter: "saturate(1.35)", frame: ["#ff8fd0", "#3ddc97", "#3d9bff"], body: ["#1a1a52", "#0c0b2a"] },
-  Romantic: { btn2: "#ffc2d4", sub: "#ff9bb8", accent: "#ff8aa8", glow: "rgba(255,80,130,.45)", filter: "sepia(.12) saturate(1.1)", frame: ["#ff8aa8", "#d6336c", "#7a1f4a"], body: ["#3a0f2a", "#170512"] },
-  Melancholic: { btn2: "#8fd0ff", sub: "#9bb4d6", accent: "#8fb3d9", glow: "rgba(100,140,210,.35)", filter: "saturate(.7) brightness(.92)", frame: ["#9bb4d6", "#4a6fa5", "#24325c"], body: ["#13203d", "#080e1e"] },
-  Dreamy: { btn2: "#4cc9f0", sub: "#d3b8ff", accent: "#c9a7ff", glow: "rgba(170,120,255,.5)", filter: "saturate(1.1) brightness(1.05)", frame: ["#d3b8ff", "#8f6bff", "#4cc9f0"], body: ["#2a1a5c", "#100a2e"] },
-  Dark: { btn2: "#ff8a8a", sub: "#d85a5a", accent: "#d1403a", glow: "rgba(190,30,30,.4)", filter: "saturate(.8) contrast(1.15) brightness(.82)", frame: ["#b83a3a", "#5a1a2a", "#1a0a14"], body: ["#1a0a10", "#07030a"] },
-  World: { btn2: "#9fd6a0", sub: "#e0a050", accent: "#e0903a", glow: "rgba(224,144,58,.4)", filter: "sepia(.15) saturate(1.1)", frame: ["#e0903a", "#8f5a2a", "#3a5a3a"], body: ["#2a1c0e", "#0f0904"] },
+  Nostalgic: {
+    btn2: "#ffd9a8",
+    sub: "#ffb76b",
+    accent: "#e0b070",
+    glow: "rgba(255,160,90,.45)",
+    filter: "sepia(.2) contrast(1.05)",
+    frame: ["#ffb76b", "#c26a3a", "#6b3a24"],
+    body: ["#2a1810", "#120a06"],
+  },
+  Energetic: {
+    btn2: "#ffc24d",
+    sub: "#ff6b3d",
+    accent: "#ff9a2e",
+    glow: "rgba(255,90,30,.5)",
+    filter: "saturate(1.3) contrast(1.12)",
+    frame: ["#ff8a3d", "#ff3d2e", "#8f1d3d"],
+    body: ["#3a1408", "#150704"],
+  },
+  Euphoric: {
+    btn2: "#2ad0ff",
+    sub: "#ff7ce8",
+    accent: "#ffe81a",
+    glow: "rgba(255,61,240,.5)",
+    filter: "saturate(1.2) contrast(1.06)",
+    frame: ["#ff4fd8", "#8f3dff", "#2ad0ff"],
+    body: ["#20105c", "#0d0728"],
+  },
+  Playful: {
+    btn2: "#3d9bff",
+    sub: "#ff8fd0",
+    accent: "#3ddc97",
+    glow: "rgba(61,220,151,.45)",
+    filter: "saturate(1.35)",
+    frame: ["#ff8fd0", "#3ddc97", "#3d9bff"],
+    body: ["#1a1a52", "#0c0b2a"],
+  },
+  Romantic: {
+    btn2: "#ffc2d4",
+    sub: "#ff9bb8",
+    accent: "#ff8aa8",
+    glow: "rgba(255,80,130,.45)",
+    filter: "sepia(.12) saturate(1.1)",
+    frame: ["#ff8aa8", "#d6336c", "#7a1f4a"],
+    body: ["#3a0f2a", "#170512"],
+  },
+  Melancholic: {
+    btn2: "#8fd0ff",
+    sub: "#9bb4d6",
+    accent: "#8fb3d9",
+    glow: "rgba(100,140,210,.35)",
+    filter: "saturate(.7) brightness(.92)",
+    frame: ["#9bb4d6", "#4a6fa5", "#24325c"],
+    body: ["#13203d", "#080e1e"],
+  },
+  Dreamy: {
+    btn2: "#4cc9f0",
+    sub: "#d3b8ff",
+    accent: "#c9a7ff",
+    glow: "rgba(170,120,255,.5)",
+    filter: "saturate(1.1) brightness(1.05)",
+    frame: ["#d3b8ff", "#8f6bff", "#4cc9f0"],
+    body: ["#2a1a5c", "#100a2e"],
+  },
+  Dark: {
+    btn2: "#ff8a8a",
+    sub: "#d85a5a",
+    accent: "#d1403a",
+    glow: "rgba(190,30,30,.4)",
+    filter: "saturate(.8) contrast(1.15) brightness(.82)",
+    frame: ["#b83a3a", "#5a1a2a", "#1a0a14"],
+    body: ["#1a0a10", "#07030a"],
+  },
+  World: {
+    btn2: "#9fd6a0",
+    sub: "#e0a050",
+    accent: "#e0903a",
+    glow: "rgba(224,144,58,.4)",
+    filter: "sepia(.15) saturate(1.1)",
+    frame: ["#e0903a", "#8f5a2a", "#3a5a3a"],
+    body: ["#2a1c0e", "#0f0904"],
+  },
 };
 
 /** Keyword families, checked in order. Unknown genres fall back to gothic. */
@@ -156,7 +228,9 @@ export function familyForGenre(genre: string | null | undefined): CardFamily {
 }
 
 export function asCardMood(value: string | null | undefined): CardMood {
-  return (CARD_MOODS as readonly string[]).includes(value ?? "") ? (value as CardMood) : "Nostalgic";
+  return (CARD_MOODS as readonly string[]).includes(value ?? "")
+    ? (value as CardMood)
+    : "Nostalgic";
 }
 
 const grad3 = (c: Trio) => `linear-gradient(135deg, ${c[0]} 0%, ${c[1]} 50%, ${c[2]} 100%)`;
@@ -174,7 +248,10 @@ export interface ResolvedCardTheme {
   backdrop: string;
 }
 
-export function resolveCardVars(genre: string | null | undefined, mood: string | null | undefined): ResolvedCardTheme {
+export function resolveCardVars(
+  genre: string | null | undefined,
+  mood: string | null | undefined,
+): ResolvedCardTheme {
   const family = familyForGenre(genre);
   const m = asCardMood(mood);
   const F = FAMILIES[family];

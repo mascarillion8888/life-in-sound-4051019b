@@ -8,12 +8,7 @@ import { existsSync } from "fs";
 import { resolve as resolvePath } from "path";
 import { describe, expect, it } from "vitest";
 
-import {
-  ALL_GENRES,
-  GENRE_ALIASES,
-  normalizeGenre,
-  SCENE_ASSET_REGISTRY,
-} from "./assetRegistry";
+import { ALL_GENRES, GENRE_ALIASES, normalizeGenre, SCENE_ASSET_REGISTRY } from "./assetRegistry";
 import { resolveSceneVisualSpec } from "./visualResolver";
 
 describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () => {
@@ -130,7 +125,11 @@ describe("exact-match asset registry (FAZ 3.1)", () => {
   it("genre eşleşmezse (Doom Metal — registry dışı) → exactAssetRef undefined, exact-match izi yok", () => {
     // Doom Metal bir GenreId DEĞİL ve GENRE_ALIASES'te yok → küçük-harfli orijinal
     // kalır, hiçbir registry satırıyla eşleşmez.
-    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "Doom Metal", releaseYear: 1985 });
+    const res = resolveSceneVisualSpec({
+      mood: "Energetic",
+      genre: "Doom Metal",
+      releaseYear: 1985,
+    });
     expect(res.exactAssetRef).toBeUndefined();
     expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
   });

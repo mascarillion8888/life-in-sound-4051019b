@@ -6,15 +6,43 @@ export const Route = createFileRoute("/dev/player-card")({
 });
 
 const SAMPLES = [
-  { genre: "Synth-pop", mood: "Euphoric", title: "Miami Nights", artist: "Bryan Ferry", era: "80’ler" },
+  {
+    genre: "Synth-pop",
+    mood: "Euphoric",
+    title: "Miami Nights",
+    artist: "Bryan Ferry",
+    era: "80’ler",
+  },
   { genre: "Metal", mood: "Dark", title: "Fade to Black", artist: "Metallica", era: "80’ler" },
-  { genre: "Jazz", mood: "Melancholic", title: "Blue in Green", artist: "Miles Davis", era: "50’ler" },
-  { genre: "Hip-Hop", mood: "Energetic", title: "Lose Yourself", artist: "Eminem", era: "2000’ler" },
+  {
+    genre: "Jazz",
+    mood: "Melancholic",
+    title: "Blue in Green",
+    artist: "Miles Davis",
+    era: "50’ler",
+  },
+  {
+    genre: "Hip-Hop",
+    mood: "Energetic",
+    title: "Lose Yourself",
+    artist: "Eminem",
+    era: "2000’ler",
+  },
 ];
 
 function PlayerCardPreview() {
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0618", display: "flex", flexWrap: "wrap", gap: 32, justifyContent: "center", padding: 24 }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0c0618",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 32,
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
       {SAMPLES.map((s) => (
         <PlayerCard
           key={s.title}

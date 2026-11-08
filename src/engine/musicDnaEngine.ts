@@ -116,12 +116,7 @@ export function calculateMusicalIdentity(songs: Song[]): MusicalIdentity {
   return {
     topArtists: uniqueArtists.slice(0, 3),
     diversityScore,
-    dominantVibe: deriveDominantVibe(
-      topGenres,
-      genreCoverage,
-      topMoods,
-      moodCoverage,
-    ),
+    dominantVibe: deriveDominantVibe(topGenres, genreCoverage, topMoods, moodCoverage),
     hasVerifiedTracks: songs.every((s) => s.verified === true),
     topGenres,
     genreCoverage,

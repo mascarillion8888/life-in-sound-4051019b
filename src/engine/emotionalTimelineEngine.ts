@@ -77,15 +77,69 @@ const DEFAULT_STAGE_RULE: StageEmotionRule = {
  * falls through to the stage rule.
  */
 const MOOD_EMOTION_MAP: Record<string, StageEmotionRule> = {
-  Energetic: { valency: 0.7, intensity: 8, energy: 0.8, vibeLabel: "Driving Spark", primaryEmotion: "Energetic" },
-  Euphoric: { valency: 0.9, intensity: 9, energy: 0.8, vibeLabel: "Radiant High", primaryEmotion: "Euphoric" },
-  Playful: { valency: 0.8, intensity: 6, energy: 0.7, vibeLabel: "Playful Bounce", primaryEmotion: "Playful" },
-  Romantic: { valency: 0.7, intensity: 7, energy: 0.5, vibeLabel: "Tender Warmth", primaryEmotion: "Romantic" },
-  Melancholic: { valency: -0.6, intensity: 6, energy: 0.3, vibeLabel: "Quiet Sadness", primaryEmotion: "Melancholic" },
-  Dreamy: { valency: 0.4, intensity: 5, energy: 0.3, vibeLabel: "Hazy Reverie", primaryEmotion: "Dreamy" },
-  Nostalgic: { valency: 0.3, intensity: 6, energy: 0.4, vibeLabel: "Warm Memory", primaryEmotion: "Nostalgic" },
-  Dark: { valency: -0.5, intensity: 8, energy: 0.7, vibeLabel: "Shadowed Weight", primaryEmotion: "Dark" },
-  World: { valency: 0.5, intensity: 6, energy: 0.6, vibeLabel: "Wide Horizon", primaryEmotion: "Open" },
+  Energetic: {
+    valency: 0.7,
+    intensity: 8,
+    energy: 0.8,
+    vibeLabel: "Driving Spark",
+    primaryEmotion: "Energetic",
+  },
+  Euphoric: {
+    valency: 0.9,
+    intensity: 9,
+    energy: 0.8,
+    vibeLabel: "Radiant High",
+    primaryEmotion: "Euphoric",
+  },
+  Playful: {
+    valency: 0.8,
+    intensity: 6,
+    energy: 0.7,
+    vibeLabel: "Playful Bounce",
+    primaryEmotion: "Playful",
+  },
+  Romantic: {
+    valency: 0.7,
+    intensity: 7,
+    energy: 0.5,
+    vibeLabel: "Tender Warmth",
+    primaryEmotion: "Romantic",
+  },
+  Melancholic: {
+    valency: -0.6,
+    intensity: 6,
+    energy: 0.3,
+    vibeLabel: "Quiet Sadness",
+    primaryEmotion: "Melancholic",
+  },
+  Dreamy: {
+    valency: 0.4,
+    intensity: 5,
+    energy: 0.3,
+    vibeLabel: "Hazy Reverie",
+    primaryEmotion: "Dreamy",
+  },
+  Nostalgic: {
+    valency: 0.3,
+    intensity: 6,
+    energy: 0.4,
+    vibeLabel: "Warm Memory",
+    primaryEmotion: "Nostalgic",
+  },
+  Dark: {
+    valency: -0.5,
+    intensity: 8,
+    energy: 0.7,
+    vibeLabel: "Shadowed Weight",
+    primaryEmotion: "Dark",
+  },
+  World: {
+    valency: 0.5,
+    intensity: 6,
+    energy: 0.6,
+    vibeLabel: "Wide Horizon",
+    primaryEmotion: "Open",
+  },
 };
 
 export function generateEmotionalTimeline(

@@ -207,7 +207,7 @@ export const GENRE_ALIASES: Record<string, GenreId> = {
   "avant-garde jazz": "jazz",
   blues: "jazz",
   // reggae ailesi → reggae klasörü
-  "dancehall": "reggae",
+  dancehall: "reggae",
   ska: "reggae",
   reggaeton: "reggae",
   "roots reggae": "reggae",

@@ -30,7 +30,8 @@ describe("moodBackdrop — fallback contract", () => {
 
   it("resolves the URL when the file exists in the map", () => {
     const map = {
-      "/src/assets/pop/mood-backdrop-energetic.jpg": "/assets/pop-mood-backdrop-energetic-abc123.jpg",
+      "/src/assets/pop/mood-backdrop-energetic.jpg":
+        "/assets/pop-mood-backdrop-energetic-abc123.jpg",
     };
     expect(moodBackdropUrl("Energetic", undefined, undefined, map)).toBe(
       "/assets/pop-mood-backdrop-energetic-abc123.jpg",
@@ -71,12 +72,8 @@ describe("backdropCandidates — genre-agnostic neutral mood-wall fallback", () 
   it("registered genre folders are NOT named here — the registry handles them", () => {
     // Genre-specific selection is the Asset Registry's job; the fallback chain
     // stays genre-agnostic (pop) so metal/jazz/etc. get a real neutral mood wall.
-    expect(backdropCandidates("Dark", "Metal", undefined)).toEqual([
-      "pop/mood-backdrop-dark.jpg",
-    ]);
-    expect(backdropCandidates("Dark", "Rock", undefined)).toEqual([
-      "pop/mood-backdrop-dark.jpg",
-    ]);
+    expect(backdropCandidates("Dark", "Metal", undefined)).toEqual(["pop/mood-backdrop-dark.jpg"]);
+    expect(backdropCandidates("Dark", "Rock", undefined)).toEqual(["pop/mood-backdrop-dark.jpg"]);
   });
 
   it("decade does not shape the filename anymore", () => {

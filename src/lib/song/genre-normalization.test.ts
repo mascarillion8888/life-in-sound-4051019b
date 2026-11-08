@@ -20,6 +20,7 @@ interface TestCase {
   description?: string;
 }
 
+// prettier-ignore
 const TEST_CASES: TestCase[] = [
   // POP family
   { artist: "Madonna", title: "Like a Prayer", primaryGenreName: "Pop", expectedGenreId: "pop" },

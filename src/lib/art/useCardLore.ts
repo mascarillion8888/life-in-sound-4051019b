@@ -117,7 +117,19 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     return () => {
       active = false;
     };
-  }, [key, cacheKey, artist, title, releaseYear, cardIndex, birthYear, encounterAge, genre, userMemory, mood]);
+  }, [
+    key,
+    cacheKey,
+    artist,
+    title,
+    releaseYear,
+    cardIndex,
+    birthYear,
+    encounterAge,
+    genre,
+    userMemory,
+    mood,
+  ]);
 
   if (!song || state.key !== key) return null;
   return state.lore;

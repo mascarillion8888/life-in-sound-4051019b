@@ -5,9 +5,17 @@ import type { Song } from "@/lib/song/types";
 
 function song(over: Partial<Song> = {}): Song {
   const base: Song = {
-    provider: "manual", providerId: "x", title: "Neutral", artist: "A", album: null,
-    artworkUrl: null, releaseYear: 1990, previewUrl: null, isrc: null,
-    genre: null, mood: null,
+    provider: "manual",
+    providerId: "x",
+    title: "Neutral",
+    artist: "A",
+    album: null,
+    artworkUrl: null,
+    releaseYear: 1990,
+    previewUrl: null,
+    isrc: null,
+    genre: null,
+    mood: null,
   };
   return { ...base, ...over };
 }
@@ -81,7 +89,11 @@ describe("sceneThemeFor — 23 tür beklentisi (gerileme koruması)", () => {
 describe("resolver ≡ sceneThemeFor — 23 tür eşitlik (iki kaynak aynı karar)", () => {
   it.each(Object.keys(EXPECT))("%s", (genre) => {
     const renderTheme = sceneThemeFor(song({ genre }));
-    const resolverTheme = resolveSceneVisualSpec({ mood: "Dreamy", genre, releaseYear: 1990 }).sceneThemeId;
+    const resolverTheme = resolveSceneVisualSpec({
+      mood: "Dreamy",
+      genre,
+      releaseYear: 1990,
+    }).sceneThemeId;
     expect(resolverTheme).toBe(renderTheme);
     expect(resolverTheme).toBe(EXPECT[genre]);
   });
