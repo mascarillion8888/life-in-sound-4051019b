@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import { resolveCardVars } from "@/lib/art/cardThemeV3";
+import { stageLabelForAge } from "@/lib/art/lifeStageLabel";
 import type { Spectrum } from "@/lib/soundmap/previewSpectrum";
 
 export interface PlayerCardProps {
@@ -46,12 +47,7 @@ function lifeStage(metaLeft: string): string | null {
   const nums = (metaLeft.match(/\d{1,3}/g) ?? []).slice(0, 2).map(Number);
   if (!nums.length) return null;
   const age = nums.reduce((a, b) => a + b, 0) / nums.length;
-  if (age <= 12) return "Childhood";
-  if (age <= 17) return "Teen years";
-  if (age <= 24) return "Youth";
-  if (age <= 39) return "Young adult";
-  if (age <= 59) return "Adulthood";
-  return "Later life";
+  return stageLabelForAge(age);
 }
 
 const CSS = `
@@ -102,13 +98,75 @@ const CSS = `
 @media (max-height:700px){.pc-in{padding:12px}.pc-head{margin-top:12px}.pc-btn{height:48px}.pc-btn.col{height:44px}}
 `;
 
-const PlayIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>);
-const PauseIcon = () => (<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>);
-const PlusIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity=".25" /><path d="M12 7v10M7 12h10" /></svg>);
-const CheckIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity=".25" /><path d="M7.5 12.5l3 3 6-7" /></svg>);
+const PlayIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M7 4.5v15l13-7.5z" />
+  </svg>
+);
+const PauseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+  </svg>
+);
+const PlusIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.4"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity=".25" />
+    <path d="M12 7v10M7 12h10" />
+  </svg>
+);
+const CheckIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity=".25" />
+    <path d="M7.5 12.5l3 3 6-7" />
+  </svg>
+);
 
-const CassetteIcon = () => (<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="3" /><rect x="9" y="12" width="14" height="6" rx="3" /><circle cx="12.5" cy="15" r="1.4" fill="currentColor" /><circle cx="19.5" cy="15" r="1.4" fill="currentColor" /><path d="M9 25l2-4h10l2 4" /></svg>);
-const SmileIcon = () => (<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor" fillOpacity=".18" /><circle cx="11.5" cy="13" r="1.3" fill="currentColor" /><circle cx="20.5" cy="13" r="1.3" fill="currentColor" /><path d="M9.5 18.5c1.6 3.2 4 4.5 6.5 4.5s4.9-1.3 6.5-4.5" /></svg>);
+const CassetteIcon = () => (
+  <svg
+    viewBox="0 0 32 32"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="7" width="26" height="18" rx="3" />
+    <rect x="9" y="12" width="14" height="6" rx="3" />
+    <circle cx="12.5" cy="15" r="1.4" fill="currentColor" />
+    <circle cx="19.5" cy="15" r="1.4" fill="currentColor" />
+    <path d="M9 25l2-4h10l2 4" />
+  </svg>
+);
+const SmileIcon = () => (
+  <svg
+    viewBox="0 0 32 32"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <circle cx="16" cy="16" r="12.5" fill="currentColor" fillOpacity=".18" />
+    <circle cx="11.5" cy="13" r="1.3" fill="currentColor" />
+    <circle cx="20.5" cy="13" r="1.3" fill="currentColor" />
+    <path d="M9.5 18.5c1.6 3.2 4 4.5 6.5 4.5s4.9-1.3 6.5-4.5" />
+  </svg>
+);
 
 const EQ_BARS = 24;
 const EQ_SEGS = 12;
@@ -118,8 +176,13 @@ export function PlayerCard(p: PlayerCardProps) {
   const eq = useMemo(
     () =>
       Array.from({ length: EQ_BARS }, (_, i) => {
-        const h = 0.2 + 0.8 * Math.pow(Math.abs(Math.sin(i * 0.55 + 0.6) * Math.cos(i * 0.21)), 1.3);
-        return { h: Math.ceil(h * EQ_SEGS) / EQ_SEGS, d: -((i * 37) % 100) / 100, t: 0.5 + ((i * 53) % 50) / 100 };
+        const h =
+          0.2 + 0.8 * Math.pow(Math.abs(Math.sin(i * 0.55 + 0.6) * Math.cos(i * 0.21)), 1.3);
+        return {
+          h: Math.ceil(h * EQ_SEGS) / EQ_SEGS,
+          d: -((i * 37) % 100) / 100,
+          t: 0.5 + ((i * 53) % 50) / 100,
+        };
       }),
     [],
   );
@@ -169,35 +232,74 @@ export function PlayerCard(p: PlayerCardProps) {
   return (
     <div className="pcw" style={theme.vars as CSSProperties}>
       <style>{CSS}</style>
-      <article className="pc" data-testid={p["data-testid"]} data-family={theme.family} data-mood={theme.mood}>
+      <article
+        className="pc"
+        data-testid={p["data-testid"]}
+        data-family={theme.family}
+        data-mood={theme.mood}
+      >
         <div className="pc-in">
           {/* Visually hidden: the poster behind the card already shows era + counter. */}
           <div className="pc-sr">
-            <span data-testid="card-meta">{p.metaLeft} {p.sequence}</span>
-            <span data-testid="card-badge">{score}/10 {p.scoreLabel}</span>
+            <span data-testid="card-meta">
+              {p.metaLeft} {p.sequence}
+            </span>
+            <span data-testid="card-badge">
+              {score}/10 {p.scoreLabel}
+            </span>
           </div>
 
           {stage && (
-            <div className="pc-tag" data-testid="card-stage"><span>{stage}</span></div>
+            <div className="pc-tag" data-testid="card-stage">
+              <span>{stage}</span>
+            </div>
           )}
-          <div className="pc-cover" data-testid="card-cover">{p.coverSlot}</div>
+          <div className="pc-cover" data-testid="card-cover">
+            {p.coverSlot}
+          </div>
 
           <div className="pc-head">
             <div className="pc-titles">
-              <h2 data-testid="card-title" title={p.title}>{p.title}</h2>
-              <div className="pc-artist" data-testid="card-artist">{p.artist}</div>
+              <h2 data-testid="card-title" title={p.title}>
+                {p.title}
+              </h2>
+              <div className="pc-artist" data-testid="card-artist">
+                {p.artist}
+              </div>
             </div>
-            <svg className="pc-heart" viewBox="0 0 24 24" fill={p.collected ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              className="pc-heart"
+              viewBox="0 0 24 24"
+              fill={p.collected ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M12 20.5s-8-4.7-8-10.6A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 8 2.6c0 5.9-8 10.6-8 10.6z" />
             </svg>
           </div>
 
-          <div className="pc-bar" data-testid="card-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+          <div
+            className="pc-bar"
+            data-testid="card-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(pct)}
+          >
             <i style={{ width: `${pct}%` }} />
           </div>
-          <div className="pc-times"><span>{p.timeLeft ?? "0:00"}</span><span>{p.timeRight ?? "0:30"}</span></div>
+          <div className="pc-times">
+            <span>{p.timeLeft ?? "0:00"}</span>
+            <span>{p.timeRight ?? "0:30"}</span>
+          </div>
 
-          <div ref={eqRef} className={`pc-eq${p.playing ? " on" : ""}${live ? " live" : ""}`} aria-hidden="true">
+          <div
+            ref={eqRef}
+            className={`pc-eq${p.playing ? " on" : ""}${live ? " live" : ""}`}
+            aria-hidden="true"
+          >
             {eq.map((b, i) => (
               <span className="c" key={i}>
                 <i style={{ "--h": b.h, "--t": `${b.t}s`, "--d": `${b.d}s` } as CSSProperties} />
@@ -206,17 +308,43 @@ export function PlayerCard(p: PlayerCardProps) {
             ))}
           </div>
           <div className="pc-stats">
-            <div className="pc-stat era" data-testid="card-era"><CassetteIcon /><div><small>{p.eraTitle}</small><strong>{p.eraValue}</strong></div></div>
+            <div className="pc-stat era" data-testid="card-era">
+              <CassetteIcon />
+              <div>
+                <small>{p.eraTitle}</small>
+                <strong>{p.eraValue}</strong>
+              </div>
+            </div>
             <div className="pc-sep" />
-            <div className="pc-stat mood" data-testid="card-mood"><SmileIcon /><div><small>{p.moodTitle}</small><strong>{p.moodValue}</strong></div></div>
+            <div className="pc-stat mood" data-testid="card-mood">
+              <SmileIcon />
+              <div>
+                <small>{p.moodTitle}</small>
+                <strong>{p.moodValue}</strong>
+              </div>
+            </div>
           </div>
 
           <div className="pc-deck">
-            <button type="button" className="pc-btn play" data-testid="card-play" disabled={!p.canPlay} onClick={p.onPlay} aria-label={p.playLabel}>
+            <button
+              type="button"
+              className="pc-btn play"
+              data-testid="card-play"
+              disabled={!p.canPlay}
+              onClick={p.onPlay}
+              aria-label={p.playLabel}
+            >
               {p.playing ? <PauseIcon /> : <PlayIcon />}
               <span>{p.playLabel}</span>
             </button>
-            <button type="button" className="pc-btn col" data-testid="card-collect" aria-pressed={!!p.collected} aria-label={p.collectLabel} onClick={p.onCollect}>
+            <button
+              type="button"
+              className="pc-btn col"
+              data-testid="card-collect"
+              aria-pressed={!!p.collected}
+              aria-label={p.collectLabel}
+              onClick={p.onCollect}
+            >
               {p.collected ? <CheckIcon /> : <PlusIcon />}
               <span>{p.collectLabel}</span>
             </button>
@@ -224,7 +352,9 @@ export function PlayerCard(p: PlayerCardProps) {
         </div>
       </article>
 
-      <p className="pc-story" data-testid="card-lore"><span>{p.lore}</span></p>
+      <p className="pc-story" data-testid="card-lore">
+        <span>{p.lore}</span>
+      </p>
     </div>
   );
 }
