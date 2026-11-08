@@ -19,6 +19,7 @@ import { loadJourney, saveJourney } from "@/lib/journey-storage";
 import { resetJourneySession } from "@/lib/reset-session";
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
+import { useCollectionSync } from "@/lib/supabase/use-collection-sync";
 import { useProfile } from "@/lib/supabase/use-profile";
 import { birthYearStore } from "@/lib/supabase/birth-year-store";
 import { BirthYearPrompt } from "@/components/auth/BirthYearPrompt";
@@ -116,6 +117,7 @@ function JourneyPage() {
   const total = questions.length;
   const navigate = useNavigate();
   const session = useSession();
+  useCollectionSync(session);
   const { t } = useLanguage();
   const [current, setCurrent] = useState(1);
   const [answers, setAnswers] = useState<Record<number, string>>({});

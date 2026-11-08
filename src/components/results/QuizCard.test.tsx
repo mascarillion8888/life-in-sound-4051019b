@@ -16,6 +16,14 @@ vi.mock("@/lib/card/cardTemplates", () => ({
   CARD_TEMPLATES: [],
 }));
 
+// The Supabase mirror is a network boundary — stub it so the card's own
+// local-first behaviour is what is under test.
+vi.mock("@/lib/supabase/use-collection-sync", () => ({
+  syncCollectionToggle: vi.fn(),
+}));
+
+import { syncCollectionToggle } from "@/lib/supabase/use-collection-sync";
+
 // Audio playback is stubbed: jsdom cannot play media.
 vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
 vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
@@ -42,6 +50,7 @@ describe("QuizCard (player-card layout)", () => {
   beforeEach(() => {
     __clearCardArtworkMemoryCache();
     window.localStorage.clear();
+    vi.mocked(syncCollectionToggle).mockClear();
     act(() => birthYearStore.set(null));
   });
 
@@ -82,6 +91,22 @@ describe("QuizCard (player-card layout)", () => {
     fireEvent.click(btn);
     expect(btn.getAttribute("aria-pressed")).toBe("true");
     expect(isInCollection(loadCollection(), cardArtworkKey(s))).toBe(true);
+  });
+
+  it("mirrors the heart toggle to the sync layer: push on save, remove on unsave", () => {
+    const s = song();
+    const key = cardArtworkKey(s);
+    render(<QuizCard card={cards[0]} song={s} />);
+    const heart = screen.getByTestId("card-heart");
+
+    fireEvent.click(heart);
+    expect(syncCollectionToggle).toHaveBeenLastCalledWith(
+      key,
+      expect.objectContaining({ trackKey: key }),
+    );
+
+    fireEvent.click(heart);
+    expect(syncCollectionToggle).toHaveBeenLastCalledWith(key, null);
   });
 
   it("enables play when a preview exists and disables it when not", () => {

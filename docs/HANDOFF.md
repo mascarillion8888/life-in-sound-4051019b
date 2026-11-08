@@ -14,16 +14,15 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main ile eşit (AHEAD 0). origin/main tipi = 5791309
-HEAD:       5791309 — "Merge pull request #18 from mascarillion8888/feat/google-link-status"
+Dal:        main — origin/main ile eşit (AHEAD 0). origin/main tipi = 3354d9b (PR #19 HANDOFF güncellemesi MERGED)
+HEAD:       3354d9b — "Merge pull request #19 from mascarillion8888/docs/handoff-update"
+            5791309 — "Merge pull request #18 from mascarillion8888/feat/google-link-status"
             dd7cdf3 — "feat(auth): show why Google link is unavailable" (PR #18 gövdesi)
             a0c488c — "Merge pull request #17 from mascarillion8888/feat/card-heart-and-stage-label"
             19d7d42 — "feat(card): working favorite heart and centered, larger stage label"
-            6baf947 — "fix(card): use existing collectLabel for heart aria-label (no new i18n keys)"
             0151dbf — "Merge pull request #16 from mascarillion8888/chore/lint-debt"
-            09eb7b5 — "chore: fix repo-wide lint debt (prettier + no-explicit-any)"
             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #10 auth-birth-year, #12 personal-lore)
-Testler:    85 dosya passed / 1 skipped (86); 907 passed / 2 skipped (909) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
+Testler:    87 dosya passed / 1 skipped (88); 928 passed / 2 skipped (930) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-11-08 doğrulandı)
 Lint:       ✅ 0 hata — `npm run lint` exit 0 (2026-11-08 doğrulandı). Repo-geneli prettier borcu PR #16 (chore/lint-debt) ile kapatıldı.
 Sonar/CI:   ✅ temiz — PR #17 ve #18'de SonarCloud Code Analysis + CI/verify + Vercel tümü başarılı.
@@ -42,11 +41,17 @@ GÜNCEL DURUM (2026-11-08):
     mevcut düğme). Supabase tarafında Google sağlayıcısı, "Allow manual linking" ve URL ayarları yapıldı.
   - ✅ profiles TABLOSU: doğum yılı `profiles.birth_year`'a yazılıyor (migration 0004_profiles.sql;
     RLS owner-scoped, set_updated_at trigger).
+  - ✅ FAVORİLER SUPABASE'E BAĞLANDI (bu oturum, PR açık): yerel-öncelikli kaldı — arayüz her zaman
+    localStorage'dan okur/yazar; `collection_entries` tablosuna ayna yazımı yapılır
+    (migration 0005_collection_entries.sql). Oturum hazır olunca `useCollectionSync` bir kez
+    `pullAndMerge` çalıştırır (yeni-kazanır birleşim, MAX_COLLECTION_ENTRIES cap); kalp toggle'ı
+    tek kaydı upsert/delete eder (fire-and-forget, hatalar yutulur). Supabase yoksa/hatalıysa
+    hiçbir şey bozulmaz, yalnızca yerel çalışır.
 
 AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
-  - Favorilerin Supabase hesabına bağlanması: kalp/favori katmanı ŞU AN yalnızca tarayıcıda
-    (localStorage `soundmap.collection.v1`); oturumlar/cihazlar arası kalıcılık için Supabase'e
-    taşınmalı (cards/profiles gibi RLS'li tablo).
+  - ⚠️ MIGRATION UYGULANMALI: `supabase/migrations/0005_collection_entries.sql` henüz Supabase'e
+    uygulanmadı — kullanıcı Supabase Dashboard → SQL Editor'da çalıştırmalı (RLS açık, sahibine
+    select/insert/update/delete). Uygulanana kadar favoriler yalnızca yerelde kalır (hata yutulur).
   - Kalp aria-label'ının büyük harfle okunması: küçük erişilebilirlik notu — etiket ekran
     okuyucuda büyük harfle duyulabiliyor; metin/kaynak gözden geçirilmeli.
   - Sonar'daki eski bakım maddeleri: `parseInt` (radix belirtilmeyen çağrılar), regex kullanımları,

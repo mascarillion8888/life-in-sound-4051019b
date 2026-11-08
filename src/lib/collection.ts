@@ -80,7 +80,8 @@ export function snapshotFromSong(song: Song): CollectionSnapshot {
   };
 }
 
-function normalizeEntry(value: unknown): CollectionEntry | null {
+/** Validate one stored/remote entry into the collection shape (or null). */
+export function normalizeCollectionEntry(value: unknown): CollectionEntry | null {
   if (!value || typeof value !== "object") return null;
   const v = value as Record<string, unknown>;
   const s = v.snapshot as Record<string, unknown> | undefined;
@@ -114,7 +115,7 @@ export function loadCollection(): CollectionState {
       return emptyCollection();
     }
     const entries = parsed.entries
-      .map(normalizeEntry)
+      .map(normalizeCollectionEntry)
       .filter((e): e is CollectionEntry => e !== null);
     // Enforce the LRU cap defensively on load too (a hand-edited or stale key).
     const capped = entries.slice(0, MAX_COLLECTION_ENTRIES);
@@ -140,6 +141,15 @@ export function saveCollection(state: CollectionState): void {
 /** True when a track is already saved in the collection. */
 export function isInCollection(state: CollectionState, trackKey: string): boolean {
   return state.entries.some((e) => e.trackKey === trackKey);
+}
+
+/**
+ * Build a valid state from raw entries: newest-first by `addedAt`, LRU-capped.
+ * Shared by the merge path so the ordering/cap rule lives in one place.
+ */
+export function collectionFromEntries(entries: CollectionEntry[]): CollectionState {
+  const sorted = [...entries].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+  return { entries: sorted.slice(0, MAX_COLLECTION_ENTRIES), updatedAt: now() };
 }
 
 /**
