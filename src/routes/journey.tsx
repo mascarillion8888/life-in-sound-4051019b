@@ -164,7 +164,6 @@ function JourneyPage() {
   // stage on every card through birthYearStore.
   const profile = useProfile(userId, session.status !== "loading");
   const [editingBirthYear, setEditingBirthYear] = useState(false);
-  const isAnonymousUser = session.status === "anonymous" && session.user?.is_anonymous === true;
   const needsBirthYear =
     (restored &&
       !profile.loading &&
@@ -450,7 +449,7 @@ function JourneyPage() {
                 else void profile.skip();
               }}
             />
-            <GoogleLinkButton isAnonymous={isAnonymousUser} />
+            <GoogleLinkButton session={session} />
           </div>
         </div>
       ) : null}
@@ -466,7 +465,7 @@ function JourneyPage() {
               Change birth year
             </button>
           ) : null}
-          <GoogleLinkButton isAnonymous={isAnonymousUser} />
+          <GoogleLinkButton session={session} />
           <LanguageSwitcher />
         </div>
       </div>
