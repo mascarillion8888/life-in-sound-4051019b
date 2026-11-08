@@ -44,18 +44,24 @@ HEAD:       c545879 — "feat(poster): İş 3 Dilim 2 — hero line from real in
             81→207: metal/synth/gothic/grunge/acoustic artık kendi klasörüne (eskiden fallback),
             9 YENİ tür eklendi: classical, country, folk, gospel, latin, rnb, soundtrack,
             timeless-opera, world. Klasör istisnası tek: hiphop→hip-hop/.
-Testler:    74 dosya, 845 passed / 2 skipped, 0 failed (847) — vitest v4.1.11, `npm test` exit 0 (2026-10-13 doğrulandı)
+Testler:    84 dosya passed / 1 skipped (85); 900 passed / 2 skipped (902) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-10-13 doğrulandı)
 Lint:       ✅ KAPATILDI (2026-11-08, PR chore/lint-debt): ham `npm run lint` (prettier açık) = 0 hata
             (147 prettier drift + 11 no-explicit-any; eslint-disable EKLENMEDEN gerçek tiplerle düzeltildi).
             Önceki tarihli bulgu (2026-10-13: 150 prettier hatası / 15 eski dosya) İş 3 kaynaklı DEĞİL,
             önceden var olan repo-geneli borçtu — bu PR ile kapatıldı.
-Build:      exit 0 (2026-10-13 doğrulandı)
+Build:      exit 0 (2026-11-08 doğrulandı)
 Push:       ✅ Push'lu: a4eaa30/0ed0b05/e0c701f (2026-10-10, kural-10 göz onayı VERİLDİ) + 624b650/01ee852/
             5756daa/7f71bad + d5f5fa2/f0ba59a (2026-10-12/13 belge hizalaması + Imagen ölü katman kaldırma +
             Gemini null-yol testleri). Worktree TEMİZ; AMA 3 yerel commit (21135fe, c545879, 39ab4bd docs) PUSH
             EDİLMEDİ — origin/main = 7f71bad.
 
+GÜNCEL AÇIK İŞ (2026-11-08): kalp düğmesi ✅ ÇALIŞIR — PR "feat(card): working favorite heart and centered, larger stage label":
+  PlayerCard'daki kalp artık gerçek `<button type="button">` (aria-pressed, aria-label mevcut `collectLabel` — "Add to
+  Collection" / "In Collection ✓", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` (localStorage
+  `soundmap.collection.v1`) üzerinden kalıcı; tıklama `e.stopPropagation()` ile kartın ana tıklamasını tetiklemez.
+  Aşama etiketi (`.pc-tag`) yatayda ortalandı + 11px→13px büyütüldü. HÂLÂ AÇIK: Google girişi + Supabase `profiles`
+  satırı uçtan uca doğrulaması.
 AÇIK İŞLER (katalog — şu an aksiyon YOK, bilinçli kararlar):
   - 4 eşleşmeyen iTunes etiketi: Classical Crossover, Electronic, Chinese, Vocal → GenreId YOK,
     nötr `pop/` fallback'e düşüyor. ALIAS EKLEMEME KARARI (2026-10-10; kullanıcı onayı).
@@ -427,5 +433,5 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 
 ---
 
-_Artık son güncelleme: Hermes (2026-10-03) — tüm session fixes CANLI (production): genre→jazz (Robert Johnson `scene-room-jazz`) + 2:3 backdrop kutusu (3 viewport doğrulandı) + Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60, deploy SUCCESS). Yerel: 771/2, tsc 0, build ok._
+_Artık son güncelleme: OpenHands (2026-11-08) — §1 "şu an neredeyiz" güncellendi: kalp düğmesi artık ÇALIŞIR (PlayerCard'da gerçek `<button>` + `collection.ts` favori katmanı + localStorage; aşama etiketi ortalandı/büyütüldü). Önceki: Hermes (2026-10-03) — Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60). Yerel: 900/2 test, tsc 0, lint 0, build ok._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._

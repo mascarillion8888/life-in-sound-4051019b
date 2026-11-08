@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { __clearCardArtworkMemoryCache, cardArtworkKey } from "@/lib/art/useCardArtwork";
-import { isInCollection, loadCollection } from "@/lib/collection";
+import { COLLECTION_STORAGE_KEY, isInCollection, loadCollection } from "@/lib/collection";
 import { birthYearStore } from "@/lib/supabase/birth-year-store";
 import type { Song } from "@/lib/song/types";
 
@@ -122,5 +122,55 @@ describe("QuizCard (player-card layout)", () => {
     const meta = screen.getByTestId("card-meta").textContent ?? "";
     expect(meta).toContain("Ages 5-9");
     expect(meta).not.toContain("Age 20");
+  });
+
+  it("toggles the favorite heart: aria-pressed flips and persists to localStorage", () => {
+    const s = song();
+    const key = cardArtworkKey(s);
+    render(<QuizCard card={cards[0]} song={s} />);
+    const heart = screen.getByTestId("card-heart");
+    expect(heart.getAttribute("aria-pressed")).toBe("false");
+    expect(heart.getAttribute("aria-label")).toBe("Add to Collection");
+    fireEvent.click(heart);
+    expect(heart.getAttribute("aria-pressed")).toBe("true");
+    expect(heart.getAttribute("aria-label")).toBe("In Collection ✓");
+    expect(window.localStorage.getItem(COLLECTION_STORAGE_KEY)).toBeTruthy();
+    expect(isInCollection(loadCollection(), key)).toBe(true);
+    fireEvent.click(heart);
+    expect(heart.getAttribute("aria-pressed")).toBe("false");
+    expect(isInCollection(loadCollection(), key)).toBe(false);
+  });
+
+  it("restores the favorite state on a fresh render (persisted across refresh)", () => {
+    const s = song();
+    const first = render(<QuizCard card={cards[0]} song={s} />);
+    fireEvent.click(screen.getByTestId("card-heart"));
+    expect(screen.getByTestId("card-heart").getAttribute("aria-pressed")).toBe("true");
+    first.unmount();
+    render(<QuizCard card={cards[0]} song={s} />);
+    expect(screen.getByTestId("card-heart").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("does not trigger the surrounding card click when the heart is clicked", () => {
+    const onCardClick = vi.fn();
+    const s = song();
+    render(
+      <div onClick={onCardClick}>
+        <QuizCard card={cards[0]} song={s} />
+      </div>,
+    );
+    fireEvent.click(screen.getByTestId("card-heart"));
+    expect(onCardClick).not.toHaveBeenCalled();
+    expect(screen.getByTestId("card-heart").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("renders the stage chip as a centered structure", () => {
+    act(() => birthYearStore.set(1967));
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    const stage = screen.getByTestId("card-stage");
+    expect(stage.textContent).toBe("Youth");
+    const chip = stage.firstElementChild;
+    expect(chip?.tagName).toBe("SPAN");
+    expect(chip?.textContent).toBe("Youth");
   });
 });

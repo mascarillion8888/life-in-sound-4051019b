@@ -62,13 +62,16 @@ const CSS = `
 .pc-titles{min-width:0}
 .pc h2{margin:0;font:600 28px/1.1 var(--display);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pc-artist{font:500 19px var(--display);color:var(--sub);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pc-heart{flex:none;width:30px;height:30px;margin-top:4px;color:var(--sub);filter:drop-shadow(0 0 5px currentColor)}
+.pc-heart{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin-top:4px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--sub);cursor:pointer;filter:drop-shadow(0 0 5px currentColor);transition:transform .12s,color .12s}
+.pc-heart svg{width:30px;height:30px;display:block}
+.pc-heart[aria-pressed="true"]{color:var(--btn1,#ff2fb3)}
+.pc-heart:active{transform:scale(.9)}
 .pc-bar{margin-top:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.18);position:relative}
 .pc-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;transition:width .22s linear;background:linear-gradient(90deg,var(--btn1),var(--sub))}
 .pc-bar i::after{content:"";position:absolute;right:-6px;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 8px var(--sub)}
 .pc-times{display:flex;justify-content:space-between;font:500 12px var(--display);opacity:.8;margin-top:7px}
-.pc-tag{display:flex;justify-content:flex-start;margin:0 0 10px}
-.pc-tag span{display:inline-flex;gap:6px;align-items:center;padding:4px 11px;border-radius:999px;border:1px solid var(--sub);background:rgba(0,0,0,.3);color:var(--sub);font:700 11px var(--display);letter-spacing:.12em;text-transform:uppercase;text-shadow:var(--glowTxt)}
+.pc-tag{display:flex;justify-content:center;margin:0 0 10px}
+.pc-tag span{display:inline-flex;gap:6px;align-items:center;max-width:100%;padding:4px 11px;border-radius:999px;border:1px solid var(--sub);background:rgba(0,0,0,.3);color:var(--sub);font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;text-shadow:var(--glowTxt)}
 @property --lv{syntax:"<number>";inherits:false;initial-value:0}
 .pc-eq{display:flex;align-items:flex-end;justify-content:space-between;gap:3px;height:48px;margin:12px 0 20px;-webkit-box-reflect:below 1px linear-gradient(transparent 58%,rgba(255,255,255,.26))}
 .pc-eq .c{position:relative;flex:1 1 0;height:100%;-webkit-mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px);mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px)}
@@ -267,17 +270,29 @@ export function PlayerCard(p: PlayerCardProps) {
                 {p.artist}
               </div>
             </div>
-            <svg
+            <button
+              type="button"
               className="pc-heart"
-              viewBox="0 0 24 24"
-              fill={p.collected ? "currentColor" : "none"}
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-              aria-hidden="true"
+              data-testid="card-heart"
+              aria-pressed={!!p.collected}
+              aria-label={p.collectLabel}
+              title={p.collectLabel}
+              onClick={(e) => {
+                e.stopPropagation();
+                p.onCollect?.();
+              }}
             >
-              <path d="M12 20.5s-8-4.7-8-10.6A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 8 2.6c0 5.9-8 10.6-8 10.6z" />
-            </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill={p.collected ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 20.5s-8-4.7-8-10.6A4.4 4.4 0 0 1 12 7.3a4.4 4.4 0 0 1 8 2.6c0 5.9-8 10.6-8 10.6z" />
+              </svg>
+            </button>
           </div>
 
           <div
