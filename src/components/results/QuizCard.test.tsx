@@ -130,10 +130,10 @@ describe("QuizCard (player-card layout)", () => {
     render(<QuizCard card={cards[0]} song={s} />);
     const heart = screen.getByTestId("card-heart");
     expect(heart.getAttribute("aria-pressed")).toBe("false");
-    expect(heart.getAttribute("aria-label")).toBe("Add to favorites");
+    expect(heart.getAttribute("aria-label")).toBe("Add to Collection");
     fireEvent.click(heart);
     expect(heart.getAttribute("aria-pressed")).toBe("true");
-    expect(heart.getAttribute("aria-label")).toBe("Remove from favorites");
+    expect(heart.getAttribute("aria-label")).toBe("In Collection ✓");
     expect(window.localStorage.getItem(COLLECTION_STORAGE_KEY)).toBeTruthy();
     expect(isInCollection(loadCollection(), key)).toBe(true);
     fireEvent.click(heart);

@@ -33,8 +33,6 @@ export interface PlayerCardProps {
   collected?: boolean;
   onCollect?: () => void;
   collectLabel: string;
-  /** Heart toggle aria-label (e.g. "Add to favorites" / "Remove from favorites"). Falls back to collectLabel. */
-  favoriteLabel?: string;
   /** Optional override for the life-stage chip (e.g. "Childhood"). Derived from metaLeft when omitted. */
   stageLabel?: string;
   /** Offline spectrum of the preview; with `getTime` the equalizer follows the real music. */
@@ -277,8 +275,8 @@ export function PlayerCard(p: PlayerCardProps) {
               className="pc-heart"
               data-testid="card-heart"
               aria-pressed={!!p.collected}
-              aria-label={p.favoriteLabel ?? p.collectLabel}
-              title={p.favoriteLabel ?? p.collectLabel}
+              aria-label={p.collectLabel}
+              title={p.collectLabel}
               onClick={(e) => {
                 e.stopPropagation();
                 p.onCollect?.();

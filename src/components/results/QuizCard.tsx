@@ -208,7 +208,6 @@ export function QuizCard({
       collected={saved}
       onCollect={toggleSaved}
       collectLabel={saved ? t.quizCard.inCollection : t.quizCard.addToCollection}
-      favoriteLabel={saved ? t.quizCard.removeFromFavorites : t.quizCard.addToFavorites}
     />
   );
 }

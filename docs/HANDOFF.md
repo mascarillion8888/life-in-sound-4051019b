@@ -56,9 +56,9 @@ Push:       ✅ Push'lu: a4eaa30/0ed0b05/e0c701f (2026-10-10, kural-10 göz onay
             Gemini null-yol testleri). Worktree TEMİZ; AMA 3 yerel commit (21135fe, c545879, 39ab4bd docs) PUSH
             EDİLMEDİ — origin/main = 7f71bad.
 
-GÜNCEL AÇIK İŞ (2026-11-08): kalp düğmesi ✅ ÇALIŞIR — PR "feat(card): working favorite heart and centered, larger
-  stage label": PlayerCard'daki kalp artık gerçek `<button type="button">` (aria-pressed, aria-label "Add to favorites" /
-  "Remove from favorites", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` (localStorage
+GÜNCEL AÇIK İŞ (2026-11-08): kalp düğmesi ✅ ÇALIŞIR — PR "feat(card): working favorite heart and centered, larger stage label":
+  PlayerCard'daki kalp artık gerçek `<button type="button">` (aria-pressed, aria-label mevcut `collectLabel` — "Add to
+  Collection" / "In Collection ✓", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` (localStorage
   `soundmap.collection.v1`) üzerinden kalıcı; tıklama `e.stopPropagation()` ile kartın ana tıklamasını tetiklemez.
   Aşama etiketi (`.pc-tag`) yatayda ortalandı + 11px→13px büyütüldü. HÂLÂ AÇIK: Google girişi + Supabase `profiles`
   satırı uçtan uca doğrulaması.
