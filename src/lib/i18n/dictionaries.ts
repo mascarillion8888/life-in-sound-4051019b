@@ -38,6 +38,10 @@ export type Dictionary = {
     artGenerating: string;
     addToCollection: string;
     inCollection: string;
+    /** Heart toggle aria-label when the track is not yet a favorite. */
+    addToFavorites: string;
+    /** Heart toggle aria-label when the track is already a favorite. */
+    removeFromFavorites: string;
   };
   crisis: {
     /** Panel heading — calm, humane, non-clinical. */
@@ -153,6 +157,8 @@ const en: Dictionary = {
     artGenerating: "Etched ink art generating…",
     addToCollection: "Add to Collection",
     inCollection: "In Collection ✓",
+    addToFavorites: "Add to favorites",
+    removeFromFavorites: "Remove from favorites",
   },
   crisis: {
     title: "This sounds like a hard moment.",
@@ -280,6 +286,8 @@ const tr: Dictionary = {
     artGenerating: "Gravür çizim üretiliyor…",
     addToCollection: "Koleksiyona Ekle",
     inCollection: "Koleksiyonda ✓",
+    addToFavorites: "Favorilere ekle",
+    removeFromFavorites: "Favorilerden çıkar",
   },
   crisis: {
     title: "Bu zor bir an gibi görünüyor.",
@@ -407,6 +415,8 @@ const es: Dictionary = {
     artGenerating: "Generando grabado a tinta…",
     addToCollection: "Añadir a la colección",
     inCollection: "En la colección ✓",
+    addToFavorites: "Añadir a favoritos",
+    removeFromFavorites: "Quitar de favoritos",
   },
   crisis: {
     title: "Esto parece un momento difícil.",
@@ -535,6 +545,8 @@ const de: Dictionary = {
     artGenerating: "Tuschradierung wird erstellt…",
     addToCollection: "Zur Sammlung hinzufügen",
     inCollection: "In Sammlung ✓",
+    addToFavorites: "Zu Favoriten hinzufügen",
+    removeFromFavorites: "Aus Favoriten entfernen",
   },
   crisis: {
     title: "Das klingt nach einem schweren Moment.",
@@ -663,6 +675,8 @@ const fr: Dictionary = {
     artGenerating: "Gravure à l'encre en cours…",
     addToCollection: "Ajouter à la collection",
     inCollection: "Dans la collection ✓",
+    addToFavorites: "Ajouter aux favoris",
+    removeFromFavorites: "Retirer des favoris",
   },
   crisis: {
     title: "Cela ressemble à un moment difficile.",
