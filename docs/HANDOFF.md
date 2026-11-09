@@ -39,6 +39,16 @@ Push:       ✅ Worktree TEMİZ (.openhands/ hariç). main = origin/main (810b07
             PR #16/#17/#18/#19/#21/#22 MERGED; PR #20 (bu dal) AÇIK (merge edilmedi).
 
 GÜNCEL DURUM (2026-11-08):
+  - 🔧 KART "ŞEFFAF/SİLİK" GÖRÜNÜMÜ DÜZELTİLDİ (dal: fix/hide-card-no-replay-fade, PR AÇIK — merge edilmedi):
+    `EraCardReveal`'de giriş animasyonu (`animate-in fade-in zoom-in-95 duration-500`) ile gizleme
+    (`hidden`) AYNI elemanda (`era-card-frame`) olduğundan, "Show card" (display:none→block) giriş
+    animasyonunu yeniden başlatıyordu: kart opacity ~0.05–0.09'dan ~0.5 sn'de 1'e çıkıyordu (şeffaf/silik).
+    Giriş animasyonu artık hiç gizlenmeyen kalıcı dış sarmalayıcıya (`data-testid="era-card-entry"`) taşındı;
+    `hidden` yalnızca iç `era-card-frame`'de. Ölçüm (Playwright+chromium, ham): HIDE→SHOW sonrası
+    +50/+140/+350 ms'de frame + tüm ebeveyn opacity = 1 (3 döngü, önce: 0.050/0.30/0.92); SHOW'da
+    animationstart 0 (önce: her döngüde 1); ilk açılışta giriş animasyonu hâlâ bir kez oynuyor (entry
+    opacity 0.37→1, `enter` running). +239 ms ekran görüntüsü settled'a göre fark: önce %9.9 piksel>10,
+    sonra %1.6 (kalan fark kartın sürekli çalan ekolayzer animasyonu). Kart widget'ı opak — dokunulmadı.
   - ✅ HIDE-CARD TOGGLE (PR #21, MERGED): `EraCardReveal` gerçek `<button>` (data-testid="card-visibility-toggle",
     aria-pressed) ile kartı `hidden` (display) yapar; kart DOM'da kalır, 30 sn önizleme çalmaya devam eder.
     main'deki durum değişkeni `cardVisible`.
