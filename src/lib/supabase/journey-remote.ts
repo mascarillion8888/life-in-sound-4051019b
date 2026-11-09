@@ -75,6 +75,20 @@ export async function loadRemoteJourney(userId: string): Promise<JourneyProgress
 }
 
 /**
+ * The journey to restore for a resolved session: the server copy when the user
+ * is authenticated (already reconciled with the local cache inside
+ * `loadRemoteJourney`), otherwise the localStorage copy. When the remote read
+ * yields nothing at all (no server row and an empty merge) this still falls
+ * back to the local cache so a Google round-trip that lands on `/journey`
+ * restores the draft instead of starting blank.
+ */
+export async function resolveJourneyForUser(
+  userId: string | null,
+): Promise<JourneyProgress | null> {
+  return (userId ? await loadRemoteJourney(userId) : null) ?? loadJourney();
+}
+
+/**
  * Persist the journey for the given user id. Writes to localStorage first
  * (instant, offline-safe), then upserts to Supabase. Failures are swallowed so
  * a network blip never blocks the UI.

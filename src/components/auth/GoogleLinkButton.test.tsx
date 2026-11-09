@@ -83,10 +83,29 @@ describe("GoogleLinkButton", () => {
     await waitFor(() =>
       expect(linkIdentity).toHaveBeenCalledWith({
         provider: "google",
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: `${window.location.origin}/journey` },
       }),
     );
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("returns the user to /journey (never ?fresh) so progress is restored", async () => {
+    const linkIdentity = vi.fn().mockResolvedValue({ error: null });
+    getClient.mockReturnValue({ auth: { linkIdentity } } as unknown as ReturnType<
+      typeof getSupabase
+    >);
+
+    render(
+      <GoogleLinkButton session={{ status: "anonymous", user: user({ is_anonymous: true }) }} />,
+    );
+    fireEvent.click(screen.getByTestId("google-link"));
+
+    await waitFor(() => expect(linkIdentity).toHaveBeenCalled());
+    const redirectTo = linkIdentity.mock.calls[0][0].options.redirectTo as string;
+    // Lands on /journey, NOT the bare origin (whose Start link is ?fresh=true).
+    expect(redirectTo).toBe(`${window.location.origin}/journey`);
+    expect(redirectTo.endsWith("/journey")).toBe(true);
+    expect(redirectTo).not.toContain("fresh");
   });
 
   it("surfaces an error and never logs the session when linking fails", async () => {

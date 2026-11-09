@@ -54,12 +54,19 @@ export function SceneRoom({
   mood,
   genre,
   releaseYear,
+  cardHidden = false,
   children,
 }: {
   themeId: SceneThemeId;
   mood?: Mood | string | null;
   genre?: string | null;
   releaseYear?: number | null;
+  /**
+   * When the era card is hidden the poster should read at full brightness, so
+   * both darkening scrims fade out. Default false keeps every existing caller
+   * (and the card-open look) unchanged.
+   */
+  cardHidden?: boolean;
   children?: ReactNode;
 }) {
   const theme = SCENE_PALETTES[themeId];
@@ -72,14 +79,25 @@ export function SceneRoom({
   });
   const moodImage = resolution.backdropUrl;
   const slug = moodBackdropSlug(mood ?? FALLBACK_MOOD);
+  /*
+   * Both darkening scrims fade out when the card is hidden so the poster reads
+   * at full brightness; the fade honours prefers-reduced-motion (no transition).
+   */
+  const scrimFade = `transition-opacity duration-500 motion-reduce:transition-none${
+    cardHidden ? " opacity-0" : ""
+  }`;
   return (
     <div
       data-testid={`scene-room-${themeId}`}
       className="pointer-events-none absolute inset-0 overflow-hidden"
       style={{ background: `linear-gradient(to bottom, ${theme.wall[0]}, ${theme.wall[1]})` }}
     >
-      {/* Slight darkening so the sharp layer reads clearly. */}
-      <span aria-hidden className="absolute inset-0 bg-black/40" />
+      {/* Slight darkening so the sharp layer reads clearly — fades out with the card. */}
+      <span
+        aria-hidden
+        data-testid="scene-backdrop-scrim"
+        className={`absolute inset-0 bg-black/40 ${scrimFade}`}
+      />
       {/* Sharp main layer — covers the whole room, centered (crop-safe, no letterbox bands). */}
       <span
         aria-hidden
@@ -93,11 +111,12 @@ export function SceneRoom({
         }}
       />
       {/* Center fade — softens the "two halves" seam under the card so the
-                centered image doesn't read as two disconnected scenes. */}
+                centered image doesn't read as two disconnected scenes. Fades
+                out with the card so the hidden poster is evenly bright. */}
       <span
         aria-hidden
         data-testid={`scene-backdrop-fade-${slug}`}
-        className="absolute inset-0"
+        className={`absolute inset-0 ${scrimFade}`}
         style={{
           background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 58%)",
         }}

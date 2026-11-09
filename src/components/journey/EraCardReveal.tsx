@@ -71,6 +71,7 @@ export function EraCardReveal({
         mood={song?.mood ?? null}
         genre={song?.genre ?? null}
         releaseYear={song?.releaseYear ?? null}
+        cardHidden={!cardVisible}
       />
 
       <div className="relative z-10 mt-auto flex flex-col items-center gap-4">

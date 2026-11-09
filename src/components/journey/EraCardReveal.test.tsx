@@ -184,5 +184,21 @@ describe("EraCardReveal", () => {
       expect(screen.getByTestId("era-card-frame")).not.toHaveClass("hidden");
       expect(toggle.textContent).toBe("Hide card");
     });
+
+    it("fades the poster scrims out while hidden and back in when shown", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const scrim = screen.getByTestId("scene-backdrop-scrim");
+      // Card open: scrims darken the room.
+      expect(scrim).not.toHaveClass("opacity-0");
+
+      fireEvent.click(screen.getByTestId("card-visibility-toggle"));
+      // Card hidden: both darkening scrims are faded out → poster at full brightness.
+      expect(screen.getByTestId("scene-backdrop-scrim")).toHaveClass("opacity-0");
+      const fade = document.querySelector('[data-testid^="scene-backdrop-fade-"]') as HTMLElement;
+      expect(fade).toHaveClass("opacity-0");
+
+      fireEvent.click(screen.getByTestId("card-visibility-toggle"));
+      expect(screen.getByTestId("scene-backdrop-scrim")).not.toHaveClass("opacity-0");
+    });
   });
 });

@@ -104,7 +104,12 @@ vi.mock("./client", () => ({
 }));
 
 // Import after the mock is registered so journey-remote sees the stub.
-import { clearRemoteJourney, loadRemoteJourney, saveRemoteJourney } from "./journey-remote";
+import {
+  clearRemoteJourney,
+  loadRemoteJourney,
+  resolveJourneyForUser,
+  saveRemoteJourney,
+} from "./journey-remote";
 
 describe("loadRemoteJourney", () => {
   beforeEach(() => {
@@ -256,6 +261,63 @@ describe("loadRemoteJourney", () => {
     const result = await loadRemoteJourney("user-1");
 
     expect(result?.songs[1]).toEqual(sparse);
+  });
+});
+
+describe("resolveJourneyForUser — the restore rule after a Google round-trip", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    dbCache.invalidate();
+    setFake(null);
+  });
+
+  it("returns the local journey when the authenticated user has no server row", async () => {
+    // The user left /journey, went to Google, and came back to /journey: the
+    // local draft must still be restored even though the server row is empty.
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 3, answers: { 1: "a", 2: "b" }, songs: {} }),
+    );
+    setFake(makeFakeSupabase({ existing: null }));
+
+    const result = await resolveJourneyForUser("user-1");
+
+    expect(result).toEqual({ current: 3, answers: { 1: "a", 2: "b" }, songs: {} });
+  });
+
+  it("returns null when neither the server row nor the local cache exists", async () => {
+    setFake(makeFakeSupabase({ existing: null }));
+
+    const result = await resolveJourneyForUser("user-1");
+
+    expect(result).toBeNull();
+  });
+
+  it("returns the local journey when the session is not authenticated (no user id)", async () => {
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 2, answers: { 1: "guest" }, songs: {} }),
+    );
+
+    const result = await resolveJourneyForUser(null);
+
+    expect(result).toEqual({ current: 2, answers: { 1: "guest" }, songs: {} });
+  });
+
+  it("prefers the merged server copy when the server row is fuller than local", async () => {
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: "local" }, songs: {} }),
+    );
+    setFake(
+      makeFakeSupabase({
+        existing: { current: 3, answers: { 1: "remote", 2: "remote2" }, songs: {} },
+      }),
+    );
+
+    const result = await resolveJourneyForUser("user-1");
+
+    expect(result).toEqual({ current: 3, answers: { 1: "remote", 2: "remote2" }, songs: {} });
   });
 });
 

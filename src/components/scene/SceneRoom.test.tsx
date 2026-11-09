@@ -55,6 +55,45 @@ describe("SceneRoom — the fixed global library environment", () => {
     const room = container.querySelector("[data-testid='scene-room-synth']") as HTMLElement;
     expect(room.style.background).toContain("rgb(20, 15, 34)"); // #140f22
   });
+
+  it("keeps both darkening scrims fully opaque while the card is shown (default)", () => {
+    const { container } = render(<SceneRoom themeId="synth" mood="dark" />);
+    const scrim = screen.getByTestId("scene-backdrop-scrim");
+    const fade = screen.getByTestId("scene-backdrop-fade-dark");
+    // Card open: the scrims darken the room for readability — not faded out.
+    expect(scrim).not.toHaveClass("opacity-0");
+    expect(fade).not.toHaveClass("opacity-0");
+    expect(scrim).toHaveClass("bg-black/40");
+    expect(fade.style.background).toContain("rgba(0, 0, 0, 0.55)");
+    // The smooth fade is wired for both, reduced-motion aware.
+    expect(scrim).toHaveClass("transition-opacity");
+    expect(fade).toHaveClass("transition-opacity");
+    expect(scrim).toHaveClass("motion-reduce:transition-none");
+    expect(container).toBeTruthy();
+  });
+
+  it("fades BOTH darkening scrims out (opacity 0) when cardHidden — the poster reads bright", () => {
+    render(<SceneRoom themeId="synth" mood="dark" cardHidden />);
+    const scrim = screen.getByTestId("scene-backdrop-scrim");
+    const fade = screen.getByTestId("scene-backdrop-fade-dark");
+    expect(scrim).toHaveClass("opacity-0");
+    expect(fade).toHaveClass("opacity-0");
+    // Still mounted (only faded) so the transition can animate both ways.
+    expect(scrim).toBeTruthy();
+    expect(fade).toBeTruthy();
+  });
+
+  it("leaves the ambient room-light layer untouched when cardHidden", () => {
+    const { container } = render(<SceneRoom themeId="synth" mood="dark" cardHidden />);
+    const room = screen.getByTestId("scene-room-synth");
+    // The ambient light is the screen-blended layer; it must not carry opacity-0.
+    const ambient = [...room.querySelectorAll("span[aria-hidden]")].find(
+      (el) => (el as HTMLElement).style.mixBlendMode === "screen",
+    ) as HTMLElement;
+    expect(ambient).toBeTruthy();
+    expect(ambient.className).not.toContain("opacity-0");
+    expect(container).toBeTruthy();
+  });
 });
 
 describe("sceneThemeFor — DOM-side mirror of the server scene vocabulary", () => {
