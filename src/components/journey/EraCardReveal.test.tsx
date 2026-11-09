@@ -154,6 +154,39 @@ describe("EraCardReveal", () => {
       expect(screen.getByTestId("era-card-frame")).not.toHaveClass("hidden");
     });
 
+    it("keeps the one-shot entry animation on the permanent wrapper, never on the frame", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const frame = screen.getByTestId("era-card-frame");
+      const entry = screen.getByTestId("era-card-entry");
+      // The animated wrapper is a stable parent of the frame.
+      expect(entry).toContainElement(frame);
+      expect(entry).toHaveClass("animate-in");
+      expect(entry).toHaveClass("fade-in");
+      expect(entry).toHaveClass("zoom-in-95");
+      // The frame itself must never carry the animation: toggling its display
+      // would otherwise replay the enter fade.
+      expect(frame).not.toHaveClass("animate-in");
+      expect(frame).not.toHaveClass("fade-in");
+      expect(frame).not.toHaveClass("zoom-in-95");
+    });
+
+    it("never leaves an animation class on the frame after hide -> show", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const toggle = screen.getByTestId("card-visibility-toggle");
+      const frame = screen.getByTestId("era-card-frame");
+      const assertNoAnim = () => {
+        expect(frame.className).not.toMatch(/\banimate-in\b/);
+        expect(frame.className).not.toMatch(/\bfade-in\b/);
+        expect(frame.className).not.toMatch(/\bzoom-in-95\b/);
+      };
+      assertNoAnim();
+      fireEvent.click(toggle); // hide
+      assertNoAnim();
+      fireEvent.click(toggle); // show again
+      assertNoAnim();
+      expect(frame).not.toHaveClass("hidden");
+    });
+
     it("hides the card without unmounting it and flips the toggle to show", () => {
       render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
       const toggle = screen.getByTestId("card-visibility-toggle");
@@ -165,6 +198,8 @@ describe("EraCardReveal", () => {
       expect(toggle.textContent).toBe("Show card");
       // The card is still mounted (only display toggled) so audio never stops.
       expect(screen.getByTestId("card-title")).toBeInTheDocument();
+      // The permanent animated wrapper is never hidden — only the inner frame.
+      expect(screen.getByTestId("era-card-entry")).not.toHaveClass("hidden");
     });
 
     it("keeps the preview playing while the card is hidden", () => {
