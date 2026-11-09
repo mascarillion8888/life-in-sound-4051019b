@@ -14,9 +14,12 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        feat/collection-supabase-sync (PR #20, AÇIK — main bu dala MERGE edildi).
-            main = origin/main tipi 810b07e ("Merge pull request #22 …/fix/hide-card-poster-and-google-return").
-HEAD:       main 810b07e (#21 ve #22 MERGED — hide-card toggle + poster scrim kaldırma + Google /journey dönüşü main'de).
+Dal:        docs/handoff-collection-synced (yalnızca docs/HANDOFF.md — 0005 uygulandı notu).
+            main = origin/main tipi ea59c71 ("Merge pull request #20 …/feat/collection-supabase-sync").
+HEAD:       main ea59c71 (#16–#22 MERGED — koleksiyon Supabase senkronu, hide-card toggle,
+            poster scrim kaldırma, Google /journey dönüşü main'de).
+            ea59c71 — "Merge pull request #20 from mascarillion8888/feat/collection-supabase-sync"
+            6e341dc — "Merge main into feat/collection-supabase-sync" (PR #20 gövdesi)
             810b07e — "Merge pull request #22 from mascarillion8888/fix/hide-card-poster-and-google-return"
             5f9115d — "docs: update HANDOFF for hide-card scrims and Google return" (PR #22 gövdesi)
             22df972 — "feat(auth): show why Google link is unavailable" (PR #22 gövdesi)
@@ -29,14 +32,14 @@ HEAD:       main 810b07e (#21 ve #22 MERGED — hide-card toggle + poster scrim 
             19d7d42 — "feat(card): working favorite heart and centered, larger stage label"
             0151dbf — "Merge pull request #16 from mascarillion8888/chore/lint-debt"
             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #10 auth-birth-year, #12 personal-lore)
-Testler:    main (810b07e): 85 dosya passed / 1 skipped (86); 920 passed / 2 skipped (922).
-            PR #20 dalı (main merge sonrası): 87 dosya passed / 1 skipped (88); 941 passed / 2 skipped (943). vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
+Testler:    main (ea59c71): 87 dosya passed / 1 skipped (88); 941 passed / 2 skipped (943).
+            vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-11-08 doğrulandı)
 Lint:       ✅ 0 hata — `npm run lint` exit 0 (2026-11-08 doğrulandı). Repo-geneli prettier borcu PR #16 (chore/lint-debt) ile kapatıldı.
 Sonar/CI:   ✅ temiz — PR #22'de SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
 Build:      exit 0 (2026-11-08 doğrulandı)
-Push:       ✅ Worktree TEMİZ (.openhands/ hariç). main = origin/main (810b07e).
-            PR #16/#17/#18/#19/#21/#22 MERGED; PR #20 (bu dal) AÇIK (merge edilmedi).
+Push:       ✅ Worktree TEMİZ (.openhands/ hariç). main = origin/main (ea59c71).
+            PR #16/#17/#18/#19/#20/#21/#22 MERGED (kuyrukta push edilmemiş yerel commit yok).
 
 GÜNCEL DURUM (2026-11-08):
   - ✅ HIDE-CARD TOGGLE (PR #21, MERGED): `EraCardReveal` gerçek `<button>` (data-testid="card-visibility-toggle",
@@ -64,7 +67,7 @@ GÜNCEL DURUM (2026-11-08):
     mevcut düğme). Supabase tarafında Google sağlayıcısı, "Allow manual linking" ve URL ayarları yapıldı.
   - ✅ profiles TABLOSU: doğum yılı `profiles.birth_year`'a yazılıyor (migration 0004_profiles.sql;
     RLS owner-scoped, set_updated_at trigger).
-  - ✅ FAVORİLER SUPABASE'E BAĞLANDI (bu oturum, PR açık): yerel-öncelikli kaldı — arayüz her zaman
+  - ✅ FAVORİLER SUPABASE'E SENKRON (PR #20, MERGED): yerel-öncelikli kaldı — arayüz her zaman
     localStorage'dan okur/yazar; `collection_entries` tablosuna ayna yazımı yapılır
     (migration 0005_collection_entries.sql). Oturum hazır olunca `useCollectionSync` bir kez
     `pullAndMerge` çalıştırır (yeni-kazanır birleşim, MAX_COLLECTION_ENTRIES cap); kalp toggle'ı
@@ -72,11 +75,9 @@ GÜNCEL DURUM (2026-11-08):
     hiçbir şey bozulmaz, yalnızca yerel çalışır.
 
 AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
-  - PR #20'yi (bu dal) gözden geçir + birleştir: favoriler Supabase'e bağlanır (kart gizleme/Google dönüşü
-    zaten main'de MERGED). Merge edilince bu HANDOFF §1 tekrar main'e göre güncellenmeli (checkpoint commit'i).
-  - ⚠️ MIGRATION UYGULANMALI: `supabase/migrations/0005_collection_entries.sql` henüz Supabase'e
-    uygulanmadı — kullanıcı Supabase Dashboard → SQL Editor'da çalıştırmalı (RLS açık, sahibine
-    select/insert/update/delete). Uygulanana kadar favoriler yalnızca yerelde kalır (hata yutulur).
+  - ✅ Koleksiyon Supabase senkronu CANLI (PR #20 MERGED): migration `0005_collection_entries.sql`
+    uygulandı; favoriler artık `collection_entries` tablosuna senkron (RLS owner-scoped, sahibine
+    select/insert/update/delete). Yerel-öncelikli davranış korunur (hata yutulur, yerel çalışır).
   - Kalp aria-label'ının büyük harfle okunması: küçük erişilebilirlik notu — etiket ekran
     okuyucuda büyük harfle duyulabiliyor; metin/kaynak gözden geçirilmeli.
   - Sonar'daki eski bakım maddeleri: `parseInt` (radix belirtilmeyen çağrılar), regex kullanımları,
