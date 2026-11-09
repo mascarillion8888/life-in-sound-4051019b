@@ -18,6 +18,7 @@ import {
   saveCollection,
   toggleInCollection,
 } from "@/lib/collection";
+import { syncCollectionToggle } from "@/lib/supabase/use-collection-sync";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { LifeCard } from "@/lib/soundmap/lifeCards";
 import { useAudioPreview } from "@/lib/soundmap/useAudioPreview";
@@ -70,6 +71,10 @@ export function QuizCard({
     const next = toggleInCollection(loadCollection(), collectionKey, song);
     saveCollection(next);
     setSaved(isInCollection(next, collectionKey));
+    // Mirror the single change to the server (fire-and-forget; no-op when
+    // there is no session). The UI never waits on — or breaks from — this.
+    const entry = next.entries.find((e) => e.trackKey === collectionKey) ?? null;
+    syncCollectionToggle(collectionKey, entry);
   };
 
   const art = useCardArtwork(song, { cardIndex: card.index });
