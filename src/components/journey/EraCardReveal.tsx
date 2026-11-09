@@ -75,24 +75,31 @@ export function EraCardReveal({
       />
 
       <div className="relative z-10 mt-auto flex flex-col items-center gap-4">
-        {/* The card stands on the desk. Hiding it only toggles display: the
-            card stays in the DOM so the preview keeps playing. */}
+        {/* The card stands on the desk. The one-shot entry animation lives on
+            this permanent wrapper, which is never hidden: a display:none→block
+            flip on the animated element would replay the enter fade (the card
+            would flash from ~0 opacity back to 1). Hiding only toggles the
+            inner frame's display, so the card stays in the DOM and the preview
+            keeps playing. */}
         <div
-          data-testid="era-card-frame"
-          className={`relative isolate w-full max-w-md animate-in fade-in zoom-in-95 duration-500${
-            cardVisible ? "" : " hidden"
-          }`}
+          data-testid="era-card-entry"
+          className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500"
         >
-          {eraTheme.overlayClasses && (
-            <div aria-hidden="true" className={eraTheme.overlayClasses} />
-          )}
-          <QuizCard
-            card={card}
-            song={song}
-            autoPlayPreview
-            templateFile={null}
-            artStatus={artStatus}
-          />
+          <div
+            data-testid="era-card-frame"
+            className={`relative isolate w-full max-w-md${cardVisible ? "" : " hidden"}`}
+          >
+            {eraTheme.overlayClasses && (
+              <div aria-hidden="true" className={eraTheme.overlayClasses} />
+            )}
+            <QuizCard
+              card={card}
+              song={song}
+              autoPlayPreview
+              templateFile={null}
+              artStatus={artStatus}
+            />
+          </div>
         </div>
 
         <button
