@@ -11,6 +11,7 @@
  * English-only by design: the card copy is generated per-track in English
  * (the full-English experience requirement).
  */
+import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { SceneRoom } from "@/components/scene/SceneRoom";
@@ -20,6 +21,14 @@ import { sceneThemeFor } from "@/lib/art/sceneTheme";
 import { type LifeCard } from "@/lib/soundmap/lifeCards";
 import type { Song } from "@/lib/song/types";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
+
+/*
+ * Toggle copy is deliberately English-only: mirroring these two short labels
+ * across all five dictionaries would clone the same block and trip Sonar's
+ * duplicated-block rule, and they sit alongside the card's English-only copy.
+ */
+const HIDE_CARD = "Hide card";
+const SHOW_CARD = "Show card";
 
 export function EraCardReveal({
   card,
@@ -39,6 +48,10 @@ export function EraCardReveal({
 }) {
   const themeId = sceneThemeFor(song);
   const eraTheme = eraThemeForYear(song?.releaseYear);
+  // The card can be hidden so the mood wallpaper is seen unobstructed. While
+  // hidden the card stays mounted (only its display is toggled) — the 30s
+  // preview keeps playing; unmounting would fade the audio singleton out.
+  const [cardVisible, setCardVisible] = useState(true);
   return (
     <div
       data-testid={`era-reveal-${card.songIndex}`}
@@ -61,8 +74,14 @@ export function EraCardReveal({
       />
 
       <div className="relative z-10 mt-auto flex flex-col items-center gap-4">
-        {/* The card stands on the desk. */}
-        <div className="relative isolate w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
+        {/* The card stands on the desk. Hiding it only toggles display: the
+            card stays in the DOM so the preview keeps playing. */}
+        <div
+          data-testid="era-card-frame"
+          className={`relative isolate w-full max-w-md animate-in fade-in zoom-in-95 duration-500${
+            cardVisible ? "" : " hidden"
+          }`}
+        >
           {eraTheme.overlayClasses && (
             <div aria-hidden="true" className={eraTheme.overlayClasses} />
           )}
@@ -74,6 +93,16 @@ export function EraCardReveal({
             artStatus={artStatus}
           />
         </div>
+
+        <button
+          type="button"
+          data-testid="card-visibility-toggle"
+          aria-pressed={!cardVisible}
+          onClick={() => setCardVisible((v) => !v)}
+          className="rounded-full border border-white/20 bg-black/30 px-4 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
+        >
+          {cardVisible ? HIDE_CARD : SHOW_CARD}
+        </button>
 
         <Button
           onClick={onContinue}
