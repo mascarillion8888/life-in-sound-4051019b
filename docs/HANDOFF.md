@@ -14,22 +14,45 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        main — origin/main ile eşit (AHEAD 0). origin/main tipi = 3354d9b (PR #19 HANDOFF güncellemesi MERGED)
-HEAD:       3354d9b — "Merge pull request #19 from mascarillion8888/docs/handoff-update"
+Dal:        feat/collection-supabase-sync (PR #20, AÇIK — main bu dala MERGE edildi).
+            main = origin/main tipi 810b07e ("Merge pull request #22 …/fix/hide-card-poster-and-google-return").
+HEAD:       main 810b07e (#21 ve #22 MERGED — hide-card toggle + poster scrim kaldırma + Google /journey dönüşü main'de).
+            810b07e — "Merge pull request #22 from mascarillion8888/fix/hide-card-poster-and-google-return"
+            5f9115d — "docs: update HANDOFF for hide-card scrims and Google return" (PR #22 gövdesi)
+            22df972 — "feat(auth): show why Google link is unavailable" (PR #22 gövdesi)
+            2fd7204 — "Merge pull request #21 from mascarillion8888/feat/card-opacity-and-wallpaper-toggle"
+            eae9a8f — "feat(card): add hide-card wallpaper toggle" (PR #21 gövdesi)
+            3354d9b — "Merge pull request #19 from mascarillion8888/docs/handoff-update"
             5791309 — "Merge pull request #18 from mascarillion8888/feat/google-link-status"
             dd7cdf3 — "feat(auth): show why Google link is unavailable" (PR #18 gövdesi)
             a0c488c — "Merge pull request #17 from mascarillion8888/feat/card-heart-and-stage-label"
             19d7d42 — "feat(card): working favorite heart and centered, larger stage label"
             0151dbf — "Merge pull request #16 from mascarillion8888/chore/lint-debt"
             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #10 auth-birth-year, #12 personal-lore)
-Testler:    87 dosya passed / 1 skipped (88); 928 passed / 2 skipped (930) — vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
+Testler:    main (810b07e): 85 dosya passed / 1 skipped (86); 920 passed / 2 skipped (922).
+            PR #20 dalı (main merge sonrası): 87 dosya passed / 1 skipped (88); 941 passed / 2 skipped (943). vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
 tsc:        temiz (`npm run typecheck` = 0 hata, 2026-11-08 doğrulandı)
 Lint:       ✅ 0 hata — `npm run lint` exit 0 (2026-11-08 doğrulandı). Repo-geneli prettier borcu PR #16 (chore/lint-debt) ile kapatıldı.
-Sonar/CI:   ✅ temiz — PR #17 ve #18'de SonarCloud Code Analysis + CI/verify + Vercel tümü başarılı.
+Sonar/CI:   ✅ temiz — PR #22'de SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
 Build:      exit 0 (2026-11-08 doğrulandı)
-Push:       ✅ Worktree TEMİZ; main = origin/main (5791309). PR #17 ve #18 MERGED (kuyrukta push edilmemiş yerel commit yok).
+Push:       ✅ Worktree TEMİZ (.openhands/ hariç). main = origin/main (810b07e).
+            PR #16/#17/#18/#19/#21/#22 MERGED; PR #20 (bu dal) AÇIK (merge edilmedi).
 
 GÜNCEL DURUM (2026-11-08):
+  - ✅ HIDE-CARD TOGGLE (PR #21, MERGED): `EraCardReveal` gerçek `<button>` (data-testid="card-visibility-toggle",
+    aria-pressed) ile kartı `hidden` (display) yapar; kart DOM'da kalır, 30 sn önizleme çalmaya devam eder.
+    main'deki durum değişkeni `cardVisible`.
+  - ✅ KART GİZLENİNCE POSTER KARARTMALARI KALKAR (PR #22, MERGED): `SceneRoom`'a `cardHidden` prop'u eklendi
+    (varsayılan false → kart açıkken görünüm değişmez). true iken her iki karartma katmanı — `bg-black/40`
+    scrim (data-testid="scene-backdrop-scrim") ve `scene-backdrop-fade-*` radyal `rgba(0,0,0,0.55)` —
+    `opacity-0`'a fade olur (500 ms, `motion-reduce:transition-none`). `EraCardReveal` `cardHidden={!cardVisible}`
+    geçirir. Ölçüm (Playwright+PIL, poster merkez kırpması, ortalama parlaklık): gizli-yeni vs gizli-scrim'li(eski)
+    desktop 105.89 vs 74.10 (+%42.9), mobile 105.82 vs 74.05 (+%42.9); kart AÇIKKEN scrim opacity 1 (değişmedi).
+  - ✅ GOOGLE BAĞLAMA DÖNÜŞÜ /journey (PR #22, MERGED): `GoogleLinkButton` `redirectTo` artık `${origin}/journey`
+    (eskiden çıplak origin → landing'in "Start" bağlantısı `/journey?fresh=true` ilerlemeyi SİLERDİ).
+    Journey restore tek bir `resolveJourneyForUser(userId)` yardımcısından geçer: önce uzak (oturum varsa),
+    hiçbir şey dönmezse yerel cache — böylece /journey'e dönen Google turu taslağı kaybetmez.
+    E-posta/token/kullanıcı kimliği yazdırılmaz veya loglanmaz.
   - ✅ KALP DÜĞMESİ + ORTALANMIŞ AŞAMA YAZISI (PR #17, MERGED): PlayerCard'daki kalp gerçek
     `<button type="button">` (aria-pressed, aria-label mevcut `collectLabel` — "Add to Collection" /
     "In Collection ✓", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` üzerinden
@@ -49,6 +72,8 @@ GÜNCEL DURUM (2026-11-08):
     hiçbir şey bozulmaz, yalnızca yerel çalışır.
 
 AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
+  - PR #20'yi (bu dal) gözden geçir + birleştir: favoriler Supabase'e bağlanır (kart gizleme/Google dönüşü
+    zaten main'de MERGED). Merge edilince bu HANDOFF §1 tekrar main'e göre güncellenmeli (checkpoint commit'i).
   - ⚠️ MIGRATION UYGULANMALI: `supabase/migrations/0005_collection_entries.sql` henüz Supabase'e
     uygulanmadı — kullanıcı Supabase Dashboard → SQL Editor'da çalıştırmalı (RLS açık, sahibine
     select/insert/update/delete). Uygulanana kadar favoriler yalnızca yerelde kalır (hata yutulur).

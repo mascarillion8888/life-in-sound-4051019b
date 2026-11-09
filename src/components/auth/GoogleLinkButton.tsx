@@ -47,9 +47,12 @@ export function GoogleLinkButton({ session }: { session: SessionState }) {
     setBusy(true);
     setError(null);
     try {
+      // Return to /journey (no ?fresh) so the restored progress brings the user
+      // back to the question they left — origin alone lands on the landing page,
+      // whose Start link is /journey?fresh=true (which wipes progress).
       const { error: linkError } = await supabase.auth.linkIdentity({
         provider: "google",
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: `${window.location.origin}/journey` },
       });
       if (linkError) setError("Google sign-in is not available right now.");
     } catch {

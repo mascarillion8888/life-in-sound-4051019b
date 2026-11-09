@@ -15,7 +15,7 @@ import { buildPosterModel } from "@/lib/ai/posterModel";
 import type { EmotionProfile, MusicProfile, PersonalityProfile } from "@/lib/ai/types";
 import { deterministicPoeticAnalysis } from "@/lib/llm/poetic-analyzer";
 import { questions } from "@/lib/questions";
-import { loadJourney, saveJourney } from "@/lib/journey-storage";
+import { saveJourney } from "@/lib/journey-storage";
 import { resetJourneySession } from "@/lib/reset-session";
 import { buildLifeCards } from "@/lib/soundmap/lifeCards";
 import { useSession } from "@/lib/supabase/use-session";
@@ -24,7 +24,7 @@ import { useProfile } from "@/lib/supabase/use-profile";
 import { birthYearStore } from "@/lib/supabase/birth-year-store";
 import { BirthYearPrompt } from "@/components/auth/BirthYearPrompt";
 import { GoogleLinkButton } from "@/components/auth/GoogleLinkButton";
-import { loadRemoteJourney, saveRemoteJourney } from "@/lib/supabase/journey-remote";
+import { resolveJourneyForUser, saveRemoteJourney } from "@/lib/supabase/journey-remote";
 import { searchSongs, suggestSongs } from "@/lib/song/searchSong.server";
 import { verifySongArtwork, songCacheKey } from "@/lib/song/artworkVerify";
 import { collectUnverifiedManualSongs, songVerifyKey } from "@/lib/song/enrich-songs";
@@ -195,7 +195,10 @@ function JourneyPage() {
         void navigate({ to: "/journey", search: { fresh: undefined }, replace: true });
         return;
       }
-      const saved = userId ? await loadRemoteJourney(userId) : loadJourney();
+      // Remote is the source of truth when authenticated; if it yields nothing
+      // at all, fall back to the local cache so a Google round-trip that lands
+      // on /journey restores the draft (see resolveJourneyForUser).
+      const saved = await resolveJourneyForUser(userId);
       if (!active) return;
       if (saved) {
         setCurrent(Math.min(Math.max(saved.current, 1), total));

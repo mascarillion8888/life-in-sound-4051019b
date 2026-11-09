@@ -143,4 +143,62 @@ describe("EraCardReveal", () => {
     // Skeleton should not be present
     expect(screen.queryByTestId("card-art-skeleton")).toBeNull();
   });
+
+  describe("hide/show card toggle", () => {
+    it("offers a labelled toggle that starts showing the card", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const toggle = screen.getByTestId("card-visibility-toggle");
+      expect(toggle.tagName).toBe("BUTTON");
+      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+      expect(toggle.textContent).toBe("Hide card");
+      expect(screen.getByTestId("era-card-frame")).not.toHaveClass("hidden");
+    });
+
+    it("hides the card without unmounting it and flips the toggle to show", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const toggle = screen.getByTestId("card-visibility-toggle");
+      fireEvent.click(toggle);
+
+      const frame = screen.getByTestId("era-card-frame");
+      expect(frame).toHaveClass("hidden");
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+      expect(toggle.textContent).toBe("Show card");
+      // The card is still mounted (only display toggled) so audio never stops.
+      expect(screen.getByTestId("card-title")).toBeInTheDocument();
+    });
+
+    it("keeps the preview playing while the card is hidden", () => {
+      playSpy.mockClear();
+      pauseSpy.mockClear();
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      fireEvent.click(screen.getByTestId("card-visibility-toggle"));
+      // Hiding only toggles display — it must never pause the preview.
+      expect(pauseSpy).not.toHaveBeenCalled();
+    });
+
+    it("brings the card back on a second toggle", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const toggle = screen.getByTestId("card-visibility-toggle");
+      fireEvent.click(toggle);
+      fireEvent.click(toggle);
+      expect(screen.getByTestId("era-card-frame")).not.toHaveClass("hidden");
+      expect(toggle.textContent).toBe("Hide card");
+    });
+
+    it("fades the poster scrims out while hidden and back in when shown", () => {
+      render(<EraCardReveal card={cards[0]} song={song()} isLast={false} onContinue={() => {}} />);
+      const scrim = screen.getByTestId("scene-backdrop-scrim");
+      // Card open: scrims darken the room.
+      expect(scrim).not.toHaveClass("opacity-0");
+
+      fireEvent.click(screen.getByTestId("card-visibility-toggle"));
+      // Card hidden: both darkening scrims are faded out → poster at full brightness.
+      expect(screen.getByTestId("scene-backdrop-scrim")).toHaveClass("opacity-0");
+      const fade = document.querySelector('[data-testid^="scene-backdrop-fade-"]') as HTMLElement;
+      expect(fade).toHaveClass("opacity-0");
+
+      fireEvent.click(screen.getByTestId("card-visibility-toggle"));
+      expect(screen.getByTestId("scene-backdrop-scrim")).not.toHaveClass("opacity-0");
+    });
+  });
 });
