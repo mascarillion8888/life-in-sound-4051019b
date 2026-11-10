@@ -50,80 +50,85 @@ describe("lifePeriodForAge", () => {
 });
 
 describe("LORE_SYSTEM_PROMPT (style guide)", () => {
-  const mustInclude = (needle: string) => expect(LORE_SYSTEM_PROMPT).toContain(needle);
+  const mustIncludeAll = (needles: string[]) => {
+    const missing = needles.filter((needle) => !LORE_SYSTEM_PROMPT.includes(needle));
+    expect(missing).toEqual([]);
+  };
 
-  it("carries the core formula", () => {
-    mustInclude("SONG → AGE → LIFE PERIOD → INNER CONFLICT → EMOTION → LORE");
-  });
-
-  it("carries the length rule (1–3 sentences, 8–30, never over 40)", () => {
-    mustInclude("1–3 sentences");
-    mustInclude("8–30 words");
-    mustInclude("40 words");
+  it("carries the core formula and the length rule", () => {
+    mustIncludeAll([
+      "SONG → AGE → LIFE PERIOD → INNER CONFLICT → EMOTION → LORE",
+      "1–3 sentences",
+      "8–30 words",
+      "40 words",
+    ]);
   });
 
   it("puts the song first", () => {
-    mustInclude("SONG FIRST");
-    mustInclude("must never replace the song");
-    mustInclude("sentences that could swap places");
+    mustIncludeAll([
+      "SONG FIRST",
+      "must never replace the song",
+      "sentences that could swap places",
+    ]);
   });
 
-  it("forbids opening with the age", () => {
-    mustInclude("never begin with the age");
-  });
-
-  it("forbids leaking the brief skeleton", () => {
-    mustInclude("NEVER LEAK THE BRIEF");
-    mustInclude('"Age:"');
-    mustInclude('"clues"');
+  it("forbids opening with the age, leaking the brief and copying examples", () => {
+    mustIncludeAll([
+      "never begin with the age",
+      "NEVER LEAK THE BRIEF",
+      '"Age:"',
+      '"clues"',
+      "NEVER copy",
+    ]);
   });
 
   it("forbids review language anywhere, not only at the start", () => {
-    mustInclude("anywhere in the text (not only at the start)");
-    mustInclude("Bu şarkı");
-    mustInclude("Bu albüm");
-    mustInclude("This song");
-    mustInclude("This album");
-    mustInclude("must-listen");
-  });
-
-  it("bans copying the few-shot examples", () => {
-    mustInclude("NEVER copy");
+    mustIncludeAll([
+      "anywhere in the text (not only at the start)",
+      "Bu şarkı",
+      "Bu albüm",
+      "This song",
+      "This album",
+      "must-listen",
+    ]);
   });
 
   it("carries the no-fabrication ban", () => {
-    mustInclude("NO FABRICATION");
-    mustInclude("Never quote or paraphrase lyrics");
+    mustIncludeAll(["NO FABRICATION", "Never quote or paraphrase lyrics"]);
   });
 
   it("carries all five few-shot references with their narrative logic", () => {
-    for (const song of [
+    mustIncludeAll([
       "The Trooper",
       "For Whom the Bell Tolls",
       "Operation: Mindcrime",
       "Painkiller",
       "The Curse of Silence",
-    ]) {
-      expect(LORE_SYSTEM_PROMPT).toContain(song);
-    }
+    ]);
     // TR example + faithful EN equivalent + "logic" note, once per example.
     expect(LORE_SYSTEM_PROMPT.match(/logic:/g)).toHaveLength(5);
-    expect(LORE_SYSTEM_PROMPT).toContain('TR: "Melankoli. Kabullenme. Derinlik.');
-    expect(LORE_SYSTEM_PROMPT).toContain(
+    mustIncludeAll([
+      'TR: "Melankoli. Kabullenme. Derinlik.',
       'EN: "Melancholy. Acceptance. Depth. This is not the end. This is your peace."',
-    );
+    ]);
   });
 
   it("no longer carries the copyable weak/right example lines", () => {
-    expect(LORE_SYSTEM_PROMPT).not.toContain("Weak:");
-    expect(LORE_SYSTEM_PROMPT).not.toContain("Right:");
-    expect(LORE_SYSTEM_PROMPT).not.toContain("The years you first questioned your own limits");
+    const gone = [
+      "Weak:",
+      "Right:",
+      "The years you first questioned your own limits",
+      "Fast guitars and harsh vocals",
+    ];
+    expect(gone.filter((needle) => LORE_SYSTEM_PROMPT.includes(needle))).toEqual([]);
   });
 
   it("carries the 5-question final check", () => {
-    expect(LORE_SYSTEM_PROMPT).toContain("FINAL CHECK");
-    expect(LORE_SYSTEM_PROMPT).toContain("Could this text be applied to any song?");
-    expect(LORE_SYSTEM_PROMPT).toContain('"this is a moment from my life"');
+    mustIncludeAll([
+      "FINAL CHECK",
+      "Could this text be applied to any song?",
+      '"this is a moment from my life"',
+    ]);
   });
 
   it("has a versioned style id", () => {
