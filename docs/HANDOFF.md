@@ -12,92 +12,96 @@
 
 ## 1. Doğrulanabilir gerçek
 
+> **Bu bölüm git gerçeğinden derlendi (2026-11-10).** Doğrulama komutları bölüm
+> sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
+> kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
+
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:        feat/collection-supabase-sync (PR #20, AÇIK — main bu dala MERGE edildi).
-            main = origin/main tipi 810b07e ("Merge pull request #22 …/fix/hide-card-poster-and-google-return").
-HEAD:       main 810b07e (#21 ve #22 MERGED — hide-card toggle + poster scrim kaldırma + Google /journey dönüşü main'de).
-            810b07e — "Merge pull request #22 from mascarillion8888/fix/hide-card-poster-and-google-return"
-            5f9115d — "docs: update HANDOFF for hide-card scrims and Google return" (PR #22 gövdesi)
-            22df972 — "feat(auth): show why Google link is unavailable" (PR #22 gövdesi)
-            2fd7204 — "Merge pull request #21 from mascarillion8888/feat/card-opacity-and-wallpaper-toggle"
-            eae9a8f — "feat(card): add hide-card wallpaper toggle" (PR #21 gövdesi)
-            3354d9b — "Merge pull request #19 from mascarillion8888/docs/handoff-update"
-            5791309 — "Merge pull request #18 from mascarillion8888/feat/google-link-status"
-            dd7cdf3 — "feat(auth): show why Google link is unavailable" (PR #18 gövdesi)
-            a0c488c — "Merge pull request #17 from mascarillion8888/feat/card-heart-and-stage-label"
-            19d7d42 — "feat(card): working favorite heart and centered, larger stage label"
-            0151dbf — "Merge pull request #16 from mascarillion8888/chore/lint-debt"
-            (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #10 auth-birth-year, #12 personal-lore)
-Testler:    main (810b07e): 85 dosya passed / 1 skipped (86); 920 passed / 2 skipped (922).
-            PR #20 dalı (main merge sonrası): 87 dosya passed / 1 skipped (88); 941 passed / 2 skipped (943). vitest v4.1.11, `npm test` exit 0 (2026-11-08 doğrulandı)
-tsc:        temiz (`npm run typecheck` = 0 hata, 2026-11-08 doğrulandı)
-Lint:       ✅ 0 hata — `npm run lint` exit 0 (2026-11-08 doğrulandı). Repo-geneli prettier borcu PR #16 (chore/lint-debt) ile kapatıldı.
-Sonar/CI:   ✅ temiz — PR #22'de SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
-Build:      exit 0 (2026-11-08 doğrulandı)
-Push:       ✅ Worktree TEMİZ (.openhands/ hariç). main = origin/main (810b07e).
-            PR #16/#17/#18/#19/#21/#22 MERGED; PR #20 (bu dal) AÇIK (merge edilmedi).
+Dal:         docs/sync-status-2026-11-10 (bu oturum, docs-only). main = origin/main.
+HEAD:        main 375e0a3 — "Merge pull request #24 from mascarillion8888/fix/hide-card-no-replay-fade"
+             375e0a3 — Merge PR #24 (gizle→göster'de giriş animasyonu yeniden oynamıyor)
+             797a5fe — docs: note the card enter-fade replay fix in HANDOFF §1 (PR #24 gövdesi)
+             5e2c947 — fix(card): do not replay enter fade when showing hidden card (PR #24 gövdesi)
+             ea59c71 — Merge pull request #20 …/feat/collection-supabase-sync
+             810b07e — Merge pull request #22 …/fix/hide-card-poster-and-google-return
+             2fd7204 — Merge pull request #21 …/feat/card-opacity-and-wallpaper-toggle
+             3354d9b — Merge pull request #19 …/docs/handoff-update
+             5791309 — Merge pull request #18 …/feat/google-link-status
+             a0c488c — Merge pull request #17 …/feat/card-heart-and-stage-label
+             0151dbf — Merge pull request #16 …/chore/lint-debt
+             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #12 personal-lore, #10 auth-birth-year; #9/#8/#7/#6/#4/#3/#2/#1)
+Testler:     main (375e0a3): 87 dosya passed / 1 skipped (88); 943 passed / 2 skipped (945). vitest v4.1.11, `npm test -- --run` exit 0 (2026-11-10 doğrulandı).
+tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-10 doğrulandı).
+Lint:        ✅ 0 hata — `npm run lint` exit 0 (2026-11-10 doğrulandı).
+Sonar/CI:    ✅ temiz — PR #20/#22/#24'te SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
+Build:       exit 0 (2026-11-10 doğrulandı).
+Push:        main = origin/main (375e0a3). Bu oturumun dalı docs/sync-status-2026-11-10 (docs-only).
 
-GÜNCEL DURUM (2026-11-08):
-  - 🔧 KART "ŞEFFAF/SİLİK" GÖRÜNÜMÜ DÜZELTİLDİ (dal: fix/hide-card-no-replay-fade, PR AÇIK — merge edilmedi):
-    `EraCardReveal`'de giriş animasyonu (`animate-in fade-in zoom-in-95 duration-500`) ile gizleme
-    (`hidden`) AYNI elemanda (`era-card-frame`) olduğundan, "Show card" (display:none→block) giriş
-    animasyonunu yeniden başlatıyordu: kart opacity ~0.05–0.09'dan ~0.5 sn'de 1'e çıkıyordu (şeffaf/silik).
-    Giriş animasyonu artık hiç gizlenmeyen kalıcı dış sarmalayıcıya (`data-testid="era-card-entry"`) taşındı;
-    `hidden` yalnızca iç `era-card-frame`'de. Ölçüm (Playwright+chromium, ham): HIDE→SHOW sonrası
-    +50/+140/+350 ms'de frame + tüm ebeveyn opacity = 1 (3 döngü, önce: 0.050/0.30/0.92); SHOW'da
-    animationstart 0 (önce: her döngüde 1); ilk açılışta giriş animasyonu hâlâ bir kez oynuyor (entry
-    opacity 0.37→1, `enter` running). +239 ms ekran görüntüsü settled'a göre fark: önce %9.9 piksel>10,
-    sonra %1.6 (kalan fark kartın sürekli çalan ekolayzer animasyonu). Kart widget'ı opak — dokunulmadı.
-  - ✅ HIDE-CARD TOGGLE (PR #21, MERGED): `EraCardReveal` gerçek `<button>` (data-testid="card-visibility-toggle",
-    aria-pressed) ile kartı `hidden` (display) yapar; kart DOM'da kalır, 30 sn önizleme çalmaya devam eder.
-    main'deki durum değişkeni `cardVisible`.
-  - ✅ KART GİZLENİNCE POSTER KARARTMALARI KALKAR (PR #22, MERGED): `SceneRoom`'a `cardHidden` prop'u eklendi
-    (varsayılan false → kart açıkken görünüm değişmez). true iken her iki karartma katmanı — `bg-black/40`
-    scrim (data-testid="scene-backdrop-scrim") ve `scene-backdrop-fade-*` radyal `rgba(0,0,0,0.55)` —
-    `opacity-0`'a fade olur (500 ms, `motion-reduce:transition-none`). `EraCardReveal` `cardHidden={!cardVisible}`
-    geçirir. Ölçüm (Playwright+PIL, poster merkez kırpması, ortalama parlaklık): gizli-yeni vs gizli-scrim'li(eski)
-    desktop 105.89 vs 74.10 (+%42.9), mobile 105.82 vs 74.05 (+%42.9); kart AÇIKKEN scrim opacity 1 (değişmedi).
-  - ✅ GOOGLE BAĞLAMA DÖNÜŞÜ /journey (PR #22, MERGED): `GoogleLinkButton` `redirectTo` artık `${origin}/journey`
-    (eskiden çıplak origin → landing'in "Start" bağlantısı `/journey?fresh=true` ilerlemeyi SİLERDİ).
-    Journey restore tek bir `resolveJourneyForUser(userId)` yardımcısından geçer: önce uzak (oturum varsa),
-    hiçbir şey dönmezse yerel cache — böylece /journey'e dönen Google turu taslağı kaybetmez.
-    E-posta/token/kullanıcı kimliği yazdırılmaz veya loglanmaz.
-  - ✅ KALP DÜĞMESİ + ORTALANMIŞ AŞAMA YAZISI (PR #17, MERGED): PlayerCard'daki kalp gerçek
-    `<button type="button">` (aria-pressed, aria-label mevcut `collectLabel` — "Add to Collection" /
-    "In Collection ✓", data-testid="card-heart"); favori katmanı `src/lib/collection.ts` üzerinden
-    kalıcı (localStorage `soundmap.collection.v1`); tıklama `e.stopPropagation()` ile kartın ana
-    tıklamasını tetiklemez. Aşama etiketi (`.pc-tag`) yatayda ortalandı + 11px→13px büyütüldü.
-  - ✅ GOOGLE İLE HESAP BAĞLAMA (PR #18, MERGED): `GoogleLinkButton` artık sessizce gizlenmiyor;
-    oturum durumuna göre kısa durum metni gösteriyor (unavailable → "Account sync is off (no server
-    session)."; anonim-olmayan kullanıcı → "Signed in as <email>" / "Already signed in"; anonim →
-    mevcut düğme). Supabase tarafında Google sağlayıcısı, "Allow manual linking" ve URL ayarları yapıldı.
-  - ✅ profiles TABLOSU: doğum yılı `profiles.birth_year`'a yazılıyor (migration 0004_profiles.sql;
-    RLS owner-scoped, set_updated_at trigger).
-  - ✅ FAVORİLER SUPABASE'E BAĞLANDI (bu oturum, PR açık): yerel-öncelikli kaldı — arayüz her zaman
-    localStorage'dan okur/yazar; `collection_entries` tablosuna ayna yazımı yapılır
-    (migration 0005_collection_entries.sql). Oturum hazır olunca `useCollectionSync` bir kez
-    `pullAndMerge` çalıştırır (yeni-kazanır birleşim, MAX_COLLECTION_ENTRIES cap); kalp toggle'ı
-    tek kaydı upsert/delete eder (fire-and-forget, hatalar yutulur). Supabase yoksa/hatalıysa
-    hiçbir şey bozulmaz, yalnızca yerel çalışır.
+MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
+  - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
+  - OPEN:   #23 docs/handoff-collection-synced (docs-only; main ea59c71 tabanlı → ESKİ; CLEAN/MERGEABLE)
+            #15 docs/handoff-2026-11-08 (docs-only; eski)
+            #11 phase-1/generation-security (kod; eski, açık)
+  - DAL:    chore/sonar-maintenance YEREL (push edilmedi, PR YOK). feat/i18n-new-strings YOK (hiç yok).
+
+GÜNCEL DURUM (2026-11-10):
+  - ✅ KART "ŞEFFAF/SİLİK" GİDERİLDİ (PR #24, MERGED): EraCardReveal'de giriş animasyonu (`animate-in
+    fade-in zoom-in-95 duration-500`) ile `hidden` AYNI elemanda olduğundan "Show card" (display:none→block)
+    animasyonu yeniden başlatıyordu (opacity ~0.05→1, ~0.5 sn). Animasyon hiç gizlenmeyen kalıcı sarmalayıcıya
+    (`data-testid="era-card-entry"`) taşındı; `hidden` yalnızca iç `era-card-frame`'de. Ölçüm (Playwright+chromium):
+    HIDE→SHOW sonrası +50/+140/+350 ms frame+ebeveyn opacity=1 (önce 0.050/0.30/0.92); +239 ms ekran farkı %9.9→%1.6.
+  - ✅ HIDE-CARD TOGGLE (PR #21, MERGED): EraCardReveal gerçek `<button>` (data-testid="card-visibility-toggle",
+    aria-pressed) kartı `hidden` (display) yapar; kart DOM'da kalır, 30 sn önizleme çalmaya devam eder. Durum: `cardVisible`.
+  - ✅ KART GİZLİYKEN POSTER KARARTMALARI KALKAR (PR #22, MERGED): SceneRoom'a `cardHidden` prop'u (varsayılan
+    false → kart açıkken görünüm değişmez). true iken iki karartma katmanı — `bg-black/40` scrim
+    (data-testid="scene-backdrop-scrim") + `scene-backdrop-fade-*` radyal `rgba(0,0,0,0.55)` — `opacity-0`'a fade
+    (500 ms, motion-reduce:transition-none). Ölçüm (Playwright+PIL): +%42.9 ortalama parlaklık (desktop+mobile).
+  - ✅ GOOGLE BAĞLAMA DÖNÜŞÜ /journey (PR #22, MERGED): GoogleLinkButton `redirectTo` = `${origin}/journey`
+    (eskiden çıplak origin → landing "Start" = `/journey?fresh=true` ilerlemeyi SİLERDİ). Journey restore tek bir
+    `resolveJourneyForUser(userId)` üzerinden: uzak (oturum varsa) ?? yerel cache. E-posta/token/kimlik loglanmaz.
+  - ✅ GOOGLE BAĞLAMA DURUM METNİ (PR #18, MERGED): GoogleLinkButton artık sessizce GİZLENMİYOR; oturum durumuna
+    göre kısa metin gösterir — unavailable → "Account sync is off (no server session)."; anonim-olmayan →
+    "Signed in as <email>" / "Already signed in"; anonim → mevcut düğme. Metinler küçük/soluk ve İngilizce SABİT
+    (i18n sözlüğüne taşınmadı — 5 dilde aynı blok Sonar duplikasyonunu tetikler).
+  - ✅ KALP DÜĞMESİ + ORTALANMIŞ AŞAMA YAZISI (PR #17, MERGED): PlayerCard kalbi gerçek `<button type="button">`
+    (aria-pressed, aria-label mevcut `collectLabel`, data-testid="card-heart"); favori `src/lib/collection.ts`
+    üzerinden kalıcı (localStorage `soundmap.collection.v1`); `e.stopPropagation()`.
+  - ✅ profiles TABLOSU (migration 0004): doğum yılı `profiles.birth_year`; RLS owner-scoped, set_updated_at trigger.
+  - ✅ FAVORİLER SUPABASE SENKRONU (PR #20, MERGED): yerel-öncelikli + `collection_entries` aynası (migration 0005,
+    RLS owner-scoped). Oturum hazır olunca `useCollectionSync` bir kez `pullAndMerge` (yeni-kazanır, MAX cap);
+    kalp toggle tek kaydı upsert/delete eder (fire-and-forget, hatalar yutulur). Supabase yoksa/hatalıysa yalnız yerel.
 
 AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
-  - PR #20'yi (bu dal) gözden geçir + birleştir: favoriler Supabase'e bağlanır (kart gizleme/Google dönüşü
-    zaten main'de MERGED). Merge edilince bu HANDOFF §1 tekrar main'e göre güncellenmeli (checkpoint commit'i).
-  - ⚠️ MIGRATION UYGULANMALI: `supabase/migrations/0005_collection_entries.sql` henüz Supabase'e
-    uygulanmadı — kullanıcı Supabase Dashboard → SQL Editor'da çalıştırmalı (RLS açık, sahibine
-    select/insert/update/delete). Uygulanana kadar favoriler yalnızca yerelde kalır (hata yutulur).
-  - Kalp aria-label'ının büyük harfle okunması: küçük erişilebilirlik notu — etiket ekran
-    okuyucuda büyük harfle duyulabiliyor; metin/kaynak gözden geçirilmeli.
-  - Sonar'daki eski bakım maddeleri: `parseInt` (radix belirtilmeyen çağrılar), regex kullanımları,
-    `journey.tsx` floating promise uyarıları.
-  - TR çeviri kapsamı: bazı kullanıcı-yüzü metinler hâlâ yalnızca İngilizce sabit (ör. auth
-    bileşenleri — GoogleLinkButton durum metinleri, BirthYearPrompt hata metni); sözlüğe taşınmalı.
-  - (Geçmiş, hâlâ geçerli) 4 eşleşmeyen iTunes etiketi + MusicBrainz genre lisansı askısı —
-    HANDOFF öncesi turların kaydı; aksiyon yok.
+  - PR #23 / #15 / #11 AÇIK: gözden geçir + birleştir (BİRLEŞTİRMEYİ KULLANICI YAPAR). #23 ve #15 docs-only ve
+    ESKİ main tabanlı; içerikleri bu HANDOFF tarafından büyük ölçüde ikame edildi — birleştirip kapat ya da kapat.
+  - Sonar eski bakım maddeleri: `chore/sonar-maintenance` YEREL dalda 6 commit hazır (Number.parseInt,
+    Number.isNaN + reduce seed, floating promise `void`, @import sırası, alert başlığı, MasterPosterModal a11y).
+    Kalan: regex backtracking (itunes-mapping / poetic-analyzer / sharePoster). Dal push edilmedi, PR YOK.
+  - TR/çok dilli kapsam: sabit İngilizce metinler (GoogleLinkButton durum metinleri, BirthYearPrompt hata metni,
+    Hide/Show card, Change birth year) → `src/lib/i18n/dictionaries.ts` (5 dil). `feat/i18n-new-strings` YOK.
+  - Faz 4 hizalama: `docs/TECH/DATABASE_PLAN.md` (DRAFT) ile gerçek tabloları (0001-0005) karşılaştır, farkı
+    raporla. Migration YAZMA; şema onayı bekle.
+  - Beta öncesi riskler: **§5b** (gizlilik/rıza, LLM hız limiti/maliyet, PII loglama, anonim birikim temizliği).
+  - (Geçmiş, hâlâ geçerli) 4 eşleşmeyen iTunes etiketi + MusicBrainz genre lisansı askısı — aksiyon yok.
 ```
 
-Doğrula: `git pull origin main && npm test && npm run typecheck && npm run lint`.
+Doğrula: `git fetch origin && git pull origin main && npm test -- --run && npx tsc --noEmit && npm run lint`.
+
+---
+
+## 1a. GEÇMİŞ (arşiv — eski tur kayıtları, kısaltıldı)
+
+> Aşağıdaki notlar eski HANDOFF turlarından; tarihsel kayıt olarak KORUNUR.
+> Güncel doğru fotoğraf §1'dedir. Silmek yerine buraya çekildi (kayıp yok).
+
+- **2026-11-08 turu (PR #18/#20/#21/#22 hazırlanırken yazılmıştı):** O zaman `main` = 810b07e,
+  testler 920/922 (PR #20 dalı 941/943) idi. "PR #20 AÇIK", "migration 0005 henüz uygulanmadı — SQL
+  Editor'da çalıştırılmalı", "KART ŞEFFAF işi PR AÇIK (merge edilmedi)" ve "PR #20'yi gözden geçir +
+  birleştir" notları ARTIK GEÇERSİZ: PR #20 MERGED (ea59c71), PR #24 MERGED, migration 0005 uygulandı.
+- Kalp aria-label'ının ekran okuyucuda büyük harfle duyulabilmesi — küçük erişilebilirlik notu, açık kaldı.
+- Eski turların ayrıntılı kayıtları hâlâ §2 (Lint/Format mimari düzeltmesi, 2026-09-25), §2b (5 Genre
+  Backdrop Wiring + R&B/Soul kararı, 2026-09-30), §8 (devir kaydı) ve §9'da durur — burada tekrar edilmez.
 
 ---
 
@@ -340,6 +344,38 @@ Sanatçı düzeyi üst-üste binmeler ileride music map işinde manuel ele alın
 
 ---
 
+## 5b. BETA ÖNCESİ RİSKLER (salt-okunur inceleme, 2026-11-10 — düzeltme YAPILMADI)
+
+> Kaynak: kod okuması. Yalnız dosya:satır kanıtı; hiçbir şey değiştirilmedi.
+
+1. **Doğum yılı = kişisel veri, rıza/gizlilik metni ve silme akışı YOK.**
+   - Toplama: `src/components/auth/BirthYearPrompt.tsx` → `src/lib/supabase/use-profile.ts`
+     (localStorage `lis.birthYear`) → `profiles.birth_year` (migration `0004_profiles.sql`).
+   - `src/routes/` altında gizlilik/koşullar sayfası YOK (yalnız index/journey/results/soundmap/profile/dev).
+   - `src/lib/i18n/dictionaries.ts` içinde "privacy/terms/consent" anahtarı YOK.
+   - Hesap silme akışı YOK: `auth.admin`/`deleteUser`/`service_role` istemci tarafında hiç yok
+     (grep: yalnız `rls-live.test.ts` içinde service_role *string* sabiti). KVKK/GDPR için rıza + silme gerekir.
+2. **LLM uçlarında hız sınırı (rate limit) YOK; yalnız sağlayıcı-tarafı 429 fallback var.**
+   - Giriş noktaları `createServerFn` (POST): `generateStory.server.ts:39`, `generateAnalysis.server.ts:111/135`,
+     `moodInference.server.ts:104`, `generateCard.server.ts:268`, `cardArtwork.server.ts:409`.
+   - Uygulama seviyesinde limiter/throttle yok (grep). Koruma: `openrouter.server.ts:118-127` 429/5xx → `openrouter/free` fallback.
+   - Maliyet: yalnız `max_tokens` sınırı (`openrouter.server.ts:77` 2400; story 900; kart 300); toplam bütçe/kota koruması yok.
+3. **Zaman aşımı tutarsız.** `generateAnalysis.server.ts:145` ve `moodInference.server.ts:113` → `AbortSignal.timeout(8000)`;
+   ancak **`generateStory.server.ts:51` ve `generateCard.server.ts:144` (`runRole`/Groq yolu) signal GEÇMİYOR** →
+   yanıt vermeyen sağlayıcıda istek asılı kalabilir (kullanıcı beklemesi; sunucu bağlantı tutma).
+4. **Hata log'u sağlayıcı yanıt gövdesini (PII olabilir) yazıyor.** `src/lib/openrouter.server.ts:133-151`
+   → `gövde=${result.text.slice(0,200)}` (parse hatası 120). Model çıktısı/echo edilen prompt kullanıcı verisi
+   içerebilir. Anahtar loglanmıyor (iyi), ama gövde loglanıyor. Hata izleme (Sentry vb.) entegrasyonu YOK.
+5. **RLS tüm tablolarda sahibe kapalı — DOĞRU (olumlu bulgu).** `0001` journeys, `0002` (journeys.songs kolonu —
+   satır RLS'i devralır), `0003` cards + storage `card_artworks` (`(storage.foldername(name))[1] = auth.uid()::text`),
+   `0004` profiles, `0005` collection_entries — hepsi `auth.uid() = user_id` ve `enable row level security`.
+   İstemci yalnız anon key kullanıyor (`src/lib/supabase/client.ts`); service_role istemciye sızmıyor (test doğruluyor).
+6. **Anonim kullanıcı birikimi temizliği YOK.** Vercel cron yalnız `/api/keep-alive` (`vercel.json`); anon
+   kullanıcı/atık temizleyen bir iş yok. Google bağlama "identity already exists" hatası kullanıcıya genel metin
+   olarak dönüyor (`GoogleLinkButton.tsx:57` "Google sign-in is not available right now.") — neden ayırt edilmiyor.
+
+---
+
 ## 6. Sıradaki İş Adımları (Next Steps)
 
 1. **Sırada (onayla):** MUSIC DNA P0 — (c) ✅ kapandı (655ddae). Kalan P0: tam analitik çekirdek + kullanıcı cevaplarının poster'e akışı (answers-odaklı `analyzeUserJourney` hâlâ ayrı engine, results'ta canlı; grounding ile birleşmesi ayrı karar).
@@ -443,5 +479,5 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 
 ---
 
-_Artık son güncelleme: OpenHands (2026-11-08) — §1 "şu an neredeyiz" güncellendi: kalp düğmesi artık ÇALIŞIR (PlayerCard'da gerçek `<button>` + `collection.ts` favori katmanı + localStorage; aşama etiketi ortalandı/büyütüldü). Önceki: Hermes (2026-10-03) — Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60). Yerel: 900/2 test, tsc 0, lint 0, build ok._
+_Artık son güncelleme: OpenHands (2026-11-10) — §1 "şu an neredeyiz" git gerçeğine göre (main 375e0a3, 943/2 test) TAMAMEN yeniden yazıldı; eski tur notları §1a'ya arşivlendi; §5b (beta öncesi riskler, salt-okunur) eklendi; STATE.md yol haritası (Faz 4/5/6) aynı commit'te güncellendi. Önceki: OpenHands (2026-11-08) — kalp düğmesi + aşama etiketi. Hermes (2026-10-03) — Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60)._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
