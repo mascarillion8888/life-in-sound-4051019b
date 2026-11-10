@@ -358,14 +358,19 @@ export function lifeStageFor(encounter: CardEncounter): LifeStage | null {
  * or fails — the card never ships an empty lore box. With a known life stage
  * the poetry follows it and names the song and artist; without one the
  * generic bedroom lines are kept.
+ *
+ * The optional `language` selects a localized line (tr/en/es/de/fr). The Turkish
+ * source lines are used for `tr` (and any unknown language) so behaviour is
+ * unchanged for the app's source locale; every line is short, natural and names
+ * only the song/artist — no invented events or places.
  */
-export function deterministicLore(encounter: CardEncounter): string {
+export function deterministicLore(encounter: CardEncounter, language?: string): string {
   const hash = stableHash(
     `${encounter.artist}::${encounter.songTitle}::${encounter.encounterAge ?? ""}`,
   );
   const stage = lifeStageFor(encounter);
   if (stage) {
-    const line = stage.lines[hash % stage.lines.length];
+    const line = localizedStageLine(stage, language, hash);
     const song = encounter.songTitle.trim()
       ? `\u201C${encounter.songTitle.trim()}\u201D`
       : "this song";
@@ -376,3 +381,69 @@ export function deterministicLore(encounter: CardEncounter): string {
   const closer = LORE_CLOSERS[Math.floor(hash / LORE_OPENERS.length) % LORE_CLOSERS.length];
   return `${opener} ${closer}`;
 }
+
+/** Pick the stage line for the requested language, falling back to Turkish. */
+function localizedStageLine(stage: LifeStage, language: string | undefined, hash: number): string {
+  const set = LOCALIZED_LINES[languageKey(language)];
+  const lines = set && set.length === LIFE_STAGES.length ? set : stage.lines;
+  return lines[hash % lines.length];
+}
+
+/** Map a language display name ("Español") or code ("es") to the line-set key. */
+function languageKey(language: string | undefined): string {
+  if (!language) return "";
+  const l = language.toLowerCase();
+  if (l === "tr" || l.startsWith("türk")) return "tr";
+  if (l === "en" || l.startsWith("engl")) return "en";
+  if (l === "es" || l.startsWith("espa")) return "es";
+  if (l === "de" || l.startsWith("deut")) return "de";
+  if (l === "fr" || l.startsWith("fran")) return "fr";
+  return l;
+}
+
+/**
+ * Localized deterministic lines, one per life stage (index 0..7), for the
+ * non-Turkish UI languages. Each is 2 short sentences and names only {t}/{a}.
+ */
+const LOCALIZED_LINES: Record<string, readonly string[]> = {
+  en: [
+    "The first time {t} played, {a}'s voice wrapped around a small soul. Feelings with no names yet began to rise.",
+    "With {t}, a sound became truly theirs for the first time. {a} turned into a mirror, and a new self looked back.",
+    "{t} turned up the volume on everything unsaid. With {a} nearby, every restless heartbeat found an anthem.",
+    "Doors opened everywhere, and {t} played behind every question. {a} gave no answers, only the courage to keep asking.",
+    "Life asked for strength, and {t} answered in {a}'s voice. What once felt fragile quietly became armor.",
+    "In the long dark hours, {t} arrived before the dawn did. {a} kept the silence company until morning.",
+    "{t} carries every goodbye ever whispered. In {a}'s voice, loss became something to hold gently.",
+    "Now {t} sounds like peace after a long journey. {a} sings what is finally understood.",
+  ],
+  es: [
+    "La primera vez que sonó {t}, la voz de {a} envolvió a un alma pequeña. Empezaron a brotar sentimientos sin nombre.",
+    "Con {t}, un sonido fue por fin suyo. {a} se volvió un espejo, y un yo nuevo le devolvió la mirada.",
+    "{t} subió el volumen de todo lo no dicho. Con {a} cerca, cada latido inquieto encontró un himno.",
+    "Se abrieron puertas por todas partes, y {t} sonó detrás de cada pregunta. {a} no dio respuestas, solo valor para seguir preguntando.",
+    "La vida pidió fuerza, y {t} respondió con la voz de {a}. Lo que parecía frágil se volvió armadura.",
+    "En las horas oscuras, {t} llegó antes que el amanecer. {a} le hizo compañía al silencio hasta la mañana.",
+    "{t} guarda cada adiós susurrado. En la voz de {a}, la pérdida se volvió algo que se puede sostener.",
+    "Ahora {t} suena a paz tras un largo viaje. {a} canta lo que por fin se entiende.",
+  ],
+  de: [
+    "Als {t} zum ersten Mal lief, legte sich {a}s Stimme um eine kleine Seele. Gefühle ohne Namen stiegen auf.",
+    "Mit {t} wurde ein Klang zum ersten Mal wirklich ihrer. {a} wurde zum Spiegel, und ein neues Ich blickte zurück.",
+    "{t} drehte die Lautstärke für alles Ungesagte auf. Mit {a} in der Nähe fand jeder unruhige Herzschlag eine Hymne.",
+    "Überall öffneten sich Türen, und {t} spielte hinter jeder Frage. {a} gab keine Antworten, nur Mut weiterzufragen.",
+    "Das Leben verlangte Stärke, und {t} antwortete mit {a}s Stimme. Was zerbrechlich schien, wurde leise zur Rüstung.",
+    "In den langen dunklen Stunden kam {t} vor der Dämmerung. {a} leistete dem Schweigen Gesellschaft bis zum Morgen.",
+    "{t} trägt jeden je geflüsterten Abschied. In {a}s Stimme wurde Verlust zu etwas, das man sanft hält.",
+    "Jetzt klingt {t} wie Frieden nach einer langen Reise. {a} singt, was endlich verstanden ist.",
+  ],
+  fr: [
+    "La première fois que {t} a joué, la voix de {a} a enveloppé une petite âme. Des sentiments sans nom ont commencé à monter.",
+    "Avec {t}, un son est enfin devenu le leur. {a} est devenu un miroir, et un nouveau soi a regardé en retour.",
+    "{t} a monté le volume sur tout ce qui restait tu. Avec {a} près de soi, chaque cœur agité a trouvé un hymne.",
+    "Des portes s'ouvraient partout, et {t} jouait derrière chaque question. {a} n'a donné aucune réponse, seulement le courage de continuer à demander.",
+    "La vie a demandé de la force, et {t} a répondu par la voix de {a}. Ce qui semblait fragile est devenu une armure.",
+    "Dans les longues heures sombres, {t} est arrivé avant l'aube. {a} a tenu compagnie au silence jusqu'au matin.",
+    "{t} porte chaque adieu jamais murmuré. Dans la voix de {a}, la perte est devenue quelque chose à tenir doucement.",
+    "Maintenant {t} sonne comme la paix après un long voyage. {a} chante ce qui est enfin compris.",
+  ],
+};

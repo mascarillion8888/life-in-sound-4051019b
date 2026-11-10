@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildLoreUserPrompt,
   cleanLore,
+  diagnoseCandidate,
   exceedsWordLimit,
   generateLoreCore,
   hasForbiddenPhrase,
@@ -11,10 +12,13 @@ import {
   isCopiedLore,
   isGenericLore,
   lifePeriodForAge,
+  LORE_CANDIDATES,
   LORE_STYLE_VERSION,
   LORE_SYSTEM_PROMPT,
   maxCopySimilarity,
   MAX_LORE_WORDS,
+  parseCandidates,
+  pickBestCandidate,
   truncateToWordLimit,
   wordCount,
 } from "./loreEngine";
@@ -178,9 +182,9 @@ describe("buildLoreUserPrompt", () => {
     expect(prompt).toContain("never diagnose, label, or pathologize");
   });
 
-  it("ends with the prose-only instruction", () => {
+  it("ends with the prose-only, three-option instruction", () => {
     expect(buildLoreUserPrompt({ ...base, age: 9 })).toContain(
-      "Write ONLY the lore text — no labels, no headings, no age/period line, no lists.",
+      "Write ONLY the three lore options separated by ### — no labels, no headings, no age/period line, no lists, no numbering.",
     );
   });
 
@@ -346,6 +350,108 @@ describe("cleanLore", () => {
   });
 });
 
+describe("parseCandidates", () => {
+  it("splits on a line containing only ###", () => {
+    expect(parseCandidates("First one.\n###\nSecond one.\n###\nThird one.")).toEqual([
+      "First one.",
+      "Second one.",
+      "Third one.",
+    ]);
+  });
+
+  it("accepts a JSON array of strings", () => {
+    expect(parseCandidates('["One.", "Two."]')).toEqual(["One.", "Two."]);
+  });
+
+  it("treats a response with no separator as a single candidate", () => {
+    expect(parseCandidates("Just one line here.")).toEqual(["Just one line here."]);
+  });
+
+  it("strips a reasoning block before splitting", () => {
+    const raw = "<think>secret</think>\nOne.\n###\nTwo.";
+    expect(parseCandidates(raw)).toEqual(["One.", "Two."]);
+  });
+});
+
+describe("diagnoseCandidate (hard vs soft)", () => {
+  it("separates hard rejections from soft violations", () => {
+    const hard = diagnoseCandidate("Age: 22, clues: power.", "Türkçe", 22);
+    expect(hard.hard).toContain("leak");
+    expect(diagnoseCandidate("Hız, enerji, isyan ve başkaldırı.", "Türkçe", 22).hard).toContain(
+      "copy",
+    );
+    expect(diagnoseCandidate("Age 22. A door opened.", "English", 22).hard).toContain("leadingAge");
+    expect(
+      diagnoseCandidate("Yıllar geçti ve bu şarkı hâlâ seninle.", "Türkçe", 22).hard,
+    ).toContain("forbidden");
+    expect(
+      diagnoseCandidate("The song became a door in your life and never left you.", "Türkçe", 22)
+        .hard,
+    ).toContain("wrongLanguage");
+  });
+
+  it("marks clichés, a repeated age, scenes and 3+ sentences as soft", () => {
+    const soft = diagnoseCandidate("Ruh ve karanlık bir yolculuk. Ateş ve fırtına.", "Türkçe", 22);
+    expect(soft.hard).toEqual([]);
+    expect(soft.soft).toContain("cliche");
+    const age = diagnoseCandidate("22 yaşındaydın; 22 yıl sonra hâlâ aynı.", "Türkçe", 22);
+    expect(age.soft).toContain("ageNumber");
+    expect(diagnoseCandidate("Bir. İki. Üç.", "Türkçe", 22).soft).toContain("sentences");
+  });
+
+  it("passes a clean, song-first line with no violations", () => {
+    const clean = diagnoseCandidate(
+      "Kendi sınırlarını ilk kez zorladığın yıllar. Gücün ne olduğunu öğrendiğin an.",
+      "Türkçe",
+      22,
+    );
+    expect(clean.hard).toEqual([]);
+    expect(clean.soft).toEqual([]);
+  });
+});
+
+describe("pickBestCandidate", () => {
+  it("skips hard-rejected candidates and returns the clean one", () => {
+    const batch = [
+      diagnoseCandidate("Age: 22, clues: power.", "Türkçe", 22),
+      diagnoseCandidate("Kendi sınırlarını zorladığın yıllar. Gücü öğrendiğin an.", "Türkçe", 22),
+      diagnoseCandidate("Hız, enerji, isyan ve başkaldırı.", "Türkçe", 22),
+    ];
+    expect(pickBestCandidate(batch)?.text).toBe(
+      "Kendi sınırlarını zorladığın yıllar. Gücü öğrendiğin an.",
+    );
+  });
+
+  it("returns null when every candidate has a hard violation", () => {
+    const batch = [
+      diagnoseCandidate("Age: 22, clues: power.", "Türkçe", 22),
+      diagnoseCandidate("Hız, enerji, isyan ve başkaldırı.", "Türkçe", 22),
+    ];
+    expect(pickBestCandidate(batch)).toBeNull();
+  });
+
+  it("breaks a soft-violation tie by choosing the shorter line", () => {
+    const batch = [
+      diagnoseCandidate(
+        "Ruh ve karanlık bir yolculuk içinde kaybolduğun o uzun yıllar.",
+        "Türkçe",
+        22,
+      ),
+      diagnoseCandidate("Karanlık bir yolculuk.", "Türkçe", 22),
+    ];
+    expect(pickBestCandidate(batch)?.text).toBe("Karanlık bir yolculuk.");
+  });
+});
+
+describe("candidate count", () => {
+  it("asks the model for exactly three options", () => {
+    expect(LORE_CANDIDATES).toBe(3);
+    expect(buildLoreUserPrompt({ songTitle: "S", artist: "A", languageName: "English" })).toContain(
+      "3 DIFFERENT lore options",
+    );
+  });
+});
+
 describe("generateLoreCore (pipeline)", () => {
   const ENCOUNTER = {
     artist: "Sting",
@@ -357,44 +463,75 @@ describe("generateLoreCore (pipeline)", () => {
   };
   const GOOD =
     "The nights you first tested your own edges. The moment power stopped being an idea.";
+  const GOOD_2 = "A song that refused to be furniture. You carried its quiet argument for years.";
+  const BAD_LEAK = "Age: 22, Period: exploration. clues: power.";
+  const BAD_COPY = "Hız, enerji, isyan ve başkaldırı.";
 
-  it("returns provider output on the first clean answer", async () => {
-    const write = vi.fn().mockResolvedValue({ text: GOOD, via: "openrouter" });
+  it("returns the best of three candidates in one call", async () => {
+    const write = vi.fn().mockResolvedValue({
+      text: [BAD_LEAK, GOOD, BAD_COPY].join("\n###\n"),
+      via: "openrouter",
+    });
     const result = await generateLoreCore(ENCOUNTER, write);
-    expect(result).toEqual({ text: GOOD, path: "provider" });
+    expect(result).toEqual({
+      text: GOOD,
+      path: "provider",
+      language: "English",
+      candidates: expect.any(Array),
+    });
     expect(write).toHaveBeenCalledOnce();
+    expect(result.candidates).toHaveLength(3);
   });
 
-  it("rewrites once when the first answer leaks the brief", async () => {
+  it("prefers the candidate with the fewest soft violations", async () => {
+    const write = vi.fn().mockResolvedValue({
+      text: [`${GOOD} ${GOOD}`, GOOD_2].join("\n###\n"),
+      via: "openrouter",
+    });
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result.path).toBe("provider");
+    // The first candidate is over the soft length ceiling; GOOD_2 is clean.
+    expect(result.text).toBe(GOOD_2);
+  });
+
+  it("rewrites once when all three candidates are hard-rejected", async () => {
     const write = vi
       .fn()
       .mockResolvedValueOnce({
-        text: "Age: 22, Period: exploration. clues: power.",
+        text: [BAD_LEAK, BAD_COPY, BAD_LEAK].join("\n###\n"),
         via: "openrouter",
       })
       .mockResolvedValueOnce({ text: GOOD, via: "openrouter" });
     const result = await generateLoreCore(ENCOUNTER, write);
-    expect(result).toEqual({ text: GOOD, path: "rewrite" });
+    expect(result).toEqual({
+      text: GOOD,
+      path: "rewrite",
+      language: "English",
+      candidates: expect.any(Array),
+    });
     expect(write).toHaveBeenCalledTimes(2);
-    expect(write.mock.calls[1][0]).toContain("write it again");
+    expect(write.mock.calls[1][0]).toContain("write 3 fresh");
   });
 
-  it("rewrites once when the first answer copies a few-shot line", async () => {
-    const write = vi
-      .fn()
-      .mockResolvedValueOnce({ text: "Hız, enerji, isyan ve başkaldırı.", via: "openrouter" })
-      .mockResolvedValueOnce({ text: GOOD, via: "openrouter" });
-    const result = await generateLoreCore(ENCOUNTER, write);
-    expect(result.path).toBe("rewrite");
-  });
-
-  it("falls to the template when the provider keeps failing the filter", async () => {
+  it("falls to the localized template when the provider keeps failing the filter", async () => {
     const write = vi
       .fn()
       .mockResolvedValue({ text: "Age: 22. This song is a must-listen.", via: "openrouter" });
     const result = await generateLoreCore(ENCOUNTER, write);
     expect(result.path).toBe("template");
+    expect(result.language).toBe("English");
     expect(result.text.length).toBeGreaterThan(20);
+  });
+
+  it("returns the template in the requested language", async () => {
+    const write = vi.fn().mockResolvedValue({ text: null, via: "openrouter" });
+    const tr = await generateLoreCore({ ...ENCOUNTER, languageName: "Türkçe" }, write);
+    expect(tr.path).toBe("template");
+    expect(tr.language).toBe("Türkçe");
+    expect(tr.text).toMatch(/[şğıöçü]|bir|ve/i);
+    const es = await generateLoreCore({ ...ENCOUNTER, languageName: "Español" }, write);
+    expect(es.language).toBe("Español");
+    expect(es.text).not.toBe(tr.text);
   });
 
   it("falls to the template when there is no provider key (null)", async () => {

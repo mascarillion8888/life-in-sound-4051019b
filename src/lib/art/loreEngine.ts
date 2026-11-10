@@ -1,23 +1,27 @@
 /**
  * Lore engine — the "cinematic life-journey" prompt + text hygiene + the
- * provider→rewrite→template pipeline for the card's lore box.
+ * multi-candidate provider→rewrite→template pipeline for the card's lore box.
  *
  * PURE by design: no app dependencies and no I/O (the provider call is
  * injected), so it is trivially unit-testable and loadable by tooling
  * (`scripts/lore-eval.mjs`). Its only imports are the pure `cardBlueprint`
  * helpers.
  *
- * The prompt is rebuilt around the user's "Cinematic Life-Journey Lore Engine"
- * style guide: the lore names the song's place in a life, never its musical
- * features. Callers (`generateCard.server.ts`) supply the already-resolved
- * inputs — the historical era year, the encounter age, the UI language.
+ * Each provider call asks for THREE candidates in one response (separated by
+ * `###`). Candidates are judged with a hard/soft filter: hard violations can
+ * never be selected (brief leak, few-shot copy, wrong language, forbidden
+ * phrasing, over the word ceiling); soft violations lower the score (clichés,
+ * a leading/duplicated age number, 3+ sentences, length beyond the sweet spot).
+ * The best surviving candidate wins; otherwise one rewrite, then a localized
+ * deterministic template.
  */
-// Explicit `.ts` extension: tsc allows it (`allowImportingTsExtensions`) and it
-// keeps this module loadable by plain Node tooling (`scripts/lore-eval.mjs`).
 import { deterministicLore, historicalEraYear, type CardEncounter } from "./cardBlueprint.ts";
 
 /** Bumping this invalidates the client lore cache (see `useCardLore.cacheKey`). */
 export const LORE_STYLE_VERSION = "lore-v3";
+
+/** How many candidate lines one provider call must return. */
+export const LORE_CANDIDATES = 3;
 
 /* -------------------------------------------------------------------------- */
 /* Life periods (guide's age interpretation)                                    */
@@ -133,7 +137,7 @@ export const LORE_SYSTEM_PROMPT = [
   "",
   "AGES: an age is a psychological period, not a number. Never use the cliché meaning of an age automatically — tie it to this specific song.",
   "",
-  "OUTPUT: reply with ONLY the lore (1–3 sentences), written in the language named in the user message. No headings, no labels, no quotes, no explanation.",
+  "OUTPUT: reply with ONLY the three lore candidates (see the user message), written in the language named in the user message. No headings, no labels, no quotes, no explanation.",
   "",
   "FINAL CHECK before you answer — ask yourself:",
   "1. Could this text be applied to any song? (if YES, rewrite it)",
@@ -204,12 +208,13 @@ export function buildLoreUserPrompt(input: LorePromptInput): string {
     "Work out the song's own character first (title, artist, genre, mood, year); the life period is only the frame.",
     "Use only these facts: do not invent lyrics, the song's subject or album stories, and never quote lyrics.",
     "Do not start with the age, and mention the age at most once.",
-    `Write 1–3 short sentences (prefer 8–30 words, never more than 40) in ${input.languageName}, the app's UI language.`,
-    "Write about the song's place in the listener's life, not about its musical features.",
-    "Keep it specific and warm, never a generic fortune-cookie compliment.",
+    `Write 3 DIFFERENT lore options, each from a different angle (for example: an inner state / the song's function in life / the period's conflict); they must not repeat each other.`,
+    `Separate the three options with a line that contains only "###". Write each option in ${input.languageName}, the app's UI language.`,
+    `Each option: 1–3 short sentences (prefer 8–30 words, never more than 40). Write about the song's place in the listener's life, not about its musical features.`,
+    "Keep each one specific and warm, never a generic fortune-cookie compliment.",
     "This is a friend's memory, not a clinical case — never diagnose, label, or pathologize the listener or their feelings.",
     "No lyrics, no quotes, no artist-face descriptions.",
-    "Write ONLY the lore text — no labels, no headings, no age/period line, no lists.",
+    "Write ONLY the three lore options separated by ### — no labels, no headings, no age/period line, no lists, no numbering.",
   );
   return parts.join(" ");
 }
@@ -256,6 +261,38 @@ const COPY_REFERENCES: string[] = [
   "Melankoli. Kabullenme. Derinlik. Bu, son değil. Bu, senin huzurun.",
   "The years you first questioned your own limits. The moment you began to learn what power is.",
   "This is a powerful heavy metal song. Fast guitars and harsh vocals give you energy.",
+];
+
+/** Cliché words (guide's list) — SOFT: allowed, but each one lowers the score. */
+const CLICHE_WORDS = [
+  "ruh",
+  "kader",
+  "sonsuz",
+  "karanlık",
+  "ışık",
+  "yolculuk",
+  "özgürlük",
+  "kalp",
+  "hayal",
+  "umut",
+  "ateş",
+  "fırtına",
+];
+
+/** Fabricated-scene words: invented rooms/objects the brief never mentioned. */
+const SCENE_WORDS = [
+  "bedroom",
+  "bed oda",
+  "odasında",
+  "odasına",
+  "pencere",
+  "perde",
+  "kaset",
+  "walkman",
+  "duvar",
+  "neon",
+  "sokak lambası",
+  "streetlight",
 ];
 
 /** Normalize for comparison: lowercase, punctuation → spaces, collapse. */
@@ -310,6 +347,8 @@ export const COPY_SIMILARITY_THRESHOLD = 0.6;
 export const MAX_LORE_CHARS = 320;
 /** Hard word ceiling for a lore line; longer output gets one rewrite, then a cut. */
 export const MAX_LORE_WORDS = 40;
+/** Preferred upper bound — exceeding it is a SOFT length violation. */
+export const SOFT_MAX_LORE_WORDS = 30;
 
 /** True when the text uses review language / stock phrases (anywhere). */
 export function hasForbiddenPhrase(text: string): boolean {
@@ -339,10 +378,167 @@ export function exceedsWordLimit(text: string): boolean {
   return wordCount(text) > MAX_LORE_WORDS;
 }
 
+/** Cliché words present (SOFT). */
+export function clicheHits(text: string): string[] {
+  const lower = text.toLowerCase();
+  return CLICHE_WORDS.filter((word) =>
+    new RegExp(`(?<![\\p{L}])${word}(?![\\p{L}])`, "u").test(lower),
+  );
+}
+
+/** Fabricated-scene words present (SOFT). */
+export function sceneHits(text: string): string[] {
+  const lower = text.toLowerCase();
+  return SCENE_WORDS.filter((word) => lower.includes(word));
+}
+
+/** Sentence count (SOFT: 3+ is penalized). */
+export function sentenceCount(text: string): number {
+  return (text.match(/[^.!?]+[.!?]+/g) ?? []).length || (text.trim() ? 1 : 0);
+}
+
+/** The spelled-out numbers whose digits we look for in the text (SOFT). */
+const NUMBER_WORDS: Record<string, string> = {
+  "10": "on",
+  "12": "on iki",
+  "18": "on sekiz",
+  "20": "yirmi",
+  "22": "yirmi iki",
+  "30": "otuz",
+  "40": "kırk",
+  "50": "elli",
+};
+
 /**
- * True when generated lore is too long, leaks the brief, opens with the age,
- * copies a few-shot line, or leans on forbidden / stock phrases.
+ * SOFT: how many times the encounter age appears — as digits or, for common
+ * ages, as Turkish number words. A leading age is already a hard violation.
  */
+export function ageNumberHits(text: string, age: number | null | undefined): number {
+  if (typeof age !== "number" || !Number.isFinite(age)) return 0;
+  const a = Math.floor(age);
+  let hits = (text.match(new RegExp(`(?<![\\p{N}])${a}(?![\\p{N}])`, "gu")) ?? []).length;
+  const word = NUMBER_WORDS[String(a)];
+  if (word) {
+    hits += (text.toLowerCase().match(new RegExp(`(?<![\\p{L}])${word}(?![\\p{L}])`, "gu")) ?? [])
+      .length;
+  }
+  return hits;
+}
+
+/**
+ * SOFT: English function words in a text the app asked to be Turkish (or
+ * vice-versa). Deliberately lenient — the hard language gate is separate.
+ */
+export function wrongLanguageScore(text: string, languageName: string): number {
+  const isTurkish = /türk/i.test(languageName);
+  const words = tokens(text);
+  const english = [
+    "the",
+    "and",
+    "you",
+    "your",
+    "with",
+    "was",
+    "were",
+    "that",
+    "this",
+    "for",
+    "from",
+  ];
+  const turkish = ["ve", "bir", "sen", "senin", "için", "ile", "gibi", "çok", "daha", "ama", "ki"];
+  const set = isTurkish ? english : turkish;
+  return words.filter((w) => set.includes(w)).length;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Candidate diagnostics: hard rejections + soft violations                     */
+/* -------------------------------------------------------------------------- */
+
+export type RejectReason =
+  "copy" | "leak" | "header" | "leadingAge" | "forbidden" | "wrongLanguage" | "length";
+
+export type SoftViolation =
+  "cliche" | "ageNumber" | "scene" | "sentences" | "long" | "wrongLanguage";
+
+export type CandidateDiagnostics = {
+  text: string;
+  hard: RejectReason[];
+  soft: SoftViolation[];
+};
+
+/** The three anchors the guide's own examples use — a candidate must add something new. */
+const ANCHOR_WORDS = [
+  "trooper",
+  "bell",
+  "mindcrime",
+  "painkiller",
+  "curse",
+  "silence",
+  "metal",
+  "iron maiden",
+  "metallica",
+  "queensrÿche",
+  "judas priest",
+  "draconian",
+];
+
+/** HARD: a brief-skeleton line — label lines, headings or separators. */
+function looksLikeHeader(text: string): boolean {
+  return /^\s*(?:#{1,6}\s|[-*]\s|\d+[.)]\s|option\s*\d|seçenek\s*\d)/iu.test(text);
+}
+
+/** HARD: copy of a few-shot line OR a line that only paraphrases the anchor examples. */
+function isHardCopy(text: string): boolean {
+  if (isCopiedLore(text)) return true;
+  const anchors = tokens(text).filter((w) => ANCHOR_WORDS.includes(w));
+  return anchors.length >= 2 && wordCount(text) <= 15;
+}
+
+/** HARD: wrong language — the text does not read as the requested language. */
+function isHardWrongLanguage(text: string, languageName: string): boolean {
+  const letters = text.replace(/[^\p{L}]/gu, "");
+  if (!letters) return false;
+  const latin = (letters.match(/[a-z]/gi) ?? []).length / letters.length;
+  if (!/türk|espa|deutsch|fran|english|ingiliz/i.test(languageName) && latin > 0.95) return true;
+  if (/türk/i.test(languageName)) {
+    const turkishSpecific = (text.match(/[şğıöçü]/gi) ?? []).length;
+    const englishMarkers = (
+      text.match(/(?<![\p{L}])(the|and|your|with|this|that|you)(?![\p{L}])/giu) ?? []
+    ).length;
+    if (englishMarkers >= 2 && turkishSpecific === 0) return true;
+  }
+  return false;
+}
+
+/**
+ * Judge one candidate: `hard` reasons make it ineligible, `soft` violations only
+ * lower its score.
+ */
+export function diagnoseCandidate(
+  text: string,
+  languageName: string,
+  age?: number | null,
+): CandidateDiagnostics {
+  const hard: RejectReason[] = [];
+  const soft: SoftViolation[] = [];
+  if (isHardCopy(text)) hard.push("copy");
+  if (hasPromptLeak(text)) hard.push("leak");
+  if (looksLikeHeader(text)) hard.push("header");
+  if (hasLeadingAge(text)) hard.push("leadingAge");
+  if (hasForbiddenPhrase(text)) hard.push("forbidden");
+  if (isHardWrongLanguage(text, languageName)) hard.push("wrongLanguage");
+  if (exceedsWordLimit(text)) hard.push("length");
+
+  if (clicheHits(text).length) soft.push("cliche");
+  if (ageNumberHits(text, age) > 1) soft.push("ageNumber");
+  if (sceneHits(text).length) soft.push("scene");
+  if (sentenceCount(text) >= 3) soft.push("sentences");
+  if (wordCount(text) > SOFT_MAX_LORE_WORDS) soft.push("long");
+  if (wrongLanguageScore(text, languageName) > 0) soft.push("wrongLanguage");
+  return { text, hard, soft };
+}
+
+/** True when the text is acceptable at all (no hard violation). */
 export function isGenericLore(text: string): boolean {
   return (
     text.length > MAX_LORE_CHARS ||
@@ -354,9 +550,50 @@ export function isGenericLore(text: string): boolean {
   );
 }
 
+/** Pick the best eligible candidate: fewest soft violations, then shortest. */
+export function pickBestCandidate(candidates: CandidateDiagnostics[]): CandidateDiagnostics | null {
+  const eligible = candidates.filter((c) => c.hard.length === 0 && c.text.length >= 20);
+  if (!eligible.length) return null;
+  return eligible.sort(
+    (a, b) => a.soft.length - b.soft.length || wordCount(a.text) - wordCount(b.text),
+  )[0];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cleaning + parsing                                                           */
+/* -------------------------------------------------------------------------- */
+
 /** Strip reasoning blocks some models emit before the answer. */
 export function cleanLore(raw: string | null | undefined): string {
   return (raw ?? "").replace(/<think[\s\S]*?<\/think>/gi, "").trim();
+}
+
+/**
+ * Split one provider answer into candidate lines. Candidates are separated by a
+ * line containing only "###"; a JSON array is also accepted, and a response with
+ * no separator is treated as a single candidate.
+ */
+export function parseCandidates(raw: string | null | undefined): string[] {
+  const text = cleanLore(raw);
+  if (!text) return [];
+  const json = text.match(/^\s*\[[\s\S]*\]\s*$/);
+  if (json) {
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((v): v is string => typeof v === "string")
+          .map((v) => v.trim())
+          .filter(Boolean);
+      }
+    } catch {
+      /* fall through to the separator split */
+    }
+  }
+  return text
+    .split(/^\s*#{2,}\s*$/m)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
 }
 
 /**
@@ -383,7 +620,7 @@ export function truncateToWordLimit(text: string, maxWords: number = MAX_LORE_WO
 }
 
 /* -------------------------------------------------------------------------- */
-/* Pipeline: provider → one rewrite → deterministic template                    */
+/* Pipeline: 3 candidates → one rewrite → localized template                    */
 /* -------------------------------------------------------------------------- */
 
 export type LorePipelineInput = CardEncounter & { languageName: string };
@@ -392,19 +629,28 @@ export type LoreWriteResult = { text: string | null; via: "openrouter" | "groq" 
 export type LorePath = "provider" | "rewrite" | "template";
 export type LoreWrite = (userPrompt: string, languageName: string) => Promise<LoreWriteResult>;
 
+export type LoreResult = {
+  text: string;
+  path: LorePath;
+  /** The language the text is in — always the requested language. */
+  language: string;
+  /** Diagnostics of every candidate seen, for `lore-eval --verbose`. */
+  candidates: CandidateDiagnostics[];
+};
+
 const REWRITE_SUFFIX =
-  " Your previous answer opened with the age, leaked the brief, copied an example, used review language, or was too long: write it again, fresh, song-first and shorter.";
+  " Your previous answer opened with the age, leaked the brief, copied an example, used review language, was too long, or was not written in the requested language: write 3 fresh, shorter, song-first options again.";
 
 /**
- * Resolve the final lore, never throwing: try the provider, reject output that
- * leaks the brief / opens with the age / copies a few-shot / uses review
- * language / runs long, allow exactly one rewrite, then a sentence-boundary cut,
- * and finally the deterministic template. Reports which path produced the text.
+ * Resolve the final lore, never throwing: ask for three candidates in one call,
+ * keep the best that passes the hard filter, allow exactly one rewrite, then a
+ * sentence-boundary cut, and finally the localized deterministic template.
  */
 export async function generateLoreCore(
   encounter: LorePipelineInput,
   write: LoreWrite,
-): Promise<{ text: string; path: LorePath }> {
+): Promise<LoreResult> {
+  const language = encounter.languageName;
   const prompt = buildLoreUserPrompt({
     songTitle: encounter.songTitle,
     artist: encounter.artist,
@@ -414,38 +660,49 @@ export async function generateLoreCore(
     genre: encounter.genre ?? null,
     mood: encounter.mood ?? null,
     userMemory: encounter.userMemory ?? null,
-    languageName: encounter.languageName,
+    languageName: language,
   });
 
-  let candidate: string | null = null;
+  const candidates: CandidateDiagnostics[] = [];
+  let fallbackCandidate: string | null = null;
+
   for (let attempt = 0; attempt < 2; attempt++) {
     let result: LoreWriteResult;
     try {
-      result = await write(
-        attempt === 0 ? prompt : `${prompt}${REWRITE_SUFFIX}`,
-        encounter.languageName,
-      );
+      result = await write(attempt === 0 ? prompt : `${prompt}${REWRITE_SUFFIX}`, language);
     } catch {
       break;
     }
     if (result.text == null) break; // no provider/key configured — retrying cannot help
-    const cleaned = cleanLore(result.text);
-    if (cleaned.length < 20 || cleaned.length > 600) continue;
-    if (!isGenericLore(cleaned)) {
-      return { text: cleaned, path: attempt === 0 ? "provider" : "rewrite" };
+
+    const batch: CandidateDiagnostics[] = [];
+    for (const raw of parseCandidates(result.text)) {
+      if (raw.length < 20 || raw.length > 600) continue;
+      const diagnosis = diagnoseCandidate(raw, language, encounter.encounterAge ?? null);
+      batch.push(diagnosis);
+      candidates.push(diagnosis);
+      if (fallbackCandidate === null) fallbackCandidate = raw;
     }
-    candidate = cleaned;
+    const best = pickBestCandidate(batch);
+    if (best) {
+      return {
+        text: best.text,
+        path: attempt === 0 ? "provider" : "rewrite",
+        language,
+        candidates,
+      };
+    }
   }
-  if (candidate) {
-    const cut = truncateToWordLimit(candidate);
+  if (fallbackCandidate) {
+    const cut = truncateToWordLimit(fallbackCandidate);
     if (
       cut.length >= 20 &&
       !hasForbiddenPhrase(cut) &&
       !hasPromptLeak(cut) &&
       !hasLeadingAge(cut)
     ) {
-      return { text: cut, path: "rewrite" };
+      return { text: cut, path: "rewrite", language, candidates };
     }
   }
-  return { text: deterministicLore(encounter), path: "template" };
+  return { text: deterministicLore(encounter, language), path: "template", language, candidates };
 }

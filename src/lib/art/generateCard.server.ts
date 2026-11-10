@@ -105,7 +105,8 @@ export function buildLorePrompt(encounter: CardEncounter & { language?: Language
 /**
  * Provider chain for lore: OpenRouter (Gemini) first, then the Groq
  * `summarizer` role. Returns null when neither is configured or both fail,
- * so the pipeline can fall back to the deterministic lines.
+ * so the pipeline can fall back to the deterministic lines. The single call
+ * returns three candidates, so the token budget covers all of them.
  */
 async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Promise<string | null> {
   try {
@@ -114,13 +115,13 @@ async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Prom
         { role: "system", content: LORE_SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
-      { temperature: 0.9, maxTokens: 300, fetchImpl },
+      { temperature: 0.9, maxTokens: 900, fetchImpl },
     );
     if (viaOpenRouter != null) return viaOpenRouter;
   } catch {
     /* fall through to Groq */
   }
-  return runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 300, fetchImpl });
+  return runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 900, fetchImpl });
 }
 
 /**

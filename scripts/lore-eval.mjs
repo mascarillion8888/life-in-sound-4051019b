@@ -3,10 +3,11 @@
  * lore-eval — local quality-evaluation harness for the cinematic life-journey
  * lore. NOT part of CI and NOT wired into package.json (run it by hand).
  *
- * It runs the SAME pipeline the app uses (`generateLoreCore`: clean → GENERIC
- * filter → one rewrite → 40-word cut → deterministic template), so the WORDS
- * and FLAG columns reflect the text the user actually sees, and each row shows
- * which path produced it: provider / rewrite / template.
+ * It runs the SAME pipeline the app uses (`generateLoreCore`: three candidates
+ * in one call → hard/soft filter → best pick → one rewrite → 40-word cut →
+ * localized deterministic template), so the WORDS and FLAG columns reflect the
+ * text the user actually sees, and each row shows which path produced it:
+ * provider / rewrite / template.
  *
  * Usage (from the repo root):
  *
@@ -15,10 +16,11 @@
  *   node scripts/lore-eval.mjs
  *
  * Options:
- *   --model <id>     override the OpenRouter model (sets OPENROUTER_PRIMARY_MODEL)
- *   --lang <tr,en>   comma-separated UI languages to evaluate
- *   --songs <N>      use only the first N reference songs
+ *   --model <id>      override the OpenRouter model (sets OPENROUTER_PRIMARY_MODEL)
+ *   --lang <tr,en>    comma-separated UI languages to evaluate
+ *   --songs <N>       use only the first N reference songs
  *   --ages <10,22,40> comma-separated ages
+ *   --verbose         print every rejected candidate with its rejection reasons
  *
  * The API key and any network detail are NEVER printed; with no key it prints a
  * clear message and exits. Every result is written immediately and also appended
@@ -52,12 +54,13 @@ function loadDotEnv() {
   }
 }
 
-/** Parse `--flag value` options. */
+/** Parse `--flag value` and boolean options. */
 function parseArgs(argv) {
   const out = {};
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
-    if (key === "--model") out.model = argv[++i];
+    if (key === "--verbose") out.verbose = true;
+    else if (key === "--model") out.model = argv[++i];
     else if (key === "--lang") out.lang = argv[++i];
     else if (key === "--songs") out.songs = Number(argv[++i]);
     else if (key === "--ages") out.ages = argv[++i];
@@ -135,10 +138,10 @@ async function writeLore(userPrompt) {
           { role: "system", content: LORE_SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        { temperature: 0.9, maxTokens: 300 },
+        { temperature: 0.9, maxTokens: 900 },
       );
       if (viaOpenRouter != null) return { text: viaOpenRouter, via: "openrouter" };
-      const viaGroq = await runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 300 });
+      const viaGroq = await runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 900 });
       return { text: viaGroq, via: "groq" };
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
@@ -153,6 +156,12 @@ async function writeLore(userPrompt) {
 }
 
 const pad = (value, width) => String(value).slice(0, width).padEnd(width);
+/** Short "reject:<first reason>" label for the main table. */
+const firstReason = (candidates, text) => {
+  const match = candidates.find((c) => c.text === text);
+  if (!match || !match.hard.length) return "ok";
+  return `reject:${match.hard[0]}`;
+};
 
 writeFileSync(OUTPUT_PATH, "");
 const emit = (line) => {
@@ -165,7 +174,7 @@ emit(
   `[lore-eval] model=${model} · ${songs.length} songs × ${ages.length} ages × ${languages.length} languages = ${songs.length * ages.length * languages.length} samples`,
 );
 emit(
-  `${pad("SONG", 30)} ${pad("AGE", 4)} ${pad("LANG", 5)} ${pad("WORDS", 6)} ${pad("FLAG", 8)} ${pad("PATH", 9)} LORE`,
+  `${pad("SONG", 30)} ${pad("AGE", 4)} ${pad("LANG", 5)} ${pad("WORDS", 6)} ${pad("FLAG", 18)} ${pad("PATH", 9)} LORE`,
 );
 emit("-".repeat(120));
 
@@ -187,16 +196,17 @@ for (const song of songs) {
       };
 
       let text = "FAILED";
-      let flag = "-";
       let path = "-";
+      let note = "-";
+      let candidates = [];
       try {
         const result = await generateLoreCore(encounter, writeLore);
         text = result.text.replace(/\s+/g, " ").trim();
         path = result.path;
-        flag = result.path === "template" ? "template" : "ok";
+        candidates = result.candidates;
+        note = candidates.length ? firstReason(candidates, result.text) : "-";
       } catch {
         stats.failed++;
-        text = "FAILED";
       }
 
       stats.total++;
@@ -208,8 +218,19 @@ for (const song of songs) {
         stats.paths[path] = (stats.paths[path] ?? 0) + 1;
       }
       emit(
-        `${pad(`${song.artist} — ${song.title}`, 30)} ${pad(age, 4)} ${pad(code, 5)} ${pad(words, 6)} ${pad(flag, 8)} ${pad(path, 9)} ${text}`,
+        `${pad(`${song.artist} — ${song.title}`, 30)} ${pad(age, 4)} ${pad(code, 5)} ${pad(words, 6)} ${pad(note, 18)} ${pad(path, 9)} ${text}`,
       );
+
+      if (args.verbose) {
+        candidates.forEach((c, i) => {
+          const hard = c.hard.length ? c.hard.join(",") : "-";
+          const soft = c.soft.length ? c.soft.join(",") : "-";
+          emit(
+            `    cand${i + 1} hard=[${hard}] soft=[${soft}] :: ${c.text.replace(/\s+/g, " ").trim()}`,
+          );
+        });
+        if (!candidates.length) emit("    (no candidate text parsed from the provider answer)");
+      }
     }
   }
 }
