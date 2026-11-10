@@ -42,6 +42,9 @@ type ProviderSpec = {
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
+/** Default request budget for one provider call, in milliseconds. */
+const DEFAULT_TIMEOUT_MS = 20_000;
+
 /**
  * Role → provider/model/key mapping. Only `summarizer` is mapped; it is the
  * sole role the product calls. Kept consistent with the `summarizer` entry in
@@ -67,6 +70,8 @@ export type RunRoleOptions = {
   fetchImpl?: typeof fetch;
   /** Abort signal for request cancellation. */
   signal?: AbortSignal;
+  /** Per-call request budget (ms). Defaults to `DEFAULT_TIMEOUT_MS`. */
+  timeoutMs?: number;
 };
 
 /** Return the role → model mapping (no secrets). Mirrors list_roles() in Python. */
@@ -102,8 +107,11 @@ function extractContent(payload: unknown): string | null {
  * Run a single Orchestra role call against its mapped provider.
  *
  * Returns the assistant text, or `null` on any failure (missing key, network
- * error, non-OK status, empty/malformed response). Never throws — callers can
- * treat `null` as "provider unavailable, use fallback".
+ * error, timeout, non-OK status, empty/malformed response). Never throws —
+ * callers can treat `null` as "provider unavailable, use fallback".
+ *
+ * Every request carries a default timeout (`DEFAULT_TIMEOUT_MS`, overridable
+ * per call via `timeoutMs`). Provider response bodies are never logged.
  *
  * Mirrors `run_role()` in orchestra/router.py but via native fetch and without
  * LiteLLM. No API key is returned or logged.
@@ -124,15 +132,20 @@ export async function runRole(
   const maxTokens = options.maxTokens ?? 512;
   const fetchImpl = options.fetchImpl ?? fetch;
 
-  let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  const abortFromCaller = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  else options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+
   try {
-    response = await fetchImpl(spec.endpoint, {
+    const response = await fetchImpl(spec.endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
         authorization: `Bearer ${apiKey}`,
       },
-      signal: options.signal,
+      signal: controller.signal,
       body: JSON.stringify({
         model: spec.model,
         messages: [
@@ -143,18 +156,14 @@ export async function runRole(
         max_tokens: maxTokens,
       }),
     });
+
+    if (!response.ok) return null;
+    const payload: unknown = await response.json();
+    return extractContent(payload);
   } catch {
-    return null; // network error → fallback
+    return null; // network error / timeout / malformed body → fallback
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abortFromCaller);
   }
-
-  if (!response.ok) return null;
-
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    return null;
-  }
-
-  return extractContent(payload);
 }

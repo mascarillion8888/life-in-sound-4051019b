@@ -137,6 +137,44 @@ describe("generateCardLoreCore", () => {
     });
     expect(lore.length).toBeGreaterThan(40);
   });
+
+  it("falls through OpenRouter -> Groq when the OpenRouter call times out", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    vi.stubEnv("GROQ_API_KEY", "groq-key");
+    vi.useFakeTimers();
+
+    const groqText = "A child hums along in the lamplight. The song stays in the room.";
+    const fetchImpl = vi.fn((url: string | URL | Request, init?: RequestInit) => {
+      if (String(url).includes("openrouter.ai")) {
+        // Never resolves on its own; only the request timeout settles it.
+        return new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true },
+          );
+        });
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ choices: [{ message: { content: groqText } }] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    });
+
+    const promise = generateCardLoreCore(ENCOUNTER, {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    await vi.advanceTimersByTimeAsync(20_001);
+    const lore = await promise;
+
+    expect(lore).toBe(groqText);
+    expect(String(fetchImpl.mock.calls[0][0])).toContain("openrouter.ai");
+    expect(String(fetchImpl.mock.calls[1][0])).toContain("groq.com");
+
+    vi.useRealTimers();
+  });
 });
 
 describe("persistCardCore", () => {
