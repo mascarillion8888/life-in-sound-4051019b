@@ -60,7 +60,7 @@ NOT (2026-11-10, feat/lore-cinematic-style): kart lore'u kılavuzun ("Cinematic 
              (`lore-v3`) + dil EKLENDİ. Aşama etiketi eşikleri (lifeStageLabel.ts) ve kart arayüzü DEĞİŞMEDİ.
              `scripts/lore-eval.mjs` GERÇEK hattı çağırır (WORDS/FLAG kullanıcının gördüğü metin), `--model/--lang/
              --songs/--ages`, 1500 ms aralık, 429'da 3 kez artan bekleme (3/6/12 sn), satır-başına PATH, özet; çıktıyı
-             `scripts/lore-eval-output.txt`'ye de yazar (gitignored). Bu dalda: 91 dosya / 997 passed / 2 skipped; tsc 0;
+             `scripts/lore-eval-output.txt`'ye de yazar (gitignored). Bu dalda: 91 dosya / 994 passed / 2 skipped; tsc 0;
              eslint 0; prettier temiz; build exit 0. LLM çıktı KALİTESİ gerçek modelle doğrulanmadı (anahtar yok) —
              yalnız yapısal doğrulama raporlandı.
 
