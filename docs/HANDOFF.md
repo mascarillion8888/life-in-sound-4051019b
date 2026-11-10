@@ -45,18 +45,24 @@ NOT (2026-11-10, fix/llm-timeouts-no-body-logs): #11 (phase-1/generation-securit
              (`status=…`) ve sabit kod/mesaj; Groq yolunda gövde zaten loglanmıyordu. Kota/authz/cache izolasyonu S2'de.
              Bu dalda: 90 dosya / 954 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
 NOT (2026-11-10, feat/lore-cinematic-style): kart lore'u kılavuzun ("Cinematic Life-Journey Lore Engine") ruhuna
-             göre yeniden kuruldu — yeni SAF modül `src/lib/art/loreEngine.ts` (LORE_SYSTEM_PROMPT: formül + stil +
-             5 few-shot (TR + sadık EN karşılığı, "anlatım mantığı") + yasak anlatımlar (TR/EN) + klişe uyarısı +
-             uydurma yasağı + 5 soruluk son kontrol; `lifePeriodForAge(age)` → dönem + ipucu kelimeleri (8→keşif,
-             12→keşif, 13→kimlik, 18→kimlik, 28→sorgulama, 35→hafıza, null→dönem yok); TR/EN genel-lore filtresi;
-             40 kelime sınırı (bir yeniden yazma, sonra cümle sınırında kesme)). `generateCard.server.ts` motoru
-             kullanır; kullanıcı prompt'una "yaş: N, dönem: …, ipuçları: …" eklenir; yaş yoksa satır yok + "dönem
-             uydurma". `useCardLore.cacheKey`'e stil sürümü (`lore-v2`) + dil EKLENDİ (mevcut parçalar korunur);
-             QuizCard yalnız dili bağlama geçirir. Aşama etiketi eşikleri (lifeStageLabel.ts) ve kart arayüzü
-             DEĞİŞMEDİ. `scripts/lore-eval.mjs` yerel kalite aracı (CI'a girmez; package.json'a script eklenmedi;
-             anahtarı/ağ ayrıntısını yazdırmaz; anahtar yoksa net mesajla çıkar). Bu dalda: 91 dosya / 977 passed /
-             2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. LLM çıktı KALİTESİ gerçek modelle
-             doğrulanmadı (anahtar yok) — yalnız yapısal doğrulama raporlandı.
+             göre yeniden kuruldu — yeni SAF modül `src/lib/art/loreEngine.ts` (LORE_SYSTEM_PROMPT: formül + SONG FIRST +
+             stil + 5 few-shot (TR + sadık EN karşılığı, "anlatım mantığı") + "asla kopyalama" + yasak anlatımlar
+             (TR/EN, metnin HER YERİNDE) + "başta yaş yok" + "brief sızdırma yok" + klişe uyarısı + uydurma yasağı +
+             5 soruluk son kontrol; `lifePeriodForAge(age)` → dönem + en fazla 3 ipucu kelimesi (8→keşif, 12→keşif,
+             13→kimlik, 18→kimlik, 28→sorgulama, 35→hafıza, null→dönem yok); çıktı denetimi: kopya/echo
+             (`isCopiedLore`, few-shot + kılavuz örnekleriyle cümle/n-gram benzerliği), brief sızıntısı
+             (`hasPromptLeak`, "Age:/Period:/Genre:/Yaş:/Tür:/clues/…"), başta yaş (`hasLeadingAge`), yasak kalıplar,
+             40 kelime sınırı). Kılavuzun "ZAYIF/DOĞRU YAKLAŞIM" örnek satırları prompt'tan ÇIKARILDI (kopyalanıyordu).
+             Saf pipeline `generateLoreCore(encounter, write)` → yol: provider / tek yeniden yazma / şablon yedeği;
+             `generateCard.server.ts` buna delege eder (davranış: OpenRouter → Groq → şablon). Kullanıcı prompt'u artık
+             doğal dil ("Anahtar: değer" satırı YOK) + "yalnız lore metni; etiket/başlık/yaş satırı/liste YOK". Ana model
+             `OPENROUTER_PRIMARY_MODEL` ile seçilebilir (zaten vardı). `useCardLore.cacheKey`'e stil sürümü
+             (`lore-v3`) + dil EKLENDİ. Aşama etiketi eşikleri (lifeStageLabel.ts) ve kart arayüzü DEĞİŞMEDİ.
+             `scripts/lore-eval.mjs` GERÇEK hattı çağırır (WORDS/FLAG kullanıcının gördüğü metin), `--model/--lang/
+             --songs/--ages`, 1500 ms aralık, 429'da 3 kez artan bekleme (3/6/12 sn), satır-başına PATH, özet; çıktıyı
+             `scripts/lore-eval-output.txt`'ye de yazar (gitignored). Bu dalda: 91 dosya / 997 passed / 2 skipped; tsc 0;
+             eslint 0; prettier temiz; build exit 0. LLM çıktı KALİTESİ gerçek modelle doğrulanmadı (anahtar yok) —
+             yalnız yapısal doğrulama raporlandı.
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
