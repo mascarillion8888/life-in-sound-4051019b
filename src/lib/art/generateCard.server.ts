@@ -36,22 +36,21 @@ import { generateCardArtworkCore } from "./cardArtwork.server";
 import {
   buildMultidimensionalPrompt,
   cardArtworkSceneForGenre,
-  deterministicLore,
   historicalEraYear,
   type CardEncounter,
 } from "./cardBlueprint";
 import {
   buildLoreUserPrompt,
-  cleanLore,
-  exceedsWordLimit,
+  generateLoreCore,
   hasForbiddenPhrase,
+  isGenericLore,
+  LORE_STYLE_VERSION,
   LORE_SYSTEM_PROMPT,
   MAX_LORE_CHARS,
-  truncateToWordLimit,
 } from "./loreEngine";
 
-// Text hygiene lives in `loreEngine.ts`; re-exported so existing importers keep
-// working and callers can share one implementation.
+// Text hygiene + the pipeline live in `loreEngine.ts`; re-exported so existing
+// importers keep working and callers share one implementation.
 export {
   cleanLore,
   hasForbiddenPhrase,
@@ -106,7 +105,7 @@ export function buildLorePrompt(encounter: CardEncounter & { language?: Language
 /**
  * Provider chain for lore: OpenRouter (Gemini) first, then the Groq
  * `summarizer` role. Returns null when neither is configured or both fail,
- * so the caller can fall back to the deterministic lines.
+ * so the pipeline can fall back to the deterministic lines.
  */
 async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Promise<string | null> {
   try {
@@ -125,44 +124,23 @@ async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Prom
 }
 
 /**
- * LLM lore with deterministic fallback — never null, never throws. Output that
- * leans on forbidden phrases or runs long gets exactly one rewrite attempt; a
- * still-too-long answer is cut at a sentence boundary, a still-forbidden one
- * falls through to the deterministic lines, and a missing key (null) or any
- * failure goes straight to the deterministic lines.
+ * LLM lore with deterministic fallback — never null, never throws. Delegates the
+ * hygiene (leak / leading-age / copy / review-language / length) and the single
+ * rewrite to `generateLoreCore` in the pure `loreEngine`.
  */
 export async function generateCardLoreCore(
   encounter: GenerateCardInput,
   options: { fetchImpl?: typeof fetch } = {},
 ): Promise<string> {
-  const prompt = buildLorePrompt(encounter);
-  let candidate: string | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const llm = await writeLoreText(
-        attempt === 0
-          ? prompt
-          : `${prompt} Your previous answer used stock phrases or was too long: write it fresher, more specific and shorter.`,
-        options.fetchImpl,
-      );
-      if (llm == null) break; // no provider/key configured — retrying cannot help
-      const cleaned = cleanLore(llm);
-      if (cleaned.length < 20 || cleaned.length > 600) continue;
-      const ok =
-        cleaned.length <= MAX_LORE_CHARS &&
-        !hasForbiddenPhrase(cleaned) &&
-        !exceedsWordLimit(cleaned);
-      if (ok) return cleaned;
-      candidate = cleaned;
-    } catch {
-      break;
-    }
-  }
-  if (candidate) {
-    const cut = truncateToWordLimit(candidate);
-    if (cut.length >= 20 && !hasForbiddenPhrase(cut)) return cut;
-  }
-  return deterministicLore(encounter);
+  const language = isLanguage(encounter.language) ? encounter.language : DEFAULT_LANGUAGE;
+  const { text } = await generateLoreCore(
+    { ...encounter, languageName: LANGUAGE_NAMES[language] },
+    async (userPrompt) => {
+      const providerText = await writeLoreText(userPrompt, options.fetchImpl);
+      return { text: providerText, via: "openrouter" as const };
+    },
+  );
+  return text;
 }
 
 /* -------------------------------------------------------------------------- */

@@ -1,14 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildLoreUserPrompt,
   cleanLore,
   exceedsWordLimit,
+  generateLoreCore,
   hasForbiddenPhrase,
+  hasLeadingAge,
+  hasPromptLeak,
+  isCopiedLore,
   isGenericLore,
   lifePeriodForAge,
   LORE_STYLE_VERSION,
   LORE_SYSTEM_PROMPT,
+  maxCopySimilarity,
   MAX_LORE_WORDS,
   truncateToWordLimit,
   wordCount,
@@ -35,7 +40,10 @@ describe("lifePeriodForAge", () => {
     expect(lifePeriodForAge(-3)).toBeNull();
   });
 
-  it("exposes the period's conflict/emotion cue words", () => {
+  it("exposes at most three cue words per period", () => {
+    for (const age of [10, 15, 22, 30, 40]) {
+      expect(lifePeriodForAge(age)?.hints.length).toBeLessThanOrEqual(3);
+    }
     expect(lifePeriodForAge(40)?.cues).toContain("kabullenme");
     expect(lifePeriodForAge(10)?.cues).toContain("hayal gücü");
   });
@@ -54,13 +62,33 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
     mustInclude("40 words");
   });
 
-  it("carries the forbidden phrasings (TR + EN)", () => {
-    mustInclude("Bu şarkı bize");
-    mustInclude("Müzikal olarak");
-    mustInclude("Mutlaka dinlemelisiniz");
+  it("puts the song first", () => {
+    mustInclude("SONG FIRST");
+    mustInclude("must never replace the song");
+    mustInclude("sentences that could swap places");
+  });
+
+  it("forbids opening with the age", () => {
+    mustInclude("never begin with the age");
+  });
+
+  it("forbids leaking the brief skeleton", () => {
+    mustInclude("NEVER LEAK THE BRIEF");
+    mustInclude('"Age:"');
+    mustInclude('"clues"');
+  });
+
+  it("forbids review language anywhere, not only at the start", () => {
+    mustInclude("anywhere in the text (not only at the start)");
+    mustInclude("Bu şarkı");
+    mustInclude("Bu albüm");
     mustInclude("This song");
-    mustInclude("unforgettable journey");
+    mustInclude("This album");
     mustInclude("must-listen");
+  });
+
+  it("bans copying the few-shot examples", () => {
+    mustInclude("NEVER copy");
   });
 
   it("carries the no-fabrication ban", () => {
@@ -86,6 +114,12 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
     );
   });
 
+  it("no longer carries the copyable weak/right example lines", () => {
+    expect(LORE_SYSTEM_PROMPT).not.toContain("Weak:");
+    expect(LORE_SYSTEM_PROMPT).not.toContain("Right:");
+    expect(LORE_SYSTEM_PROMPT).not.toContain("The years you first questioned your own limits");
+  });
+
   it("carries the 5-question final check", () => {
     expect(LORE_SYSTEM_PROMPT).toContain("FINAL CHECK");
     expect(LORE_SYSTEM_PROMPT).toContain("Could this text be applied to any song?");
@@ -93,58 +127,131 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
   });
 
   it("has a versioned style id", () => {
-    expect(LORE_STYLE_VERSION).toBe("lore-v2");
+    expect(LORE_STYLE_VERSION).toBe("lore-v3");
   });
 });
 
 describe("buildLoreUserPrompt", () => {
-  const base = {
-    songTitle: "Fragile",
-    artist: "Sting",
-    languageName: "English",
-  };
+  const base = { songTitle: "Fragile", artist: "Sting", languageName: "English" };
 
-  it("states the real age and its mapped life period with cue words", () => {
-    const prompt = buildLoreUserPrompt({ ...base, age: 22 });
-    expect(prompt).toContain("at age 22");
-    expect(prompt).toContain("yaş: 22");
-    expect(prompt).toContain("Self-discovery & questioning");
-    expect(prompt).toContain("sorgulama");
+  it("is natural language with no 'key: value' lines", () => {
+    const prompt = buildLoreUserPrompt({
+      ...base,
+      age: 22,
+      eraYear: 1987,
+      genre: "Gothic Folk",
+      releaseYear: 1987,
+    });
+    expect(prompt).not.toMatch(/\b(age|period|genre|release year|yaş|dönem|tür)\s*:/i);
+    expect(prompt).toContain('about the song "Fragile" by Sting');
+    expect(prompt).toContain("the genre is Gothic Folk");
+    expect(prompt).toContain("it was released in 1987");
   });
 
-  it("omits the period line and forbids inventing one when the age is unknown", () => {
+  it("states the real age and at most three period cue words", () => {
+    const prompt = buildLoreUserPrompt({ ...base, age: 22 });
+    expect(prompt).toContain("at age 22");
+    expect(prompt).toContain("kendini bulma");
+    expect(prompt).toContain("soft frame");
+  });
+
+  it("omits the period hint and forbids inventing one when the age is unknown", () => {
     const prompt = buildLoreUserPrompt(base);
-    expect(prompt).not.toContain("yaş:");
-    expect(prompt).toContain("yaş bilinmiyor");
-    expect(prompt).toContain("do not invent an age or a life period");
+    expect(prompt).toContain("age when they first heard it is unknown");
+    expect(prompt).toContain("Do not invent an age or a life period");
   });
 
   it("names the target UI language", () => {
     expect(buildLoreUserPrompt({ ...base, languageName: "Türkçe" })).toContain("in Türkçe");
   });
 
-  it("carries the anti-fabrication and non-clinical rules", () => {
+  it("carries the song-first, no-leading-age and anti-fabrication rules", () => {
     const prompt = buildLoreUserPrompt({ ...base, age: 9 });
+    expect(prompt).toContain("Work out the song's own character first");
+    expect(prompt).toContain("Do not start with the age");
     expect(prompt).toContain("do not invent lyrics");
-    expect(prompt).toContain("never quote lyrics");
     expect(prompt).toContain("never diagnose, label, or pathologize");
   });
 
-  it("weaves the personal memory and the era year when supplied", () => {
-    const prompt = buildLoreUserPrompt({
-      ...base,
-      age: 9,
-      eraYear: 1987,
-      releaseYear: 1987,
-      userMemory: "rain on the window that summer",
-    });
-    expect(prompt).toContain("(around 1987)");
-    expect(prompt).toContain("Release year: 1987");
-    expect(prompt).toContain("Personal memory to honour: rain on the window that summer");
+  it("ends with the prose-only instruction", () => {
+    expect(buildLoreUserPrompt({ ...base, age: 9 })).toContain(
+      "Write ONLY the lore text — no labels, no headings, no age/period line, no lists.",
+    );
+  });
+
+  it("weaves the personal memory when supplied", () => {
+    const prompt = buildLoreUserPrompt({ ...base, age: 9, userMemory: "rain on the window" });
+    expect(prompt).toContain("Honour this personal memory from the listener: rain on the window");
   });
 });
 
-describe("forbidden-phrase filter (TR + EN)", () => {
+describe("copy protection (few-shot echo)", () => {
+  const copied = [
+    // EN few-shot, verbatim
+    "Epic stories and a world that pushes its own limits.",
+    // TR few-shot, verbatim
+    "Hız, enerji, isyan ve başkaldırı.",
+    // the guide's "right" example, verbatim
+    "The years you first questioned your own limits. The moment you began to learn what power is.",
+  ];
+
+  it("flags a verbatim few-shot / guide example as GENERIC", () => {
+    for (const text of copied) {
+      expect(isCopiedLore(text)).toBe(true);
+      expect(isGenericLore(text)).toBe(true);
+      expect(maxCopySimilarity(text)).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("passes a fresh, song-specific line", () => {
+    const fresh = "Kendi sınırlarını ilk kez zorladığın yıllar. Gücün ne olduğunu öğrendiğin an.";
+    expect(isCopiedLore(fresh)).toBe(false);
+    expect(isGenericLore(fresh)).toBe(false);
+  });
+});
+
+describe("prompt-leak filter", () => {
+  const leaks = [
+    "Age: 40, Period: Memory & acceptance. Conflict/Emotion clues: kabullenme. Genre: Doom Metal. Release year: 2011.",
+    "Yaş: 40, Dönem: hafıza, Tür: Doom Metal.",
+    "Release year: 1983. The Trooper opens a door.",
+    "clues: power, pride",
+  ];
+
+  it("flags brief-skeleton output as GENERIC", () => {
+    for (const text of leaks) {
+      expect(hasPromptLeak(text)).toBe(true);
+      expect(isGenericLore(text)).toBe(true);
+    }
+  });
+
+  it("does not flag ordinary prose", () => {
+    expect(hasPromptLeak("Yıllar sonra o dönem bir anahtar oldu.")).toBe(false);
+  });
+});
+
+describe("leading-age filter", () => {
+  const leading = [
+    "Age 22. The nights you first tested your own edges.",
+    "22 yaş. Kendi sınırlarını ilk kez zorladığın yıllar.",
+    "Kırk yaşında. Sessizliğin sana öğrettiği derinlik.",
+    "At 22, the world finally had edges.",
+  ];
+
+  it("flags a leading age as GENERIC", () => {
+    for (const text of leading) {
+      expect(hasLeadingAge(text)).toBe(true);
+      expect(isGenericLore(text)).toBe(true);
+    }
+  });
+
+  it("allows the age inside the prose", () => {
+    const inside = "Yirmi iki yaşındaydın; o şarkı sana gücü öğretti.";
+    expect(hasLeadingAge(inside)).toBe(false);
+  });
+});
+
+describe("forbidden-phrase filter (TR + EN, anywhere)", () => {
   const rejects = (phrases: string[], alsoGeneric: boolean) => {
     for (const phrase of phrases) {
       expect(hasForbiddenPhrase(phrase)).toBe(true);
@@ -177,10 +284,15 @@ describe("forbidden-phrase filter (TR + EN)", () => {
     );
   });
 
+  it("catches the banned phrasing mid-text, not only at the start", () => {
+    expect(hasForbiddenPhrase("Yıllar geçti ve bu şarkı hâlâ seninle.")).toBe(true);
+    expect(hasForbiddenPhrase("Years passed and this song stayed with you.")).toBe(true);
+    expect(isGenericLore("Yıllar geçti ve bu şarkı hâlâ seninle.")).toBe(true);
+  });
+
   it("passes a proper, specific lore line", () => {
     const good = "Epik hikâyeler ve sınırlarını zorlayan bir dünya.";
     expect(hasForbiddenPhrase(good)).toBe(false);
-    expect(isGenericLore(good)).toBe(false);
   });
 });
 
@@ -226,5 +338,70 @@ describe("cleanLore", () => {
     expect(cleanLore("The lore.  ")).toBe("The lore.");
     expect(cleanLore(null)).toBe("");
     expect(cleanLore(undefined)).toBe("");
+  });
+});
+
+describe("generateLoreCore (pipeline)", () => {
+  const ENCOUNTER = {
+    artist: "Sting",
+    songTitle: "Fragile",
+    genre: "Gothic Folk",
+    releaseYear: 1987,
+    encounterAge: 22,
+    languageName: "English",
+  };
+  const GOOD =
+    "The nights you first tested your own edges. The moment power stopped being an idea.";
+
+  it("returns provider output on the first clean answer", async () => {
+    const write = vi.fn().mockResolvedValue({ text: GOOD, via: "openrouter" });
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result).toEqual({ text: GOOD, path: "provider" });
+    expect(write).toHaveBeenCalledOnce();
+  });
+
+  it("rewrites once when the first answer leaks the brief", async () => {
+    const write = vi
+      .fn()
+      .mockResolvedValueOnce({
+        text: "Age: 22, Period: exploration. clues: power.",
+        via: "openrouter",
+      })
+      .mockResolvedValueOnce({ text: GOOD, via: "openrouter" });
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result).toEqual({ text: GOOD, path: "rewrite" });
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(write.mock.calls[1][0]).toContain("write it again");
+  });
+
+  it("rewrites once when the first answer copies a few-shot line", async () => {
+    const write = vi
+      .fn()
+      .mockResolvedValueOnce({ text: "Hız, enerji, isyan ve başkaldırı.", via: "openrouter" })
+      .mockResolvedValueOnce({ text: GOOD, via: "openrouter" });
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result.path).toBe("rewrite");
+  });
+
+  it("falls to the template when the provider keeps failing the filter", async () => {
+    const write = vi
+      .fn()
+      .mockResolvedValue({ text: "Age: 22. This song is a must-listen.", via: "openrouter" });
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result.path).toBe("template");
+    expect(result.text.length).toBeGreaterThan(20);
+  });
+
+  it("falls to the template when there is no provider key (null)", async () => {
+    const write = vi.fn().mockResolvedValue({ text: null, via: "openrouter" });
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result.path).toBe("template");
+    expect(write).toHaveBeenCalledOnce();
+  });
+
+  it("falls to the template when the provider throws", async () => {
+    const write = vi.fn().mockRejectedValue(new Error("network down"));
+    const result = await generateLoreCore(ENCOUNTER, write);
+    expect(result.path).toBe("template");
   });
 });
