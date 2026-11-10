@@ -42,30 +42,30 @@ describe("lifePeriodForAge", () => {
 });
 
 describe("LORE_SYSTEM_PROMPT (style guide)", () => {
+  const mustInclude = (needle: string) => expect(LORE_SYSTEM_PROMPT).toContain(needle);
+
   it("carries the core formula", () => {
-    expect(LORE_SYSTEM_PROMPT).toContain(
-      "SONG → AGE → LIFE PERIOD → INNER CONFLICT → EMOTION → LORE",
-    );
+    mustInclude("SONG → AGE → LIFE PERIOD → INNER CONFLICT → EMOTION → LORE");
   });
 
   it("carries the length rule (1–3 sentences, 8–30, never over 40)", () => {
-    expect(LORE_SYSTEM_PROMPT).toContain("1–3 sentences");
-    expect(LORE_SYSTEM_PROMPT).toContain("8–30 words");
-    expect(LORE_SYSTEM_PROMPT).toContain("40 words");
+    mustInclude("1–3 sentences");
+    mustInclude("8–30 words");
+    mustInclude("40 words");
   });
 
   it("carries the forbidden phrasings (TR + EN)", () => {
-    expect(LORE_SYSTEM_PROMPT).toContain("Bu şarkı bize");
-    expect(LORE_SYSTEM_PROMPT).toContain("Müzikal olarak");
-    expect(LORE_SYSTEM_PROMPT).toContain("Mutlaka dinlemelisiniz");
-    expect(LORE_SYSTEM_PROMPT).toContain("This song");
-    expect(LORE_SYSTEM_PROMPT).toContain("unforgettable journey");
-    expect(LORE_SYSTEM_PROMPT).toContain("must-listen");
+    mustInclude("Bu şarkı bize");
+    mustInclude("Müzikal olarak");
+    mustInclude("Mutlaka dinlemelisiniz");
+    mustInclude("This song");
+    mustInclude("unforgettable journey");
+    mustInclude("must-listen");
   });
 
   it("carries the no-fabrication ban", () => {
-    expect(LORE_SYSTEM_PROMPT).toContain("NO FABRICATION");
-    expect(LORE_SYSTEM_PROMPT).toContain("Never quote or paraphrase lyrics");
+    mustInclude("NO FABRICATION");
+    mustInclude("Never quote or paraphrase lyrics");
   });
 
   it("carries all five few-shot references with their narrative logic", () => {
@@ -145,28 +145,36 @@ describe("buildLoreUserPrompt", () => {
 });
 
 describe("forbidden-phrase filter (TR + EN)", () => {
-  it("catches the English review/ad copy patterns", () => {
-    for (const phrase of [
-      "This song is a must-listen.",
-      "This track touches your heart.",
-      "Musically, it is unforgettable journey material.",
-      "It inspires you every time.",
-    ]) {
+  const rejects = (phrases: string[], alsoGeneric: boolean) => {
+    for (const phrase of phrases) {
       expect(hasForbiddenPhrase(phrase)).toBe(true);
-      expect(isGenericLore(phrase)).toBe(true);
+      if (alsoGeneric) expect(isGenericLore(phrase)).toBe(true);
     }
+  };
+
+  it("catches the English review/ad copy patterns", () => {
+    rejects(
+      [
+        "This song is a must-listen.",
+        "This track touches your heart.",
+        "Musically, it is unforgettable journey material.",
+        "It inspires you every time.",
+      ],
+      true,
+    );
   });
 
   it("catches the Turkish review/ad copy patterns", () => {
-    for (const phrase of [
-      "Bu şarkı bize huzur verir.",
-      "Müzikal olarak çok güçlü.",
-      "Kalbinize dokunur.",
-      "Size ilham verir.",
-      "Mutlaka dinlemelisiniz.",
-    ]) {
-      expect(hasForbiddenPhrase(phrase)).toBe(true);
-    }
+    rejects(
+      [
+        "Bu şarkı bize huzur verir.",
+        "Müzikal olarak çok güçlü.",
+        "Kalbinize dokunur.",
+        "Size ilham verir.",
+        "Mutlaka dinlemelisiniz.",
+      ],
+      false,
+    );
   });
 
   it("passes a proper, specific lore line", () => {
