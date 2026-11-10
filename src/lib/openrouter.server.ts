@@ -8,12 +8,21 @@
  * fallback attempt: they are not transient and would fail the same way on the
  * fallback model.
  *
+ * Every request carries a default timeout (`DEFAULT_TIMEOUT_MS`, overridable
+ * per call via `timeoutMs`); on timeout the call throws so the caller's
+ * fallback chain (Groq → deterministic template) takes over.
+ *
  * SECURITY:
  *   - Key is read from `OPENROUTER_API_KEY` — a server-only env var, NEVER
  *     `VITE_`-prefixed. This file must only be imported from server functions
  *     (`*.server.ts`) or other server-only modules.
  *   - No key is ever returned or logged.
+ *   - Provider response bodies are NEVER logged: error logs carry only the
+ *     status code and a static code. A body can echo the prompt or user text.
  */
+
+/** Default request budget for one provider call, in milliseconds. */
+const DEFAULT_TIMEOUT_MS = 20_000;
 
 type OpenRouterMessage = {
   role: "system" | "user";
@@ -26,6 +35,8 @@ type CallOpenRouterOptions = {
   /** Ask the provider for an OpenAI-format JSON object response. */
   jsonMode?: boolean;
   signal?: AbortSignal;
+  /** Per-call request budget (ms). Defaults to `DEFAULT_TIMEOUT_MS`. */
+  timeoutMs?: number;
   /** Optional fetch override (for tests). Defaults to global fetch. */
   fetchImpl?: typeof fetch;
 };
@@ -97,62 +108,82 @@ export async function callOpenRouter(
   const primaryModel = getEnv("OPENROUTER_PRIMARY_MODEL") ?? "google/gemini-2.5-flash-lite";
   const fallbackModel = getEnv("OPENROUTER_FALLBACK_MODEL") ?? "openrouter/free";
   const fetchImpl = options.fetchImpl ?? fetch;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-  let result: AttemptResult;
-  let usedModel = primaryModel;
-  let didFallback = false;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const abortFromCaller = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  else options.signal?.addEventListener("abort", abortFromCaller, { once: true });
 
   try {
-    result = await attempt(apiKey, baseUrl, primaryModel, messages, { ...options, fetchImpl });
-  } catch (err) {
-    // Network-level failure (thrown by fetch): treat like a transient provider
-    // error — try the fallback once.
-    console.warn(
-      `[openrouter] ${primaryModel} ağ hatası → fallback deneniyor: ${fallbackModel}`,
-      (err as Error).message,
-    );
-    result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
-    usedModel = fallbackModel;
-    didFallback = true;
-  }
+    let result: AttemptResult;
+    let usedModel = primaryModel;
+    let didFallback = false;
 
-  if (result.status === 429 || result.status >= 500) {
-    if (!didFallback) {
+    try {
+      result = await attempt(apiKey, baseUrl, primaryModel, messages, {
+        ...options,
+        signal: controller.signal,
+        fetchImpl,
+      });
+    } catch {
+      if (controller.signal.aborted) {
+        throw new Error("OpenRouter request timed out or was cancelled");
+      }
+      // Network-level failure (thrown by fetch): treat like a transient
+      // provider error — try the fallback once.
       console.warn(
-        `[openrouter] ${primaryModel} → ${result.status} (rate limit / sunucu), fallback deneniyor: ${fallbackModel}`,
+        `[openrouter] ${primaryModel} ağ hatası → fallback deneniyor: ${fallbackModel}`,
+        "network failure",
       );
-      result = await attempt(apiKey, baseUrl, fallbackModel, messages, { ...options, fetchImpl });
+      result = await attempt(apiKey, baseUrl, fallbackModel, messages, {
+        ...options,
+        signal: controller.signal,
+        fetchImpl,
+      });
       usedModel = fallbackModel;
       didFallback = true;
     }
-  }
 
-  if (!(result.status >= 200 && result.status < 300)) {
-    // Transient hatalar fallback'ten sonra da geldiyse, ya da istemci hatası
-    // (400/401/…) varsa — fallback anlamsız; fırlat. (isteğe bağlı: anlamlı log)
-    const detail = result.text.slice(0, 200).replace(/\n/g, " ");
     if (result.status === 429 || result.status >= 500) {
-      console.error(
-        `[openrouter] hata model=${result.model} status=${result.status} gövde=${detail}`,
-      );
-      throw new Error(
-        `OpenRouter ${result.model} başarısız: HTTP ${result.status} (fallback de başarısız)`,
-      );
+      if (!didFallback) {
+        console.warn(
+          `[openrouter] ${primaryModel} → ${result.status} (rate limit / sunucu), fallback deneniyor: ${fallbackModel}`,
+        );
+        result = await attempt(apiKey, baseUrl, fallbackModel, messages, {
+          ...options,
+          signal: controller.signal,
+          fetchImpl,
+        });
+        usedModel = fallbackModel;
+        didFallback = true;
+      }
     }
-    console.error(
-      `[openrouter] istemci hatası model=${usedModel} status=${result.status} gövde=${detail}`,
-    );
-    throw new Error(`OpenRouter isteği reddedildi: HTTP ${result.status}`);
-  }
 
-  const content = parseContent(result.text);
-  if (content === null) {
-    console.error(
-      `[openrouter] parse edilemeyen yanıt model=${usedModel} gövde=${result.text.slice(0, 120).replace(/\n/g, " ")}`,
-    );
-    return null;
-  }
+    if (!(result.status >= 200 && result.status < 300)) {
+      // Transient hatalar fallback'ten sonra da geldiyse, ya da istemci hatası
+      // (400/401/…) varsa — fallback anlamsız; fırlat. Gövde ASLA loglanmaz.
+      if (result.status === 429 || result.status >= 500) {
+        console.error(`[openrouter] hata model=${result.model} status=${result.status}`);
+        throw new Error(
+          `OpenRouter ${result.model} başarısız: HTTP ${result.status} (fallback de başarısız)`,
+        );
+      }
+      console.error(`[openrouter] istemci hatası model=${usedModel} status=${result.status}`);
+      throw new Error(`OpenRouter isteği reddedildi: HTTP ${result.status}`);
+    }
 
-  console.log(`[openrouter] OK model=${usedModel}${didFallback ? " (fallback)" : ""}`);
-  return content;
+    const content = parseContent(result.text);
+    if (content === null) {
+      console.error(`[openrouter] parse edilemeyen yanıt model=${usedModel}`);
+      return null;
+    }
+
+    console.log(`[openrouter] OK model=${usedModel}${didFallback ? " (fallback)" : ""}`);
+    return content;
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abortFromCaller);
+  }
 }
