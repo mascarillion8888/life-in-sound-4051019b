@@ -37,6 +37,13 @@ Lint:        ✅ 0 hata — `npm run lint` exit 0 (2026-11-10 doğrulandı).
 Sonar/CI:    ✅ temiz — PR #20/#22/#24'te SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
 Build:       exit 0 (2026-11-10 doğrulandı).
 Push:        main = origin/main (375e0a3). Bu oturumun dalı docs/sync-status-2026-11-10 (docs-only).
+NOT (2026-11-10, fix/llm-timeouts-no-body-logs): #11 (phase-1/generation-security) BİRLEŞTİRİLMEDİ (Lovable geçmişi;
+             rebase/force-push YOK). #11'den yalnız İKİ parça elle taşındı: (a) summarizer (Groq, orchestra.ts) +
+             OpenRouter (openrouter.server.ts) çağrılarına varsayılan 20 sn zaman aşımı (AbortController; çağrı başına
+             `timeoutMs` ile geçersiz kılınabilir), zaman aşımı mevcut fallback zincirine düşer (OpenRouter → Groq →
+             şablon); (b) openrouter.server.ts hata yolları artık yanıt GÖVDESİNİ loglamıyor — yalnız durum kodu
+             (`status=…`) ve sabit kod/mesaj; Groq yolunda gövde zaten loglanmıyordu. Kota/authz/cache izolasyonu S2'de.
+             Bu dalda: 90 dosya / 954 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
