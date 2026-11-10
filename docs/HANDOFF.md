@@ -63,6 +63,21 @@ NOT (2026-11-10, feat/lore-cinematic-style): kart lore'u kılavuzun ("Cinematic 
              `scripts/lore-eval-output.txt`'ye de yazar (gitignored). Bu dalda: 91 dosya / 994 passed / 2 skipped; tsc 0;
              eslint 0; prettier temiz; build exit 0. LLM çıktı KALİTESİ gerçek modelle doğrulanmadı (anahtar yok) —
              yalnız yapısal doğrulama raporlandı.
+NOT (2026-11-10, feat/lore-cinematic-style · 3. tur): sağlayıcı yolunun çoğu reddedilip şablona düştüğü için mimari
+             değişti — (A) tek çağrıda 3 ADAY istenir ("###" ayraçlı düz metin; JSON da kabul, ayraç yoksa tek metin),
+             (B) SERT/YUMUŞAK filtre: SERT (asla seçilmez) = prompt sızıntısı/başlık/iskelet, few-shot kopyası,
+             yanlış dil, 40+ kelime, "Bu şarkı/This song" kalıpları; YUMUŞAK (puan düşürür) = klişe kelimeler,
+             yaş sayısı/başta yaş, uydurma sahne kelimeleri, 3+ cümle, uzunluk, dil karışması; seçim = sert
+             ihlalsizler arasında en az yumuşak ihlal, eşitlikte en kısa. Hiçbiri geçmezse TEK yeniden yazma, o da
+             olmazsa şablon. (C) ŞABLON yerelleştirildi: tr/en/es/de/fr (tr = mevcut Türkçe satırlar, davranış sabit;
+             satırlar kısa/doğal, uydurma olay-mekân yok; `deterministicLore(encounter, language)`; gösterim adı da
+             kod da kabul). (D) `scripts/lore-eval.mjs --verbose` her reddedilen adayı metniyle + hard/soft nedenleriyle
+             yazar; normal çıktıda PATH yanında FLAG = "ok" | "reject:<ilk neden>"; çıktı dosyasına da yazar (anahtar
+             asla yazılmaz). (E) Gecikme: hâlâ TEK çağrı (3 aday tek yanıtta); zaman aşımı ve OpenRouter→Groq→şablon
+             zinciri aynı; maxToken 300→900 (3 adaya yeter). (F) Önbellek stili zaten `lore-v3`. Bu turda: 91 dosya /
+             1006 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek modelle kalite iddiası YOK —
+             mock sağlayıcı ile "3 adaydan 1'i temiz" seçimi, hepsi sert ihlalli → yeniden yazma → şablon düşüşü ve
+             dile uygun şablon yapısal testlerle doğrulandı.
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
