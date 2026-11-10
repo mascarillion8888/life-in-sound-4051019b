@@ -98,6 +98,7 @@ export function QuizCard({
     mood: (song as { mood?: string | null } | null)?.mood ?? null,
     cardIndex: card.index,
     genre: song ? `${song.title} ${song.artist} ${song.album ?? ""}` : null,
+    language,
   });
   const coverUrl = song?.artworkUrl ?? null;
   const copy = song
