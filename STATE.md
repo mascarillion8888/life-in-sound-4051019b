@@ -44,9 +44,15 @@ Bu protokol tam da bunun için tasarlandı.
 
 ### ⏳ Sıradaki Fazlar
 
-- **Faz 4:** Music Memory veri modeli (tasarım onayı gerekli — `docs/TECH/DATABASE_PLAN.md` DRAFT, henüz implement edilmedi)
-- **Faz 5:** User Accounts (anonim → email migration)
-- **Faz 6:** Public Beta → Product Hunt → Mobile
+- **Faz 4:** Music Memory veri modeli — **KISMEN YAPILDI** (tasarım onayı hâlâ gerekli;
+  `docs/TECH/DATABASE_PLAN.md` hâlâ DRAFT). Pratikte şu tablolar var: `journeys`,
+  `journey_songs` (journeys.songs JSONB), `cards`, `profiles`, `collection_entries`
+  (migration 0001–0005). Kalan iş: DRAFT'ı gerçek şemayla hizalamak (fark raporu + onay).
+- **Faz 5:** User Accounts (anonim → email migration) — **BÜYÜK ÖLÇÜDE YAPILDI**:
+  anonim Supabase oturumu, Google ile `linkIdentity` bağlama (dönüşte `/journey`),
+  `profiles` (doğum yılı), favorilerin hesaba senkronu (yerel-öncelikli). Kalan: anonim
+  kullanıcı birikimi temizliği ve hesap silme/gizlilik akışı (bkz. HANDOFF §5b).
+- **Faz 6:** Public Beta → Product Hunt → Mobile — **BAŞLAMADI.**
 
 ---
 
@@ -256,5 +262,5 @@ Uygulayan: [AI]
 - **2026-09-17 (Hermes):** mood→song veri-yolu bağlandı (Faz 1: journey'de şarkı seçilince inferMood → Song.mood'a yaz → localStorage persist → SceneRoom mood-backdrop gösterir; results'ta ayrı infer devam eder). Visual Resolver / Asset Registry TAM kurulumu Phase 4'e ertelendi (Ana_mimari roadmap, Asset Factory raporu §15). Kod bugün yalnız mood eksenini çözüyor; kanonik Resolver giridi mood+genre+decade bileşimidir (18 Eylül kararı — KARARLAR). Genişleme sırası (Asset Factory §15): 1980s×Rock, 1980s×Soul/Funk/Disco vb. — yalnızca kullanıcı onayıyla, No Uncontrolled Refactoring guardrail'i altında küçük adımlarla.
 - **2026-09-17 (Hermes) — GÜVENLİK OLAYI + GIT COMMIT KİMLİK KURALI:** `.claude/settings.local.json`'daki OpenRouter API key kazara commit'lenip push edildi (4493914); tespit edilip git history'den force-with-lease ile purge edildi ve key derhal rotate edildi. Kök neden: `git commit --allow-empty` index'teki staged dosyaları da commit'e dahil ediyor — gerçekten boş commit için önce `git status` / `git diff --cached --name-only` ile index'in boş olduğu doğrulanmalı. `.claude/` artık `.gitignore`'da. **OTOMATİK COMMIT KURALI:** commit'ler `mascarillion8888 <67925182+mascarillion8888@users.noreply.github.com>` kimliğiyle atılmalı (repo-local `git config`), aksi halde Vercel Hobby plan "commit author did not have contributing access" hatasıyla deployment'ı bloklar.
 
-_Son güncelleme: Hermes — 2026-09-16 (mood-backdrop 9 görsel 1620x941 güncellendi + push; mood→song bağlaması açık kaldı; 639/2 test, tsc 0)_
+_Son güncelleme: OpenHands — 2026-11-10 (belge senkronu: yol haritası güncellendi — Faz 4 KISMEN, Faz 5 BÜYÜK ÖLÇÜDE YAPILDI, Faz 6 başlamadı; HANDOFF §1 git gerçeğine göre yeniden yazıldı. Kaynak: `gh pr list --state all` + `git log`. Kod değişmedi.)_
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + docs/HANDOFF.md gerçektir._
