@@ -78,6 +78,18 @@ NOT (2026-11-10, feat/lore-cinematic-style · 3. tur): sağlayıcı yolunun ço�
              1006 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek modelle kalite iddiası YOK —
              mock sağlayıcı ile "3 adaydan 1'i temiz" seçimi, hepsi sert ihlalli → yeniden yazma → şablon düşüşü ve
              dile uygun şablon yapısal testlerle doğrulandı.
+NOT (2026-11-10, feat/lore-cinematic-style · 4. tur): `tr` şablonu yanlışlıkla İNGİLİZCE çıkıyordu — kök neden:
+             `LIFE_STAGES[].lines` zaten İngilizceydi ve `tr` için yerelleştirilmiş set yoktu (bu yüzden İngilizceye
+             düşüyordu). (1) `cardBlueprint.ts`: tr/es/de/fr için GERÇEK yerelleştirilmiş setler (her dilde 8 sahne × 3
+             satır + kendi opener/closer'ları); İngilizce satırlar varsayılan (`en` + bilinmeyen dil). tr satırları
+             doğal, kısa (1-2 cümle), olay/mekân uydurmuyor ve "Bu şarkı…" kalıbı içermiyor; şarkı adı ve sanatçı
+             geçebiliyor. (2) `loreEngine.ts`: `detectLoreLanguage` / `loreLanguageKey` / `languageCheck`
+             ("ok" | "WRONG-LANG"); tespitte tırnak içi şarkı adları yok sayılır ve yalnız `ş ğ ı Ş Ğ İ` Türkçe sinyali
+             sayılır (ö/ü/ç Almanca/Fransızca'da da var). Yeniden-yazma "kırpma" yedeği de artık `languageCheck`
+             geçmeli — yanlış dilde satır ASLA gönderilmez. (3) `scripts/lore-eval.mjs`: FLAG sütunu istenen dille
+             uyuşmayan satıra `WRONG-LANG` yazar (reddedilme nedeninden önce). Bu turda: 91 dosya / 1014 passed /
+             2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Mock sağlayıcı (`OPENROUTER_BASE_URL`) ile
+             TR isteğine EN yanıt → `WRONG-LANG` + Türkçe şablona düşüş uçtan uca doğrulandı.
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
