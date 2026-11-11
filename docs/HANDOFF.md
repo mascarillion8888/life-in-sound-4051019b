@@ -18,25 +18,22 @@
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:         docs/sync-status-2026-11-10 (bu oturum, docs-only). main = origin/main.
-HEAD:        main 375e0a3 — "Merge pull request #24 from mascarillion8888/fix/hide-card-no-replay-fade"
-             375e0a3 — Merge PR #24 (gizle→göster'de giriş animasyonu yeniden oynamıyor)
-             797a5fe — docs: note the card enter-fade replay fix in HANDOFF §1 (PR #24 gövdesi)
-             5e2c947 — fix(card): do not replay enter fade when showing hidden card (PR #24 gövdesi)
-             ea59c71 — Merge pull request #20 …/feat/collection-supabase-sync
-             810b07e — Merge pull request #22 …/fix/hide-card-poster-and-google-return
-             2fd7204 — Merge pull request #21 …/feat/card-opacity-and-wallpaper-toggle
-             3354d9b — Merge pull request #19 …/docs/handoff-update
-             5791309 — Merge pull request #18 …/feat/google-link-status
-             a0c488c — Merge pull request #17 …/feat/card-heart-and-stage-label
-             0151dbf — Merge pull request #16 …/chore/lint-debt
-             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #12 personal-lore, #10 auth-birth-year; #9/#8/#7/#6/#4/#3/#2/#1)
-Testler:     main (375e0a3): 87 dosya passed / 1 skipped (88); 943 passed / 2 skipped (945). vitest v4.1.11, `npm test -- --run` exit 0 (2026-11-10 doğrulandı).
-tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-10 doğrulandı).
-Lint:        ✅ 0 hata — `npm run lint` exit 0 (2026-11-10 doğrulandı).
-Sonar/CI:    ✅ temiz — PR #20/#22/#24'te SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
-Build:       exit 0 (2026-11-10 doğrulandı).
-Push:        main = origin/main (375e0a3). Bu oturumun dalı docs/sync-status-2026-11-10 (docs-only).
+Dal:         docs/cinematic-life-poster-design (bu oturum, docs-only). main = origin/main.
+HEAD:        main 60f6a52 — "Merge pull request #28 from mascarillion8888/fix/lore-filter-polish"
+             60f6a52 — Merge PR #28 (lore filter polish; main = origin/main)
+             e581a6b — Merge PR #27 (feat/lore-cinematic-style)
+             90362cd / e97bf41 — lore filter fix turları (PR #27/#28 gövdesi)
+             (daha eskisi: #26 llm-timeouts, #25 docs/sync-status, #24 hide-card-no-replay-fade,
+             #22 hide-card-poster-and-google-return, #21 card-opacity-and-wallpaper-toggle,
+             #20 collection-supabase-sync, #19 handoff-update, #18 google-link-status,
+             #17 card-heart-and-stage-label, #16 lint-debt, #14 ci-ignore-scripts,
+             #13 real-age-from-birth-year, #12 personal-lore, #10 auth-birth-year)
+Testler:     main (60f6a52): 90 dosya passed / 1 skipped (91); 1037 passed / 2 skipped (1039). vitest v4.1.11, `npm test -- --run` exit 0 (2026-11-11 doğrulandı).
+tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-11 doğrulandı).
+Lint:        ✅ 0 hata — `npm run lint` exit 0 (2026-11-11 doğrulandı).
+Sonar/CI:    ✅ temiz — PR #20/#22/#24'te SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı (eski tur).
+Build:       exit 0 (2026-11-10 doğrulandı; bu oturumda build çalıştırılmadı — docs-only).
+Push:        main = origin/main (60f6a52). Bu oturumun dalı docs/cinematic-life-poster-design (docs-only).
 NOT (2026-11-10, fix/llm-timeouts-no-body-logs): #11 (phase-1/generation-security) BİRLEŞTİRİLMEDİ (Lovable geçmişi;
              rebase/force-push YOK). #11'den yalnız İKİ parça elle taşındı: (a) summarizer (Groq, orchestra.ts) +
              OpenRouter (openrouter.server.ts) çağrılarına varsayılan 20 sn zaman aşımı (AbortController; çağrı başına
@@ -134,12 +131,19 @@ NOT (2026-11-10, fix/lore-filter-polish · 7. tur): PR #27 main'e birleştirildi
              (uygulama "sen" kullanır). (6) Yaygın yazım hatası listesi (soft, yalnız NOT; otomatik düzeltme YOK):
              "ritm". (7) `LORE_STYLE_VERSION` "lore-v6". Bu turda: 90 dosya / 1037 passed / 2 skipped; tsc 0; eslint 0;
              prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok).
+NOT (2026-11-11, docs/cinematic-life-poster-design): DOCS-ONLY. Yeni tasarım dokümanı eklendi:
+             `docs/architecture/CINEMATIC_LIFE_POSTER.md` (Karar B — Sinematik Yaşam Posteri tasarımı;
+             hedef/kapsam-dışı/başarı kriterleri, üç strateji karşılaştırması, fazlı plan, veri modeli,
+             mimari uyum, Music Memory v1 + açık karar, kötüye kullanım kontrolleri, riskler/açık kararlar/
+             görev kırılımı). Kod, migration, config, asset DEĞİŞMEDİ; main'e birleştirme YOK. Fiyatlar
+             `TEK-KAYNAK` etiketli (Gemini + OpenAI resmî fiyat sayfaları, 2026-11-11). Brief'te anılan
+             ChatGPT poster görseli bu oturumda erişilebilir DEĞİLDİ → kalite hedefi `VARSAYIM` etiketli.
+             `prettier --check docs/architecture/CINEMATIC_LIFE_POSTER.md` temiz.
 
-MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
-  - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
-  - OPEN:   #23 docs/handoff-collection-synced (docs-only; main ea59c71 tabanlı → ESKİ; CLEAN/MERGEABLE)
-            #15 docs/handoff-2026-11-08 (docs-only; eski)
-            #11 phase-1/generation-security (kod; eski, açık)
+MERGE DURUMU (kaynak: `gh pr list --state all` + GitHub API, 2026-11-11 doğrulandı):
+  - MERGED: #28, #27, #26, #25, #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
+  - OPEN:   #11 phase-1/generation-security (kod; eski, açık — main'e BİRLEŞTİRİLMEDİ).
+  - KAPALI (birleşmedi): #23 docs/handoff-collection-synced, #15 docs/handoff-2026-11-08 (ikisi de docs-only, ESKİ; içerikleri §1 tarafından ikame edildi).
   - DAL:    chore/sonar-maintenance YEREL (push edilmedi, PR YOK). feat/i18n-new-strings YOK (hiç yok).
 
 GÜNCEL DURUM (2026-11-10):
@@ -224,6 +228,12 @@ Mimari ilkeler (bağlayıcı):
 Not: yukarıdaki tanımlar mevcut inceleme bulgusudur (salt-okunur); kaynak koddan yeniden doğrulanmayan işlev, "kesinleşmiş gerçek" diye sunulmamıştır.
 
 **SONRAKİ ADIM (bir sonraki AI oturumunun İLK işi):** Aşama 0 — salt-okunur teknik inceleme + kullanıcıya sunulacak onay taslağı (bkz. aşağı "SONRAKİ ADIM" bölümü). Uygulama için kullanıcı onayı ŞART; onay olmadan kod/commit/push yok.
+
+> **GÜNCELLEME (2026-11-11):** Karar B için TASARIM dokümanı yazıldı →
+> `docs/architecture/CINEMATIC_LIFE_POSTER.md` (docs-only; üç strateji karşılaştırması,
+> fazlı plan, veri modeli, açık kararlar, görev kırılımı). Aşama 0 incelemesi bu
+> dokümanla büyük ölçüde karşılandı; **uygulama hâlâ onaylı DEĞİL** — doküman §9
+> "sahibin karar vermesi gerekenler" listesi bekliyor.
 
 ---
 
@@ -576,5 +586,5 @@ ef27814  fix(mood): dedupe render-driven 8x mood-inference calls
 
 ---
 
-_Artık son güncelleme: OpenHands (2026-11-10) — §1 "şu an neredeyiz" git gerçeğine göre (main 375e0a3, 943/2 test) TAMAMEN yeniden yazıldı; eski tur notları §1a'ya arşivlendi; §5b (beta öncesi riskler, salt-okunur) eklendi; STATE.md yol haritası (Faz 4/5/6) aynı commit'te güncellendi. Önceki: OpenHands (2026-11-08) — kalp düğmesi + aşama etiketi. Hermes (2026-10-03) — Vercel build fail ÇÖZÜLDÜ (TanStack XSS CVE-2026-102989 → react-start 1.168.60)._
+_Artık son güncelleme: OpenHands (2026-11-11) — §1 git gerçeğine göre TAMAMEN yeniden yazıldı (main 60f6a52, 1037/2 test, tsc 0, lint 0; MERGE DURUMU GitHub API ile doğrulandı); §1b'ye Karar B tasarım dokümanı notu (`docs/architecture/CINEMATIC_LIFE_POSTER.md`) eklendi. DOCS-ONLY, kod değişmedi. Önceki: OpenHands (2026-11-10) — §1 git gerçeğine göre (main 375e0a3) yeniden yazıldı; §5b eklendi._
 _git repo kökünde yaşar. Sohbet geçmişi değil, bu dosya + git log + STATE.md gerçektir._
