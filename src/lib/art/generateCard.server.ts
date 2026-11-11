@@ -28,6 +28,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
 import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
+import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, isLanguage, type Language } from "@/lib/i18n/languages";
 import { runRole } from "@/lib/llm/orchestra";
 import { callOpenRouter } from "@/lib/openrouter.server";
 
@@ -35,17 +36,36 @@ import { generateCardArtworkCore } from "./cardArtwork.server";
 import {
   buildMultidimensionalPrompt,
   cardArtworkSceneForGenre,
-  deterministicLore,
   historicalEraYear,
-  lifeStageFor,
   type CardEncounter,
 } from "./cardBlueprint";
+import {
+  buildLoreUserPrompt,
+  generateLoreCore,
+  hasForbiddenPhrase,
+  isGenericLore,
+  LORE_STYLE_VERSION,
+  LORE_SYSTEM_PROMPT,
+  MAX_LORE_CHARS,
+} from "./loreEngine";
+
+// Text hygiene + the pipeline live in `loreEngine.ts`; re-exported so existing
+// importers keep working and callers share one implementation.
+export {
+  cleanLore,
+  hasForbiddenPhrase,
+  isGenericLore,
+  LORE_STYLE_VERSION,
+  MAX_LORE_CHARS,
+} from "./loreEngine";
 
 export type GenerateCardInput = CardEncounter & {
   /** Stable cache identity: provider track id, or artist:title for manual. */
   trackKey: string;
   /** The card's journey position (0-based) — fallback era signal. */
   cardIndex?: number;
+  /** Active UI language — the lore is written in this language. */
+  language?: Language | null;
   /** Caller's Supabase access token — persistence is skipped without it. */
   accessToken?: string | null;
 };
@@ -67,66 +87,26 @@ const DAILY_LIMIT = 20; // ported from card-studio's per-user quota
 /* Lore                                                                        */
 /* -------------------------------------------------------------------------- */
 
-export function buildLorePrompt(encounter: CardEncounter): string {
-  const eraYear = historicalEraYear(encounter);
-  const parts = [
-    `Write a friendly, poetic nostalgia snippet of exactly 2 sentences for a music memory card.`,
-    `The listener first heard "${encounter.songTitle}" by ${encounter.artist || "an artist"}`,
-  ];
-  if (typeof encounter.encounterAge === "number") {
-    parts.push(`at age ${Math.floor(encounter.encounterAge)}`);
-  }
-  if (eraYear) parts.push(`(around ${eraYear})`);
-  parts.push(".");
-  if (encounter.genre) parts.push(`Genre: ${encounter.genre}.`);
-  if (encounter.mood?.trim()) parts.push(`Mood of the song: ${encounter.mood.trim()}.`);
-  if (encounter.userMemory?.trim()) {
-    parts.push(`Personal memory to honour: ${encounter.userMemory.trim()}.`);
-  }
-  const stage = lifeStageFor(encounter);
-  if (stage) {
-    parts.push(
-      `Life stage of the listener at that moment: ${stage.subject}. Let the feeling match it: ${stage.tone}.`,
-    );
-  }
-  parts.push(
-    `Warm, gentle, second-person-free prose about ${stage ? stage.subject : "a child"} absorbed in music. ` +
-      "Tone: poetic, epic yet friendly, like a gentle storyteller. " +
-      "Name the song title and the artist plainly in the text (no lyrics, no quotation of lines). " +
-      "This is a friend's memory, not a clinical case — never diagnose, label, or pathologize the listener or their feelings. " +
-      "Write something specific and warm, never a generic fortune-cookie compliment. " +
-      "No artist face descriptions, no lyrics, no quotes. Keep it under 200 characters in total. " +
-      "Sentence 1: one concrete, specific detail only THIS song could give (its real theme, sound, album or era; use real knowledge of the song if you have it, otherwise stay with the facts above). " +
-      "Sentence 2: the emotional turn for this life stage. " +
-      'Avoid stock phrases such as "wrapped around", "small soul", "nameless feelings", "whole world", "journey", "tapestry", "echoes of", "whispers of", "time stood still", "never alone". ' +
-      "Never invent people, places, events or memories the listener did not give. Reply with ONLY the 2 sentences.",
-  );
-  return parts.join(" ");
+export function buildLorePrompt(encounter: CardEncounter & { language?: Language | null }): string {
+  const language = isLanguage(encounter.language) ? encounter.language : DEFAULT_LANGUAGE;
+  return buildLoreUserPrompt({
+    songTitle: encounter.songTitle,
+    artist: encounter.artist,
+    eraYear: historicalEraYear(encounter),
+    releaseYear: encounter.releaseYear ?? null,
+    age: encounter.encounterAge ?? null,
+    genre: encounter.genre ?? null,
+    mood: encounter.mood ?? null,
+    userMemory: encounter.userMemory ?? null,
+    languageName: LANGUAGE_NAMES[language],
+  });
 }
-
-/** Stock phrases a fresh, personal line should not lean on. */
-const GENERIC_LORE =
-  /wrapped around|small soul|nameless|whole world|tapestry|journey|echoes of|whispers? of|time stood still|never alone|symphony of|dance of/i;
-/** The story panel clamps at three lines; far longer text is cut off. */
-const MAX_LORE_CHARS = 320;
-
-/** True when generated lore is too long or leans on stock phrases. */
-export function isGenericLore(text: string): boolean {
-  return text.length > MAX_LORE_CHARS || GENERIC_LORE.test(text);
-}
-
-/** Strip reasoning blocks some models emit before the answer. */
-function cleanLore(raw: string | null | undefined): string {
-  return (raw ?? "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-}
-
-const LORE_SYSTEM_PROMPT =
-  "You are the narrator of a music-memory app. You write one short, poetic, warm piece of lore (2 sentences, plain prose, English only) about a listener meeting a song at a certain age. Be concrete and specific, never generic. Never quote lyrics, never invent people, places or events from the listener's life, never diagnose or give advice. Output only the lore text.";
 
 /**
  * Provider chain for lore: OpenRouter (Gemini) first, then the Groq
  * `summarizer` role. Returns null when neither is configured or both fail,
- * so the caller can fall back to the deterministic lines.
+ * so the pipeline can fall back to the deterministic lines. The single call
+ * returns three candidates, so the token budget covers all of them.
  */
 async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Promise<string | null> {
   try {
@@ -135,41 +115,33 @@ async function writeLoreText(userPrompt: string, fetchImpl?: typeof fetch): Prom
         { role: "system", content: LORE_SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
-      { temperature: 0.9, maxTokens: 300, fetchImpl },
+      { temperature: 0.9, maxTokens: 900, fetchImpl },
     );
     if (viaOpenRouter != null) return viaOpenRouter;
   } catch {
     /* fall through to Groq */
   }
-  return runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 300, fetchImpl });
+  return runRole("summarizer", userPrompt, { temperature: 0.9, maxTokens: 900, fetchImpl });
 }
 
 /**
- * LLM lore with deterministic fallback — never null, never throws. Output that
- * is too long or leans on stock phrases gets exactly one rewrite attempt; a
- * missing key (null) or any failure goes straight to the deterministic lines.
+ * LLM lore with deterministic fallback — never null, never throws. Delegates the
+ * hygiene (leak / leading-age / copy / review-language / length) and the single
+ * rewrite to `generateLoreCore` in the pure `loreEngine`.
  */
 export async function generateCardLoreCore(
-  encounter: CardEncounter,
+  encounter: GenerateCardInput,
   options: { fetchImpl?: typeof fetch } = {},
 ): Promise<string> {
-  const prompt = buildLorePrompt(encounter);
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const llm = await writeLoreText(
-        attempt === 0
-          ? prompt
-          : `${prompt} Your previous answer used stock phrases or was too long: write it fresher, more specific and shorter.`,
-        options.fetchImpl,
-      );
-      if (llm == null) break; // no provider/key configured — retrying cannot help
-      const cleaned = cleanLore(llm);
-      if (cleaned.length >= 20 && cleaned.length <= 600 && !isGenericLore(cleaned)) return cleaned;
-    } catch {
-      break;
-    }
-  }
-  return deterministicLore(encounter);
+  const language = isLanguage(encounter.language) ? encounter.language : DEFAULT_LANGUAGE;
+  const { text } = await generateLoreCore(
+    { ...encounter, languageName: LANGUAGE_NAMES[language] },
+    async (userPrompt) => {
+      const providerText = await writeLoreText(userPrompt, options.fetchImpl);
+      return { text: providerText, via: "openrouter" as const };
+    },
+  );
+  return text;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -289,6 +261,7 @@ export const generateCard = createServerFn({ method: "POST" })
       typeof input.cardIndex === "number" && Number.isFinite(input.cardIndex)
         ? Math.floor(input.cardIndex)
         : undefined,
+    language: isLanguage(input.language) ? input.language : null,
     accessToken: typeof input.accessToken === "string" ? input.accessToken.slice(0, 4096) : null,
   }))
   .handler(async ({ data }): Promise<GenerateCardOutput> => {
@@ -308,7 +281,7 @@ export const generateCard = createServerFn({ method: "POST" })
     // a "::card" suffix would mint a second key and silently double image
     // generation (and archive a painting that differs from the on-screen one).
     const [lore, image] = await Promise.all([
-      generateCardLoreCore(encounter),
+      generateCardLoreCore(data),
       generateCardArtworkCore({
         trackKey: data.trackKey,
         artist: data.artist,

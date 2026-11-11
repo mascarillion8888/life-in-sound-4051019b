@@ -21,9 +21,11 @@ import { useEffect, useState } from "react";
 
 import { invalidateCardsCache } from "@/lib/supabase/cards-remote";
 import { getSupabase } from "@/lib/supabase/client";
+import { DEFAULT_LANGUAGE, isLanguage, type Language } from "@/lib/i18n/languages";
 import type { Song } from "@/lib/song/types";
 
 import { generateCard } from "./generateCard.server";
+import { LORE_STYLE_VERSION } from "./loreEngine";
 import { cardArtworkKey } from "./useCardArtwork";
 
 const LORE_CACHE = new Map<string, string>();
@@ -40,6 +42,8 @@ export type CardLoreContext = {
   genre?: string | null;
   userMemory?: string | null;
   mood?: string | null;
+  /** Active UI language — the lore is written in this language. */
+  language?: Language | null;
 };
 
 export function useCardLore(song: Song | null, context: CardLoreContext = {}): string | null {
@@ -48,9 +52,12 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
   const title = song?.title ?? "";
   const releaseYear = song?.releaseYear ?? null;
   const { cardIndex, birthYear, encounterAge, genre, userMemory, mood } = context;
-  // The same track can read differently per life stage / memory / mood.
+  const language = isLanguage(context.language) ? context.language : DEFAULT_LANGUAGE;
+  // The same track can read differently per life stage / memory / mood, and the
+  // lore text is language-specific; the style version busts stale entries when
+  // the prompt changes.
   const cacheKey = key
-    ? `${key}|${birthYear ?? ""}|${encounterAge ?? ""}|${mood ?? ""}|${userMemory ?? ""}`
+    ? `${LORE_STYLE_VERSION}|${key}|${language}|${birthYear ?? ""}|${encounterAge ?? ""}|${mood ?? ""}|${userMemory ?? ""}`
     : "";
 
   const [state, setState] = useState<{ key: string; lore: string | null }>({
@@ -97,6 +104,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
             genre: genre ?? null,
             userMemory: userMemory ?? null,
             mood: mood ?? null,
+            language,
             accessToken,
           },
         });
@@ -129,6 +137,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     genre,
     userMemory,
     mood,
+    language,
   ]);
 
   if (!song || state.key !== key) return null;

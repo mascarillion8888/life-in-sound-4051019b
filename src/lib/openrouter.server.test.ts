@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { callOpenRouter } from "./openrouter.server";
+import { callOpenRouter, DEFAULT_OPENROUTER_MODEL } from "./openrouter.server";
 
 const MESSAGES = [{ role: "user" as const, content: "hello" }];
 
@@ -79,6 +79,35 @@ describe("callOpenRouter timeouts", () => {
     });
     expect(result).toBe("the story");
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+});
+
+describe("callOpenRouter default model", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  /** Capture the JSON body of the (first) request the fetch mock received. */
+  function captureBody(fetchImpl: ReturnType<typeof vi.fn>) {
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit | undefined;
+    return JSON.parse(String(init?.body)) as { model?: string };
+  }
+
+  it("sends DEFAULT_OPENROUTER_MODEL when no env override is set", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    vi.stubEnv("OPENROUTER_PRIMARY_MODEL", "");
+    const fetchImpl = okFetch({ choices: [{ message: { content: "x" } }] });
+    await callOpenRouter(MESSAGES, { fetchImpl: fetchImpl as unknown as typeof fetch });
+    expect(captureBody(fetchImpl).model).toBe(DEFAULT_OPENROUTER_MODEL);
+  });
+
+  it("lets OPENROUTER_PRIMARY_MODEL override the default", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "or-key");
+    vi.stubEnv("OPENROUTER_PRIMARY_MODEL", "some/other-model");
+    const fetchImpl = okFetch({ choices: [{ message: { content: "x" } }] });
+    await callOpenRouter(MESSAGES, { fetchImpl: fetchImpl as unknown as typeof fetch });
+    expect(captureBody(fetchImpl).model).toBe("some/other-model");
   });
 });
 

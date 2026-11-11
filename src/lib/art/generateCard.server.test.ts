@@ -263,6 +263,8 @@ describe("buildLorePrompt", () => {
       encounterAge: 9,
       userMemory: "rain on the window that summer",
     });
-    expect(prompt).toContain("Personal memory to honour: rain on the window that summer");
+    expect(prompt).toContain(
+      "Honour this personal memory from the listener: rain on the window that summer",
+    );
   });
 });

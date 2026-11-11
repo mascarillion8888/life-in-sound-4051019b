@@ -24,6 +24,13 @@
 /** Default request budget for one provider call, in milliseconds. */
 const DEFAULT_TIMEOUT_MS = 20_000;
 
+/**
+ * The default primary model — the single source of truth for this value. The
+ * eval harness (`scripts/lore-eval.mjs`) imports it so its header can never
+ * disagree with what the app actually calls.
+ */
+export const DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash";
+
 type OpenRouterMessage = {
   role: "system" | "user";
   content: string;
@@ -105,7 +112,7 @@ export async function callOpenRouter(
   if (!apiKey) return null;
 
   const baseUrl = getEnv("OPENROUTER_BASE_URL") ?? "https://openrouter.ai/api/v1";
-  const primaryModel = getEnv("OPENROUTER_PRIMARY_MODEL") ?? "google/gemini-2.5-flash-lite";
+  const primaryModel = getEnv("OPENROUTER_PRIMARY_MODEL") ?? DEFAULT_OPENROUTER_MODEL;
   const fallbackModel = getEnv("OPENROUTER_FALLBACK_MODEL") ?? "openrouter/free";
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;

@@ -61,3 +61,6 @@ bun.lock
 scripts/test-mood-live.ts
 scripts/test-openrouter-live.ts
 .claude/
+
+# lore-eval local output
+scripts/lore-eval-output.txt

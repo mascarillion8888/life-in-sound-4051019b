@@ -44,6 +44,81 @@ NOT (2026-11-10, fix/llm-timeouts-no-body-logs): #11 (phase-1/generation-securit
              şablon); (b) openrouter.server.ts hata yolları artık yanıt GÖVDESİNİ loglamıyor — yalnız durum kodu
              (`status=…`) ve sabit kod/mesaj; Groq yolunda gövde zaten loglanmıyordu. Kota/authz/cache izolasyonu S2'de.
              Bu dalda: 90 dosya / 954 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
+NOT (2026-11-10, feat/lore-cinematic-style): kart lore'u kılavuzun ("Cinematic Life-Journey Lore Engine") ruhuna
+             göre yeniden kuruldu — yeni SAF modül `src/lib/art/loreEngine.ts` (LORE_SYSTEM_PROMPT: formül + SONG FIRST +
+             stil + 5 few-shot (TR + sadık EN karşılığı, "anlatım mantığı") + "asla kopyalama" + yasak anlatımlar
+             (TR/EN, metnin HER YERİNDE) + "başta yaş yok" + "brief sızdırma yok" + klişe uyarısı + uydurma yasağı +
+             5 soruluk son kontrol; `lifePeriodForAge(age)` → dönem + en fazla 3 ipucu kelimesi (8→keşif, 12→keşif,
+             13→kimlik, 18→kimlik, 28→sorgulama, 35→hafıza, null→dönem yok); çıktı denetimi: kopya/echo
+             (`isCopiedLore`, few-shot + kılavuz örnekleriyle cümle/n-gram benzerliği), brief sızıntısı
+             (`hasPromptLeak`, "Age:/Period:/Genre:/Yaş:/Tür:/clues/…"), başta yaş (`hasLeadingAge`), yasak kalıplar,
+             40 kelime sınırı). Kılavuzun "ZAYIF/DOĞRU YAKLAŞIM" örnek satırları prompt'tan ÇIKARILDI (kopyalanıyordu).
+             Saf pipeline `generateLoreCore(encounter, write)` → yol: provider / tek yeniden yazma / şablon yedeği;
+             `generateCard.server.ts` buna delege eder (davranış: OpenRouter → Groq → şablon). Kullanıcı prompt'u artık
+             doğal dil ("Anahtar: değer" satırı YOK) + "yalnız lore metni; etiket/başlık/yaş satırı/liste YOK". Ana model
+             `OPENROUTER_PRIMARY_MODEL` ile seçilebilir (zaten vardı). `useCardLore.cacheKey`'e stil sürümü
+             (`lore-v3`) + dil EKLENDİ. Aşama etiketi eşikleri (lifeStageLabel.ts) ve kart arayüzü DEĞİŞMEDİ.
+             `scripts/lore-eval.mjs` GERÇEK hattı çağırır (WORDS/FLAG kullanıcının gördüğü metin), `--model/--lang/
+             --songs/--ages`, 1500 ms aralık, 429'da 3 kez artan bekleme (3/6/12 sn), satır-başına PATH, özet; çıktıyı
+             `scripts/lore-eval-output.txt`'ye de yazar (gitignored). Bu dalda: 91 dosya / 994 passed / 2 skipped; tsc 0;
+             eslint 0; prettier temiz; build exit 0. LLM çıktı KALİTESİ gerçek modelle doğrulanmadı (anahtar yok) —
+             yalnız yapısal doğrulama raporlandı.
+NOT (2026-11-10, feat/lore-cinematic-style · 3. tur): sağlayıcı yolunun çoğu reddedilip şablona düştüğü için mimari
+             değişti — (A) tek çağrıda 3 ADAY istenir ("###" ayraçlı düz metin; JSON da kabul, ayraç yoksa tek metin),
+             (B) SERT/YUMUŞAK filtre: SERT (asla seçilmez) = prompt sızıntısı/başlık/iskelet, few-shot kopyası,
+             yanlış dil, 40+ kelime, "Bu şarkı/This song" kalıpları; YUMUŞAK (puan düşürür) = klişe kelimeler,
+             yaş sayısı/başta yaş, uydurma sahne kelimeleri, 3+ cümle, uzunluk, dil karışması; seçim = sert
+             ihlalsizler arasında en az yumuşak ihlal, eşitlikte en kısa. Hiçbiri geçmezse TEK yeniden yazma, o da
+             olmazsa şablon. (C) ŞABLON yerelleştirildi: tr/en/es/de/fr (tr = mevcut Türkçe satırlar, davranış sabit;
+             satırlar kısa/doğal, uydurma olay-mekân yok; `deterministicLore(encounter, language)`; gösterim adı da
+             kod da kabul). (D) `scripts/lore-eval.mjs --verbose` her reddedilen adayı metniyle + hard/soft nedenleriyle
+             yazar; normal çıktıda PATH yanında FLAG = "ok" | "reject:<ilk neden>"; çıktı dosyasına da yazar (anahtar
+             asla yazılmaz). (E) Gecikme: hâlâ TEK çağrı (3 aday tek yanıtta); zaman aşımı ve OpenRouter→Groq→şablon
+             zinciri aynı; maxToken 300→900 (3 adaya yeter). (F) Önbellek stili zaten `lore-v3`. Bu turda: 91 dosya /
+             1006 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek modelle kalite iddiası YOK —
+             mock sağlayıcı ile "3 adaydan 1'i temiz" seçimi, hepsi sert ihlalli → yeniden yazma → şablon düşüşü ve
+             dile uygun şablon yapısal testlerle doğrulandı.
+NOT (2026-11-10, feat/lore-cinematic-style · 4. tur): `tr` şablonu yanlışlıkla İNGİLİZCE çıkıyordu — kök neden:
+             `LIFE_STAGES[].lines` zaten İngilizceydi ve `tr` için yerelleştirilmiş set yoktu (bu yüzden İngilizceye
+             düşüyordu). (1) `cardBlueprint.ts`: tr/es/de/fr için GERÇEK yerelleştirilmiş setler (her dilde 8 sahne × 3
+             satır + kendi opener/closer'ları); İngilizce satırlar varsayılan (`en` + bilinmeyen dil). tr satırları
+             doğal, kısa (1-2 cümle), olay/mekân uydurmuyor ve "Bu şarkı…" kalıbı içermiyor; şarkı adı ve sanatçı
+             geçebiliyor. (2) `loreEngine.ts`: `detectLoreLanguage` / `loreLanguageKey` / `languageCheck`
+             ("ok" | "WRONG-LANG"); tespitte tırnak içi şarkı adları yok sayılır ve yalnız `ş ğ ı Ş Ğ İ` Türkçe sinyali
+             sayılır (ö/ü/ç Almanca/Fransızca'da da var). Yeniden-yazma "kırpma" yedeği de artık `languageCheck`
+             geçmeli — yanlış dilde satır ASLA gönderilmez. (3) `scripts/lore-eval.mjs`: FLAG sütunu istenen dille
+             uyuşmayan satıra `WRONG-LANG` yazar (reddedilme nedeninden önce). Bu turda: 91 dosya / 1014 passed /
+             2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Mock sağlayıcı (`OPENROUTER_BASE_URL`) ile
+             TR isteğine EN yanıt → `WRONG-LANG` + Türkçe şablona düşüş uçtan uca doğrulandı.
+NOT (2026-11-10, feat/lore-cinematic-style · 5. tur): gerçek eval (gemini-2.5-flash, tr) filtre boşlukları
+             gösterdi, tümü kapatıldı. (1) Hecelenmiş yaşlar: `LEADING_AGE` + `ageNumberHits` artık tr sayı
+             kelimelerini ("yirmi iki yaşında", "kırklı yaşlarında", "otuzlu yaşların") ve en/es/de/fr
+             karşılıklarını ("twenty-two years old", "veintidós años", "zwanzig Jahre alt", "vingt-deux ans")
+             yakalar. (2) Baştaki "Bu" + ad ("Bu metal marşı / Bu ses", en "This song", es "Esta canción") artık
+             SERT ret (`hasLeadingDemonstrative`); metnin ortasında YUMUŞAK (`hasDemonstrativePhrase` →
+             soft "demonstrative"). (3) Klişe listesi genişletildi (ruh, ruhu, isyan ateşi, kıvılcım, fısılda,
+             çığlık, derinlik, labirent, yankı, ateş, alev, kanat). (4) `detectLoreLanguage`/`languageCheck` artık
+             şarkı adını ve sanatçıyı (tırnaklı/tırnaksız) metinden çıkarır — "The Trooper ile" yanlış dil saymaz;
+             `generateLoreCore` ve `lore-eval` adları geçirir. (5) Prompt: "Bu/This" ile başlama yasağı + şarkı adı
+             VEYA çıkış yılı cümle içinde geçmeli + sayı/hecelenmiş yaş yasak (few-shot DEĞİŞMEDİ). (6) Varsayılan
+             model `google/gemini-2.5-flash` (OPENROUTER_PRIMARY_MODEL hâlâ geçersiz kılar; fallback aynı);
+             `LORE_STYLE_VERSION` "lore-v4" (eski önbellek yok sayılır). (7) `lore-eval.mjs`: 12 şarkı (pop,
+             Turkish rock/arabesk-pop, electronic, hip-hop) + `--genres` süzgeci. Bu turda: 90 dosya / 1021
+             passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI
+             (ortamda OPENROUTER_API_KEY yok) — yalnız yapısal/table-driven testler.
+NOT (2026-11-10, feat/lore-cinematic-style · 6. tur): 36 örnekli eval'in kalan boşlukları kapatıldı. (1) SAYI
+             yaşları artık her yerde SERT ret: `hasAgeMention` (DIGIT_AGE + SPELLED_AGE) — "10 yaşındaki", "Henüz 10
+             yaşındayken", "22 yaşındaydın", "40 yaşında", "at 22", "aged 40". Hecelenmiş yaş da yumuşaktan SERTE
+             çıktı (`RejectReason "age"`; eski soft `ageNumber` ve `ageNumberHits` KALDIRILDI). (2) Baştaki işaretçi
+             daha güçlü: önce tırnak/noktalama kırpılır (`stripLeadingMarks`) → "Bu, …", "Bu 1984 marşı", '"Bu şarkı"',
+             "Şu/O", Dies/Cette yakalanır. (3) Prompt artık kılavuzun ADLARINI vermiyor: dönem ipucu yalnız nötr bir
+             MOOD cümlesi (`LifePeriod.mood`); "Never reuse the guide's nouns" + hero/kahraman/destan/epik yasağı.
+             (4) Prompt: tek gramer kişisi (sen/-sin; siz/3. şahıs yasak) + `hasMixedPerson` YUMUŞAK filtre (soft
+             "person", yalnız tr). (5) Prompt: uydurma yasağı (söz türü/enstrüman) + şarkı adı VEYA çıkış yılı bağlamı.
+             (6) `scripts/lore-eval.mjs` başlığı çözülen modeli + kaynağını yazar (`(default)` / `(OPENROUTER_PRIMARY_MODEL)`)
+             ve varsayılanı `DEFAULT_OPENROUTER_MODEL`'den import eder (artık tek kaynak). (7) `LORE_STYLE_VERSION`
+             "lore-v5". Bu turda: 90 dosya / 1026 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
+             Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok) — yalnız table-driven testler (tr/en/es/de/fr).
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
