@@ -18,7 +18,7 @@
 import { deterministicLore, historicalEraYear, type CardEncounter } from "./cardBlueprint.ts";
 
 /** Bumping this invalidates the client lore cache (see `useCardLore.cacheKey`). */
-export const LORE_STYLE_VERSION = "lore-v3";
+export const LORE_STYLE_VERSION = "lore-v4";
 
 /** How many candidate lines one provider call must return. */
 export const LORE_CANDIDATES = 3;
@@ -123,6 +123,9 @@ export const LORE_SYSTEM_PROMPT = [
   "LENGTH: 1–3 sentences. Prefer 8–30 words. Never more than 40 words. Short sentences, readable at a glance. Do not explain — open an emotional door.",
   "",
   'OPENING: never begin with the age. No "Age 22.", no "22 yaş.", no "Kırk yaşında.", no "At 22 …". The age may appear at most once, inside the prose, never as the first thing.',
+  'OPENING: do not start with "Bu" or "This" (no "Bu şarkı", "Bu parça", "Bu metal marşı", "Bu ses", "This song"). Start with a concrete image, feeling or moment instead.',
+  "SONG ANCHOR: mention the song title or its release year naturally inside a sentence — at least one of the two. Never as a label or heading.",
+  'AGES: never write an age as a number or as spelled-out words (no "22", no "yirmi iki yaşında", no "twenty-two years old"). The life period carries the age, not a figure.',
   "",
   "FORBIDDEN PHRASINGS — never use them, in any language, anywhere in the text (not only at the start):",
   '"Bu şarkı…", "Bu parça…", "Bu albüm…", "Bu eser…", "Bu tür…", "Bu şarkı bize…", "Bu parça bize…", "Şarkı, dinleyiciyi…", "Bu albümün ana teması…", "Müzikal olarak…", "Dinlerken kendinizi…", "Hayatın her anında…", "Her zaman hatırlatır…", "Unutulmaz bir yolculuk…", "Ruhun derinliklerine…", "Kalbinize dokunur…", "Size ilham verir…", "Mutlaka dinlemelisiniz…".',
@@ -226,10 +229,21 @@ export function buildLoreUserPrompt(input: LorePromptInput): string {
 /**
  * Stock phrases / review language, forbidden ANYWHERE in the text (TR + EN).
  * `u` + `(?<![\p{L}\p{N}])` instead of `\b` so Turkish letters ("şarkı") are
- * handled — ASCII `\b` does not see them as word characters.
+ * handled — ASCII `\b` does not see them as word characters. The
+ * demonstrative+"song" patterns ("Bu şarkı…", "This song…") are NOT here: they
+ * are hard only when they OPEN the text (see `hasLeadingDemonstrative`).
  */
 const FORBIDDEN_LORE =
-  /(?<![\p{L}\p{N}])(this (?:song|track|album)|musically|unforgettable journey|touches your heart|inspires you|must-listen|wrapped around|small soul|nameless|whole world|tapestry|echoes of|whispers? of|time stood still|never alone|symphony of|dance of|bu (?:şarkı|parça|albüm|eser)|müzikal olarak|dinlerken kendinizi|hayatın her anında|her zaman hatırlatır|unutulmaz bir yolculuk|ruhun derinliklerine|kalbinize dokunur|size ilham verir|mutlaka dinlemelisiniz)/iu;
+  /(?<![\p{L}\p{N}])(musically|unforgettable journey|touches your heart|inspires you|must-listen|wrapped around|small soul|nameless|whole world|tapestry|echoes of|whispers? of|time stood still|never alone|symphony of|dance of|müzikal olarak|dinlerken kendinizi|hayatın her anında|her zaman hatırlatır|unutulmaz bir yolculuk|ruhun derinliklerine|kalbinize dokunur|size ilham verir|mutlaka dinlemelisiniz)/iu;
+
+/**
+ * A demonstrative + noun that names the song — "Bu metal marşı", "Bu ilerici
+ * metal", "Bu ses", "This song", "Esta canción". HARD only at the very start of
+ * the text; anywhere else it is a soft violation (see `hasDemonstrativePhrase`).
+ */
+const DEMONSTRATIVE_PHRASE =
+  /(?<![\p{L}])(?:bu|this|esta|este|dies(?:e|er|es)?|cette|ce)\s+\p{L}/iu;
+const LEADING_DEMONSTRATIVE = /^\s*(?:bu|this|esta|este|dies(?:e|er|es)?|cette|ce)\s+\p{L}/iu;
 
 /**
  * Skeleton labels the model must not echo from the brief: any "label:" pair, or
@@ -238,9 +252,34 @@ const FORBIDDEN_LORE =
 const LEAK_PATTERN =
   /(?<![\p{L}\p{N}])(age|period|genre|release year|conflict|clues?|cues?|mood|yaş|dönem|tür|çatışma|ipucu|ipuçları|yıl|ruh hali)\s*[:：]|(?<![\p{L}\p{N}])(clues|cues|ipucu|ipuçları)(?![\p{L}\p{N}])/iu;
 
-/** A leading age — "Age 22.", "22 yaş.", "Kırk yaşında.", "At 22 …". */
-const LEADING_AGE =
-  /^\s*(?:age\s*\d{1,3}|\d{1,3}\s*(?:yaş\p{L}*|years?\s*old)|at\s+\d{1,3}|\d{1,3}\s*[-–—]\s*\d{1,3}\s*(?:yaş\p{L}*|years?\s*old)|(?:bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan|yüz)\s*yaş\p{L}*)/iu;
+/**
+ * Spelled-out ages, per language: number word (+ optional unit/tens suffix)
+ * followed by the language's "years old" form. Shared by the leading-age hard
+ * check (start-anchored) and the soft age-number count (anywhere).
+ */
+const TR_NUM = "on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan";
+const TR_UNIT = "bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz";
+/** "yirmi iki yaşında", "kırklı yaşlarında", "otuzlu yaşların". */
+const SPELLED_AGE_TR = `(?:${TR_NUM}|${TR_UNIT})(?:\\s+(?:${TR_UNIT}))?(?:l[ıiuü])?\\s*yaş`;
+/** "twenty-two years old", "in his forties", "in the twenties". */
+const SPELLED_AGE_EN =
+  "(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?\\s*years?[- ]old|in (?:his|her|their|the) (?:twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)";
+/** "veintidós años", "treinta y cinco años". */
+const SPELLED_AGE_ES =
+  "(?:veinti\\p{L}*|veinte|treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa)(?:\\s+y\\s+(?:uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?\\s*años";
+/** "zwanzig Jahre alt", "in den Zwanzigern". */
+const SPELLED_AGE_DE =
+  "(?:zwanzig|dreißig|dreissig|vierzig|fünfzig|funfzig|sechzig|siebzig|achtzig|neunzig)(?:er|ern|\\s*jahre\\p{L}*)|in den (?:zwanzigern|dreißigern|vierzigern|fünfzigern|sechzigern|siebzigern|achtzigern|neunzigern)";
+/** "vingt-deux ans", "la quarantaine". */
+const SPELLED_AGE_FR =
+  "(?:vingt|trente|quarante|cinquante|soixante|quatre-vingt)(?:-|\\s)?\\p{L}*\\s*ans|la (?:vingtaine|trentaine|quarantaine|cinquantaine|soixantaine)";
+const SPELLED_AGE = `(?:${SPELLED_AGE_TR}|${SPELLED_AGE_EN}|${SPELLED_AGE_ES}|${SPELLED_AGE_DE}|${SPELLED_AGE_FR})`;
+
+/** A leading age — "Age 22.", "22 yaş.", "Yirmi iki yaşında.", "At 22 …". */
+const LEADING_AGE = new RegExp(
+  `^\\s*(?:age\\s*\\d{1,3}|\\d{1,3}\\s*(?:yaş\\p{L}*|years?\\s*old)|at\\s+\\d{1,3}|\\d{1,3}\\s*[-–—]\\s*\\d{1,3}\\s*(?:yaş\\p{L}*|years?\\s*old)|${SPELLED_AGE})`,
+  "iu",
+);
 
 /**
  * Copy references: the five few-shot lore lines (EN + TR) plus the guide's
@@ -266,6 +305,7 @@ const COPY_REFERENCES: string[] = [
 /** Cliché words (guide's list) — SOFT: allowed, but each one lowers the score. */
 const CLICHE_WORDS = [
   "ruh",
+  "ruhu",
   "kader",
   "sonsuz",
   "karanlık",
@@ -277,6 +317,15 @@ const CLICHE_WORDS = [
   "umut",
   "ateş",
   "fırtına",
+  "isyan ateşi",
+  "kıvılcım",
+  "fısılda",
+  "çığlık",
+  "derinlik",
+  "labirent",
+  "yankı",
+  "alev",
+  "kanat",
 ];
 
 /** Fabricated-scene words: invented rooms/objects the brief never mentioned. */
@@ -355,6 +404,16 @@ export function hasForbiddenPhrase(text: string): boolean {
   return FORBIDDEN_LORE.test(text);
 }
 
+/** True when the text OPENS with a demonstrative that names the song ("Bu şarkı…"). */
+export function hasLeadingDemonstrative(text: string): boolean {
+  return LEADING_DEMONSTRATIVE.test(text);
+}
+
+/** True when a demonstrative-naming phrase appears anywhere (soft when not leading). */
+export function hasDemonstrativePhrase(text: string): boolean {
+  return DEMONSTRATIVE_PHRASE.test(text);
+}
+
 /** True when the text leaks brief-skeleton labels ("Age:", "Period:", …). */
 export function hasPromptLeak(text: string): boolean {
   return LEAK_PATTERN.test(text);
@@ -411,12 +470,15 @@ const NUMBER_WORDS: Record<string, string> = {
 
 /**
  * SOFT: how many times the encounter age appears — as digits or, for common
- * ages, as Turkish number words. A leading age is already a hard violation.
+ * ages, as Turkish number words — plus any spelled-out age phrase in the five
+ * UI languages ("yirmi iki yaşında", "in his forties", "zwanzig Jahre alt").
+ * A leading age is already a hard violation.
  */
 export function ageNumberHits(text: string, age: number | null | undefined): number {
-  if (typeof age !== "number" || !Number.isFinite(age)) return 0;
+  let hits = (text.match(new RegExp(SPELLED_AGE, "giu")) ?? []).length;
+  if (typeof age !== "number" || !Number.isFinite(age)) return hits;
   const a = Math.floor(age);
-  let hits = (text.match(new RegExp(`(?<![\\p{N}])${a}(?![\\p{N}])`, "gu")) ?? []).length;
+  hits += (text.match(new RegExp(`(?<![\\p{N}])${a}(?![\\p{N}])`, "gu")) ?? []).length;
   const word = NUMBER_WORDS[String(a)];
   if (word) {
     hits += (text.toLowerCase().match(new RegExp(`(?<![\\p{L}])${word}(?![\\p{L}])`, "gu")) ?? [])
@@ -464,11 +526,13 @@ const LANGUAGE_SIGNATURES: Record<string, RegExp> = {
  * Turkish-specific letters (ş ğ ı ö ç ü) are a strong Turkish signal; otherwise
  * the language with the most function-word hits wins. Returns "unknown" when no
  * language scores at least two hits — callers then skip a wrong-language flag.
+ *
+ * The song title and artist (quoted or bare) are removed first: proper nouns
+ * like "The Trooper" or "For Whom the Bell Tolls" would otherwise inject English
+ * function words into a Turkish line ("The Trooper ile …").
  */
-export function detectLoreLanguage(text: string): string {
-  // Ignore quoted song titles — proper nouns ("The Curse of Silence") would
-  // otherwise inject another language's function words into the sample.
-  const prose = text.replace(/[“”"][^“”"]*[“”"]/gu, " ");
+export function detectLoreLanguage(text: string, names: string[] = []): string {
+  const prose = stripNames(text, names);
   // Only letters Turkish does NOT share with German/French are a signal here
   // (ö/ü/ç are common in German/French, so they must not imply Turkish).
   const turkishSpecific = (prose.match(/[şğıŞĞİ]/gu) ?? []).length;
@@ -488,6 +552,21 @@ export function detectLoreLanguage(text: string): string {
   return bestScore >= 2 ? best : "unknown";
 }
 
+/** Remove quoted spans and every supplied name (title/artist) from the text. */
+function stripNames(text: string, names: string[]): string {
+  let prose = text.replace(/[“”"][^“”"]*[“”"]/gu, " ");
+  for (const name of names) {
+    const trimmed = name.trim();
+    if (!trimmed) continue;
+    prose = prose.replace(new RegExp(escapeRegExp(trimmed), "giu"), " ");
+  }
+  return prose;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /** The requested language key ("tr"/"en"/"es"/"de"/"fr") for a display name. */
 export function loreLanguageKey(languageName: string): string {
   const l = languageName.toLowerCase();
@@ -502,9 +581,14 @@ export function loreLanguageKey(languageName: string): string {
 /**
  * "WRONG-LANG" when the text's detected language is a known one that differs
  * from the requested language; "ok" otherwise (unknown detection never flags).
+ * The song title and artist are ignored so they cannot skew the guess.
  */
-export function languageCheck(text: string, requested: string): "ok" | "WRONG-LANG" {
-  const detected = detectLoreLanguage(text);
+export function languageCheck(
+  text: string,
+  requested: string,
+  names: string[] = [],
+): "ok" | "WRONG-LANG" {
+  const detected = detectLoreLanguage(text, names);
   if (detected === "unknown") return "ok";
   return detected === loreLanguageKey(requested) ? "ok" : "WRONG-LANG";
 }
@@ -517,7 +601,7 @@ export type RejectReason =
   "copy" | "leak" | "header" | "leadingAge" | "forbidden" | "wrongLanguage" | "length";
 
 export type SoftViolation =
-  "cliche" | "ageNumber" | "scene" | "sentences" | "long" | "wrongLanguage";
+  "cliche" | "ageNumber" | "scene" | "sentences" | "long" | "wrongLanguage" | "demonstrative";
 
 export type CandidateDiagnostics = {
   text: string;
@@ -554,15 +638,16 @@ function isHardCopy(text: string): boolean {
 }
 
 /** HARD: wrong language — the text does not read as the requested language. */
-function isHardWrongLanguage(text: string, languageName: string): boolean {
-  const letters = text.replace(/[^\p{L}]/gu, "");
+function isHardWrongLanguage(text: string, languageName: string, names: string[] = []): boolean {
+  const prose = stripNames(text, names);
+  const letters = prose.replace(/[^\p{L}]/gu, "");
   if (!letters) return false;
   const latin = (letters.match(/[a-z]/gi) ?? []).length / letters.length;
   if (!/türk|espa|deutsch|fran|english|ingiliz/i.test(languageName) && latin > 0.95) return true;
   if (/türk/i.test(languageName)) {
-    const turkishSpecific = (text.match(/[şğıöçü]/gi) ?? []).length;
+    const turkishSpecific = (prose.match(/[şğıöçü]/gi) ?? []).length;
     const englishMarkers = (
-      text.match(/(?<![\p{L}])(the|and|your|with|this|that|you)(?![\p{L}])/giu) ?? []
+      prose.match(/(?<![\p{L}])(the|and|your|with|this|that|you)(?![\p{L}])/giu) ?? []
     ).length;
     if (englishMarkers >= 2 && turkishSpecific === 0) return true;
   }
@@ -577,6 +662,7 @@ export function diagnoseCandidate(
   text: string,
   languageName: string,
   age?: number | null,
+  names: string[] = [],
 ): CandidateDiagnostics {
   const hard: RejectReason[] = [];
   const soft: SoftViolation[] = [];
@@ -584,8 +670,9 @@ export function diagnoseCandidate(
   if (hasPromptLeak(text)) hard.push("leak");
   if (looksLikeHeader(text)) hard.push("header");
   if (hasLeadingAge(text)) hard.push("leadingAge");
+  if (hasLeadingDemonstrative(text)) hard.push("forbidden");
   if (hasForbiddenPhrase(text)) hard.push("forbidden");
-  if (isHardWrongLanguage(text, languageName)) hard.push("wrongLanguage");
+  if (isHardWrongLanguage(text, languageName, names)) hard.push("wrongLanguage");
   if (exceedsWordLimit(text)) hard.push("length");
 
   if (clicheHits(text).length) soft.push("cliche");
@@ -594,6 +681,7 @@ export function diagnoseCandidate(
   if (sentenceCount(text) >= 3) soft.push("sentences");
   if (wordCount(text) > SOFT_MAX_LORE_WORDS) soft.push("long");
   if (wrongLanguageScore(text, languageName) > 0) soft.push("wrongLanguage");
+  if (hasDemonstrativePhrase(text)) soft.push("demonstrative");
   return { text, hard, soft };
 }
 
@@ -602,6 +690,7 @@ export function isGenericLore(text: string): boolean {
   return (
     text.length > MAX_LORE_CHARS ||
     hasForbiddenPhrase(text) ||
+    hasLeadingDemonstrative(text) ||
     hasPromptLeak(text) ||
     hasLeadingAge(text) ||
     isCopiedLore(text) ||
@@ -735,9 +824,10 @@ export async function generateLoreCore(
     if (result.text == null) break; // no provider/key configured — retrying cannot help
 
     const batch: CandidateDiagnostics[] = [];
+    const names = [encounter.songTitle, encounter.artist];
     for (const raw of parseCandidates(result.text)) {
       if (raw.length < 20 || raw.length > 600) continue;
-      const diagnosis = diagnoseCandidate(raw, language, encounter.encounterAge ?? null);
+      const diagnosis = diagnoseCandidate(raw, language, encounter.encounterAge ?? null, names);
       batch.push(diagnosis);
       candidates.push(diagnosis);
       if (fallbackCandidate === null) fallbackCandidate = raw;
@@ -757,9 +847,10 @@ export async function generateLoreCore(
     if (
       cut.length >= 20 &&
       !hasForbiddenPhrase(cut) &&
+      !hasLeadingDemonstrative(cut) &&
       !hasPromptLeak(cut) &&
       !hasLeadingAge(cut) &&
-      languageCheck(cut, language) === "ok"
+      languageCheck(cut, language, [encounter.songTitle, encounter.artist]) === "ok"
     ) {
       return { text: cut, path: "rewrite", language, candidates };
     }

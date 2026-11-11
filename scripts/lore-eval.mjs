@@ -20,6 +20,7 @@
  *   --lang <tr,en>    comma-separated UI languages to evaluate
  *   --songs <N>       use only the first N reference songs
  *   --ages <10,22,40> comma-separated ages
+ *   --genres <a,b>    keep only songs whose genre matches (case-insensitive substring)
  *   --verbose         print every rejected candidate with its rejection reasons
  *
  * The API key and any network detail are NEVER printed; with no key it prints a
@@ -64,6 +65,7 @@ function parseArgs(argv) {
     else if (key === "--lang") out.lang = argv[++i];
     else if (key === "--songs") out.songs = Number(argv[++i]);
     else if (key === "--ages") out.ages = argv[++i];
+    else if (key === "--genres") out.genres = argv[++i];
   }
   return out;
 }
@@ -107,11 +109,46 @@ const ALL_SONGS = [
   { artist: "Michael Jackson", title: "Bad", genre: "Pop", releaseYear: 1987 },
   { artist: "Madonna", title: "Like a Prayer", genre: "Pop", releaseYear: 1989 },
   { artist: "Nirvana", title: "Smells Like Teen Spirit", genre: "Grunge", releaseYear: 1991 },
+  // Turkish rock / arabesk-pop, electronic and hip-hop so the eval is not
+  // metal-only — the filter must hold up across genres and languages.
+  {
+    artist: "Duman",
+    title: "Her Şeyi Yak",
+    genre: "Turkish Rock",
+    releaseYear: 2002,
+  },
+  {
+    artist: "Orhan Gencebay",
+    title: "Bir Teselli Ver",
+    genre: "Arabesk Pop",
+    releaseYear: 1971,
+  },
+  {
+    artist: "Daft Punk",
+    title: "Around the World",
+    genre: "Electronic",
+    releaseYear: 1997,
+  },
+  {
+    artist: "Kendrick Lamar",
+    title: "Alright",
+    genre: "Hip-Hop",
+    releaseYear: 2015,
+  },
 ];
 const ALL_AGES = [10, 22, 40];
 
+const genreFilters = args.genres
+  ? args.genres
+      .split(",")
+      .map((v) => v.trim().toLowerCase())
+      .filter(Boolean)
+  : [];
+const byGenre = genreFilters.length
+  ? ALL_SONGS.filter((s) => genreFilters.some((g) => s.genre.toLowerCase().includes(g)))
+  : ALL_SONGS;
 const songs =
-  Number.isFinite(args.songs) && args.songs > 0 ? ALL_SONGS.slice(0, args.songs) : ALL_SONGS;
+  Number.isFinite(args.songs) && args.songs > 0 ? byGenre.slice(0, args.songs) : byGenre;
 const ages = args.ages
   ? args.ages
       .split(",")
@@ -163,8 +200,10 @@ const firstReason = (candidates, text) => {
   return `reject:${match.hard[0]}`;
 };
 /** The FLAG column: a wrong-language line outranks the reject label. */
-const flagFor = (candidates, text, languageName) =>
-  languageCheck(text, languageName) === "WRONG-LANG" ? "WRONG-LANG" : firstReason(candidates, text);
+const flagFor = (candidates, text, languageName, names = []) =>
+  languageCheck(text, languageName, names) === "WRONG-LANG"
+    ? "WRONG-LANG"
+    : firstReason(candidates, text);
 
 writeFileSync(OUTPUT_PATH, "");
 const emit = (line) => {
@@ -207,7 +246,9 @@ for (const song of songs) {
         text = result.text.replace(/\s+/g, " ").trim();
         path = result.path;
         candidates = result.candidates;
-        note = candidates.length ? flagFor(candidates, result.text, encounter.languageName) : "-";
+        note = candidates.length
+          ? flagFor(candidates, result.text, encounter.languageName, [song.title, song.artist])
+          : "-";
       } catch {
         stats.failed++;
       }

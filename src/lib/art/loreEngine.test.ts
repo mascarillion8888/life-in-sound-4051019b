@@ -1,14 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  ageNumberHits,
   buildLoreUserPrompt,
   cleanLore,
   detectLoreLanguage,
   diagnoseCandidate,
   exceedsWordLimit,
   generateLoreCore,
+  hasDemonstrativePhrase,
   hasForbiddenPhrase,
   hasLeadingAge,
+  hasLeadingDemonstrative,
   hasPromptLeak,
   isCopiedLore,
   isGenericLore,
@@ -104,6 +107,15 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
     mustIncludeAll(["NO FABRICATION", "Never quote or paraphrase lyrics"]);
   });
 
+  it("forbids opening with Bu/This and requires a title or year anchor", () => {
+    mustIncludeAll([
+      'do not start with "Bu" or "This"',
+      "Bu metal marşı",
+      "SONG ANCHOR: mention the song title or its release year",
+      "never write an age as a number or as spelled-out words",
+    ]);
+  });
+
   it("carries all five few-shot references with their narrative logic", () => {
     mustIncludeAll([
       "The Trooper",
@@ -139,7 +151,7 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
   });
 
   it("has a versioned style id", () => {
-    expect(LORE_STYLE_VERSION).toBe("lore-v3");
+    expect(LORE_STYLE_VERSION).toBe("lore-v4");
   });
 });
 
@@ -248,6 +260,14 @@ describe("leading-age filter", () => {
     "22 yaş. Kendi sınırlarını ilk kez zorladığın yıllar.",
     "Kırk yaşında. Sessizliğin sana öğrettiği derinlik.",
     "At 22, the world finally had edges.",
+    // Spelled-out ages at the very start — the eval's real leaks.
+    "Yirmi iki yaşında. Kapıların ilk kez açıldığı yıllar.",
+    "Kırklı yaşlarında. Sessizliğin sana öğrettiği derinlik.",
+    "Otuzlu yaşların. Kendi sesini bulmaya başladığın dönem.",
+    "Twenty-two years old, the world finally had edges.",
+    "In his forties, the quiet became a companion.",
+    "Zwanzig Jahre alt, und die Welt bekam endlich Kanten.",
+    "Vingt-deux ans, et le monde eut enfin des bords.",
   ];
 
   it("flags a leading age as GENERIC", () => {
@@ -258,8 +278,37 @@ describe("leading-age filter", () => {
   });
 
   it("allows the age inside the prose", () => {
-    const inside = "Yirmi iki yaşındaydın; o şarkı sana gücü öğretti.";
+    const inside = "O şarkı, yirmi iki yaşındaydın diye değil, gücü öğrettiği için kaldı.";
     expect(hasLeadingAge(inside)).toBe(false);
+  });
+});
+
+describe("spelled-out age soft check (table-driven)", () => {
+  const cases: Array<[string, string]> = [
+    ["tr", "Yirmi iki yaşındaydın ve şarkı sana gücü öğretti."],
+    ["tr", "Kırklı yaşlarında sessizlik bir yoldaşa dönüştü."],
+    ["tr", "Otuzlu yaşların kendi sesini bulduğun dönemdi."],
+    ["tr", "Elli yaşın eşiğinde şarkı yeniden çaldı."],
+    ["en", "You were twenty-two years old when the song found you."],
+    ["en", "In her forties the quiet became a companion."],
+    ["es", "Tenía veintidós años cuando la canción te encontró."],
+    ["de", "Mit zwanzig Jahren wurde das Lied zu einem Zuhause."],
+    ["fr", "Tu avais vingt-deux ans quand la chanson t'a trouvé."],
+  ];
+
+  it("counts a spelled-out age anywhere as an ageNumber hit", () => {
+    for (const [lang, text] of cases) {
+      expect([lang, ageNumberHits(text, 22) >= 1]).toEqual([lang, true]);
+    }
+  });
+
+  it("flags a spelled-out age in a candidate's soft violations", () => {
+    const d = diagnoseCandidate(
+      "O yıl yirmi iki yaşındaydın; şarkı sana gücü öğretti.",
+      "Türkçe",
+      22,
+    );
+    expect(d.soft).toContain("ageNumber");
   });
 });
 
@@ -286,7 +335,6 @@ describe("forbidden-phrase filter (TR + EN, anywhere)", () => {
   it("catches the Turkish review/ad copy patterns", () => {
     rejects(
       [
-        "Bu şarkı bize huzur verir.",
         "Müzikal olarak çok güçlü.",
         "Kalbinize dokunur.",
         "Size ilham verir.",
@@ -297,14 +345,49 @@ describe("forbidden-phrase filter (TR + EN, anywhere)", () => {
   });
 
   it("catches the banned phrasing mid-text, not only at the start", () => {
-    expect(hasForbiddenPhrase("Yıllar geçti ve bu şarkı hâlâ seninle.")).toBe(true);
-    expect(hasForbiddenPhrase("Years passed and this song stayed with you.")).toBe(true);
-    expect(isGenericLore("Yıllar geçti ve bu şarkı hâlâ seninle.")).toBe(true);
+    expect(hasForbiddenPhrase("Yıllar geçti ve ruhun derinliklerine işledi.")).toBe(true);
+    expect(hasForbiddenPhrase("Years passed and it touches your heart still.")).toBe(true);
+    expect(isGenericLore("Yıllar geçti ve ruhun derinliklerine işledi.")).toBe(true);
   });
 
   it("passes a proper, specific lore line", () => {
     const good = "Epik hikâyeler ve sınırlarını zorlayan bir dünya.";
     expect(hasForbiddenPhrase(good)).toBe(false);
+  });
+});
+
+describe("demonstrative rule: sentence-initial Bu/This is HARD, elsewhere SOFT", () => {
+  // The eval dodged "Bu şarkı" with "Bu metal marşı", "Bu ilerici metal", etc.
+  const leading = [
+    "Bu metal marşı kendi sınırlarını zorladı.",
+    "Bu ilerici metal bir kapı açtı.",
+    "Bu sert melodi yılları taşıdı.",
+    "Bu ses seninle kaldı.",
+    "Bu şarkı bize huzur verir.",
+    "This song became a door in your life.",
+    "Esta canción abrió una puerta.",
+  ];
+
+  it("hard-rejects a sentence-initial demonstrative + noun", () => {
+    for (const text of leading) {
+      expect(hasLeadingDemonstrative(text)).toBe(true);
+      expect(isGenericLore(text)).toBe(true);
+      expect(diagnoseCandidate(text, "Türkçe", 22).hard).toContain("forbidden");
+    }
+  });
+
+  it("treats a demonstrative mid-text as a soft violation, not a hard one", () => {
+    const mid = "Yıllar geçti ve bu ses seninle kaldı.";
+    expect(hasLeadingDemonstrative(mid)).toBe(false);
+    expect(hasDemonstrativePhrase(mid)).toBe(true);
+    const d = diagnoseCandidate(mid, "Türkçe", 22);
+    expect(d.hard).not.toContain("forbidden");
+    expect(d.soft).toContain("demonstrative");
+  });
+
+  it("does not flag a demonstrative that does not name the song", () => {
+    // "Bu yıl" / "Bu dönem" is not a demonstrative-naming phrase.
+    expect(hasLeadingDemonstrative("Kapılar açıldı ve bu şarkıyla bir dünya kuruldu.")).toBe(false);
   });
 });
 
@@ -385,7 +468,7 @@ describe("diagnoseCandidate (hard vs soft)", () => {
     );
     expect(diagnoseCandidate("Age 22. A door opened.", "English", 22).hard).toContain("leadingAge");
     expect(
-      diagnoseCandidate("Yıllar geçti ve bu şarkı hâlâ seninle.", "Türkçe", 22).hard,
+      diagnoseCandidate("Ruhun derinliklerine işledi ve orada kaldı.", "Türkçe", 22).hard,
     ).toContain("forbidden");
     expect(
       diagnoseCandidate("The song became a door in your life and never left you.", "Türkçe", 22)
@@ -488,6 +571,20 @@ describe("language detection", () => {
 
   it("does not flag when the language cannot be told apart", () => {
     expect(languageCheck("Fragile.", "Türkçe")).toBe("ok");
+  });
+
+  it("ignores the song title and artist so they cannot skew the guess", () => {
+    // A Turkish line carrying an unquoted English title with function words.
+    // Without stripping, the English signal wins and the line is wrongly
+    // flagged; with the names removed it no longer reads as English.
+    const line = "With or Without You ve o gece seninle.";
+    expect(detectLoreLanguage(line)).toBe("en");
+    expect(detectLoreLanguage(line, ["With or Without You"])).not.toBe("en");
+    expect(languageCheck(line, "Türkçe", ["With or Without You"])).toBe("ok");
+    expect(languageCheck(line, "Türkçe")).toBe("WRONG-LANG");
+    // The same with the artist as well as the title.
+    const both = "The Trooper, Iron Maiden ile bir şarkı.";
+    expect(languageCheck(both, "Türkçe", ["The Trooper", "Iron Maiden"])).toBe("ok");
   });
 });
 
