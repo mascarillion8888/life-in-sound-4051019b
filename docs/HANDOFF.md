@@ -90,6 +90,22 @@ NOT (2026-11-10, feat/lore-cinematic-style · 4. tur): `tr` şablonu yanlışlı
              uyuşmayan satıra `WRONG-LANG` yazar (reddedilme nedeninden önce). Bu turda: 91 dosya / 1014 passed /
              2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Mock sağlayıcı (`OPENROUTER_BASE_URL`) ile
              TR isteğine EN yanıt → `WRONG-LANG` + Türkçe şablona düşüş uçtan uca doğrulandı.
+NOT (2026-11-10, feat/lore-cinematic-style · 5. tur): gerçek eval (gemini-2.5-flash, tr) filtre boşlukları
+             gösterdi, tümü kapatıldı. (1) Hecelenmiş yaşlar: `LEADING_AGE` + `ageNumberHits` artık tr sayı
+             kelimelerini ("yirmi iki yaşında", "kırklı yaşlarında", "otuzlu yaşların") ve en/es/de/fr
+             karşılıklarını ("twenty-two years old", "veintidós años", "zwanzig Jahre alt", "vingt-deux ans")
+             yakalar. (2) Baştaki "Bu" + ad ("Bu metal marşı / Bu ses", en "This song", es "Esta canción") artık
+             SERT ret (`hasLeadingDemonstrative`); metnin ortasında YUMUŞAK (`hasDemonstrativePhrase` →
+             soft "demonstrative"). (3) Klişe listesi genişletildi (ruh, ruhu, isyan ateşi, kıvılcım, fısılda,
+             çığlık, derinlik, labirent, yankı, ateş, alev, kanat). (4) `detectLoreLanguage`/`languageCheck` artık
+             şarkı adını ve sanatçıyı (tırnaklı/tırnaksız) metinden çıkarır — "The Trooper ile" yanlış dil saymaz;
+             `generateLoreCore` ve `lore-eval` adları geçirir. (5) Prompt: "Bu/This" ile başlama yasağı + şarkı adı
+             VEYA çıkış yılı cümle içinde geçmeli + sayı/hecelenmiş yaş yasak (few-shot DEĞİŞMEDİ). (6) Varsayılan
+             model `google/gemini-2.5-flash` (OPENROUTER_PRIMARY_MODEL hâlâ geçersiz kılar; fallback aynı);
+             `LORE_STYLE_VERSION` "lore-v4" (eski önbellek yok sayılır). (7) `lore-eval.mjs`: 12 şarkı (pop,
+             Turkish rock/arabesk-pop, electronic, hip-hop) + `--genres` süzgeci. Bu turda: 90 dosya / 1021
+             passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI
+             (ortamda OPENROUTER_API_KEY yok) — yalnız yapısal/table-driven testler.
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
