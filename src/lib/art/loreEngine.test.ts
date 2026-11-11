@@ -14,8 +14,10 @@ import {
   hasLeadingDemonstrative,
   hasMixedPerson,
   hasPromptLeak,
+  hasSizOnlyPerson,
   isCopiedLore,
   isGenericLore,
+  isTooShort,
   languageCheck,
   lifePeriodForAge,
   LORE_CANDIDATES,
@@ -24,9 +26,13 @@ import {
   loreLanguageKey,
   maxCopySimilarity,
   MAX_LORE_WORDS,
+  MIN_LORE_WORDS,
   parseCandidates,
   pickBestCandidate,
+  sceneHits,
+  softScore,
   truncateToWordLimit,
+  typoHits,
   wordCount,
 } from "./loreEngine";
 
@@ -157,7 +163,7 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
   });
 
   it("has a versioned style id", () => {
-    expect(LORE_STYLE_VERSION).toBe("lore-v5");
+    expect(LORE_STYLE_VERSION).toBe("lore-v6");
   });
 });
 
@@ -438,6 +444,147 @@ describe("mixed grammatical person (soft, Turkish)", () => {
   });
 });
 
+describe("second-person 'siz' only (soft, Turkish)", () => {
+  const sizOnly = [
+    "Bu şarkıyı dinlerken kendinizi buluyorsunuz ve anlıyorsunuz.",
+    "Siz o yıl bir kapı açtınız ve o melodi sizinle kaldı.",
+    "Sizin için bu şarkı bir kapıya dönüştü ve orada kaldı.",
+  ];
+
+  it("flags formal/plural second person as soft even without a mix", () => {
+    for (const text of sizOnly) {
+      expect(hasSizOnlyPerson(text)).toBe(true);
+      const d = diagnoseCandidate(text, "Türkçe", 22);
+      expect([text, d.soft]).toEqual([text, expect.arrayContaining(["person"])]);
+    }
+  });
+
+  it("passes consistent second-person-singular Turkish", () => {
+    const clean = "Sen o yıl bir kapı açtın ve o melodiyi hiç bırakmadın.";
+    expect(hasSizOnlyPerson(clean)).toBe(false);
+    expect(diagnoseCandidate(clean, "Türkçe", 22).soft).not.toContain("person");
+  });
+});
+
+describe("age-leak forms — decade / possessive / digit-apostrophe (HARD)", () => {
+  // tr decade+possessive forms and the digit + apostrophe form. Each must be a
+  // hard reject; "yirmi yıl sonra" (time passing, no possessive) stays allowed.
+  const leaks = [
+    "Kırkında kapılar açıldı ve o şarkı seninle kaldı.",
+    "Kırk yılın ağırlığını taşırken o melodi seni buldu.",
+    "kırkına merdiven dayamışken şarkı yeniden çaldı.",
+    "40'lı yaşlarında sessizlik bir yoldaşa dönüştü.",
+    "yirmilerinde o şarkıyı her gün dinlerdin.",
+    "otuzlarında kendi sesini buldun.",
+    "Elli yaşında o melodiyi yeniden duydun ve tanıdın.",
+  ];
+  const allowed = [
+    "yirmi yıl sonra o şarkı hâlâ seninle ve seni büyüttü.",
+    "On yıl sonra bu şarkı hâlâ seninle kaldı ve seni büyüttü.",
+    "bir yıl sonra her şey değişti ama şarkı seninle kaldı.",
+    "iki gün boyunca o nakarat kafanda döndü durdu.",
+  ];
+
+  it("hard-rejects every decade/possessive/digit age leak", () => {
+    for (const text of leaks) {
+      expect([text, hasAgeMention(text)]).toEqual([text, true]);
+      expect([text, isGenericLore(text)]).toEqual([text, true]);
+      const d = diagnoseCandidate(text, "Türkçe", 22);
+      expect([text, d.hard.includes("age") || d.hard.includes("leadingAge")]).toEqual([text, true]);
+    }
+  });
+
+  it("keeps elapsed-time phrases (no age) allowed", () => {
+    for (const text of allowed) {
+      expect([text, hasAgeMention(text)]).toEqual([text, false]);
+      expect([text, hasLeadingAge(text)]).toEqual([text, false]);
+    }
+  });
+});
+
+describe("title stripping — quoted title with a Turkish suffix", () => {
+  const cases: Array<[string, string]> = [
+    ['The Trooper"ın gücü seninle kaldı ve yıllar boyunca seni büyüttü.', "The Trooper"],
+    ['"Painkiller"ı yıllarca dinledin ve o ses seninle kaldı hep.', "Painkiller"],
+    ['"Alright"ın enerjisi seni başka bir yıla taşıdı ve orada kaldı.', "Alright"],
+    ['Smells Like Teen Spirit"le büyüdün ve o dönem seninle kaldı.', "Smells Like Teen Spirit"],
+  ];
+
+  it("removes title + suffix so wrongLanguage does not fire", () => {
+    for (const [text, name] of cases) {
+      expect([text, languageCheck(text, "Türkçe", [name])]).toEqual([text, "ok"]);
+      expect([text, diagnoseCandidate(text, "Türkçe", 22, [name]).hard]).toEqual([text, []]);
+    }
+  });
+});
+
+describe("invented-scene nouns (soft, weighted)", () => {
+  const scenes: Array<[string, string]> = [
+    ["tr", "Yatak odasında bir kılıç vardı ve sokaklar boştu o gece."],
+    ["tr", "Odanın duvarları sana bir savaş alanı gibi göründü o an."],
+    ["tr", "At üstünde gidiyordun ve araba sesleri uzaktan geliyordu."],
+    ["en", "You stood on horseback while the sword caught the battlefield light."],
+    ["es", "Soñaste con una espada en el campo de batalla esa noche."],
+    ["de", "Im Schlafzimmer hing ein Schwert an der Wand und wartete."],
+    ["fr", "Une épée brillait dans la chambre et la rue restait silencieuse."],
+  ];
+
+  it("detects scene nouns across the five languages", () => {
+    for (const [lang, text] of scenes) {
+      expect([lang, text, sceneHits(text).length > 0]).toEqual([lang, text, true]);
+    }
+  });
+
+  it("weights a scene candidate below an equally-clean scene-free one", () => {
+    const withScene = diagnoseCandidate(
+      "Yatak odasında şarkı yıllarca kaldı ve seni sessizce büyüttü hep.",
+      "Türkçe",
+      22,
+    );
+    const noScene = diagnoseCandidate(
+      "Şarkı yıllarca seninle kaldı ve seni sessizce büyüttü hep orada.",
+      "Türkçe",
+      22,
+    );
+    expect(withScene.soft).toContain("scene");
+    expect(noScene.soft).not.toContain("scene");
+    expect(softScore(withScene.soft)).toBeGreaterThan(softScore(noScene.soft));
+    expect(pickBestCandidate([withScene, noScene])?.text).toBe(noScene.text);
+  });
+});
+
+describe("minimum length (hard)", () => {
+  it("hard-rejects a line shorter than eight words", () => {
+    const short = "Kapılar açıldı ve şarkı çaldı.";
+    expect(wordCount(short)).toBeLessThan(MIN_LORE_WORDS);
+    expect(isTooShort(short)).toBe(true);
+    expect(diagnoseCandidate(short, "Türkçe", 22).hard).toContain("short");
+    expect(isGenericLore(short)).toBe(true);
+  });
+
+  it("accepts a line of exactly eight words", () => {
+    const ok = "Kapılar açıldı ve o şarkı seninle hep kaldı.";
+    expect(wordCount(ok)).toBeGreaterThanOrEqual(MIN_LORE_WORDS);
+    expect(isTooShort(ok)).toBe(false);
+    expect(diagnoseCandidate(ok, "Türkçe", 22).hard).not.toContain("short");
+  });
+});
+
+describe("common typos (soft, note-only)", () => {
+  it("notes 'ritm' as a soft violation but never rewrites it", () => {
+    const text = "Bu şarkının ritm seni yakaladı ve içine işledi o gece.";
+    expect(typoHits(text)).toContain("ritm");
+    const d = diagnoseCandidate(text, "Türkçe", 22);
+    expect(d.soft).toContain("typo");
+    // Note-only: the text is returned unchanged.
+    expect(d.text).toBe(text);
+  });
+
+  it("does not flag a correctly spelled line", () => {
+    expect(typoHits("Bu şarkının ritmi seni yakaladı ve içine işledi o gece.")).toEqual([]);
+  });
+});
+
 describe("word limit", () => {
   it("flags text above the 40-word ceiling", () => {
     const over = Array.from({ length: 45 }, () => "word").join(" ");
@@ -545,11 +692,15 @@ describe("pickBestCandidate", () => {
   it("skips hard-rejected candidates and returns the clean one", () => {
     const batch = [
       diagnoseCandidate("Age: 22, clues: power.", "Türkçe", 22),
-      diagnoseCandidate("Kendi sınırlarını zorladığın yıllar. Gücü öğrendiğin an.", "Türkçe", 22),
+      diagnoseCandidate(
+        "Kendi sınırlarını zorladığın o yıllar. Gücü ilk kez öğrendiğin an.",
+        "Türkçe",
+        22,
+      ),
       diagnoseCandidate("Hız, enerji, isyan ve başkaldırı.", "Türkçe", 22),
     ];
     expect(pickBestCandidate(batch)?.text).toBe(
-      "Kendi sınırlarını zorladığın yıllar. Gücü öğrendiğin an.",
+      "Kendi sınırlarını zorladığın o yıllar. Gücü ilk kez öğrendiğin an.",
     );
   });
 
@@ -564,13 +715,15 @@ describe("pickBestCandidate", () => {
   it("breaks a soft-violation tie by choosing the shorter line", () => {
     const batch = [
       diagnoseCandidate(
-        "Ruh ve karanlık bir yolculuk içinde kaybolduğun o uzun yıllar.",
+        "Ruh ve karanlık bir yolculuk içinde kaybolduğun o çok uzun yıllar.",
         "Türkçe",
         22,
       ),
-      diagnoseCandidate("Karanlık bir yolculuk.", "Türkçe", 22),
+      diagnoseCandidate("Karanlık bir yolculuk, ruh ve sonsuz yıllar seninle.", "Türkçe", 22),
     ];
-    expect(pickBestCandidate(batch)?.text).toBe("Karanlık bir yolculuk.");
+    expect(pickBestCandidate(batch)?.text).toBe(
+      "Karanlık bir yolculuk, ruh ve sonsuz yıllar seninle.",
+    );
   });
 });
 

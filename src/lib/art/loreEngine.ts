@@ -18,7 +18,7 @@
 import { deterministicLore, historicalEraYear, type CardEncounter } from "./cardBlueprint.ts";
 
 /** Bumping this invalidates the client lore cache (see `useCardLore.cacheKey`). */
-export const LORE_STYLE_VERSION = "lore-v5";
+export const LORE_STYLE_VERSION = "lore-v6";
 
 /** How many candidate lines one provider call must return. */
 export const LORE_CANDIDATES = 3;
@@ -277,6 +277,18 @@ const TR_NUM = "on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan";
 const TR_UNIT = "bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz";
 /** "yirmi iki yaşında", "kırklı yaşlarında", "otuzlu yaşların". */
 const SPELLED_AGE_TR = `(?:${TR_NUM}|${TR_UNIT})(?:\\s+(?:${TR_UNIT}))?(?:l[ıiuü])?\\s*yaş`;
+/**
+ * Turkish decade/possessive age forms with NO "yaş" word: "kırkında",
+ * "kırkına merdiven dayamışken", "yirmilerinde", "otuzlarında", "kırk yılın
+ * ağırlığını". Only number STEMS (kırk/yirmi/otuz/…) — never the bare units
+ * (bir/iki/…) — so "bir yıl sonra" / "iki gün" (time passing) stay allowed.
+ */
+const SPELLED_AGE_TR_DECADE = `(?:${TR_NUM})(?:\\s+(?:${TR_UNIT}))?(?:l[ıiuü])?(?:lar[ıi]?n[ıi]?nda|lar[ıi]?nda|ler[ıi]?nde|s[ıi]?nda|s[ıi]?na|n[ıi]?nda|n[ıi]?na|ına|ine|l[ıiuü]?|ı|i|ın|in)`;
+/**
+ * Turkish AGE unit that must directly follow the number: "kırk yılın ağırlığı",
+ * "kırk yaşın" — but NOT "yirmi yıl sonra" (time passing, no possessive).
+ */
+const SPELLED_AGE_TR_YIL = `(?:${TR_NUM})(?:\\s+(?:${TR_UNIT}))?\\s+(?:yıl|sene|yaş)(?:ın|in|ının|inin|ımızın|inizin)`;
 /** "twenty-two years old", "in his forties", "in the twenties". */
 const SPELLED_AGE_EN =
   "(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?\\s*years?[- ]old|in (?:his|her|their|the) (?:twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)";
@@ -291,19 +303,26 @@ const SPELLED_AGE_FR =
   "(?:vingt|trente|quarante|cinquante|soixante|quatre-vingt)(?:-|\\s)?\\p{L}*\\s*ans|la (?:vingtaine|trentaine|quarantaine|cinquantaine|soixantaine)";
 const SPELLED_AGE = `(?:${SPELLED_AGE_TR}|${SPELLED_AGE_EN}|${SPELLED_AGE_ES}|${SPELLED_AGE_DE}|${SPELLED_AGE_FR})`;
 
-/** A digit age in any phrasing: "10 yaşındaki", "22 yaşındaydın", "at 22", "aged 40". */
+/** A digit age in any phrasing: "10 yaşındaki", "22 yaşındaydın", "at 22", "aged 40", "40'lı yaşlarında". */
 const DIGIT_AGE =
-  "(?:age[sd]?\\s*\\d{1,3}|\\d{1,3}\\s*(?:yaş\\p{L}*|years?[- ]old|yo)|at\\s+\\d{1,3}|\\d{1,3}\\s*[-–—]\\s*\\d{1,3}\\s*(?:yaş\\p{L}*|years?[- ]old))";
+  "(?:age[sd]?\\s*\\d{1,3}|(?<!\\d)\\d{1,3}\\s*(?:['’]\\s*(?:l[ıiuü]|ler|lar|ın|in|ında|inde)|yaş\\p{L}*|years?[- ]old|yo)|at\\s+\\d{1,3}|(?<!\\d)\\d{1,3}\\s*[-–—]\\s*\\d{1,3}\\s*(?:yaş\\p{L}*|years?[- ]old))";
 
 /**
- * Any age statement — a digit age or a spelled-out one — ANYWHERE in the text.
- * The card already shows the age, so the lore must never state it; a hit is a
- * HARD rejection (see `hasAgeMention`).
+ * Any age statement — a digit age or a spelled-out one (incl. Turkish
+ * decade/possessive forms like "kırkında" / "yirmilerinde" / "kırk yılın") —
+ * ANYWHERE in the text. The card already shows the age, so the lore must never
+ * state it; a hit is a HARD rejection (see `hasAgeMention`).
  */
-const ANY_AGE = new RegExp(`(?:${DIGIT_AGE}|${SPELLED_AGE})`, "iu");
+const ANY_AGE = new RegExp(
+  `(?:${DIGIT_AGE}|${SPELLED_AGE}|${SPELLED_AGE_TR_DECADE}|${SPELLED_AGE_TR_YIL})`,
+  "iu",
+);
 
-/** A leading age — "Age 22.", "22 yaş.", "Yirmi iki yaşında.", "At 22 …". */
-const LEADING_AGE = new RegExp(`^\\s*(?:${DIGIT_AGE}|${SPELLED_AGE})`, "iu");
+/** A leading age — "Age 22.", "22 yaş.", "Yirmi iki yaşında.", "Kırkında …". */
+const LEADING_AGE = new RegExp(
+  `^\\s*(?:${DIGIT_AGE}|${SPELLED_AGE}|${SPELLED_AGE_TR_DECADE}|${SPELLED_AGE_TR_YIL})`,
+  "iu",
+);
 
 /**
  * Copy references: the five few-shot lore lines (EN + TR) plus the guide's
@@ -352,21 +371,77 @@ const CLICHE_WORDS = [
   "kanat",
 ];
 
-/** Fabricated-scene words: invented rooms/objects the brief never mentioned. */
+/**
+ * Fabricated-scene words: invented rooms/objects/places the brief never
+ * mentioned (tr/en/es/de/fr). SOFT, but weighted heavily in `pickBestCandidate`
+ * so a scene candidate always loses to an equally-clean scene-free one.
+ */
 const SCENE_WORDS = [
-  "bedroom",
-  "bed oda",
+  // tr
+  "yatak odası",
+  "yatak odasında",
   "odasında",
   "odasına",
+  "odanın duvarları",
+  "duvarları",
+  "duvar",
+  "at üstünde",
+  "at sırtında",
+  "kılıç",
+  "savaş alanı",
+  "savaş alanında",
+  "sokaklar",
+  "sokakta",
+  "sokak",
+  "araba",
+  "disko topu",
+  "bed oda",
   "pencere",
   "perde",
   "kaset",
   "walkman",
-  "duvar",
   "neon",
   "sokak lambası",
+  // en
+  "bedroom",
+  "walls of",
+  "on horseback",
+  "sword",
+  "battlefield",
+  "streets",
+  "street",
+  "car",
+  "disco ball",
   "streetlight",
+  // es
+  "dormitorio",
+  "espada",
+  "campo de batalla",
+  "calles",
+  "calle",
+  "coche",
+  "bola de discoteca",
+  // de
+  "schlafzimmer",
+  "schwert",
+  "schlachtfeld",
+  "straßen",
+  "straße",
+  "auto",
+  "diskokugel",
+  // fr
+  "chambre à coucher",
+  "chambre",
+  "épée",
+  "champ de bataille",
+  "rues",
+  "rue",
+  "voiture",
+  "boule à facettes",
 ];
+
+/** Common Turkish typos worth noting (SOFT, note-only — never auto-corrected). */
+const TYPO_WORDS = ["ritm"];
 
 /** Normalize for comparison: lowercase, punctuation → spaces, collapse. */
 function normalizeForCompare(text: string): string {
@@ -422,6 +497,15 @@ export const MAX_LORE_CHARS = 320;
 export const MAX_LORE_WORDS = 40;
 /** Preferred upper bound — exceeding it is a SOFT length violation. */
 export const SOFT_MAX_LORE_WORDS = 30;
+/** Hard floor: shorter than this is a fragment, not a lore line. */
+export const MIN_LORE_WORDS = 8;
+/**
+ * SOFT weight per violated category when picking the best candidate. A single
+ * fabricated-scene noun therefore outweighs one cliché (or any other soft
+ * violation), so a scene candidate loses to an equally-clean scene-free one.
+ */
+export const SCENE_WEIGHT = 2;
+export const DEFAULT_SOFT_WEIGHT = 1;
 
 /** True when the text uses review language / stock phrases (anywhere). */
 export function hasForbiddenPhrase(text: string): boolean {
@@ -466,6 +550,11 @@ export function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/** True when the text is too short to be a lore line (< `MIN_LORE_WORDS`). */
+export function isTooShort(text: string): boolean {
+  return wordCount(text) < MIN_LORE_WORDS;
+}
+
 export function exceedsWordLimit(text: string): boolean {
   return wordCount(text) > MAX_LORE_WORDS;
 }
@@ -478,10 +567,20 @@ export function clicheHits(text: string): string[] {
   );
 }
 
-/** Fabricated-scene words present (SOFT). */
+/** Fabricated-scene words present (SOFT, whole-word). */
 export function sceneHits(text: string): string[] {
   const lower = text.toLowerCase();
-  return SCENE_WORDS.filter((word) => lower.includes(word));
+  return SCENE_WORDS.filter((word) =>
+    new RegExp(`(?<![\\p{L}])${escapeRegExp(word)}(?![\\p{L}])`, "u").test(lower),
+  );
+}
+
+/** Common typos present (SOFT, note-only — reported, never rewritten). */
+export function typoHits(text: string): string[] {
+  const lower = text.toLowerCase();
+  return TYPO_WORDS.filter((word) =>
+    new RegExp(`(?<![\\p{L}])${word}(?![\\p{L}])`, "u").test(lower),
+  );
 }
 
 /** Sentence count (SOFT: 3+ is penalized). */
@@ -554,13 +653,19 @@ export function detectLoreLanguage(text: string, names: string[] = []): string {
   return bestScore >= 2 ? best : "unknown";
 }
 
-/** Remove quoted spans and every supplied name (title/artist) from the text. */
+/**
+ * Remove quoted spans and every supplied name (title/artist) from the text.
+ * A Turkish suffix glued to the title — `"The Trooper"ın`, `"Painkiller"ı`,
+ * `Smells Like Teen Spirit"le` — is removed with it (quote + letters, no space),
+ * so an English proper noun cannot skew the language guess.
+ */
 function stripNames(text: string, names: string[]): string {
   let prose = text.replace(/[“”"][^“”"]*[“”"]/gu, " ");
   for (const name of names) {
     const trimmed = name.trim();
     if (!trimmed) continue;
-    prose = prose.replace(new RegExp(escapeRegExp(trimmed), "giu"), " ");
+    const pattern = `${escapeRegExp(trimmed)}(?:["“”'’]?\\p{L}{1,7})?`;
+    prose = prose.replace(new RegExp(pattern, "giu"), " ");
   }
   return prose;
 }
@@ -600,10 +705,18 @@ export function languageCheck(
 /* -------------------------------------------------------------------------- */
 
 export type RejectReason =
-  "copy" | "leak" | "header" | "leadingAge" | "age" | "forbidden" | "wrongLanguage" | "length";
+  | "copy"
+  | "leak"
+  | "header"
+  | "leadingAge"
+  | "age"
+  | "forbidden"
+  | "wrongLanguage"
+  | "length"
+  | "short";
 
 export type SoftViolation =
-  "cliche" | "scene" | "sentences" | "long" | "wrongLanguage" | "demonstrative" | "person";
+  "cliche" | "scene" | "sentences" | "long" | "wrongLanguage" | "demonstrative" | "person" | "typo";
 
 export type CandidateDiagnostics = {
   text: string;
@@ -678,14 +791,18 @@ export function diagnoseCandidate(
   if (hasForbiddenPhrase(text)) hard.push("forbidden");
   if (isHardWrongLanguage(text, languageName, names)) hard.push("wrongLanguage");
   if (exceedsWordLimit(text)) hard.push("length");
+  if (isTooShort(text)) hard.push("short");
 
   if (clicheHits(text).length) soft.push("cliche");
   if (sceneHits(text).length) soft.push("scene");
+  if (typoHits(text).length) soft.push("typo");
   if (sentenceCount(text) >= 3) soft.push("sentences");
   if (wordCount(text) > SOFT_MAX_LORE_WORDS) soft.push("long");
   if (wrongLanguageScore(text, languageName) > 0) soft.push("wrongLanguage");
   if (hasDemonstrativePhrase(text)) soft.push("demonstrative");
-  if (/türk/i.test(languageName) && hasMixedPerson(text)) soft.push("person");
+  if (/türk/i.test(languageName) && (hasMixedPerson(text) || hasSizOnlyPerson(text))) {
+    soft.push("person");
+  }
   return { text, hard, soft };
 }
 
@@ -707,6 +824,18 @@ export function hasMixedPerson(text: string): boolean {
   return (secondPresent && (hasSiz || hasPluralVerb)) || (secondPresent && hasThirdVerb);
 }
 
+/**
+ * SOFT: the text addresses the reader with the formal/plural second person
+ * ("siz", "sizi", "sizin", "…-iniz/-ınız") even though the app speaks in second
+ * person singular ("sen"). Counts as a person violation on its own.
+ */
+export function hasSizOnlyPerson(text: string): boolean {
+  const lower = text.toLowerCase();
+  const hasSiz = /(?<![\p{L}])(siz|sizi|size|sizin|sizde|sizden|sizinle)(?![\p{L}])/u.test(lower);
+  const hasPluralVerb = /(?<![\p{L}])\p{L}{2,}(?:iniz|ınız|unuz|ünüz)(?![\p{L}])/u.test(lower);
+  return hasSiz || hasPluralVerb;
+}
+
 /** True when the text is acceptable at all (no hard violation). */
 export function isGenericLore(text: string): boolean {
   return (
@@ -716,16 +845,29 @@ export function isGenericLore(text: string): boolean {
     hasPromptLeak(text) ||
     hasAgeMention(text) ||
     isCopiedLore(text) ||
-    exceedsWordLimit(text)
+    exceedsWordLimit(text) ||
+    isTooShort(text)
   );
 }
 
-/** Pick the best eligible candidate: fewest soft violations, then shortest. */
+/**
+ * SOFT score: each violated category costs `DEFAULT_SOFT_WEIGHT`, except a
+ * fabricated scene which costs `SCENE_WEIGHT` — so a scene candidate loses to an
+ * otherwise-equally-clean scene-free one.
+ */
+export function softScore(violations: SoftViolation[]): number {
+  return violations.reduce(
+    (sum, v) => sum + (v === "scene" ? SCENE_WEIGHT : DEFAULT_SOFT_WEIGHT),
+    0,
+  );
+}
+
+/** Pick the best eligible candidate: fewest soft violations (weighted), then shortest. */
 export function pickBestCandidate(candidates: CandidateDiagnostics[]): CandidateDiagnostics | null {
   const eligible = candidates.filter((c) => c.hard.length === 0 && c.text.length >= 20);
   if (!eligible.length) return null;
   return eligible.sort(
-    (a, b) => a.soft.length - b.soft.length || wordCount(a.text) - wordCount(b.text),
+    (a, b) => softScore(a.soft) - softScore(b.soft) || wordCount(a.text) - wordCount(b.text),
   )[0];
 }
 
@@ -868,6 +1010,7 @@ export async function generateLoreCore(
     const cut = truncateToWordLimit(fallbackCandidate);
     if (
       cut.length >= 20 &&
+      !isTooShort(cut) &&
       !hasForbiddenPhrase(cut) &&
       !hasLeadingDemonstrative(cut) &&
       !hasPromptLeak(cut) &&
