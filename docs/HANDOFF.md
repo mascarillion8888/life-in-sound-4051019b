@@ -119,6 +119,21 @@ NOT (2026-11-10, feat/lore-cinematic-style · 6. tur): 36 örnekli eval'in kalan
              ve varsayılanı `DEFAULT_OPENROUTER_MODEL`'den import eder (artık tek kaynak). (7) `LORE_STYLE_VERSION`
              "lore-v5". Bu turda: 90 dosya / 1026 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
              Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok) — yalnız table-driven testler (tr/en/es/de/fr).
+NOT (2026-11-10, fix/lore-filter-polish · 7. tur): PR #27 main'e birleştirildi (e581a6b) → `main`'den temiz dal.
+             Gerçek eval'in (gemini-2.5-flash, tr) kalan boşlukları kapatıldı. (1) Yaş sızıntıları: `ANY_AGE`'a tr
+             onluk/iyelik formları eklendi — "kırkında", "kırkına merdiven dayamışken", "yirmilerinde", "otuzlarında",
+             "kırk yılın ağırlığını" (`SPELLED_AGE_TR_DECADE` + `SPELLED_AGE_TR_YIL`) ve sayı+kesme "40'lı yaşlarında"
+             (`DIGIT_AGE`). Hepsi SERT ret; "yirmi yıl sonra" / "on yıl sonra" (zaman geçişi, iyelik yok) İZİN VERİLİR.
+             (2) Başlık soyma: `stripNames` artık tırnaklı başlığa YAPIŞIK tr ekini de (tırnak + harf, boşluksuz) siliyor —
+             `"The Trooper"ın`, `"Painkiller"ı`, `Smells Like Teen Spirit"le` → yanlış dil tetiklenmez. (3) Uydurma sahne
+             adları tr/en/es/de/fr genişletildi (yatak odası, odanın duvarları, at üstünde, kılıç, savaş alanı, sokaklar,
+             araba, disko topu, bedroom, sword, horseback, battlefield…). `sceneHits` artık TAM KELİME (`\p{L}` sınırı;
+             "car" ≠ "carried"); yumuşak ama `softScore`'da sahne ağırlığı 2 (`SCENE_WEIGHT`) → sahneli aday sahnesiz
+             temiz adaya kaybeder. (4) Alt sınır: 8 kelimeden kısa lore SERT ret (`MIN_LORE_WORDS`, `isTooShort`, reason
+             "short"). (5) "Siz-yalnız" ikinci şahıs (siz/sizi/sizin/-iniz/-ınız) `hasSizOnlyPerson` ile yumuşak ihlal
+             (uygulama "sen" kullanır). (6) Yaygın yazım hatası listesi (soft, yalnız NOT; otomatik düzeltme YOK):
+             "ritm". (7) `LORE_STYLE_VERSION` "lore-v6". Bu turda: 90 dosya / 1037 passed / 2 skipped; tsc 0; eslint 0;
+             prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok).
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
