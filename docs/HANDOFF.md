@@ -12,171 +12,84 @@
 
 ## 1. Doğrulanabilir gerçek
 
-> **Bu bölüm git gerçeğinden derlendi (2026-11-10).** Doğrulama komutları bölüm
+> **Bu bölüm git gerçeğinden derlendi (2026-11-11).** Doğrulama komutları bölüm
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:         docs/sync-status-2026-11-10 (bu oturum, docs-only). main = origin/main.
-HEAD:        main 375e0a3 — "Merge pull request #24 from mascarillion8888/fix/hide-card-no-replay-fade"
-             375e0a3 — Merge PR #24 (gizle→göster'de giriş animasyonu yeniden oynamıyor)
-             797a5fe — docs: note the card enter-fade replay fix in HANDOFF §1 (PR #24 gövdesi)
-             5e2c947 — fix(card): do not replay enter fade when showing hidden card (PR #24 gövdesi)
-             ea59c71 — Merge pull request #20 …/feat/collection-supabase-sync
-             810b07e — Merge pull request #22 …/fix/hide-card-poster-and-google-return
-             2fd7204 — Merge pull request #21 …/feat/card-opacity-and-wallpaper-toggle
-             3354d9b — Merge pull request #19 …/docs/handoff-update
-             5791309 — Merge pull request #18 …/feat/google-link-status
-             a0c488c — Merge pull request #17 …/feat/card-heart-and-stage-label
-             0151dbf — Merge pull request #16 …/chore/lint-debt
-             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #12 personal-lore, #10 auth-birth-year; #9/#8/#7/#6/#4/#3/#2/#1)
-Testler:     main (375e0a3): 87 dosya passed / 1 skipped (88); 943 passed / 2 skipped (945). vitest v4.1.11, `npm test -- --run` exit 0 (2026-11-10 doğrulandı).
-tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-10 doğrulandı).
-Lint:        ✅ 0 hata — `npm run lint` exit 0 (2026-11-10 doğrulandı).
-Sonar/CI:    ✅ temiz — PR #20/#22/#24'te SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
-Build:       exit 0 (2026-11-10 doğrulandı).
-Push:        main = origin/main (375e0a3). Bu oturumun dalı docs/sync-status-2026-11-10 (docs-only).
-NOT (2026-11-10, fix/llm-timeouts-no-body-logs): #11 (phase-1/generation-security) BİRLEŞTİRİLMEDİ (Lovable geçmişi;
-             rebase/force-push YOK). #11'den yalnız İKİ parça elle taşındı: (a) summarizer (Groq, orchestra.ts) +
-             OpenRouter (openrouter.server.ts) çağrılarına varsayılan 20 sn zaman aşımı (AbortController; çağrı başına
-             `timeoutMs` ile geçersiz kılınabilir), zaman aşımı mevcut fallback zincirine düşer (OpenRouter → Groq →
-             şablon); (b) openrouter.server.ts hata yolları artık yanıt GÖVDESİNİ loglamıyor — yalnız durum kodu
-             (`status=…`) ve sabit kod/mesaj; Groq yolunda gövde zaten loglanmıyordu. Kota/authz/cache izolasyonu S2'de.
-             Bu dalda: 90 dosya / 954 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
-NOT (2026-11-10, feat/lore-cinematic-style): kart lore'u kılavuzun ("Cinematic Life-Journey Lore Engine") ruhuna
-             göre yeniden kuruldu — yeni SAF modül `src/lib/art/loreEngine.ts` (LORE_SYSTEM_PROMPT: formül + SONG FIRST +
-             stil + 5 few-shot (TR + sadık EN karşılığı, "anlatım mantığı") + "asla kopyalama" + yasak anlatımlar
-             (TR/EN, metnin HER YERİNDE) + "başta yaş yok" + "brief sızdırma yok" + klişe uyarısı + uydurma yasağı +
-             5 soruluk son kontrol; `lifePeriodForAge(age)` → dönem + en fazla 3 ipucu kelimesi (8→keşif, 12→keşif,
-             13→kimlik, 18→kimlik, 28→sorgulama, 35→hafıza, null→dönem yok); çıktı denetimi: kopya/echo
-             (`isCopiedLore`, few-shot + kılavuz örnekleriyle cümle/n-gram benzerliği), brief sızıntısı
-             (`hasPromptLeak`, "Age:/Period:/Genre:/Yaş:/Tür:/clues/…"), başta yaş (`hasLeadingAge`), yasak kalıplar,
-             40 kelime sınırı). Kılavuzun "ZAYIF/DOĞRU YAKLAŞIM" örnek satırları prompt'tan ÇIKARILDI (kopyalanıyordu).
-             Saf pipeline `generateLoreCore(encounter, write)` → yol: provider / tek yeniden yazma / şablon yedeği;
-             `generateCard.server.ts` buna delege eder (davranış: OpenRouter → Groq → şablon). Kullanıcı prompt'u artık
-             doğal dil ("Anahtar: değer" satırı YOK) + "yalnız lore metni; etiket/başlık/yaş satırı/liste YOK". Ana model
-             `OPENROUTER_PRIMARY_MODEL` ile seçilebilir (zaten vardı). `useCardLore.cacheKey`'e stil sürümü
-             (`lore-v3`) + dil EKLENDİ. Aşama etiketi eşikleri (lifeStageLabel.ts) ve kart arayüzü DEĞİŞMEDİ.
-             `scripts/lore-eval.mjs` GERÇEK hattı çağırır (WORDS/FLAG kullanıcının gördüğü metin), `--model/--lang/
-             --songs/--ages`, 1500 ms aralık, 429'da 3 kez artan bekleme (3/6/12 sn), satır-başına PATH, özet; çıktıyı
-             `scripts/lore-eval-output.txt`'ye de yazar (gitignored). Bu dalda: 91 dosya / 994 passed / 2 skipped; tsc 0;
-             eslint 0; prettier temiz; build exit 0. LLM çıktı KALİTESİ gerçek modelle doğrulanmadı (anahtar yok) —
-             yalnız yapısal doğrulama raporlandı.
-NOT (2026-11-10, feat/lore-cinematic-style · 3. tur): sağlayıcı yolunun çoğu reddedilip şablona düştüğü için mimari
-             değişti — (A) tek çağrıda 3 ADAY istenir ("###" ayraçlı düz metin; JSON da kabul, ayraç yoksa tek metin),
-             (B) SERT/YUMUŞAK filtre: SERT (asla seçilmez) = prompt sızıntısı/başlık/iskelet, few-shot kopyası,
-             yanlış dil, 40+ kelime, "Bu şarkı/This song" kalıpları; YUMUŞAK (puan düşürür) = klişe kelimeler,
-             yaş sayısı/başta yaş, uydurma sahne kelimeleri, 3+ cümle, uzunluk, dil karışması; seçim = sert
-             ihlalsizler arasında en az yumuşak ihlal, eşitlikte en kısa. Hiçbiri geçmezse TEK yeniden yazma, o da
-             olmazsa şablon. (C) ŞABLON yerelleştirildi: tr/en/es/de/fr (tr = mevcut Türkçe satırlar, davranış sabit;
-             satırlar kısa/doğal, uydurma olay-mekân yok; `deterministicLore(encounter, language)`; gösterim adı da
-             kod da kabul). (D) `scripts/lore-eval.mjs --verbose` her reddedilen adayı metniyle + hard/soft nedenleriyle
-             yazar; normal çıktıda PATH yanında FLAG = "ok" | "reject:<ilk neden>"; çıktı dosyasına da yazar (anahtar
-             asla yazılmaz). (E) Gecikme: hâlâ TEK çağrı (3 aday tek yanıtta); zaman aşımı ve OpenRouter→Groq→şablon
-             zinciri aynı; maxToken 300→900 (3 adaya yeter). (F) Önbellek stili zaten `lore-v3`. Bu turda: 91 dosya /
-             1006 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek modelle kalite iddiası YOK —
-             mock sağlayıcı ile "3 adaydan 1'i temiz" seçimi, hepsi sert ihlalli → yeniden yazma → şablon düşüşü ve
-             dile uygun şablon yapısal testlerle doğrulandı.
-NOT (2026-11-10, feat/lore-cinematic-style · 4. tur): `tr` şablonu yanlışlıkla İNGİLİZCE çıkıyordu — kök neden:
-             `LIFE_STAGES[].lines` zaten İngilizceydi ve `tr` için yerelleştirilmiş set yoktu (bu yüzden İngilizceye
-             düşüyordu). (1) `cardBlueprint.ts`: tr/es/de/fr için GERÇEK yerelleştirilmiş setler (her dilde 8 sahne × 3
-             satır + kendi opener/closer'ları); İngilizce satırlar varsayılan (`en` + bilinmeyen dil). tr satırları
-             doğal, kısa (1-2 cümle), olay/mekân uydurmuyor ve "Bu şarkı…" kalıbı içermiyor; şarkı adı ve sanatçı
-             geçebiliyor. (2) `loreEngine.ts`: `detectLoreLanguage` / `loreLanguageKey` / `languageCheck`
-             ("ok" | "WRONG-LANG"); tespitte tırnak içi şarkı adları yok sayılır ve yalnız `ş ğ ı Ş Ğ İ` Türkçe sinyali
-             sayılır (ö/ü/ç Almanca/Fransızca'da da var). Yeniden-yazma "kırpma" yedeği de artık `languageCheck`
-             geçmeli — yanlış dilde satır ASLA gönderilmez. (3) `scripts/lore-eval.mjs`: FLAG sütunu istenen dille
-             uyuşmayan satıra `WRONG-LANG` yazar (reddedilme nedeninden önce). Bu turda: 91 dosya / 1014 passed /
-             2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Mock sağlayıcı (`OPENROUTER_BASE_URL`) ile
-             TR isteğine EN yanıt → `WRONG-LANG` + Türkçe şablona düşüş uçtan uca doğrulandı.
-NOT (2026-11-10, feat/lore-cinematic-style · 5. tur): gerçek eval (gemini-2.5-flash, tr) filtre boşlukları
-             gösterdi, tümü kapatıldı. (1) Hecelenmiş yaşlar: `LEADING_AGE` + `ageNumberHits` artık tr sayı
-             kelimelerini ("yirmi iki yaşında", "kırklı yaşlarında", "otuzlu yaşların") ve en/es/de/fr
-             karşılıklarını ("twenty-two years old", "veintidós años", "zwanzig Jahre alt", "vingt-deux ans")
-             yakalar. (2) Baştaki "Bu" + ad ("Bu metal marşı / Bu ses", en "This song", es "Esta canción") artık
-             SERT ret (`hasLeadingDemonstrative`); metnin ortasında YUMUŞAK (`hasDemonstrativePhrase` →
-             soft "demonstrative"). (3) Klişe listesi genişletildi (ruh, ruhu, isyan ateşi, kıvılcım, fısılda,
-             çığlık, derinlik, labirent, yankı, ateş, alev, kanat). (4) `detectLoreLanguage`/`languageCheck` artık
-             şarkı adını ve sanatçıyı (tırnaklı/tırnaksız) metinden çıkarır — "The Trooper ile" yanlış dil saymaz;
-             `generateLoreCore` ve `lore-eval` adları geçirir. (5) Prompt: "Bu/This" ile başlama yasağı + şarkı adı
-             VEYA çıkış yılı cümle içinde geçmeli + sayı/hecelenmiş yaş yasak (few-shot DEĞİŞMEDİ). (6) Varsayılan
-             model `google/gemini-2.5-flash` (OPENROUTER_PRIMARY_MODEL hâlâ geçersiz kılar; fallback aynı);
-             `LORE_STYLE_VERSION` "lore-v4" (eski önbellek yok sayılır). (7) `lore-eval.mjs`: 12 şarkı (pop,
-             Turkish rock/arabesk-pop, electronic, hip-hop) + `--genres` süzgeci. Bu turda: 90 dosya / 1021
-             passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI
-             (ortamda OPENROUTER_API_KEY yok) — yalnız yapısal/table-driven testler.
-NOT (2026-11-10, feat/lore-cinematic-style · 6. tur): 36 örnekli eval'in kalan boşlukları kapatıldı. (1) SAYI
-             yaşları artık her yerde SERT ret: `hasAgeMention` (DIGIT_AGE + SPELLED_AGE) — "10 yaşındaki", "Henüz 10
-             yaşındayken", "22 yaşındaydın", "40 yaşında", "at 22", "aged 40". Hecelenmiş yaş da yumuşaktan SERTE
-             çıktı (`RejectReason "age"`; eski soft `ageNumber` ve `ageNumberHits` KALDIRILDI). (2) Baştaki işaretçi
-             daha güçlü: önce tırnak/noktalama kırpılır (`stripLeadingMarks`) → "Bu, …", "Bu 1984 marşı", '"Bu şarkı"',
-             "Şu/O", Dies/Cette yakalanır. (3) Prompt artık kılavuzun ADLARINI vermiyor: dönem ipucu yalnız nötr bir
-             MOOD cümlesi (`LifePeriod.mood`); "Never reuse the guide's nouns" + hero/kahraman/destan/epik yasağı.
-             (4) Prompt: tek gramer kişisi (sen/-sin; siz/3. şahıs yasak) + `hasMixedPerson` YUMUŞAK filtre (soft
-             "person", yalnız tr). (5) Prompt: uydurma yasağı (söz türü/enstrüman) + şarkı adı VEYA çıkış yılı bağlamı.
-             (6) `scripts/lore-eval.mjs` başlığı çözülen modeli + kaynağını yazar (`(default)` / `(OPENROUTER_PRIMARY_MODEL)`)
-             ve varsayılanı `DEFAULT_OPENROUTER_MODEL`'den import eder (artık tek kaynak). (7) `LORE_STYLE_VERSION`
-             "lore-v5". Bu turda: 90 dosya / 1026 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
-             Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok) — yalnız table-driven testler (tr/en/es/de/fr).
-NOT (2026-11-10, fix/lore-filter-polish · 7. tur): PR #27 main'e birleştirildi (e581a6b) → `main`'den temiz dal.
-             Gerçek eval'in (gemini-2.5-flash, tr) kalan boşlukları kapatıldı. (1) Yaş sızıntıları: `ANY_AGE`'a tr
-             onluk/iyelik formları eklendi — "kırkında", "kırkına merdiven dayamışken", "yirmilerinde", "otuzlarında",
-             "kırk yılın ağırlığını" (`SPELLED_AGE_TR_DECADE` + `SPELLED_AGE_TR_YIL`) ve sayı+kesme "40'lı yaşlarında"
-             (`DIGIT_AGE`). Hepsi SERT ret; "yirmi yıl sonra" / "on yıl sonra" (zaman geçişi, iyelik yok) İZİN VERİLİR.
-             (2) Başlık soyma: `stripNames` artık tırnaklı başlığa YAPIŞIK tr ekini de (tırnak + harf, boşluksuz) siliyor —
-             `"The Trooper"ın`, `"Painkiller"ı`, `Smells Like Teen Spirit"le` → yanlış dil tetiklenmez. (3) Uydurma sahne
-             adları tr/en/es/de/fr genişletildi (yatak odası, odanın duvarları, at üstünde, kılıç, savaş alanı, sokaklar,
-             araba, disko topu, bedroom, sword, horseback, battlefield…). `sceneHits` artık TAM KELİME (`\p{L}` sınırı;
-             "car" ≠ "carried"); yumuşak ama `softScore`'da sahne ağırlığı 2 (`SCENE_WEIGHT`) → sahneli aday sahnesiz
-             temiz adaya kaybeder. (4) Alt sınır: 8 kelimeden kısa lore SERT ret (`MIN_LORE_WORDS`, `isTooShort`, reason
-             "short"). (5) "Siz-yalnız" ikinci şahıs (siz/sizi/sizin/-iniz/-ınız) `hasSizOnlyPerson` ile yumuşak ihlal
-             (uygulama "sen" kullanır). (6) Yaygın yazım hatası listesi (soft, yalnız NOT; otomatik düzeltme YOK):
-             "ritm". (7) `LORE_STYLE_VERSION` "lore-v6". Bu turda: 90 dosya / 1037 passed / 2 skipped; tsc 0; eslint 0;
-             prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok).
+Dal:         feat/backdrop-decade-registry (bu oturum; kod+docs). main = origin/main.
+HEAD:        main 60f6a52 — "Merge pull request #28 from mascarillion8888/fix/lore-filter-polish"
+             60f6a52 — Merge PR #28 (lore filtre cila turu; f3c0aba handoff §1 notu)
+             f3c0aba — docs(handoff): note round-7 lore filter polish in §1 (PR #28 gövdesi)
+             e97bf41 — fix(lore): catch decade/possessive ages, strip suffixed titles, weight invented scenes
+             e581a6b — Merge PR #27 (feat/lore-cinematic-style; #26 fix/llm-timeouts-no-body-logs dahil)
+             (daha eskisi: #26, #25, #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10; #9/#8/#7/#6/#4/#3/#2/#1)
+Testler:     main (60f6a52): 90 dosya passed / 1 skipped (91); 1037 passed / 2 skipped (1039). vitest v4.1.11, `npm test -- --run` exit 0.
+             Bu dal (feat/backdrop-decade-registry, 1ac0fb1): 90 dosya passed / 1 skipped (91); 1093 passed / 2 skipped (1095). exit 0 (2026-11-11 doğrulandı).
+tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-11 doğrulandı).
+Lint:        ✅ 0 hata — `npm run lint` (eslint .) exit 0 (2026-11-11 doğrulandı).
+Sonar/CI:    ✅ temiz — PR #20/#22/#24/#27/#28'de SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
+Build:       exit 0 (`npm run build`, 2026-11-11 doğrulandı).
+Push:        main = origin/main (60f6a52). Bu oturumun dalı feat/backdrop-decade-registry (henüz push edilmedi).
+NOT (2026-11-11, feat/backdrop-decade-registry): DÖNEM (decade) boyutu backdrop kaydına eklendi; bugüne dek
+             çözüm yalnız (genre, mood) eksenindeydi ve TÜM dosyalar dönemsizdi → 1960s/70s/90s şarkılar
+             1980s backdrop'ını gösteriyordu (decade hiçbir zaman dosya seçmiyordu). Değişiklikler:
+             (a) YENİ `src/lib/visual/backdropRegistry.ts` — kayıt `src/assets` altındaki GERÇEK dosyalardan
+             (`import.meta.glob`) türetilir (`BACKDROP_REGISTRY`), her satır bir dönem taşır; `decadeForYear`
+             aralık dışını en yakına kelepçeler (1955→1960s, 2035→2020s); `resolveBackdrop` deterministik
+             düşer: exact → genre+decade→en yakın mood → genre+mood→en yakın dönem (eşitlikte SONRAKİ) →
+             genre→en yakın dönem → nötr varsayılan (pop mood duvarı). Kayıt BOŞ olsa bile throw ETMEZ.
+             (b) Dosya adı sözleşmesi: eski `<klasör>/mood-backdrop-<mood>.jpg` = 1980s; yeni dönemli dosya
+             `{genre}-{mood}-{decade}.{jpg,webp}` (klasör içine VEYA assets köküne). Sahip yeni dosyayı
+             düşürünce KOD/MIGRATION DEĞİŞİKLİĞİ OLMADAN çözülür (docs/ASSETS.md). (c) `assetRegistry.ts`
+             yalnız taksonomiyi tutar; elle türetilmiş dönemsiz `SCENE_ASSET_REGISTRY`/`resolveExactAsset`
+             KALDIRILDI. (d) `visualResolver.ts` `resolveBackdropAsset` + `matchedDecade`/`backdropExact`/
+             `backdropStrategy` alanlarını döner (dönem renk/grain KATMANI bu PR'da UYGULANMADI — bir sonraki
+             PR'a bırakıldı); `moodBackdropUrl` nötr mood duvarına indirgendi. (e) Testler tablo güdümlü
+             yeniden yazıldı (`visualSpec.test.ts` 79 test). (f) docs/ASSETS.md eklendi; VISUAL_ARCHITECTURE
+             §3/§8 güncellendi. KANIT: 1970s/1990s dosyaları düşürülünce (kod değişmeden) 1975 rock-melancholic
+             → `rock/rock-melancholic-1970s.webp` (exact), 1994 → `rock-melancholic-1990s.webp` (exact); dosyalar
+             kaldırılınca 1980s'e iner (approx, exact=false). Bu dalda: 90 dosya / 1093 passed / 2 skipped; tsc 0;
+             eslint 0; prettier temiz; build exit 0.
 
-MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
-  - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
-  - OPEN:   #23 docs/handoff-collection-synced (docs-only; main ea59c71 tabanlı → ESKİ; CLEAN/MERGEABLE)
-            #15 docs/handoff-2026-11-08 (docs-only; eski)
+MERGE DURUMU (kaynak: `GET /repos/mascarillion8888/life-in-sound-4051019b/pulls?state=all`, 2026-11-11 doğrulandı):
+  - MERGED: #28, #27, #26, #25, #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
+  - OPEN:   #29 docs/cinematic-life-poster-design (docs-only; tasarım dokümanı `docs/architecture/CINEMATIC_LIFE_POSTER.md`, "Karar B")
             #11 phase-1/generation-security (kod; eski, açık)
+  - KAPALI (birleştirilmedi): #23 docs/handoff-collection-synced, #15 docs/handoff-2026-11-08, #5 feature/itunes-genre-era.
   - DAL:    chore/sonar-maintenance YEREL (push edilmedi, PR YOK). feat/i18n-new-strings YOK (hiç yok).
 
-GÜNCEL DURUM (2026-11-10):
+GÜNCEL DURUM (2026-11-11):
+  - ✅ DÖNEM-FARKINDA BACKDROP (bu dal, feat/backdrop-decade-registry, PR açılacak): kayıt dosyadan türetilir +
+    deterministik fallback; sahip yeni dönem dosyalarını kod değişmeden düşürür (önce 70s ve 90s planlı).
+    Mevcut 207 dosya dönemsiz → 1980s sayılır; 1960s/70s/90s şimdilik 1980s'e iner ama exact=false raporlanır.
   - ✅ KART "ŞEFFAF/SİLİK" GİDERİLDİ (PR #24, MERGED): EraCardReveal'de giriş animasyonu (`animate-in
     fade-in zoom-in-95 duration-500`) ile `hidden` AYNI elemanda olduğundan "Show card" (display:none→block)
     animasyonu yeniden başlatıyordu (opacity ~0.05→1, ~0.5 sn). Animasyon hiç gizlenmeyen kalıcı sarmalayıcıya
-    (`data-testid="era-card-entry"`) taşındı; `hidden` yalnızca iç `era-card-frame`'de. Ölçüm (Playwright+chromium):
-    HIDE→SHOW sonrası +50/+140/+350 ms frame+ebeveyn opacity=1 (önce 0.050/0.30/0.92); +239 ms ekran farkı %9.9→%1.6.
+    (`data-testid="era-card-entry"`) taşındı; `hidden` yalnızca iç `era-card-frame`'de.
   - ✅ HIDE-CARD TOGGLE (PR #21, MERGED): EraCardReveal gerçek `<button>` (data-testid="card-visibility-toggle",
-    aria-pressed) kartı `hidden` (display) yapar; kart DOM'da kalır, 30 sn önizleme çalmaya devam eder. Durum: `cardVisible`.
+    aria-pressed) kartı `hidden` (display) yapar; kart DOM'da kalır, 30 sn önizleme çalmaya devam eder.
   - ✅ KART GİZLİYKEN POSTER KARARTMALARI KALKAR (PR #22, MERGED): SceneRoom'a `cardHidden` prop'u (varsayılan
-    false → kart açıkken görünüm değişmez). true iken iki karartma katmanı — `bg-black/40` scrim
-    (data-testid="scene-backdrop-scrim") + `scene-backdrop-fade-*` radyal `rgba(0,0,0,0.55)` — `opacity-0`'a fade
-    (500 ms, motion-reduce:transition-none). Ölçüm (Playwright+PIL): +%42.9 ortalama parlaklık (desktop+mobile).
-  - ✅ GOOGLE BAĞLAMA DÖNÜŞÜ /journey (PR #22, MERGED): GoogleLinkButton `redirectTo` = `${origin}/journey`
-    (eskiden çıplak origin → landing "Start" = `/journey?fresh=true` ilerlemeyi SİLERDİ). Journey restore tek bir
-    `resolveJourneyForUser(userId)` üzerinden: uzak (oturum varsa) ?? yerel cache. E-posta/token/kimlik loglanmaz.
-  - ✅ GOOGLE BAĞLAMA DURUM METNİ (PR #18, MERGED): GoogleLinkButton artık sessizce GİZLENMİYOR; oturum durumuna
-    göre kısa metin gösterir — unavailable → "Account sync is off (no server session)."; anonim-olmayan →
-    "Signed in as <email>" / "Already signed in"; anonim → mevcut düğme. Metinler küçük/soluk ve İngilizce SABİT
-    (i18n sözlüğüne taşınmadı — 5 dilde aynı blok Sonar duplikasyonunu tetikler).
-  - ✅ KALP DÜĞMESİ + ORTALANMIŞ AŞAMA YAZISI (PR #17, MERGED): PlayerCard kalbi gerçek `<button type="button">`
-    (aria-pressed, aria-label mevcut `collectLabel`, data-testid="card-heart"); favori `src/lib/collection.ts`
-    üzerinden kalıcı (localStorage `soundmap.collection.v1`); `e.stopPropagation()`.
+    false → kart açıkken görünüm değişmez). true iken iki karartma katmanı `opacity-0`'a fade (500 ms).
+  - ✅ GOOGLE BAĞLAMA DÖNÜŞÜ /journey (PR #22, MERGED): GoogleLinkButton `redirectTo` = `${origin}/journey`.
+    Journey restore tek bir `resolveJourneyForUser(userId)` üzerinden: uzak (oturum varsa) ?? yerel cache.
+  - ✅ GOOGLE BAĞLAMA DURUM METNİ (PR #18, MERGED): oturum durumuna göre kısa metin gösterir (unavailable/signed in/anonim).
+  - ✅ KALP DÜĞMESİ + ORTALANMIŞ AŞAMA YAZISI (PR #17, MERGED): PlayerCard kalbi gerçek `<button>` (aria-pressed,
+    data-testid="card-heart"); favori `src/lib/collection.ts` üzerinden kalıcı; `e.stopPropagation()`.
   - ✅ profiles TABLOSU (migration 0004): doğum yılı `profiles.birth_year`; RLS owner-scoped, set_updated_at trigger.
   - ✅ FAVORİLER SUPABASE SENKRONU (PR #20, MERGED): yerel-öncelikli + `collection_entries` aynası (migration 0005,
-    RLS owner-scoped). Oturum hazır olunca `useCollectionSync` bir kez `pullAndMerge` (yeni-kazanır, MAX cap);
-    kalp toggle tek kaydı upsert/delete eder (fire-and-forget, hatalar yutulur). Supabase yoksa/hatalıysa yalnız yerel.
+    RLS owner-scoped). Supabase yoksa/hatalıysa yalnız yerel.
+  - ✅ LORE CİNEMATİK STİL (PR #27, MERGED): `loreEngine.ts` SERT/YUMUŞAK filtre + tr/en/es/de/fr şablon + dil
+    denetimi; `LORE_STYLE_VERSION` "lore-v6" (PR #28 ile cila turu).
 
 AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
-  - PR #23 / #15 / #11 AÇIK: gözden geçir + birleştir (BİRLEŞTİRMEYİ KULLANICI YAPAR). #23 ve #15 docs-only ve
-    ESKİ main tabanlı; içerikleri bu HANDOFF tarafından büyük ölçüde ikame edildi — birleştirip kapat ya da kapat.
-  - Sonar eski bakım maddeleri: `chore/sonar-maintenance` YEREL dalda 6 commit hazır (Number.parseInt,
-    Number.isNaN + reduce seed, floating promise `void`, @import sırası, alert başlığı, MasterPosterModal a11y).
-    Kalan: regex backtracking (itunes-mapping / poetic-analyzer / sharePoster). Dal push edilmedi, PR YOK.
-  - TR/çok dilli kapsam: sabit İngilizce metinler (GoogleLinkButton durum metinleri, BirthYearPrompt hata metni,
-    Hide/Show card, Change birth year) → `src/lib/i18n/dictionaries.ts` (5 dil). `feat/i18n-new-strings` YOK.
+  - PR #29 / #11 AÇIK: gözden geçir + birleştir (BİRLEŞTİRMEYİ KULLANICI YAPAR). #29 docs-only; #11 kod (eski).
+  - Bu dalın PR'ı: `feat/backdrop-decade-registry` (kod+docs) — inceleme sonrası kullanıcı birleştirir.
+  - Sahip yeni dönem backdrop dosyalarını düşürür (önce 70s ve 90s) — kod değişikliği GEREKMEZ (docs/ASSETS.md).
+  - Dönem renk/grain KATMANI: `matchedDecade`/`exact=false` bayrağına göre bir sonraki PR (bu PR'da YOK).
+  - Sonar eski bakım maddeleri: `chore/sonar-maintenance` YEREL dalda 6 commit hazır. Dal push edilmedi, PR YOK.
+  - TR/çok dilli kapsam: sabit İngilizce metinler → `src/lib/i18n/dictionaries.ts` (5 dil). `feat/i18n-new-strings` YOK.
   - Faz 4 hizalama: `docs/TECH/DATABASE_PLAN.md` (DRAFT) ile gerçek tabloları (0001-0005) karşılaştır, farkı
     raporla. Migration YAZMA; şema onayı bekle.
   - Beta öncesi riskler: **§5b** (gizlilik/rıza, LLM hız limiti/maliyet, PII loglama, anonim birikim temizliği).
@@ -184,8 +97,6 @@ AÇIK İŞLER (katalog — bilinçli, sıradaki oturum için):
 ```
 
 Doğrula: `git fetch origin && git pull origin main && npm test -- --run && npx tsc --noEmit && npm run lint`.
-
----
 
 ## 1a. GEÇMİŞ (arşiv — eski tur kayıtları, kısaltıldı)
 
