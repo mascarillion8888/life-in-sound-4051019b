@@ -1,22 +1,17 @@
 /**
- * FAZ 3.1 — Exact-Match Asset Registry (manuel üretilmiş kombinasyon kaydı).
+ * FAZ 3.1 — Asset taxonomy (GenreId kümesi + genre eşanlamlı normalizasyonu).
  *
  * Kanonik karar (18 Eylül): görsel karar girdisi `Song {mood, genre, decade}`
- * bileşimidir; bu kayıt, kullanıcının MANUEL ÜRETTİĞİ kombinasyonları exact-match
- * olarak tanımlar. Runtime AI / GPT Image ÜRETİMİ YOKTUR (ANA_YASA §9,
- * §3 "runtime'da görsel üretilmez" — bu dosya sadece kayıt/seçimdir).
+ * bileşimidir. Bu dosya YALNIZCA taksonomiyi tutar: 23 `GenreId`, `GENRE_ALIASES`
+ * (provider etiketlerini kanonik kimliğe indirger), klasör eşlemesi
+ * (`hiphop` → `hip-hop/`) ve `normalizeGenre`. Runtime AI / görsel üretimi
+ * YOKTUR (ANA_YASA §9).
  *
- * Kayıt, GenreId × MOOD_SET çarpımından TÜRETİLİR (2026-10-10): 23 tür × 9 mood =
- * 207 satır, hepsi DÖNEMSİZ (decade yok → tüm yıllarda geçerli). `assetRef`
- * `<folder>/mood-backdrop-<mood>.jpg` biçimindedir; klasör adı GenreId ile aynıdır,
- * tek istisna `hiphop` → `hip-hop/` (klasör adı birleşik değil). Liste elle
- * bakımı yapılmaz — yeni tür eklemek için GenreId + GENRE_ALIASES yeterlidir.
- *
- * Bir kombinasyon burada kayıtlıysa ve girilen eksenlerle tam eşleşiyorsa,
- * `resolveExactAsset` onu döndürür → `SceneVisualResolution.exactAssetRef`
- * dolar ve `fallbackTrace`'e `exact-match:<genre>-<decade>-<mood>` izi düşer.
- * Bu ŞEFFAFLIK içindir; görsel davranışı değiştirmez (backdrop yine aynı mood
- * dosyasını gösterir).
+ * Backdrop KAYDI artık burada DEĞİL: `src/assets` altındaki GERÇEK dosyalardan
+ * türetilir ve DÖNEM boyutunu taşır (FAZ 3.2, 2026-11-11) → bkz.
+ * `./backdropRegistry` (`BACKDROP_REGISTRY`, `resolveBackdrop`). Eski elle
+ * türetilmiş dönemsiz `SCENE_ASSET_REGISTRY` KALDIRILDI; tek kaynak dosyalardır
+ * (docs/ASSETS.md).
  */
 import type { Mood } from "@/lib/ai/moodInference";
 
@@ -46,8 +41,13 @@ export type GenreId =
   | "timeless-opera"
   | "world";
 
-/** 9 kapalı mood — MOOD_SET ile birebir. Registry satırları bu listeden türer. */
-const REGISTRY_MOODS: readonly Mood[] = [
+/**
+ * 9 kapalı mood — MOOD_SET ile birebir (aynı değer/sıra). Mood "yakınlığı"
+ * (bkz. backdropRegistry) bu kanonik sırayı kullanır. Değeri `moodInference`'dan
+ * İMPORT ETMEYİZ: o modül `moodInference.server`'ı çeker; burada saf bir kopya
+ * tutmak client bundle'ına server fonksiyonu sokmaz.
+ */
+export const REGISTRY_MOODS: readonly Mood[] = [
   "Energetic",
   "Euphoric",
   "Playful",
@@ -87,10 +87,24 @@ export const ALL_GENRES: readonly GenreId[] = [
 ];
 
 /** Klasör adı ≠ GenreId olan tek tür (asset dosyasının gerçek klasörü). */
-const GENRE_FOLDER: Partial<Record<GenreId, string>> = {
+export const GENRE_FOLDER: Partial<Record<GenreId, string>> = {
   hiphop: "hip-hop",
   // diğer tüm GenreId'ler klasör adlarıyla aynıdır ("new age" boşluğu dahil).
 };
+
+/** GenreId → asset klasör adı (GENRE_FOLDER override'ı uygulanmış). */
+export function genreFolder(genre: string): string {
+  return GENRE_FOLDER[genre as GenreId] ?? genre;
+}
+
+/** Asset klasör adı → kanonik GenreId (GENRE_FOLDER'ın tersi). Bilinmeyen aynen döner. */
+const FOLDER_TO_GENRE: Record<string, string> = Object.fromEntries(
+  ALL_GENRES.map((g) => [genreFolder(g), g]),
+);
+
+export function genreFromFolder(folder: string): string {
+  return FOLDER_TO_GENRE[folder] ?? folder;
+}
 
 /**
  * Genre etiketlerini kanonik `GenreId`'ye indirger (recorded provider'lar tek
@@ -271,34 +285,3 @@ export function normalizeGenre(genre: string | null | undefined): string | null 
   if (key.length === 0) return null;
   return GENRE_ALIASES[key] ?? key;
 }
-
-/** Manuel üretilmiş bir kombinasyonun kaydı. */
-export interface SceneAssetEntry {
-  genre: GenreId;
-  /**
-   * Decade etiketi, örn. "1980s". OPSİYONEL: yoksa kayıt dönemsizdir (tür+mood
-   * tüm dönemlerde geçerli) — `resolveExactAsset` decade koşulunu yoksayar.
-   * (pop-1980s pilotu gibi dönemsel kayıtlar belirtir; mevcut 207 satırın
-   * hiçbiri dönemsel değildir — hepsi tüm yıllarda geçerli.)
-   */
-  decade?: string;
-  mood: Mood;
-  /** Görsel dosya referansı — src/assets altındaki dosya yolu, örn. "pop/mood-backdrop-energetic.jpg". */
-  assetRef: string;
-}
-
-/**
- * Kayıtlı kombinasyonlar — 23 genre × 9 mood = 207 satır, hepsi DÖNEMSİZ
- * (`decade` opsiyonel olduğundan atlanır → tüm yıllarda geçerli). `assetRef`
- * genre klasörü içindeki gerçek dosyayı gösterir:
- * `<folder>/mood-backdrop-<mood>.jpg` (klasör = GenreId, tek istisna
- * `hiphop` → `hip-hop/`). Tüm dosyalar src/assets altında 832×1248 (2:3).
- * Liste elle bakımı yapılmaz — GenreId × REGISTRY_MOODS çarpımından türer.
- */
-export const SCENE_ASSET_REGISTRY: readonly SceneAssetEntry[] = ALL_GENRES.flatMap((genre) =>
-  REGISTRY_MOODS.map((mood) => ({
-    genre,
-    mood,
-    assetRef: `${GENRE_FOLDER[genre] ?? genre}/mood-backdrop-${mood.toLowerCase()}.jpg`,
-  })),
-);

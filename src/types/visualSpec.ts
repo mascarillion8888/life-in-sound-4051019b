@@ -13,6 +13,7 @@ import type { Mood } from "@/lib/ai/moodInference";
 import type { ScenePalette, SceneThemeId } from "@/components/scene/scenePalettes";
 import type { EraStyle } from "@/lib/soundmap/eraStyle";
 import type { EraThemeId } from "@/lib/visual/eraThemes";
+import type { BackdropStrategy, Decade } from "@/lib/visual/backdropRegistry";
 
 /**
  * Bir eksenin veri kaynağı/güveni. Mevcut repo tipleriyle uyumlu — yeni zırva alan üretmez,
@@ -59,6 +60,12 @@ export interface SceneVisualResolution {
   /** Deterministik düşüş zinciri — debug/test için. */
   /** Manuel üretilmiş kombinasyondan gelen exact-match assetRef (eşleşme yoksa undefined). */
   exactAssetRef?: string;
+  /** Eşleşen backdrop kaydının dönemi (ör. "1970s"). */
+  matchedDecade?: Decade;
+  /** Eşleşen dönem İSTENEN döneme tam eşit mi? false ise bir sonraki PR dönem katmanı uygulayabilir. */
+  backdropExact?: boolean;
+  /** Backdrop'u hangi fallback stratejisinin seçtiği (exact/mood/decade/genre-decade/default). */
+  backdropStrategy?: BackdropStrategy;
   fallbackTrace: string[];
 }
 

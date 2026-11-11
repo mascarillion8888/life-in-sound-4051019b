@@ -72,20 +72,20 @@ export function moodBackdropFilename(mood: Mood | string): string {
 
 /**
  * Genre-agnostic neutral mood-wall source folder. Reached only when a song's
- * genre has NO registered folder (e.g. metal/jazz/hiphop — outside
- * pop/punk/rock/soul) or genre is absent. A REAL pop-class mood asset is shown,
- * never an invented/generated image (ANA_YASA §0). Genre-specific selection is
- * the Asset Registry's job (SCENE_ASSET_REGISTRY); this module only supplies the
- * neutral mood wall.
+ * genre has NO registered backdrop (e.g. an unknown genre) or when the
+ * decade-aware registry resolves nothing. A REAL pop-class mood asset is shown,
+ * never an invented/generated image (ANA_YASA §0). Genre-specific + decade
+ * selection is the Asset Registry's job (`SCENE_ASSET_REGISTRY` /
+ * `backdropRegistry`); this module only supplies the neutral mood wall.
  */
 export const NEUTRAL_BACKDROP_GENRE = "pop" as const;
 
 /**
- * Backdrop fallback candidates (most specific first) as `<folder>/mood-backdrop-
- * <mood>.jpg` subpaths. The genre axis is now a FOLDER resolved by the Asset
- * Registry, so the genre-agnostic fallback here always points at the neutral mood
- * wall (NEUTRAL_BACKDROP_GENRE). Decade no longer shapes a filename — it was
- * never backed by real `<decade>-...` files.
+ * Neutral fallback candidate (most specific first) as `<folder>/mood-backdrop-
+ * <mood>.jpg`. The genre+decade axes are resolved by the decade-aware backdrop
+ * registry (`backdropRegistry.resolveBackdrop`), so this genre-agnostic fallback
+ * always points at the neutral mood wall (NEUTRAL_BACKDROP_GENRE) and the
+ * `_genre`/`_decade` parameters are retained only for call compatibility.
  */
 export function backdropCandidates(
   mood: Mood | string,
@@ -124,15 +124,13 @@ const MOOD_BACKDROP_URLS: Record<string, string> = import.meta.glob<string>(
 );
 
 /**
- * Return the resolved backdrop URL for a `decade × genre × mood` combination,
- * or `undefined` if no candidate file exists (yet). `undefined` → SceneRoom
- * keeps its neutral fallback.
+ * Return the resolved URL of the NEUTRAL (pop) mood wall for a mood, or
+ * `undefined` if no such file exists. `undefined` → SceneRoom keeps its own
+ * neutral fallback.
  *
- * Fallback chain (most specific first): `<decade>-<genre>-<mood>`, `<decade>-<mood>`,
- * `<genre>-<mood>`, then plain `<mood>`. Missing decade or genre simply
- * shorten the chain. The plain mood entry is the existing 9-file reference /
- * last resort — so a not yet baked combination degrades to the mood backdrop
- * instead of rendering an empty frame.
+ * This is the genre-agnostic last resort only: genre- and decade-aware selection
+ * lives in `backdropRegistry.resolveBackdrop`. `genre`/`decade` are accepted for
+ * call compatibility but no longer shape the filename (see `backdropCandidates`).
  */
 export function moodBackdropUrl(
   mood: Mood | string | null | undefined,
