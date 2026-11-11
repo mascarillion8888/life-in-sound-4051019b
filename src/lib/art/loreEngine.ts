@@ -18,7 +18,7 @@
 import { deterministicLore, historicalEraYear, type CardEncounter } from "./cardBlueprint.ts";
 
 /** Bumping this invalidates the client lore cache (see `useCardLore.cacheKey`). */
-export const LORE_STYLE_VERSION = "lore-v4";
+export const LORE_STYLE_VERSION = "lore-v5";
 
 /** How many candidate lines one provider call must return. */
 export const LORE_CANDIDATES = 3;
@@ -33,10 +33,10 @@ export type LifePeriod = {
   key: LifePeriodKey;
   /** Short English label — for code/tests only; never sent to the model. */
   label: string;
-  /** Neutral Turkish cue words (app source locale). */
+  /** Neutral Turkish cue words (app source locale) — for tests/reference only. */
   cues: string;
-  /** At most three cue words, used in the natural-language user prompt. */
-  hints: string[];
+  /** A neutral MOOD hint (English) — the ONLY thing sent to the model. */
+  mood: string;
   /** English cue words — for the copied-example echo check (few-shots are EN+TR). */
   hintsEn: string[];
 };
@@ -46,35 +46,35 @@ const LIFE_PERIODS: Record<LifePeriodKey, LifePeriod> = {
     key: "discovery",
     label: "Discovery & imagination",
     cues: "keşif, hayal gücü, kahramanlar, ilk heyecan, dünyayı keşfetme, hayranlık",
-    hints: ["keşif", "hayal gücü", "kahramanlar"],
+    mood: "wonder and the first taste of a much bigger world",
     hintsEn: ["discovery", "imagination", "heroes"],
   },
   identity: {
     key: "identity",
     label: "Identity & rebellion",
     cues: "kimlik, isyan, aidiyet, arkadaşlık, özgürlük, ilk güçlü duygular",
-    hints: ["kimlik", "isyan", "aidiyet"],
+    mood: "restlessness, wanting to belong and to push back",
     hintsEn: ["identity", "rebellion", "belonging"],
   },
   exploration: {
     key: "exploration",
     label: "Self-discovery & questioning",
     cues: "kendini bulma, sorgulama, aşk, güç, bağımsızlık, dünya ile çatışma, gerçeklik arayışı",
-    hints: ["kendini bulma", "sorgulama", "güç"],
+    mood: "questioning, wanting to understand yourself and the world",
     hintsEn: ["self-discovery", "questioning", "power"],
   },
   choices: {
     key: "choices",
     label: "Choices & responsibility",
     cues: "seçimler, sorumluluk, kayıplar, değişim, yeniden başlama, hayatın ağırlığını fark etme",
-    hints: ["seçimler", "sorumluluk", "kayıplar"],
+    mood: "the weight of choices, responsibility and change",
     hintsEn: ["choices", "responsibility", "losses"],
   },
   memory: {
     key: "memory",
     label: "Memory & acceptance",
     cues: "geçmiş, hafıza, kayıplar, kabullenme, derinlik, anlam, huzur, kim olduğuyla barışma",
-    hints: ["kabullenme", "hafıza", "derinlik"],
+    mood: "looking back, acceptance and a quieter kind of peace",
     hintsEn: ["acceptance", "memory", "depth"],
   },
 };
@@ -122,10 +122,13 @@ export const LORE_SYSTEM_PROMPT = [
   "",
   "LENGTH: 1–3 sentences. Prefer 8–30 words. Never more than 40 words. Short sentences, readable at a glance. Do not explain — open an emotional door.",
   "",
-  'OPENING: never begin with the age. No "Age 22.", no "22 yaş.", no "Kırk yaşında.", no "At 22 …". The age may appear at most once, inside the prose, never as the first thing.',
+  'OPENING: never begin with the age. No "Age 22.", no "22 yaş.", no "Kırk yaşında.", no "At 22 …". Never state the age anywhere — not as a figure and not spelled out.',
   'OPENING: do not start with "Bu" or "This" (no "Bu şarkı", "Bu parça", "Bu metal marşı", "Bu ses", "This song"). Start with a concrete image, feeling or moment instead.',
   "SONG ANCHOR: mention the song title or its release year naturally inside a sentence — at least one of the two. Never as a label or heading.",
-  'AGES: never write an age as a number or as spelled-out words (no "22", no "yirmi iki yaşında", no "twenty-two years old"). The life period carries the age, not a figure.',
+  'AGES: never write an age as a number or as spelled-out words (no "22", no "yirmi iki yaşında", no "twenty-two years old"), anywhere in the text. The life period carries the age, not a figure.',
+  "",
+  "THE GUIDE IS A MOOD, NOT A VOCABULARY: the life-period guide only sets an emotional mood. Never reuse its nouns. Describe what THIS song sounds like, or what its title or lyric theme evokes — not what an age is supposed to mean. Do not use the words hero, kahraman, destan or epik unless the song itself is about that.",
+  'ONE PERSON ONLY: write to the listener in second person singular — Turkish "sen" (…-sin), English "you", and the matching singular form in every other language. Never mix in the plural/formal ("siz", "sizi", "-iniz") and never slip into third person ("tanıştı", "o …di").',
   "",
   "FORBIDDEN PHRASINGS — never use them, in any language, anywhere in the text (not only at the start):",
   '"Bu şarkı…", "Bu parça…", "Bu albüm…", "Bu eser…", "Bu tür…", "Bu şarkı bize…", "Bu parça bize…", "Şarkı, dinleyiciyi…", "Bu albümün ana teması…", "Müzikal olarak…", "Dinlerken kendinizi…", "Hayatın her anında…", "Her zaman hatırlatır…", "Unutulmaz bir yolculuk…", "Ruhun derinliklerine…", "Kalbinize dokunur…", "Size ilham verir…", "Mutlaka dinlemelisiniz…".',
@@ -189,7 +192,8 @@ export function buildLoreUserPrompt(input: LorePromptInput): string {
 
   if (period) {
     parts.push(
-      `That age is a life period whose inner conflict is often about ${period.hints.join(", ")}. Use it only as a soft frame; it must not overpower the song.`,
+      `That age is a season of life whose usual MOOD is ${period.mood}. Use it only as a soft emotional frame — a hint, not a word list — and never let it overpower the song.`,
+      "Never reuse the guide's nouns. Describe what THIS song sounds like or what its title or lyric theme evokes. Do not use the words hero, kahraman, destan or epik unless the song itself is about that.",
     );
   } else {
     parts.push("Do not invent an age or a life period.");
@@ -210,7 +214,9 @@ export function buildLoreUserPrompt(input: LorePromptInput): string {
   parts.push(
     "Work out the song's own character first (title, artist, genre, mood, year); the life period is only the frame.",
     "Use only these facts: do not invent lyrics, the song's subject or album stories, and never quote lyrics.",
-    "Do not start with the age, and mention the age at most once.",
+    "Do not invent facts about the song's lyrics, genre labels or instruments you are not sure about. If unsure, speak about the feeling and the era, not the content.",
+    'Write in ONE grammatical person only: second person singular — Turkish "sen" (…-sin), English "you", and the matching singular form in every other language. Never mix in "siz" / "sizi" / "-iniz", never third person ("tanıştı").',
+    "Do not start with the age, and never state the age at all — not as a number and not spelled out.",
     `Write 3 DIFFERENT lore options, each from a different angle (for example: an inner state / the song's function in life / the period's conflict); they must not repeat each other.`,
     `Separate the three options with a line that contains only "###". Write each option in ${input.languageName}, the app's UI language.`,
     `Each option: 1–3 short sentences (prefer 8–30 words, never more than 40). Write about the song's place in the listener's life, not about its musical features.`,
@@ -242,8 +248,18 @@ const FORBIDDEN_LORE =
  * the text; anywhere else it is a soft violation (see `hasDemonstrativePhrase`).
  */
 const DEMONSTRATIVE_PHRASE =
-  /(?<![\p{L}])(?:bu|this|esta|este|dies(?:e|er|es)?|cette|ce)\s+\p{L}/iu;
-const LEADING_DEMONSTRATIVE = /^\s*(?:bu|this|esta|este|dies(?:e|er|es)?|cette|ce)\s+\p{L}/iu;
+  /(?<![\p{L}])(?:bu|this|esta|este|dies(?:e|er|es)?|cette|ce)[,\s]+\p{L}/iu;
+/**
+ * A demonstrative at the very start: "Bu …", "Bu, …", "Bu 1984 marşı …", plus
+ * the EN/ES/DE/FR equivalents. Leading quotes/punctuation/brackets are stripped
+ * first so '"Bu şarkı' and '«Bu …' are caught too.
+ */
+const LEADING_DEMONSTRATIVE = /^(?:bu|şu|o|this|esta|este|dies(?:e|er|es)?|cette|ce)\b[,\s]/iu;
+
+/** Strip leading quotes, brackets and punctuation before a start-anchored check. */
+function stripLeadingMarks(text: string): string {
+  return text.replace(/^[\s"'“”‘’«»()[\]{}<>.,;:!?…—–-]+/u, "");
+}
 
 /**
  * Skeleton labels the model must not echo from the brief: any "label:" pair, or
@@ -275,11 +291,19 @@ const SPELLED_AGE_FR =
   "(?:vingt|trente|quarante|cinquante|soixante|quatre-vingt)(?:-|\\s)?\\p{L}*\\s*ans|la (?:vingtaine|trentaine|quarantaine|cinquantaine|soixantaine)";
 const SPELLED_AGE = `(?:${SPELLED_AGE_TR}|${SPELLED_AGE_EN}|${SPELLED_AGE_ES}|${SPELLED_AGE_DE}|${SPELLED_AGE_FR})`;
 
+/** A digit age in any phrasing: "10 yaşındaki", "22 yaşındaydın", "at 22", "aged 40". */
+const DIGIT_AGE =
+  "(?:age[sd]?\\s*\\d{1,3}|\\d{1,3}\\s*(?:yaş\\p{L}*|years?[- ]old|yo)|at\\s+\\d{1,3}|\\d{1,3}\\s*[-–—]\\s*\\d{1,3}\\s*(?:yaş\\p{L}*|years?[- ]old))";
+
+/**
+ * Any age statement — a digit age or a spelled-out one — ANYWHERE in the text.
+ * The card already shows the age, so the lore must never state it; a hit is a
+ * HARD rejection (see `hasAgeMention`).
+ */
+const ANY_AGE = new RegExp(`(?:${DIGIT_AGE}|${SPELLED_AGE})`, "iu");
+
 /** A leading age — "Age 22.", "22 yaş.", "Yirmi iki yaşında.", "At 22 …". */
-const LEADING_AGE = new RegExp(
-  `^\\s*(?:age\\s*\\d{1,3}|\\d{1,3}\\s*(?:yaş\\p{L}*|years?\\s*old)|at\\s+\\d{1,3}|\\d{1,3}\\s*[-–—]\\s*\\d{1,3}\\s*(?:yaş\\p{L}*|years?\\s*old)|${SPELLED_AGE})`,
-  "iu",
-);
+const LEADING_AGE = new RegExp(`^\\s*(?:${DIGIT_AGE}|${SPELLED_AGE})`, "iu");
 
 /**
  * Copy references: the five few-shot lore lines (EN + TR) plus the guide's
@@ -406,7 +430,7 @@ export function hasForbiddenPhrase(text: string): boolean {
 
 /** True when the text OPENS with a demonstrative that names the song ("Bu şarkı…"). */
 export function hasLeadingDemonstrative(text: string): boolean {
-  return LEADING_DEMONSTRATIVE.test(text);
+  return LEADING_DEMONSTRATIVE.test(stripLeadingMarks(text));
 }
 
 /** True when a demonstrative-naming phrase appears anywhere (soft when not leading). */
@@ -422,6 +446,15 @@ export function hasPromptLeak(text: string): boolean {
 /** True when the text opens with the age instead of the song. */
 export function hasLeadingAge(text: string): boolean {
   return LEADING_AGE.test(text);
+}
+
+/**
+ * True when the text states an age ANYWHERE — digits ("22 yaşındaydın", "at 22",
+ * "aged 40") or spelled out ("kırklı yaşlar", "yirmili yaşların"). The card
+ * already shows the age, so the lore must never state it.
+ */
+export function hasAgeMention(text: string): boolean {
+  return ANY_AGE.test(text);
 }
 
 /** True when the text copies/echoes a few-shot lore line. */
@@ -454,37 +487,6 @@ export function sceneHits(text: string): string[] {
 /** Sentence count (SOFT: 3+ is penalized). */
 export function sentenceCount(text: string): number {
   return (text.match(/[^.!?]+[.!?]+/g) ?? []).length || (text.trim() ? 1 : 0);
-}
-
-/** The spelled-out numbers whose digits we look for in the text (SOFT). */
-const NUMBER_WORDS: Record<string, string> = {
-  "10": "on",
-  "12": "on iki",
-  "18": "on sekiz",
-  "20": "yirmi",
-  "22": "yirmi iki",
-  "30": "otuz",
-  "40": "kırk",
-  "50": "elli",
-};
-
-/**
- * SOFT: how many times the encounter age appears — as digits or, for common
- * ages, as Turkish number words — plus any spelled-out age phrase in the five
- * UI languages ("yirmi iki yaşında", "in his forties", "zwanzig Jahre alt").
- * A leading age is already a hard violation.
- */
-export function ageNumberHits(text: string, age: number | null | undefined): number {
-  let hits = (text.match(new RegExp(SPELLED_AGE, "giu")) ?? []).length;
-  if (typeof age !== "number" || !Number.isFinite(age)) return hits;
-  const a = Math.floor(age);
-  hits += (text.match(new RegExp(`(?<![\\p{N}])${a}(?![\\p{N}])`, "gu")) ?? []).length;
-  const word = NUMBER_WORDS[String(a)];
-  if (word) {
-    hits += (text.toLowerCase().match(new RegExp(`(?<![\\p{L}])${word}(?![\\p{L}])`, "gu")) ?? [])
-      .length;
-  }
-  return hits;
 }
 
 /**
@@ -598,10 +600,10 @@ export function languageCheck(
 /* -------------------------------------------------------------------------- */
 
 export type RejectReason =
-  "copy" | "leak" | "header" | "leadingAge" | "forbidden" | "wrongLanguage" | "length";
+  "copy" | "leak" | "header" | "leadingAge" | "age" | "forbidden" | "wrongLanguage" | "length";
 
 export type SoftViolation =
-  "cliche" | "ageNumber" | "scene" | "sentences" | "long" | "wrongLanguage" | "demonstrative";
+  "cliche" | "scene" | "sentences" | "long" | "wrongLanguage" | "demonstrative" | "person";
 
 export type CandidateDiagnostics = {
   text: string;
@@ -656,7 +658,8 @@ function isHardWrongLanguage(text: string, languageName: string, names: string[]
 
 /**
  * Judge one candidate: `hard` reasons make it ineligible, `soft` violations only
- * lower its score.
+ * lower its score. `age` is accepted for signature stability (callers pass the
+ * encounter age) but is no longer used: any age mention is a hard `age` rejection.
  */
 export function diagnoseCandidate(
   text: string,
@@ -670,19 +673,38 @@ export function diagnoseCandidate(
   if (hasPromptLeak(text)) hard.push("leak");
   if (looksLikeHeader(text)) hard.push("header");
   if (hasLeadingAge(text)) hard.push("leadingAge");
+  if (hasAgeMention(text)) hard.push("age");
   if (hasLeadingDemonstrative(text)) hard.push("forbidden");
   if (hasForbiddenPhrase(text)) hard.push("forbidden");
   if (isHardWrongLanguage(text, languageName, names)) hard.push("wrongLanguage");
   if (exceedsWordLimit(text)) hard.push("length");
 
   if (clicheHits(text).length) soft.push("cliche");
-  if (ageNumberHits(text, age) > 1) soft.push("ageNumber");
   if (sceneHits(text).length) soft.push("scene");
   if (sentenceCount(text) >= 3) soft.push("sentences");
   if (wordCount(text) > SOFT_MAX_LORE_WORDS) soft.push("long");
   if (wrongLanguageScore(text, languageName) > 0) soft.push("wrongLanguage");
   if (hasDemonstrativePhrase(text)) soft.push("demonstrative");
+  if (/türk/i.test(languageName) && hasMixedPerson(text)) soft.push("person");
   return { text, hard, soft };
+}
+
+/**
+ * SOFT: the text mixes grammatical persons. We ask for second person singular
+ * ("sen …-sin" in Turkish, "you" in English). This flags the clear Turkish
+ * mix-ups: a formal/plural marker ("siz", "sizi", "…-iniz") or a third-person
+ * past verb ("tanıştı", "kaldı") alongside a "sen" form. Deliberately simple —
+ * it only nudges the score, it never rejects.
+ */
+export function hasMixedPerson(text: string): boolean {
+  const lower = text.toLowerCase();
+  const hasSen = /(?<![\p{L}])(sen|senin|seni|sana|sende|senden|seninle)(?![\p{L}])/u.test(lower);
+  const hasSiz = /(?<![\p{L}])(siz|sizi|size|sizin|sizde|sizden|sizinle)(?![\p{L}])/u.test(lower);
+  const hasPluralVerb = /(?<![\p{L}])\p{L}{2,}(?:iniz|ınız|unuz|ünüz)(?![\p{L}])/u.test(lower);
+  const hasSenVerb = /(?<![\p{L}])\p{L}{2,}(?:sin|sın|sun|sün)(?![\p{L}])/u.test(lower);
+  const hasThirdVerb = /(?<![\p{L}])\p{L}{2,}(?:dı|di|du|dü|tı|ti|tu|tü)(?![\p{L}])/u.test(lower);
+  const secondPresent = hasSen || hasSenVerb;
+  return (secondPresent && (hasSiz || hasPluralVerb)) || (secondPresent && hasThirdVerb);
 }
 
 /** True when the text is acceptable at all (no hard violation). */
@@ -692,7 +714,7 @@ export function isGenericLore(text: string): boolean {
     hasForbiddenPhrase(text) ||
     hasLeadingDemonstrative(text) ||
     hasPromptLeak(text) ||
-    hasLeadingAge(text) ||
+    hasAgeMention(text) ||
     isCopiedLore(text) ||
     exceedsWordLimit(text)
   );
@@ -849,7 +871,7 @@ export async function generateLoreCore(
       !hasForbiddenPhrase(cut) &&
       !hasLeadingDemonstrative(cut) &&
       !hasPromptLeak(cut) &&
-      !hasLeadingAge(cut) &&
+      !hasAgeMention(cut) &&
       languageCheck(cut, language, [encounter.songTitle, encounter.artist]) === "ok"
     ) {
       return { text: cut, path: "rewrite", language, candidates };

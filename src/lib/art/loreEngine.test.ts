@@ -1,17 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  ageNumberHits,
   buildLoreUserPrompt,
   cleanLore,
   detectLoreLanguage,
   diagnoseCandidate,
   exceedsWordLimit,
   generateLoreCore,
+  hasAgeMention,
   hasDemonstrativePhrase,
   hasForbiddenPhrase,
   hasLeadingAge,
   hasLeadingDemonstrative,
+  hasMixedPerson,
   hasPromptLeak,
   isCopiedLore,
   isGenericLore,
@@ -50,10 +51,15 @@ describe("lifePeriodForAge", () => {
     expect(lifePeriodForAge(-3)).toBeNull();
   });
 
-  it("exposes at most three cue words per period", () => {
+  it("carries a neutral mood hint, not a reusable noun list", () => {
     for (const age of [10, 15, 22, 30, 40]) {
-      expect(lifePeriodForAge(age)?.hints.length).toBeLessThanOrEqual(3);
+      const mood = lifePeriodForAge(age)?.mood;
+      expect(typeof mood).toBe("string");
+      expect(mood?.length).toBeGreaterThan(10);
     }
+    // The guide's own nouns must NOT appear in the hint sent to the model.
+    expect(lifePeriodForAge(10)?.mood).not.toMatch(/hero|kahraman|imagination|hayal/i);
+    expect(lifePeriodForAge(40)?.mood).toMatch(/acceptance|peace|back/i);
     expect(lifePeriodForAge(40)?.cues).toContain("kabullenme");
     expect(lifePeriodForAge(10)?.cues).toContain("hayal gücü");
   });
@@ -151,7 +157,7 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
   });
 
   it("has a versioned style id", () => {
-    expect(LORE_STYLE_VERSION).toBe("lore-v4");
+    expect(LORE_STYLE_VERSION).toBe("lore-v5");
   });
 });
 
@@ -172,11 +178,15 @@ describe("buildLoreUserPrompt", () => {
     expect(prompt).toContain("it was released in 1987");
   });
 
-  it("states the real age and at most three period cue words", () => {
+  it("states the real age and a mood hint instead of the guide's nouns", () => {
     const prompt = buildLoreUserPrompt({ ...base, age: 22 });
     expect(prompt).toContain("at age 22");
-    expect(prompt).toContain("kendini bulma");
-    expect(prompt).toContain("soft frame");
+    expect(prompt).toContain("MOOD is");
+    expect(prompt).toContain("questioning");
+    // The guide's reusable nouns must not be handed to the model as vocabulary.
+    expect(prompt).not.toContain("kendini bulma, sorgulama, güç");
+    expect(prompt).toContain("Never reuse the guide's nouns");
+    expect(prompt).toContain("hero, kahraman, destan or epik");
   });
 
   it("omits the period hint and forbids inventing one when the age is unknown", () => {
@@ -189,12 +199,27 @@ describe("buildLoreUserPrompt", () => {
     expect(buildLoreUserPrompt({ ...base, languageName: "Türkçe" })).toContain("in Türkçe");
   });
 
-  it("carries the song-first, no-leading-age and anti-fabrication rules", () => {
+  it("carries the song-first, age-ban and anti-fabrication rules", () => {
     const prompt = buildLoreUserPrompt({ ...base, age: 9 });
     expect(prompt).toContain("Work out the song's own character first");
-    expect(prompt).toContain("Do not start with the age");
+    expect(prompt).toContain("never state the age at all");
     expect(prompt).toContain("do not invent lyrics");
     expect(prompt).toContain("never diagnose, label, or pathologize");
+  });
+
+  it("enforces one grammatical person and the no-invented-facts rule", () => {
+    const prompt = buildLoreUserPrompt({ ...base, age: 22 });
+    expect(prompt).toContain("Write in ONE grammatical person only");
+    expect(prompt).toContain('Never mix in "siz"');
+    expect(prompt).toContain(
+      "Do not invent facts about the song's lyrics, genre labels or instruments",
+    );
+  });
+
+  it("carries the release year and artist as context", () => {
+    const prompt = buildLoreUserPrompt({ ...base, age: 22, releaseYear: 1983 });
+    expect(prompt).toContain('about the song "Fragile" by Sting');
+    expect(prompt).toContain("it was released in 1983");
   });
 
   it("ends with the prose-only, three-option instruction", () => {
@@ -254,61 +279,53 @@ describe("prompt-leak filter", () => {
   });
 });
 
-describe("leading-age filter", () => {
-  const leading = [
-    "Age 22. The nights you first tested your own edges.",
-    "22 yaş. Kendi sınırlarını ilk kez zorladığın yıllar.",
-    "Kırk yaşında. Sessizliğin sana öğrettiği derinlik.",
-    "At 22, the world finally had edges.",
-    // Spelled-out ages at the very start — the eval's real leaks.
-    "Yirmi iki yaşında. Kapıların ilk kez açıldığı yıllar.",
-    "Kırklı yaşlarında. Sessizliğin sana öğrettiği derinlik.",
-    "Otuzlu yaşların. Kendi sesini bulmaya başladığın dönem.",
-    "Twenty-two years old, the world finally had edges.",
-    "In his forties, the quiet became a companion.",
-    "Zwanzig Jahre alt, und die Welt bekam endlich Kanten.",
-    "Vingt-deux ans, et le monde eut enfin des bords.",
+describe("age filter — any age mention is a HARD reject (table-driven)", () => {
+  // The card already shows the age, so the lore must never state it. Digits and
+  // spelled-out forms are both hard — at the start AND anywhere else.
+  const cases: Array<[string, string, string]> = [
+    ["tr", "leading", "22 yaş. Kendi sınırlarını ilk kez zorladığın yıllar."],
+    ["tr", "inside", "Henüz 10 yaşındayken o şarkı bir kapı açtı."],
+    ["tr", "inside", "O yıl 22 yaşındaydın; şarkı sana gücü öğretti."],
+    ["tr", "inside", "10 yaşındaki halin o melodiyi hiç unutmadı."],
+    ["tr", "inside", "40 yaşında hâlâ aynı nakaratı mırıldanıyorsun."],
+    ["en", "leading", "Age 22. The nights you first tested your own edges."],
+    ["en", "inside", "The song found you at 22 and never let go."],
+    ["en", "inside", "You were 40 years old when it returned."],
+    ["en", "inside", "Even aged 40, the chorus still opened something."],
+    ["tr", "leading", "Yirmi iki yaşında. Kapıların ilk kez açıldığı yıllar."],
+    ["tr", "inside", "Kırklı yaşların getirdiği sessizlik şarkıyla anlam buldu."],
+    ["tr", "inside", "Kırk yaşın getirdiği sessizlik şarkıyla anlam buldu."],
+    ["tr", "inside", "Yirmili yaşların o şarkıyla bir anahtara dönüştü."],
+    ["en", "inside", "In her forties the quiet became a companion."],
+    ["es", "inside", "Tenía veintidós años cuando la canción te encontró."],
+    ["de", "inside", "Mit zwanzig Jahren wurde das Lied zu einem Zuhause."],
+    ["fr", "inside", "Tu avais vingt-deux ans quand la chanson t'a trouvé."],
   ];
 
-  it("flags a leading age as GENERIC", () => {
-    for (const text of leading) {
-      expect(hasLeadingAge(text)).toBe(true);
-      expect(isGenericLore(text)).toBe(true);
+  it("flags an age mention anywhere as a hard reject", () => {
+    for (const [lang, where, text] of cases) {
+      const d = diagnoseCandidate(text, lang === "tr" ? "Türkçe" : "English", 22);
+      expect([lang, where, hasAgeMention(text)]).toEqual([lang, where, true]);
+      expect([lang, where, d.hard.includes("age") || d.hard.includes("leadingAge")]).toEqual([
+        lang,
+        where,
+        true,
+      ]);
+      expect([lang, where, isGenericLore(text)]).toEqual([lang, where, true]);
     }
   });
 
-  it("allows the age inside the prose", () => {
-    const inside = "O şarkı, yirmi iki yaşındaydın diye değil, gücü öğrettiği için kaldı.";
-    expect(hasLeadingAge(inside)).toBe(false);
-  });
-});
-
-describe("spelled-out age soft check (table-driven)", () => {
-  const cases: Array<[string, string]> = [
-    ["tr", "Yirmi iki yaşındaydın ve şarkı sana gücü öğretti."],
-    ["tr", "Kırklı yaşlarında sessizlik bir yoldaşa dönüştü."],
-    ["tr", "Otuzlu yaşların kendi sesini bulduğun dönemdi."],
-    ["tr", "Elli yaşın eşiğinde şarkı yeniden çaldı."],
-    ["en", "You were twenty-two years old when the song found you."],
-    ["en", "In her forties the quiet became a companion."],
-    ["es", "Tenía veintidós años cuando la canción te encontró."],
-    ["de", "Mit zwanzig Jahren wurde das Lied zu einem Zuhause."],
-    ["fr", "Tu avais vingt-deux ans quand la chanson t'a trouvé."],
-  ];
-
-  it("counts a spelled-out age anywhere as an ageNumber hit", () => {
-    for (const [lang, text] of cases) {
-      expect([lang, ageNumberHits(text, 22) >= 1]).toEqual([lang, true]);
-    }
+  it("flags a leading age specifically as leadingAge", () => {
+    expect(hasLeadingAge("Age 22. A door opened.")).toBe(true);
+    expect(hasLeadingAge("22 yaş. Kendi sınırlarını zorladığın yıllar.")).toBe(true);
+    expect(hasLeadingAge("Yirmi iki yaşında. Kapılar açıldı.")).toBe(true);
   });
 
-  it("flags a spelled-out age in a candidate's soft violations", () => {
-    const d = diagnoseCandidate(
-      "O yıl yirmi iki yaşındaydın; şarkı sana gücü öğretti.",
-      "Türkçe",
-      22,
-    );
-    expect(d.soft).toContain("ageNumber");
+  it("leaves a clean, age-free line untouched", () => {
+    const clean = "O şarkı gücü öğrettiği için kaldı; yıllar onu bir kapıya çevirdi.";
+    expect(hasAgeMention(clean)).toBe(false);
+    expect(hasLeadingAge(clean)).toBe(false);
+    expect(diagnoseCandidate(clean, "Türkçe", 22).hard).not.toContain("age");
   });
 });
 
@@ -357,15 +374,22 @@ describe("forbidden-phrase filter (TR + EN, anywhere)", () => {
 });
 
 describe("demonstrative rule: sentence-initial Bu/This is HARD, elsewhere SOFT", () => {
-  // The eval dodged "Bu şarkı" with "Bu metal marşı", "Bu ilerici metal", etc.
+  // The eval dodged "Bu şarkı" with "Bu metal marşı", "Bu 1984 marşı", "Bu, …".
   const leading = [
     "Bu metal marşı kendi sınırlarını zorladı.",
     "Bu ilerici metal bir kapı açtı.",
     "Bu sert melodi yılları taşıdı.",
     "Bu ses seninle kaldı.",
     "Bu şarkı bize huzur verir.",
+    "Bu, yılların en sert kapısıydı.",
+    "Bu 1984 marşı seni başka bir yıla taşıdı.",
+    '"Bu şarkı bir kapı oldu."',
+    "Şu melodi yılları taşıdı.",
+    "O gitar sesi seninle kaldı.",
     "This song became a door in your life.",
     "Esta canción abrió una puerta.",
+    "Diese Melodie wurde ein Zuhause.",
+    "Cette chanson a ouvert une porte.",
   ];
 
   it("hard-rejects a sentence-initial demonstrative + noun", () => {
@@ -385,9 +409,32 @@ describe("demonstrative rule: sentence-initial Bu/This is HARD, elsewhere SOFT",
     expect(d.soft).toContain("demonstrative");
   });
 
-  it("does not flag a demonstrative that does not name the song", () => {
-    // "Bu yıl" / "Bu dönem" is not a demonstrative-naming phrase.
+  it("does not flag a demonstrative that does not open the text", () => {
     expect(hasLeadingDemonstrative("Kapılar açıldı ve bu şarkıyla bir dünya kuruldu.")).toBe(false);
+  });
+});
+
+describe("mixed grammatical person (soft, Turkish)", () => {
+  const mixed = [
+    "Sen o yıl bir kapı açtın; siz onu hiç unutmadınız.",
+    "O şarkıyı sen buldun ve sizi yıllarca taşıdı.",
+    "Sen büyüdün, o şarkı da seninle büyüdü, sonra tanıştı onunla.",
+    "Sen o melodiyi sevdin; o yıllar seni değiştirdi.",
+  ];
+
+  it("flags a mix of sen and siz / third person as soft", () => {
+    for (const text of mixed) {
+      expect(hasMixedPerson(text)).toBe(true);
+    }
+    const d = diagnoseCandidate("Sen o yıl bir kapı açtın; siz onu hiç unutmadınız.", "Türkçe", 22);
+    expect(d.soft).toContain("person");
+    expect(d.hard).toEqual([]);
+  });
+
+  it("passes consistent second-person-singular Turkish", () => {
+    const clean = "Sen o yıl bir kapı açtın ve o melodiyi hiç bırakmadın.";
+    expect(hasMixedPerson(clean)).toBe(false);
+    expect(diagnoseCandidate(clean, "Türkçe", 22).soft).not.toContain("person");
   });
 });
 
@@ -476,12 +523,10 @@ describe("diagnoseCandidate (hard vs soft)", () => {
     ).toContain("wrongLanguage");
   });
 
-  it("marks clichés, a repeated age, scenes and 3+ sentences as soft", () => {
+  it("marks clichés, scenes and 3+ sentences as soft", () => {
     const soft = diagnoseCandidate("Ruh ve karanlık bir yolculuk. Ateş ve fırtına.", "Türkçe", 22);
     expect(soft.hard).toEqual([]);
     expect(soft.soft).toContain("cliche");
-    const age = diagnoseCandidate("22 yaşındaydın; 22 yıl sonra hâlâ aynı.", "Türkçe", 22);
-    expect(age.soft).toContain("ageNumber");
     expect(diagnoseCandidate("Bir. İki. Üç.", "Türkçe", 22).soft).toContain("sentences");
   });
 

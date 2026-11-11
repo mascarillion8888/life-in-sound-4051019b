@@ -84,7 +84,9 @@ if (!process.env.OPENROUTER_API_KEY?.trim()) {
 const { generateLoreCore, languageCheck, LORE_SYSTEM_PROMPT } = await import(
   moduleUrl("src/lib/art/loreEngine.ts")
 );
-const { callOpenRouter } = await import(moduleUrl("src/lib/openrouter.server.ts"));
+const { callOpenRouter, DEFAULT_OPENROUTER_MODEL } = await import(
+  moduleUrl("src/lib/openrouter.server.ts")
+);
 const { runRole } = await import(moduleUrl("src/lib/llm/orchestra.ts"));
 const { DEFAULT_LANGUAGE, LANGUAGE_NAMES, isLanguage } = await import(
   moduleUrl("src/lib/i18n/languages.ts")
@@ -211,9 +213,11 @@ const emit = (line) => {
   appendFileSync(OUTPUT_PATH, `${line}\n`);
 };
 
-const model = process.env.OPENROUTER_PRIMARY_MODEL ?? "(default)";
+const envModel = process.env.OPENROUTER_PRIMARY_MODEL?.trim();
+const model = envModel || DEFAULT_OPENROUTER_MODEL;
+const modelSource = envModel ? "(OPENROUTER_PRIMARY_MODEL)" : "(default)";
 emit(
-  `[lore-eval] model=${model} · ${songs.length} songs × ${ages.length} ages × ${languages.length} languages = ${songs.length * ages.length * languages.length} samples`,
+  `[lore-eval] model=${model} ${modelSource} · ${songs.length} songs × ${ages.length} ages × ${languages.length} languages = ${songs.length * ages.length * languages.length} samples`,
 );
 emit(
   `${pad("SONG", 30)} ${pad("AGE", 4)} ${pad("LANG", 5)} ${pad("WORDS", 6)} ${pad("FLAG", 18)} ${pad("PATH", 9)} LORE`,
