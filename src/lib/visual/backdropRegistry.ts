@@ -243,8 +243,10 @@ export function resolveBackdrop(
   if (moodIdx >= 0) {
     const sameDecade = inGenre.filter((e) => e.decade === matchDecade);
     if (sameDecade.length > 0) {
-      const best = sameDecade.reduce((a, b) =>
-        Math.abs(moodIndex(b.mood) - moodIdx) < Math.abs(moodIndex(a.mood) - moodIdx) ? b : a,
+      const best = sameDecade.reduce(
+        (a, b) =>
+          Math.abs(moodIndex(b.mood) - moodIdx) < Math.abs(moodIndex(a.mood) - moodIdx) ? b : a,
+        sameDecade[0],
       );
       return resolution(best, requested, "mood");
     }
@@ -258,7 +260,7 @@ export function resolveBackdrop(
       const db = Math.abs(DECADE_INDEX[b.decade] - target);
       if (db !== da) return db < da ? b : a;
       return DECADE_INDEX[b.decade] > DECADE_INDEX[a.decade] ? b : a; // tie → later
-    });
+    }, inGenreMood[0]);
     return resolution(best, requested, "decade");
   }
 

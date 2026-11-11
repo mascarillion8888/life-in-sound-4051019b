@@ -181,79 +181,96 @@ describe("resolveBackdrop — deterministic fallback order (table-driven)", () =
     reg("pop", "Dreamy", "1980s"),
   ];
 
-  const cases: {
-    name: string;
-    input: Parameters<typeof resolveBackdrop>[0];
-    ref: string;
-    strategy: string;
-    decade?: string;
-    exact?: boolean;
-  }[] = [
-    {
-      name: "(a) exact genre+mood+decade",
-      input: { mood: "Melancholic", genre: "rock", decade: "1970s" },
-      ref: "rock/Melancholic-1970s.webp",
-      strategy: "exact",
-      decade: "1970s",
-      exact: true,
-    },
-    {
-      name: "(b) same genre+decade, nearest mood (requested mood absent)",
-      input: { mood: "Euphoric", genre: "rock", decade: "1970s" },
-      ref: "rock/Energetic-1970s.webp",
-      strategy: "mood",
-      decade: "1970s",
-      // decade TAM eşleşti (yalnız mood düştü) → era katmanı gerekmez:
-      exact: true,
-    },
-    {
-      name: "(c) same genre+mood, nearest decade (ties prefer the LATER decade)",
-      input: { mood: "Melancholic", genre: "rock", decade: "1980s" },
-      ref: "rock/Melancholic-1990s.webp",
-      strategy: "decade",
-      decade: "1990s",
-      exact: false,
-    },
-    {
-      name: "(d) same genre, nearest decade, any mood",
-      input: { mood: "Dark", genre: "rock", decade: "2000s" },
-      ref: "rock/Melancholic-1990s.webp",
-      strategy: "genre-decade",
-      decade: "1990s",
-      exact: false,
-    },
-    {
-      name: "(e) unknown genre → global default (pop mood wall)",
-      input: { mood: "Melancholic", genre: "polka", decade: "1970s" },
-      ref: "pop/Melancholic-1980s.webp",
-      strategy: "default",
-      decade: "1980s",
-      exact: false,
-    },
-    {
-      name: "(e) unknown genre + unknown mood → neutral dreamy default",
-      input: { mood: "Dark", genre: "polka", decade: "1970s" },
-      ref: "pop/Dreamy-1980s.webp",
-      strategy: "default",
-      decade: "1980s",
-      exact: false,
-    },
-    {
-      name: "no decade (releaseYear absent) → 1980s target, ties prefer LATER decade",
-      input: { mood: "Melancholic", genre: "rock" },
-      ref: "rock/Melancholic-1990s.webp",
-      strategy: "decade",
-      decade: "1990s",
-      exact: false,
-    },
+  // [ad, girdi(mood,genre,decade), beklenen assetRef, strateji, beklenen dönem, exact?]
+  type Case = [
+    name: string,
+    mood: string,
+    genre: string,
+    decade: string | undefined,
+    ref: string,
+    strategy: string,
+    matched: string,
+    exact: boolean,
+  ];
+  const cases: Case[] = [
+    [
+      "(a) exact genre+mood+decade",
+      "Melancholic",
+      "rock",
+      "1970s",
+      "rock/Melancholic-1970s.webp",
+      "exact",
+      "1970s",
+      true,
+    ],
+    [
+      "(b) same genre+decade, nearest mood (requested mood absent)",
+      "Euphoric",
+      "rock",
+      "1970s",
+      "rock/Energetic-1970s.webp",
+      "mood",
+      "1970s",
+      true, // dönem TAM eşleşti (yalnız mood düştü)
+    ],
+    [
+      "(c) same genre+mood, nearest decade (ties prefer the LATER decade)",
+      "Melancholic",
+      "rock",
+      "1980s",
+      "rock/Melancholic-1990s.webp",
+      "decade",
+      "1990s",
+      false,
+    ],
+    [
+      "(d) same genre, nearest decade, any mood",
+      "Dark",
+      "rock",
+      "2000s",
+      "rock/Melancholic-1990s.webp",
+      "genre-decade",
+      "1990s",
+      false,
+    ],
+    [
+      "(e) unknown genre → global default (pop mood wall)",
+      "Melancholic",
+      "polka",
+      "1970s",
+      "pop/Melancholic-1980s.webp",
+      "default",
+      "1980s",
+      false,
+    ],
+    [
+      "(e) unknown genre + unknown mood → neutral dreamy default",
+      "Dark",
+      "polka",
+      "1970s",
+      "pop/Dreamy-1980s.webp",
+      "default",
+      "1980s",
+      false,
+    ],
+    [
+      "no decade (releaseYear absent) → 1980s target, ties prefer LATER decade",
+      "Melancholic",
+      "rock",
+      undefined,
+      "rock/Melancholic-1990s.webp",
+      "decade",
+      "1990s",
+      false,
+    ],
   ];
 
-  it.each(cases)("$name", ({ input, ref, strategy, decade, exact }) => {
-    const res = resolveBackdrop(input, REG);
+  it.each(cases)("%s", (_name, mood, genre, decade, ref, strategy, matched, exact) => {
+    const res = resolveBackdrop({ mood, genre, decade }, REG);
     expect(res.assetRef).toBe(ref);
     expect(res.strategy).toBe(strategy);
-    if (decade) expect(res.matchedDecade).toBe(decade);
-    if (exact !== undefined) expect(res.exact).toBe(exact);
+    expect(res.matchedDecade).toBe(matched);
+    expect(res.exact).toBe(exact);
   });
 
   it("(b) ties in mood distance resolve deterministically (stable across calls)", () => {
