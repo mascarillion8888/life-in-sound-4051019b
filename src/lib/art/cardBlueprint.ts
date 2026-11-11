@@ -370,10 +370,11 @@ export function deterministicLore(encounter: CardEncounter, language?: string): 
     `${encounter.artist}::${encounter.songTitle}::${encounter.encounterAge ?? ""}`,
   );
   const key = languageKey(language);
-  const set = LOCALIZED[key] ?? DEFAULT_LORE_LINES;
+  const set = localizedLineSet(key);
   const stage = lifeStageFor(encounter);
   if (stage) {
-    const lines = set.stages[stage.index];
+    const base = stage.index * LINES_PER_STAGE;
+    const lines = set.stages.slice(base, base + LINES_PER_STAGE);
     const line = lines[hash % lines.length];
     return fillLine(line, encounter, key);
   }
@@ -407,14 +408,28 @@ function languageKey(language: string | undefined): string {
 type LoreLineSet = {
   openers: readonly string[];
   closers: readonly string[];
-  /** One line array per life stage, indexed 0..7. */
-  stages: readonly (readonly string[])[];
+  /** Flat stage lines: 3 per life stage, indexed `stage.index * 3 + n`. */
+  stages: readonly string[];
 };
+
+const LINES_PER_STAGE = 3;
+
+/** Assemble a line set from a language's flat raw template, or the English default. */
+function localizedLineSet(key: string): LoreLineSet {
+  const raw = LOCALIZED_RAW[key];
+  if (!raw) return DEFAULT_LORE_LINES;
+  const lines = raw.trim().split("\n");
+  return {
+    openers: lines.slice(0, 4),
+    closers: lines.slice(4, 8),
+    stages: lines.slice(8),
+  };
+}
 
 const DEFAULT_LORE_LINES: LoreLineSet = {
   openers: LORE_OPENERS,
   closers: LORE_CLOSERS,
-  stages: LIFE_STAGES.map((stage) => stage.lines),
+  stages: LIFE_STAGES.flatMap((stage) => stage.lines),
 };
 
 const PLACEHOLDERS: Record<string, { song: string; artist: string }> = {
@@ -429,230 +444,144 @@ const PLACEHOLDERS: Record<string, { song: string; artist: string }> = {
  * Localized line sets for the non-English UI languages. Turkish is a genuine
  * Turkish set (the English `LIFE_STAGES` lines are the default, not Turkish).
  * Each stage line is 1–2 short sentences and never invents a place or event.
+ * One template per language, split on newlines: 4 openers, then 4 closers,
+ * then 3 lines for each of the 8 life stages.
  */
-const LOCALIZED: Record<string, LoreLineSet> = {
-  tr: {
-    openers: [
-      "Bütün dünya tek bir şarkıya daralır; geriye yalnızca o ses kalır.",
-      "Küçük bir an, tek bir şarkıyla yıllarca taşınan bir hâle dönüşür.",
-      "Sessizlik içinde bir şarkı başlar ve içeride bir şey usulca değişir.",
-      "Bir şarkı başlar ve iki kulak arasında özel bir evren açılır.",
-    ],
-    closers: [
-      "İlk kıvılcım çakar ve koca bir dünya açılır.",
-      "Birkaç dakika boyunca dışarıda hiçbir şey yoktur.",
-      "Bir melodiyle açılan bazı kapılar bir daha tam kapanmaz.",
-      "Yıllar sonra ilk notalar hâlâ o anı geri getirir.",
-    ],
-    stages: [
-      [
-        "{t}, {a}'ın sesiyle dünyaya ilk kez büyülü bir kapı açtı.",
-        "{a}'ı dinlerken {t} ile tanışan çocuk, henüz adı olmayan bir hayranlıkla doldu.",
-        "{t} çaldığında dünya genişledi; {a}'ın sesi ilk büyük hayali uyandırdı.",
-      ],
-      [
-        "{t} ile kendi sesini ilk kez seçti; {a} bir aynaya dönüştü.",
-        "Çocuklukla dünya arasında {t} küçük bir bayrak oldu; {a} tek başına seçtiği ilk sesti.",
-        "{t}'i çalarken müziğin kendisine ait olduğunu hissetti; {a} kendi imzasının ilk satırıydı.",
-      ],
-      [
-        "{t} söylenmeyen her şeyin sesini yükseltti; {a} ile her huzursuz kalp bir marş buldu.",
-        "Dünya hem çok gürültülü hem çok sessizdi, ta ki {a} {t}'i çalana kadar; genç bir yürek taşıyacak bir bayrak buldu.",
-        "Şimşek ve sorular içinde {t} bir kimliğe dönüştü; {a} isyanı duyulur kıldı.",
-      ],
-      [
-        "Kapılar her yere açıldı ve {t} her sorunun ardında çaldı; {a} cevap değil, sormaya devam etme cesareti verdi.",
-        "Yeni şehirler, yeni yüzler, eski şarkılar: {a}'ın {t}'i bilinmeyenin içinden geçti.",
-        "Sorular yıldızlar gibi birikti; {a}'ın {t}'i birkaçını aydınlattı ve olasılıkların göğü açık kaldı.",
-      ],
-      [
-        "Hayat güç istedi ve {t} {a}'ın sesiyle cevap verdi; kırılgan görünen şey sessizce zırha dönüştü.",
-        "Sarsak zeminde dimdik duran bir kalp {a}'ın {t}'iyle ritim tuttu; yumuşaklık bir tür çeliğe dönüştü.",
-        "Her zor sabahın bir müziği vardı; {a}'ın {t}'i devam et dedi ve kalp dinledi.",
-      ],
-      [
-        "Uzun karanlık saatlerde {t} şafaktan önce geldi; {a} ışık geri dönene kadar sessizliğe eşlik etti.",
-        "Işıklar sönünce ses kaldı: {a} {t}'i söyledi; o yumuşak karanlıkta nefes almak yeniden mümkün oldu.",
-        "Bazı geceler tek bir şarkıyla taşınır; {a}'ın {t}'i sabaha kadar o saatleri taşıdı.",
-      ],
-      [
-        "{t} fısıldanmış her vedayı taşır; {a}'ın sesinde kayıp, usulca tutulacak bir şeye dönüştü.",
-        "Zaman birkaç şeyi alıp {t}'i bıraktı; {a} özlenenin bir melodide taşınabileceğini gösterdi.",
-        "Çoktan gitmiş insanlar ve yerler {t}'in içinde yaşar; çal, {a} o kapıyı bir kez daha açar.",
-      ],
-      [
-        "Şimdi {t} uzun bir yolun ardından huzur gibi tınlıyor; {a} nihayet anlaşılanı söylüyor.",
-        "Bunca yıl sonra {t} hâlâ dinleyicisini buluyor; {a} eşlik ederken bütün hikâye sessizce anlam kazanıyor.",
-        "Burada, şimdide, {t} eve dönüş gibi; {a} son akoru çalıyor ve hiçbir şey eksik değil.",
-      ],
-    ],
-  },
-  es: {
-    openers: [
-      "El mundo entero se reduce a una sola canción; solo queda esa voz.",
-      "Un instante pequeño se vuelve un lugar que se lleva durante años.",
-      "En el silencio empieza una canción y algo cambia por dentro.",
-      "Empieza una canción y se abre un universo privado entre dos oídos.",
-    ],
-    closers: [
-      "Se enciende la primera chispa y se abre todo un mundo.",
-      "Durante unos minutos, fuera no existe nada.",
-      "Algunas puertas que abre una melodía no vuelven a cerrarse del todo.",
-      "Años después, las primeras notas siguen trayendo aquel momento.",
-    ],
-    stages: [
-      [
-        "La primera vez que sonó {t}, la voz de {a} abrió una puerta mágica al mundo.",
-        "Al escuchar a {a}, quien descubrió {t} se llenó de una admiración aún sin nombre.",
-        "Cuando sonó {t}, el mundo se hizo más grande; la voz de {a} despertó un primer gran sueño.",
-      ],
-      [
-        "Con {t} eligió su propia voz por primera vez; {a} se volvió un espejo.",
-        "Entre la infancia y el mundo, {t} fue una pequeña bandera; {a} fue la primera voz elegida a solas.",
-        "Al poner {t} sintió que la música era suya; {a} fue la primera línea de su firma.",
-      ],
-      [
-        "{t} subió el volumen de todo lo no dicho; con {a}, cada corazón inquieto encontró un himno.",
-        "El mundo era demasiado ruidoso y demasiado silencioso hasta que {a} puso {t}; un corazón joven encontró una bandera.",
-        "Entre rayos y preguntas, {t} se volvió una identidad; {a} hizo audible la rebeldía.",
-      ],
-      [
-        "Se abrieron puertas por todas partes y {t} sonó detrás de cada pregunta; {a} dio valor para seguir preguntando.",
-        "Ciudades nuevas, rostros nuevos, canciones viejas: {t} de {a} cruzó lo desconocido.",
-        "Las preguntas se juntaron como estrellas; {t} de {a} iluminó algunas y el cielo quedó abierto.",
-      ],
-      [
-        "La vida pidió fuerza y {t} respondió con la voz de {a}; lo frágil se volvió armadura en silencio.",
-        "Un corazón firme sobre suelo inestable siguió el ritmo de {t} de {a}; lo suave se volvió acero.",
-        "Cada mañana dura tenía su música; {t} de {a} dijo sigue y el corazón escuchó.",
-      ],
-      [
-        "En las horas oscuras {t} llegó antes del amanecer; {a} acompañó al silencio hasta que volvió la luz.",
-        "Cuando se apagó la luz quedó el sonido: {a} cantó {t}; en esa oscuridad suave se pudo respirar otra vez.",
-        "Algunas noches solo se sostienen con una canción; {t} de {a} llevó esas horas hasta la mañana.",
-      ],
-      [
-        "{t} guarda cada adiós susurrado; en la voz de {a} la pérdida se volvió algo que se sostiene con cuidado.",
-        "El tiempo se llevó unas cosas y dejó {t}; {a} mostró que lo que se añora viaja dentro de una melodía.",
-        "Las personas y los lugares que se fueron viven dentro de {t}; ponla y {a} abre esa puerta otra vez.",
-      ],
-      [
-        "Ahora {t} suena como paz tras un largo camino; {a} canta lo que por fin se entiende.",
-        "Tras tantos años {t} sigue encontrando a quien la escucha; con {a}, toda la historia cobra sentido.",
-        "Aquí, en el presente, {t} se siente como volver a casa; {a} toca el último acorde y nada falta.",
-      ],
-    ],
-  },
-  de: {
-    openers: [
-      "Die ganze Welt schrumpft auf ein einziges Lied; nur diese Stimme bleibt.",
-      "Ein kleiner Augenblick wird zu einem Ort, den man jahrelang trägt.",
-      "In der Stille beginnt ein Lied, und innen verändert sich etwas leise.",
-      "Ein Lied beginnt, und zwischen zwei Ohren öffnet sich ein eigener Kosmos.",
-    ],
-    closers: [
-      "Der erste Funke springt über, und eine ganze Welt öffnet sich.",
-      "Für ein paar Minuten existiert draußen nichts.",
-      "Manche Türen, die eine Melodie öffnet, schließen sich nie ganz.",
-      "Jahre später bringen die ersten Töne noch immer jenen Moment zurück.",
-    ],
-    stages: [
-      [
-        "Als {t} zum ersten Mal lief, öffnete {a}s Stimme eine magische Tür zur Welt.",
-        "Wer {a} hörte und {t} entdeckte, füllte sich mit einer noch namenlosen Bewunderung.",
-        "Als {t} lief, wurde die Welt größer; {a}s Stimme weckte einen ersten großen Traum.",
-      ],
-      [
-        "Mit {t} wählte es zum ersten Mal die eigene Stimme; {a} wurde zum Spiegel.",
-        "Zwischen Kindheit und Welt wurde {t} zu einer kleinen Flagge; {a} war die erste ganz allein gewählte Stimme.",
-        "Beim Abspielen von {t} spürte es, dass die Musik ihm gehörte; {a} war die erste Zeile einer Signatur.",
-      ],
-      [
-        "{t} drehte die Lautstärke für alles Ungesagte auf; mit {a} fand jedes unruhige Herz eine Hymne.",
-        "Die Welt war zu laut und zu still, bis {a} {t} spielte; ein junges Herz fand eine Flagge.",
-        "Zwischen Blitz und Fragen wurde {t} zu einer Identität; {a} machte die Rebellion hörbar.",
-      ],
-      [
-        "Überall öffneten sich Türen, und {t} spielte hinter jeder Frage; {a} gab Mut weiterzufragen.",
-        "Neue Städte, neue Gesichter, alte Lieder: {a}s {t} ging durch das Unbekannte.",
-        "Die Fragen sammelten sich wie Sterne; {a}s {t} erhellte einige, und der Himmel blieb offen.",
-      ],
-      [
-        "Das Leben verlangte Stärke, und {t} antwortete mit {a}s Stimme; das Zerbrechliche wurde leise zur Rüstung.",
-        "Ein Herz stand fest auf schwankendem Grund im Takt von {a}s {t}; das Weiche wurde zu einer Art Stahl.",
-        "Jeder harte Morgen hatte eine Musik; {a}s {t} sagte weiter, und das Herz hörte zu.",
-      ],
-      [
-        "In den langen dunklen Stunden kam {t} vor der Dämmerung; {a} leistete dem Schweigen Gesellschaft, bis das Licht zurückkam.",
-        "Als das Licht ausging, blieb der Klang: {a} sang {t}; in diesem sanften Dunkel war Atmen wieder möglich.",
-        "Manche Nächte trägt nur ein einziges Lied; {a}s {t} trug diese Stunden bis zum Morgen.",
-      ],
-      [
-        "{t} trägt jeden geflüsterten Abschied; in {a}s Stimme wurde Verlust zu etwas, das man sanft hält.",
-        "Die Zeit nahm einiges und ließ {t} zurück; {a} zeigte, dass Vermisstes in einer Melodie reisen kann.",
-        "Die längst gegangenen Menschen und Orte leben in {t}; spiel es, und {a} öffnet diese Tür noch einmal.",
-      ],
-      [
-        "Jetzt klingt {t} wie Frieden nach einem langen Weg; {a} singt, was endlich verstanden ist.",
-        "Nach all den Jahren findet {t} noch immer seine Hörer; mit {a} ergibt die ganze Geschichte leisen Sinn.",
-        "Hier, in der Gegenwart, fühlt sich {t} wie Heimkommen an; {a} spielt den letzten Akkord, und nichts fehlt.",
-      ],
-    ],
-  },
-  fr: {
-    openers: [
-      "Le monde entier se réduit à une seule chanson ; seule cette voix demeure.",
-      "Un petit instant devient un lieu qu'on porte pendant des années.",
-      "Dans le silence, une chanson commence et quelque chose change au-dedans.",
-      "Une chanson commence, et un univers privé s'ouvre entre deux oreilles.",
-    ],
-    closers: [
-      "La première étincelle jaillit, et tout un monde s'ouvre.",
-      "Pendant quelques minutes, dehors il n'existe rien.",
-      "Certaines portes qu'ouvre une mélodie ne se referment jamais tout à fait.",
-      "Des années plus tard, les premières notes ramènent encore cet instant.",
-    ],
-    stages: [
-      [
-        "La première fois que {t} a joué, la voix de {a} a ouvert une porte magique sur le monde.",
-        "En écoutant {a}, celui qui a découvert {t} s'est rempli d'une admiration encore sans nom.",
-        "Quand {t} a joué, le monde s'est agrandi ; la voix de {a} a réveillé un premier grand rêve.",
-      ],
-      [
-        "Avec {t}, il a choisi sa propre voix pour la première fois ; {a} est devenu un miroir.",
-        "Entre l'enfance et le monde, {t} est devenu un petit drapeau ; {a} fut la première voix choisie seul.",
-        "En lançant {t}, il a senti que la musique lui appartenait ; {a} fut la première ligne d'une signature.",
-      ],
-      [
-        "{t} a monté le volume sur tout ce qui restait tu ; avec {a}, chaque cœur agité a trouvé un hymne.",
-        "Le monde était trop bruyant et trop silencieux jusqu'à ce que {a} joue {t} ; un jeune cœur a trouvé un drapeau.",
-        "Entre éclairs et questions, {t} est devenu une identité ; {a} a rendu la révolte audible.",
-      ],
-      [
-        "Des portes s'ouvraient partout et {t} jouait derrière chaque question ; {a} a donné le courage de continuer à demander.",
-        "Villes nouvelles, visages nouveaux, chansons anciennes : {t} de {a} a traversé l'inconnu.",
-        "Les questions se sont amassées comme des étoiles ; {t} de {a} en a éclairé quelques-unes et le ciel est resté ouvert.",
-      ],
-      [
-        "La vie a demandé de la force et {t} a répondu par la voix de {a} ; ce qui semblait fragile est devenu une armure.",
-        "Un cœur debout sur un sol instable a suivi le rythme de {t} de {a} ; la douceur est devenue une sorte d'acier.",
-        "Chaque matin difficile avait sa musique ; {t} de {a} a dit continue, et le cœur a écouté.",
-      ],
-      [
-        "Dans les longues heures sombres, {t} est arrivé avant l'aube ; {a} a tenu compagnie au silence jusqu'au retour de la lumière.",
-        "Quand la lumière s'est éteinte, le son est resté : {a} a chanté {t} ; dans cette douce obscurité, respirer est redevenu possible.",
-        "Certaines nuits ne tiennent qu'à une seule chanson ; {t} de {a} a porté ces heures jusqu'au matin.",
-      ],
-      [
-        "{t} porte chaque adieu murmuré ; dans la voix de {a}, la perte est devenue quelque chose qu'on tient doucement.",
-        "Le temps a pris quelques choses et a laissé {t} ; {a} a montré que ce qui manque voyage dans une mélodie.",
-        "Les gens et les lieux disparus vivent dans {t} ; lance-la, et {a} rouvre cette porte encore une fois.",
-      ],
-      [
-        "Maintenant {t} sonne comme la paix après un long chemin ; {a} chante ce qui est enfin compris.",
-        "Après tant d'années, {t} trouve encore son auditeur ; avec {a}, toute l'histoire prend un sens discret.",
-        "Ici, au présent, {t} ressemble à un retour à la maison ; {a} joue le dernier accord, et rien ne manque.",
-      ],
-    ],
-  },
+const LOCALIZED_RAW: Record<string, string> = {
+  tr: `
+Bütün dünya tek bir şarkıya daralır; geriye yalnızca o ses kalır.
+Küçük bir an, tek bir şarkıyla yıllarca taşınan bir hâle dönüşür.
+Sessizlik içinde bir şarkı başlar ve içeride bir şey usulca değişir.
+Bir şarkı başlar ve iki kulak arasında özel bir evren açılır.
+İlk kıvılcım çakar ve koca bir dünya açılır.
+Birkaç dakika boyunca dışarıda hiçbir şey yoktur.
+Bir melodiyle açılan bazı kapılar bir daha tam kapanmaz.
+Yıllar sonra ilk notalar hâlâ o anı geri getirir.
+{t}, {a}'ın sesiyle dünyaya ilk kez büyülü bir kapı açtı.
+{a}'ı dinlerken {t} ile tanışan çocuk, henüz adı olmayan bir hayranlıkla doldu.
+{t} çaldığında dünya genişledi; {a}'ın sesi ilk büyük hayali uyandırdı.
+{t} ile kendi sesini ilk kez seçti; {a} bir aynaya dönüştü.
+Çocuklukla dünya arasında {t} küçük bir bayrak oldu; {a} tek başına seçtiği ilk sesti.
+{t}'i çalarken müziğin kendisine ait olduğunu hissetti; {a} kendi imzasının ilk satırıydı.
+{t} söylenmeyen her şeyin sesini yükseltti; {a} ile her huzursuz kalp bir marş buldu.
+Dünya hem çok gürültülü hem çok sessizdi, ta ki {a} {t}'i çalana kadar; genç bir yürek taşıyacak bir bayrak buldu.
+Şimşek ve sorular içinde {t} bir kimliğe dönüştü; {a} isyanı duyulur kıldı.
+Kapılar her yere açıldı ve {t} her sorunun ardında çaldı; {a} cevap değil, sormaya devam etme cesareti verdi.
+Yeni şehirler, yeni yüzler, eski şarkılar: {a}'ın {t}'i bilinmeyenin içinden geçti.
+Sorular yıldızlar gibi birikti; {a}'ın {t}'i birkaçını aydınlattı ve olasılıkların göğü açık kaldı.
+Hayat güç istedi ve {t} {a}'ın sesiyle cevap verdi; kırılgan görünen şey sessizce zırha dönüştü.
+Sarsak zeminde dimdik duran bir kalp {a}'ın {t}'iyle ritim tuttu; yumuşaklık bir tür çeliğe dönüştü.
+Her zor sabahın bir müziği vardı; {a}'ın {t}'i devam et dedi ve kalp dinledi.
+Uzun karanlık saatlerde {t} şafaktan önce geldi; {a} ışık geri dönene kadar sessizliğe eşlik etti.
+Işıklar sönünce ses kaldı: {a} {t}'i söyledi; o yumuşak karanlıkta nefes almak yeniden mümkün oldu.
+Bazı geceler tek bir şarkıyla taşınır; {a}'ın {t}'i sabaha kadar o saatleri taşıdı.
+{t} fısıldanmış her vedayı taşır; {a}'ın sesinde kayıp, usulca tutulacak bir şeye dönüştü.
+Zaman birkaç şeyi alıp {t}'i bıraktı; {a} özlenenin bir melodide taşınabileceğini gösterdi.
+Çoktan gitmiş insanlar ve yerler {t}'in içinde yaşar; çal, {a} o kapıyı bir kez daha açar.
+Şimdi {t} uzun bir yolun ardından huzur gibi tınlıyor; {a} nihayet anlaşılanı söylüyor.
+Bunca yıl sonra {t} hâlâ dinleyicisini buluyor; {a} eşlik ederken bütün hikâye sessizce anlam kazanıyor.
+Burada, şimdide, {t} eve dönüş gibi; {a} son akoru çalıyor ve hiçbir şey eksik değil.
+`,
+  es: `
+El mundo entero se reduce a una sola canción; solo queda esa voz.
+Un instante pequeño se vuelve un lugar que se lleva durante años.
+En el silencio empieza una canción y algo cambia por dentro.
+Empieza una canción y se abre un universo privado entre dos oídos.
+Se enciende la primera chispa y se abre todo un mundo.
+Durante unos minutos, fuera no existe nada.
+Algunas puertas que abre una melodía no vuelven a cerrarse del todo.
+Años después, las primeras notas siguen trayendo aquel momento.
+La primera vez que sonó {t}, la voz de {a} abrió una puerta mágica al mundo.
+Al escuchar a {a}, quien descubrió {t} se llenó de una admiración aún sin nombre.
+Cuando sonó {t}, el mundo se hizo más grande; la voz de {a} despertó un primer gran sueño.
+Con {t} eligió su propia voz por primera vez; {a} se volvió un espejo.
+Entre la infancia y el mundo, {t} fue una pequeña bandera; {a} fue la primera voz elegida a solas.
+Al poner {t} sintió que la música era suya; {a} fue la primera línea de su firma.
+{t} subió el volumen de todo lo no dicho; con {a}, cada corazón inquieto encontró un himno.
+El mundo era demasiado ruidoso y demasiado silencioso hasta que {a} puso {t}; un corazón joven encontró una bandera.
+Entre rayos y preguntas, {t} se volvió una identidad; {a} hizo audible la rebeldía.
+Se abrieron puertas por todas partes y {t} sonó detrás de cada pregunta; {a} dio valor para seguir preguntando.
+Ciudades nuevas, rostros nuevos, canciones viejas: {t} de {a} cruzó lo desconocido.
+Las preguntas se juntaron como estrellas; {t} de {a} iluminó algunas y el cielo quedó abierto.
+La vida pidió fuerza y {t} respondió con la voz de {a}; lo frágil se volvió armadura en silencio.
+Un corazón firme sobre suelo inestable siguió el ritmo de {t} de {a}; lo suave se volvió acero.
+Cada mañana dura tenía su música; {t} de {a} dijo sigue y el corazón escuchó.
+En las horas oscuras {t} llegó antes del amanecer; {a} acompañó al silencio hasta que volvió la luz.
+Cuando se apagó la luz quedó el sonido: {a} cantó {t}; en esa oscuridad suave se pudo respirar otra vez.
+Algunas noches solo se sostienen con una canción; {t} de {a} llevó esas horas hasta la mañana.
+{t} guarda cada adiós susurrado; en la voz de {a} la pérdida se volvió algo que se sostiene con cuidado.
+El tiempo se llevó unas cosas y dejó {t}; {a} mostró que lo que se añora viaja dentro de una melodía.
+Las personas y los lugares que se fueron viven dentro de {t}; ponla y {a} abre esa puerta otra vez.
+Ahora {t} suena como paz tras un largo camino; {a} canta lo que por fin se entiende.
+Tras tantos años {t} sigue encontrando a quien la escucha; con {a}, toda la historia cobra sentido.
+Aquí, en el presente, {t} se siente como volver a casa; {a} toca el último acorde y nada falta.
+`,
+  de: `
+Die ganze Welt schrumpft auf ein einziges Lied; nur diese Stimme bleibt.
+Ein kleiner Augenblick wird zu einem Ort, den man jahrelang trägt.
+In der Stille beginnt ein Lied, und innen verändert sich etwas leise.
+Ein Lied beginnt, und zwischen zwei Ohren öffnet sich ein eigener Kosmos.
+Der erste Funke springt über, und eine ganze Welt öffnet sich.
+Für ein paar Minuten existiert draußen nichts.
+Manche Türen, die eine Melodie öffnet, schließen sich nie ganz.
+Jahre später bringen die ersten Töne noch immer jenen Moment zurück.
+Als {t} zum ersten Mal lief, öffnete {a}s Stimme eine magische Tür zur Welt.
+Wer {a} hörte und {t} entdeckte, füllte sich mit einer noch namenlosen Bewunderung.
+Als {t} lief, wurde die Welt größer; {a}s Stimme weckte einen ersten großen Traum.
+Mit {t} wählte es zum ersten Mal die eigene Stimme; {a} wurde zum Spiegel.
+Zwischen Kindheit und Welt wurde {t} zu einer kleinen Flagge; {a} war die erste ganz allein gewählte Stimme.
+Beim Abspielen von {t} spürte es, dass die Musik ihm gehörte; {a} war die erste Zeile einer Signatur.
+{t} drehte die Lautstärke für alles Ungesagte auf; mit {a} fand jedes unruhige Herz eine Hymne.
+Die Welt war zu laut und zu still, bis {a} {t} spielte; ein junges Herz fand eine Flagge.
+Zwischen Blitz und Fragen wurde {t} zu einer Identität; {a} machte die Rebellion hörbar.
+Überall öffneten sich Türen, und {t} spielte hinter jeder Frage; {a} gab Mut weiterzufragen.
+Neue Städte, neue Gesichter, alte Lieder: {a}s {t} ging durch das Unbekannte.
+Die Fragen sammelten sich wie Sterne; {a}s {t} erhellte einige, und der Himmel blieb offen.
+Das Leben verlangte Stärke, und {t} antwortete mit {a}s Stimme; das Zerbrechliche wurde leise zur Rüstung.
+Ein Herz stand fest auf schwankendem Grund im Takt von {a}s {t}; das Weiche wurde zu einer Art Stahl.
+Jeder harte Morgen hatte eine Musik; {a}s {t} sagte weiter, und das Herz hörte zu.
+In den langen dunklen Stunden kam {t} vor der Dämmerung; {a} leistete dem Schweigen Gesellschaft, bis das Licht zurückkam.
+Als das Licht ausging, blieb der Klang: {a} sang {t}; in diesem sanften Dunkel war Atmen wieder möglich.
+Manche Nächte trägt nur ein einziges Lied; {a}s {t} trug diese Stunden bis zum Morgen.
+{t} trägt jeden geflüsterten Abschied; in {a}s Stimme wurde Verlust zu etwas, das man sanft hält.
+Die Zeit nahm einiges und ließ {t} zurück; {a} zeigte, dass Vermisstes in einer Melodie reisen kann.
+Die längst gegangenen Menschen und Orte leben in {t}; spiel es, und {a} öffnet diese Tür noch einmal.
+Jetzt klingt {t} wie Frieden nach einem langen Weg; {a} singt, was endlich verstanden ist.
+Nach all den Jahren findet {t} noch immer seine Hörer; mit {a} ergibt die ganze Geschichte leisen Sinn.
+Hier, in der Gegenwart, fühlt sich {t} wie Heimkommen an; {a} spielt den letzten Akkord, und nichts fehlt.
+`,
+  fr: `
+Le monde entier se réduit à une seule chanson ; seule cette voix demeure.
+Un petit instant devient un lieu qu'on porte pendant des années.
+Dans le silence, une chanson commence et quelque chose change au-dedans.
+Une chanson commence, et un univers privé s'ouvre entre deux oreilles.
+La première étincelle jaillit, et tout un monde s'ouvre.
+Pendant quelques minutes, dehors il n'existe rien.
+Certaines portes qu'ouvre une mélodie ne se referment jamais tout à fait.
+Des années plus tard, les premières notes ramènent encore cet instant.
+La première fois que {t} a joué, la voix de {a} a ouvert une porte magique sur le monde.
+En écoutant {a}, celui qui a découvert {t} s'est rempli d'une admiration encore sans nom.
+Quand {t} a joué, le monde s'est agrandi ; la voix de {a} a réveillé un premier grand rêve.
+Avec {t}, il a choisi sa propre voix pour la première fois ; {a} est devenu un miroir.
+Entre l'enfance et le monde, {t} est devenu un petit drapeau ; {a} fut la première voix choisie seul.
+En lançant {t}, il a senti que la musique lui appartenait ; {a} fut la première ligne d'une signature.
+{t} a monté le volume sur tout ce qui restait tu ; avec {a}, chaque cœur agité a trouvé un hymne.
+Le monde était trop bruyant et trop silencieux jusqu'à ce que {a} joue {t} ; un jeune cœur a trouvé un drapeau.
+Entre éclairs et questions, {t} est devenu une identité ; {a} a rendu la révolte audible.
+Des portes s'ouvraient partout et {t} jouait derrière chaque question ; {a} a donné le courage de continuer à demander.
+Villes nouvelles, visages nouveaux, chansons anciennes : {t} de {a} a traversé l'inconnu.
+Les questions se sont amassées comme des étoiles ; {t} de {a} en a éclairé quelques-unes et le ciel est resté ouvert.
+La vie a demandé de la force et {t} a répondu par la voix de {a} ; ce qui semblait fragile est devenu une armure.
+Un cœur debout sur un sol instable a suivi le rythme de {t} de {a} ; la douceur est devenue une sorte d'acier.
+Chaque matin difficile avait sa musique ; {t} de {a} a dit continue, et le cœur a écouté.
+Dans les longues heures sombres, {t} est arrivé avant l'aube ; {a} a tenu compagnie au silence jusqu'au retour de la lumière.
+Quand la lumière s'est éteinte, le son est resté : {a} a chanté {t} ; dans cette douce obscurité, respirer est redevenu possible.
+Certaines nuits ne tiennent qu'à une seule chanson ; {t} de {a} a porté ces heures jusqu'au matin.
+{t} porte chaque adieu murmuré ; dans la voix de {a}, la perte est devenue quelque chose qu'on tient doucement.
+Le temps a pris quelques choses et a laissé {t} ; {a} a montré que ce qui manque voyage dans une mélodie.
+Les gens et les lieux disparus vivent dans {t} ; lance-la, et {a} rouvre cette porte encore une fois.
+Maintenant {t} sonne comme la paix après un long chemin ; {a} chante ce qui est enfin compris.
+Après tant d'années, {t} trouve encore son auditeur ; avec {a}, toute l'histoire prend un sens discret.
+Ici, au présent, {t} ressemble à un retour à la maison ; {a} joue le dernier accord, et rien ne manque.
+`,
 };
