@@ -106,6 +106,19 @@ NOT (2026-11-10, feat/lore-cinematic-style · 5. tur): gerçek eval (gemini-2.5-
              Turkish rock/arabesk-pop, electronic, hip-hop) + `--genres` süzgeci. Bu turda: 90 dosya / 1021
              passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0. Gerçek eval ÇALIŞTIRILMADI
              (ortamda OPENROUTER_API_KEY yok) — yalnız yapısal/table-driven testler.
+NOT (2026-11-10, feat/lore-cinematic-style · 6. tur): 36 örnekli eval'in kalan boşlukları kapatıldı. (1) SAYI
+             yaşları artık her yerde SERT ret: `hasAgeMention` (DIGIT_AGE + SPELLED_AGE) — "10 yaşındaki", "Henüz 10
+             yaşındayken", "22 yaşındaydın", "40 yaşında", "at 22", "aged 40". Hecelenmiş yaş da yumuşaktan SERTE
+             çıktı (`RejectReason "age"`; eski soft `ageNumber` ve `ageNumberHits` KALDIRILDI). (2) Baştaki işaretçi
+             daha güçlü: önce tırnak/noktalama kırpılır (`stripLeadingMarks`) → "Bu, …", "Bu 1984 marşı", '"Bu şarkı"',
+             "Şu/O", Dies/Cette yakalanır. (3) Prompt artık kılavuzun ADLARINI vermiyor: dönem ipucu yalnız nötr bir
+             MOOD cümlesi (`LifePeriod.mood`); "Never reuse the guide's nouns" + hero/kahraman/destan/epik yasağı.
+             (4) Prompt: tek gramer kişisi (sen/-sin; siz/3. şahıs yasak) + `hasMixedPerson` YUMUŞAK filtre (soft
+             "person", yalnız tr). (5) Prompt: uydurma yasağı (söz türü/enstrüman) + şarkı adı VEYA çıkış yılı bağlamı.
+             (6) `scripts/lore-eval.mjs` başlığı çözülen modeli + kaynağını yazar (`(default)` / `(OPENROUTER_PRIMARY_MODEL)`)
+             ve varsayılanı `DEFAULT_OPENROUTER_MODEL`'den import eder (artık tek kaynak). (7) `LORE_STYLE_VERSION`
+             "lore-v5". Bu turda: 90 dosya / 1026 passed / 2 skipped; tsc 0; eslint 0; prettier temiz; build exit 0.
+             Gerçek eval ÇALIŞTIRILMADI (ortamda OPENROUTER_API_KEY yok) — yalnız table-driven testler (tr/en/es/de/fr).
 
 MERGE DURUMU (kaynak: `gh pr list --state all --limit 30`, 2026-11-10 doğrulandı):
   - MERGED: #24, #22, #21, #20, #19, #18, #17, #16, #14, #13, #12, #10 (+ #9/#8/#7/#6/#4/#3/#2/#1).
