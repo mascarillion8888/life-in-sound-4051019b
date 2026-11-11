@@ -79,7 +79,7 @@ if (!process.env.OPENROUTER_API_KEY?.trim()) {
   process.exit(0);
 }
 
-const { generateLoreCore, LORE_SYSTEM_PROMPT } = await import(
+const { generateLoreCore, languageCheck, LORE_SYSTEM_PROMPT } = await import(
   moduleUrl("src/lib/art/loreEngine.ts")
 );
 const { callOpenRouter } = await import(moduleUrl("src/lib/openrouter.server.ts"));
@@ -162,6 +162,9 @@ const firstReason = (candidates, text) => {
   if (!match || !match.hard.length) return "ok";
   return `reject:${match.hard[0]}`;
 };
+/** The FLAG column: a wrong-language line outranks the reject label. */
+const flagFor = (candidates, text, languageName) =>
+  languageCheck(text, languageName) === "WRONG-LANG" ? "WRONG-LANG" : firstReason(candidates, text);
 
 writeFileSync(OUTPUT_PATH, "");
 const emit = (line) => {
@@ -204,7 +207,7 @@ for (const song of songs) {
         text = result.text.replace(/\s+/g, " ").trim();
         path = result.path;
         candidates = result.candidates;
-        note = candidates.length ? firstReason(candidates, result.text) : "-";
+        note = candidates.length ? flagFor(candidates, result.text, encounter.languageName) : "-";
       } catch {
         stats.failed++;
       }

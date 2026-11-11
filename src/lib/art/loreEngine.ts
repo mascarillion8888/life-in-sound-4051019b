@@ -450,6 +450,65 @@ export function wrongLanguageScore(text: string, languageName: string): number {
   return words.filter((w) => set.includes(w)).length;
 }
 
+/** Function-word signatures used to guess a text's language. */
+const LANGUAGE_SIGNATURES: Record<string, RegExp> = {
+  en: /(?<![\p{L}])(the|and|of|you|your|with|that|this|for|from|was|were|is|are|it|to|in)(?![\p{L}])/giu,
+  tr: /(?<![\p{L}])(ve|bir|bu|şu|için|ile|gibi|çok|daha|ama|ki|her|senin|benim)(?![\p{L}])/giu,
+  es: /(?<![\p{L}])(el|la|los|las|un|una|y|de|que|en|con|por|para|como|es|su|se|del)(?![\p{L}])/giu,
+  de: /(?<![\p{L}])(der|die|das|und|ein|eine|mit|für|von|ist|sind|wie|dass|sich|den|dem|zu)(?![\p{L}])/giu,
+  fr: /(?<![\p{L}])(le|la|les|un|une|et|de|que|en|avec|pour|comme|est|son|des|qui|dans)(?![\p{L}])/giu,
+};
+
+/**
+ * Best-effort language guess for a lore line, over the five UI languages. The
+ * Turkish-specific letters (ş ğ ı ö ç ü) are a strong Turkish signal; otherwise
+ * the language with the most function-word hits wins. Returns "unknown" when no
+ * language scores at least two hits — callers then skip a wrong-language flag.
+ */
+export function detectLoreLanguage(text: string): string {
+  // Ignore quoted song titles — proper nouns ("The Curse of Silence") would
+  // otherwise inject another language's function words into the sample.
+  const prose = text.replace(/[“”"][^“”"]*[“”"]/gu, " ");
+  // Only letters Turkish does NOT share with German/French are a signal here
+  // (ö/ü/ç are common in German/French, so they must not imply Turkish).
+  const turkishSpecific = (prose.match(/[şğıŞĞİ]/gu) ?? []).length;
+  const scores: Record<string, number> = {};
+  for (const [key, pattern] of Object.entries(LANGUAGE_SIGNATURES)) {
+    scores[key] = (prose.match(pattern) ?? []).length;
+  }
+  if (turkishSpecific > 0) scores.tr = (scores.tr ?? 0) + turkishSpecific * 2;
+  let best = "unknown";
+  let bestScore = 0;
+  for (const [key, score] of Object.entries(scores)) {
+    if (score > bestScore) {
+      bestScore = score;
+      best = key;
+    }
+  }
+  return bestScore >= 2 ? best : "unknown";
+}
+
+/** The requested language key ("tr"/"en"/"es"/"de"/"fr") for a display name. */
+export function loreLanguageKey(languageName: string): string {
+  const l = languageName.toLowerCase();
+  if (l.startsWith("türk")) return "tr";
+  if (l.startsWith("engl")) return "en";
+  if (l.startsWith("espa")) return "es";
+  if (l.startsWith("deut")) return "de";
+  if (l.startsWith("fran")) return "fr";
+  return l;
+}
+
+/**
+ * "WRONG-LANG" when the text's detected language is a known one that differs
+ * from the requested language; "ok" otherwise (unknown detection never flags).
+ */
+export function languageCheck(text: string, requested: string): "ok" | "WRONG-LANG" {
+  const detected = detectLoreLanguage(text);
+  if (detected === "unknown") return "ok";
+  return detected === loreLanguageKey(requested) ? "ok" : "WRONG-LANG";
+}
+
 /* -------------------------------------------------------------------------- */
 /* Candidate diagnostics: hard rejections + soft violations                     */
 /* -------------------------------------------------------------------------- */
@@ -699,7 +758,8 @@ export async function generateLoreCore(
       cut.length >= 20 &&
       !hasForbiddenPhrase(cut) &&
       !hasPromptLeak(cut) &&
-      !hasLeadingAge(cut)
+      !hasLeadingAge(cut) &&
+      languageCheck(cut, language) === "ok"
     ) {
       return { text: cut, path: "rewrite", language, candidates };
     }

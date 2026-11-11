@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildLoreUserPrompt,
   cleanLore,
+  detectLoreLanguage,
   diagnoseCandidate,
   exceedsWordLimit,
   generateLoreCore,
@@ -11,10 +12,12 @@ import {
   hasPromptLeak,
   isCopiedLore,
   isGenericLore,
+  languageCheck,
   lifePeriodForAge,
   LORE_CANDIDATES,
   LORE_STYLE_VERSION,
   LORE_SYSTEM_PROMPT,
+  loreLanguageKey,
   maxCopySimilarity,
   MAX_LORE_WORDS,
   parseCandidates,
@@ -452,6 +455,42 @@ describe("candidate count", () => {
   });
 });
 
+describe("language detection", () => {
+  const samples: Record<string, string> = {
+    tr: "Kapılar her yere açıldı ve şarkı her sorunun ardında çaldı.",
+    en: "Doors opened everywhere, and the song played behind every question.",
+    es: "Se abrieron puertas por todas partes y la canción sonó detrás de cada pregunta.",
+    de: "Überall öffneten sich Türen, und das Lied spielte hinter jeder Frage.",
+    fr: "Des portes s'ouvraient partout et la chanson jouait derrière chaque question.",
+  };
+
+  it("detects each of the five UI languages", () => {
+    for (const [key, text] of Object.entries(samples)) {
+      expect(detectLoreLanguage(text)).toBe(key);
+    }
+  });
+
+  it("maps display names to language keys", () => {
+    expect(loreLanguageKey("Türkçe")).toBe("tr");
+    expect(loreLanguageKey("English")).toBe("en");
+    expect(loreLanguageKey("Español")).toBe("es");
+    expect(loreLanguageKey("Deutsch")).toBe("de");
+    expect(loreLanguageKey("Français")).toBe("fr");
+  });
+
+  it("flags a mismatched language and accepts a match", () => {
+    expect(languageCheck(samples.tr, "Türkçe")).toBe("ok");
+    expect(languageCheck(samples.tr, "English")).toBe("WRONG-LANG");
+    expect(languageCheck(samples.de, "Deutsch")).toBe("ok");
+    expect(languageCheck(samples.de, "Türkçe")).toBe("WRONG-LANG");
+    expect(languageCheck(samples.en, "Türkçe")).toBe("WRONG-LANG");
+  });
+
+  it("does not flag when the language cannot be told apart", () => {
+    expect(languageCheck("Fragile.", "Türkçe")).toBe("ok");
+  });
+});
+
 describe("generateLoreCore (pipeline)", () => {
   const ENCOUNTER = {
     artist: "Sting",
@@ -528,10 +567,62 @@ describe("generateLoreCore (pipeline)", () => {
     const tr = await generateLoreCore({ ...ENCOUNTER, languageName: "Türkçe" }, write);
     expect(tr.path).toBe("template");
     expect(tr.language).toBe("Türkçe");
-    expect(tr.text).toMatch(/[şğıöçü]|bir|ve/i);
+    expect(tr.text).toMatch(/[şğıŞĞİ]|bir|ve|için/i);
     const es = await generateLoreCore({ ...ENCOUNTER, languageName: "Español" }, write);
     expect(es.language).toBe("Español");
     expect(es.text).not.toBe(tr.text);
+  });
+
+  it("never returns English for the Turkish template", async () => {
+    const write = vi.fn().mockResolvedValue({ text: null, via: "openrouter" });
+    const tr = await generateLoreCore({ ...ENCOUNTER, languageName: "Türkçe" }, write);
+    const en = await generateLoreCore({ ...ENCOUNTER, languageName: "English" }, write);
+    expect(tr.text).not.toBe(en.text);
+    expect(tr.text).not.toMatch(/(?<![\p{L}])(the|and|of|you|your|with)(?![\p{L}])/iu);
+    expect(tr.text).toMatch(/[şğıŞĞİ]|bir|ve|için/i);
+    expect(detectLoreLanguage(tr.text)).toBe("tr");
+  });
+
+  it("localizes the template for every UI language", async () => {
+    const write = vi.fn().mockResolvedValue({ text: null, via: "openrouter" });
+    const expected = {
+      Türkçe: "tr",
+      English: "en",
+      Español: "es",
+      Deutsch: "de",
+      Français: "fr",
+    } as const;
+    const seen = new Set<string>();
+    for (const [languageName, key] of Object.entries(expected)) {
+      const result = await generateLoreCore({ ...ENCOUNTER, languageName }, write);
+      expect(result.path).toBe("template");
+      expect(detectLoreLanguage(result.text)).toBe(key);
+      expect(languageCheck(result.text, languageName)).toBe("ok");
+      seen.add(result.text);
+    }
+    expect(seen.size).toBe(5); // all five are distinct
+  });
+
+  it("does not ship a wrong-language line through the fallback cut", async () => {
+    // A 50-word English answer to a Turkish request: hard-rejected, and its
+    // 40-word cut still reads English — it must fall through to the Turkish
+    // template, never ship as a truncated English line.
+    const longEnglish =
+      `${"The song opened a door and the courage to keep asking stayed with you. ".repeat(6)}`.trim();
+    const write = vi.fn().mockResolvedValue({ text: longEnglish, via: "openrouter" });
+    const result = await generateLoreCore({ ...ENCOUNTER, languageName: "Türkçe" }, write);
+    expect(result.path).toBe("template");
+    expect(detectLoreLanguage(result.text)).toBe("tr");
+  });
+
+  it("uses the fallback cut when the trimmed line is clean and in-language", async () => {
+    // A 50-word Turkish answer with no other violation: the 40-word cut is kept.
+    const longTurkish =
+      `${"Kapılar açıldı ve o şarkı her sorunun ardında çaldı; cesaret hep kaldı. ".repeat(6)}`.trim();
+    const write = vi.fn().mockResolvedValue({ text: longTurkish, via: "openrouter" });
+    const result = await generateLoreCore({ ...ENCOUNTER, languageName: "Türkçe" }, write);
+    expect(result.path).toBe("rewrite");
+    expect(wordCount(result.text)).toBeLessThanOrEqual(MAX_LORE_WORDS);
   });
 
   it("falls to the template when there is no provider key (null)", async () => {
