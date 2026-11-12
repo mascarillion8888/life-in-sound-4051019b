@@ -16,6 +16,41 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-12, feat/listener-period-selector — bu dal):** Sahibi kararı "B":
+> bir şarkının hangi yaşam dönemine ait olduğuna SORU değil, DİNLEYİCİ karar verir;
+> `releaseYear - birthYear` kullanılmaz. Journey soruları tema olarak AYNEN kalır
+> (ilk aşk, zor zaman…). Yeni SAF modül `src/lib/art/listenerPeriod.ts`: `PERIODS`
+> = childhood, teen, youth, youngAdult, adulthood, laterLife, now; etiketler mevcut
+> `stageLabelForAge` metinleri + "Now" (İngilizce sabit, i18n sözlüğü DEĞİŞMEDİ);
+> her dönemin temsili bant + orta noktası mevcut eşiklerle (<=12, <=17, <=24, <=39,
+> <=59, 60+); `periodForBand(ageRange)` kartın varsayılan bandını band ortasıyla
+> döneme eşler ("Now" bandı → now); `periodStartYear` ("now" → currentYear).
+> `currentYear` PARAMETRE olarak enjekte edilir (testler deterministik; "now" =
+> currentYear - birthYear, birthYear yoksa null). `resolveEncounterAge`
+> (`src/lib/art/encounterAge.ts`) artık isteğe bağlı `period` alır: seçili dönem
+> varsa `value` = dönem ortası ("now" → güncel yaş), yoksa band davranışı AYNEN
+> korunur; `discoveredLater` seçili dönemin başlangıç yılıyla (yoksa band) mevcut
+> `DISCOVERED_LATER_YEARS` = 8 sabitiyle hesaplanır; `releasedAtAge` korunur; imza
+> geriye uyumlu. `Song`'a isteğe bağlı `period` alanı eklendi — `SONG_FIELDS`
+> whitelist'inde, `verified` gibi yalnız SEÇİLİNCE yazılır (varsayılan hiçbir şey
+> değişmez). KALICILIK: yeni migration YOK — alan mevcut `journeys.songs` JSONB
+> kolonunun içinde taşınır (`supabase/migrations/0002_journey_songs.sql`:
+> `songs jsonb not null default '{}'`). Google-link geri yüklemede (remote → local)
+> `withLocalPeriods` yerel `period`'u AYNI parçaya (provider + providerId) taşır →
+> sunucu kopyasında period yoksa yerel seçim SİLİNMEZ. UI: `QuizCard` aşama chip'i
+> artık erişilebilir bir listbox düğmesi (`aria-haspopup="listbox"`, `role="listbox"`
+> ve yedi `role="option"`; Yukarı/Aşağı/Enter/Escape, Escape'te odak chip'e döner, dış
+> tıklamada kapanır); chip görsel olarak aynı merkezde kalır, kalp / gizle-göster
+> düğmesi / EraCardReveal tek-seferlik giriş animasyonu DOKUNULMADI. Kullanıcı dönem
+> seçtiyse meta satırı sabit bant yerine dönem etiketini gösterir ("Teen years ·
+> FIRST SIGNATURE"); seçmediyse bant bugünkü gibi. Prompt METNİ DEĞİŞMEDİ:
+> `useCardLore` zaten `encounterAge` + `discoveredLater`'a key'liyor → dönem
+> değişince önbellek anahtarı değişir ve yalnız o kartın lore'u yeniden üretilir;
+> `LORE_STYLE_VERSION` ARTIRILMADI. `src/lib/visual`, asset dosyaları,
+> `docs/architecture`, `supabase/migrations` DOKUNULMADI. Bu dalda: 91 dosya passed
+> / 1 skipped (92); 1100 passed / 2 skipped (1102); tsc 0; eslint 0; prettier temiz
+> (değişen 16 dosya); build exit 0. PR AÇIK, MERGE EDİLMEDİ; force-push YOK.
+
 > **NOT (2026-11-12, fix/encounter-age-stage-first — PR #31):** Kart yaşı artık
 > AŞAMA-ÖNCELİKLİ. `resolveEncounterAge` (`src/lib/art/encounterAge.ts`) eskiden
 > birthYear + releaseYear varsa `releaseYear - birthYear` yaşını döndürüp
