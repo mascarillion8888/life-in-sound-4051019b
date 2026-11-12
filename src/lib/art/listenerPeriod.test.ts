@@ -56,8 +56,9 @@ describe("listenerPeriod", () => {
   });
 });
 
-describe("periodForBand — the card's default period", () => {
+describe("periodForBand — card default band → period", () => {
   const cases: Array<[string, Period]> = [
+    // The 8 default card bands (lifeCards.ts ageRanges).
     ["Ages 5-9", "childhood"],
     ["Ages 9-12", "childhood"],
     ["Ages 13-17", "teen"],
@@ -66,18 +67,10 @@ describe("periodForBand — the card's default period", () => {
     ["Ages 30-39", "youngAdult"],
     ["Ages 40+", "adulthood"],
     ["Now", "now"],
-    // Turkish "Now" band and any unparseable band also fall back to "now".
+    // The Turkish "Now" band and any unparseable band also fall back to "now".
     ["Şimdi", "now"],
     ["", "now"],
-  ];
-
-  it.each(cases)("maps %s to %s", (band, expected) => {
-    expect(periodForBand(band)).toBe(expected);
-  });
-});
-
-describe("periodForBand — midpoint threshold boundaries", () => {
-  const cases: Array<[string, Period]> = [
+    // Midpoint threshold boundaries (<=12, <=17, <=24, <=39, <=59, 60+).
     ["Ages 11-13", "childhood"], // midpoint 12
     ["Ages 12-14", "teen"], // midpoint 13
     ["Ages 16-18", "teen"], // midpoint 17
@@ -90,19 +83,23 @@ describe("periodForBand — midpoint threshold boundaries", () => {
     ["Ages 59-61", "laterLife"], // midpoint 60
   ];
 
-  it.each(cases)("%s (midpoint at the threshold) maps to %s", (band, expected) => {
+  it.each(cases)("maps %s to %s", (band, expected) => {
     expect(periodForBand(band)).toBe(expected);
   });
 });
 
 describe("periodStartYear", () => {
-  it("starts a numbered period at birthYear + the band's lower bound", () => {
-    expect(periodStartYear("childhood", 1981, 2026)).toBe(1986); // 1981 + 5
-    expect(periodStartYear("teen", 1981, 2026)).toBe(1994); // 1981 + 13
-    expect(periodStartYear("youth", 1981, 2026)).toBe(1999); // 1981 + 18
-    expect(periodStartYear("youngAdult", 1981, 2026)).toBe(2006); // 1981 + 25
-    expect(periodStartYear("adulthood", 1981, 2026)).toBe(2021); // 1981 + 40
-    expect(periodStartYear("laterLife", 1981, 2026)).toBe(2041); // 1981 + 60
+  const startCases: Array<[Period, number]> = [
+    ["childhood", 1986], // 1981 + 5
+    ["teen", 1994], // 1981 + 13
+    ["youth", 1999], // 1981 + 18
+    ["youngAdult", 2006], // 1981 + 25
+    ["adulthood", 2021], // 1981 + 40
+    ["laterLife", 2041], // 1981 + 60
+  ];
+
+  it.each(startCases)("starts %s at birthYear + the band's lower bound", (period, expected) => {
+    expect(periodStartYear(period, 1981, 2026)).toBe(expected);
   });
 
   it("starts 'now' at the current year", () => {
