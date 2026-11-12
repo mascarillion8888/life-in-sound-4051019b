@@ -83,3 +83,39 @@ describe("useCardLore — persistence cache invalidation", () => {
     expect(invalidateMock).not.toHaveBeenCalled();
   });
 });
+
+describe("useCardLore — a period change regenerates only that card's lore", () => {
+  beforeEach(() => {
+    __clearCardLoreCache();
+    generateMock.mockReset();
+    invalidateMock.mockReset();
+  });
+
+  it("uses a different cache key per encounter age and reuses it when unchanged", async () => {
+    generateMock.mockResolvedValue({
+      lore: "A line written for one life period.",
+      image: null,
+      scene: "gothic",
+      persisted: false,
+    });
+    const s = song();
+    // `encounterAge` is what a chosen period feeds (see listenerPeriod.ts), so
+    // a period change is a cache-key change here.
+    const { rerender } = renderHook(
+      ({ age }: { age: number }) => useCardLore(s, { encounterAge: age }),
+      {
+        initialProps: { age: 9 },
+      },
+    );
+    await waitFor(() => expect(generateMock).toHaveBeenCalledTimes(1));
+
+    // A new period (15 = Teen) must regenerate.
+    rerender({ age: 15 });
+    await waitFor(() => expect(generateMock).toHaveBeenCalledTimes(2));
+
+    // Returning to the first period is served from the session cache — the same
+    // track/period never regenerates within a session.
+    rerender({ age: 9 });
+    await waitFor(() => expect(generateMock).toHaveBeenCalledTimes(2));
+  });
+});

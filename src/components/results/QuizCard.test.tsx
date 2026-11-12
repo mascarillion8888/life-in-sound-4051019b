@@ -22,6 +22,17 @@ vi.mock("@/lib/supabase/use-collection-sync", () => ({
   syncCollectionToggle: vi.fn(),
 }));
 
+// Capture every lore context so a test can assert what the card passes for a
+// chosen period (e.g. no age for "Now" without a birth year). Returning null
+// keeps the deterministic card copy as the visible lore.
+const lore = vi.hoisted(() => ({ contexts: [] as Array<Record<string, unknown>> }));
+vi.mock("@/lib/art/useCardLore", () => ({
+  useCardLore: (_song: unknown, context: Record<string, unknown>) => {
+    lore.contexts.push(context);
+    return null;
+  },
+}));
+
 import { syncCollectionToggle } from "@/lib/supabase/use-collection-sync";
 
 // Audio playback is stubbed: jsdom cannot play media.
@@ -51,6 +62,7 @@ describe("QuizCard (player-card layout)", () => {
     __clearCardArtworkMemoryCache();
     window.localStorage.clear();
     vi.mocked(syncCollectionToggle).mockClear();
+    lore.contexts.length = 0;
     act(() => birthYearStore.set(null));
   });
 
@@ -197,20 +209,103 @@ describe("QuizCard (player-card layout)", () => {
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
     const stage = screen.getByTestId("card-stage");
     expect(stage.textContent).toBe("Childhood");
-    const chip = stage.firstElementChild;
-    expect(chip?.tagName).toBe("SPAN");
-    expect(chip?.textContent).toBe("Childhood");
+    const chip = screen.getByTestId("card-stage-button");
+    expect(chip.tagName).toBe("BUTTON");
+    expect(chip.textContent).toBe("Childhood");
+    expect(chip.getAttribute("aria-haspopup")).toBe("listbox");
   });
 
-  it("renders no stage chip when the band carries no number ('Now')", () => {
+  it("shows the 'Now' chip even though the band carries no number", () => {
     render(<QuizCard card={cards[7]} song={song({ releaseYear: 2023 })} />);
-    expect(screen.queryByTestId("card-stage")).toBeNull();
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Now");
   });
 
   it("still renders the favorite heart alongside the stage label", () => {
     act(() => birthYearStore.set(1981));
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
-    expect(screen.getByTestId("card-stage").textContent).toBe("Childhood");
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Childhood");
     expect(screen.getByTestId("card-heart")).toBeTruthy();
+  });
+
+  it("opens the period menu, selects a period, and updates the chip and meta line", () => {
+    const onPeriodChange = vi.fn();
+    render(<QuizCard card={cards[0]} song={song()} onPeriodChange={onPeriodChange} />);
+    const chip = screen.getByTestId("card-stage-button");
+    // Default comes from the card's band ("Ages 5-9" -> Childhood).
+    expect(chip.textContent).toBe("Childhood");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Ages 5-9");
+    expect(screen.queryByTestId("period-listbox")).toBeNull();
+
+    fireEvent.click(chip);
+    expect(screen.getByTestId("period-listbox")).toBeTruthy();
+    // All seven options are present.
+    expect(screen.getAllByRole("option")).toHaveLength(7);
+
+    fireEvent.click(screen.getByTestId("period-option-teen"));
+    // Menu closed, chip shows the choice, meta line shows the period label.
+    expect(screen.queryByTestId("period-listbox")).toBeNull();
+    expect(chip.textContent).toBe("Teen years");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Teen years");
+    expect(screen.getByTestId("card-meta").textContent).not.toContain("Ages 5-9");
+    expect(onPeriodChange).toHaveBeenCalledWith("teen");
+  });
+
+  it("closes the period menu on Escape and returns focus to the chip", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const chip = screen.getByTestId("card-stage-button");
+    fireEvent.click(chip);
+    const listbox = screen.getByTestId("period-listbox");
+    expect(listbox).toBeTruthy();
+
+    fireEvent.keyDown(listbox, { key: "Escape" });
+    expect(screen.queryByTestId("period-listbox")).toBeNull();
+    expect(document.activeElement).toBe(chip);
+  });
+
+  it("closes the period menu on an outside click", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    expect(screen.getByTestId("period-listbox")).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId("period-listbox")).toBeNull();
+  });
+
+  it("supports keyboard navigation: ArrowDown opens, arrows move, Enter selects", () => {
+    const onPeriodChange = vi.fn();
+    render(<QuizCard card={cards[0]} song={song()} onPeriodChange={onPeriodChange} />);
+    const chip = screen.getByTestId("card-stage-button");
+    fireEvent.keyDown(chip, { key: "ArrowDown" });
+    const listbox = screen.getByTestId("period-listbox");
+    expect(listbox).toBeTruthy();
+
+    // Opens on the selected option (Childhood, index 0); ArrowDown moves to Teen.
+    fireEvent.keyDown(listbox, { key: "ArrowDown" });
+    fireEvent.keyDown(listbox, { key: "Enter" });
+    expect(chip.textContent).toBe("Teen years");
+    expect(onPeriodChange).toHaveBeenCalledWith("teen");
+  });
+
+  it("restores a persisted period from the song and shows it in the meta line", () => {
+    render(<QuizCard card={cards[0]} song={song({ period: "now" })} />);
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Now");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Now · FIRST SPARK");
+  });
+
+  it("passes the chosen period's age to lore, but no age for 'Now' without a birth year", () => {
+    // No birth year: "Now" has no resolvable age.
+    render(<QuizCard card={cards[0]} song={song()} />);
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    fireEvent.click(screen.getByTestId("period-option-now"));
+    const nowContext = lore.contexts.at(-1);
+    expect(nowContext?.encounterAge).toBeNull();
+  });
+
+  it("passes the 'Now' current age to lore when the birth year is known", () => {
+    act(() => birthYearStore.set(1981));
+    render(<QuizCard card={cards[0]} song={song()} />);
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    fireEvent.click(screen.getByTestId("period-option-now"));
+    const nowContext = lore.contexts.at(-1);
+    expect(nowContext?.encounterAge).toBe(new Date().getFullYear() - 1981);
   });
 });

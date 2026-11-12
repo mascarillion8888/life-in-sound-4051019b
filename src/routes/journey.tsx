@@ -486,6 +486,16 @@ function JourneyPage() {
               song={songs[question.id] ?? null}
               artStatus={artStatus[question.id] ?? "idle"}
               isLast={isLast}
+              onPeriodChange={(period) => {
+                // Persist the listener's life-period choice inside the song
+                // object so it round-trips (local + remote JSONB) with no
+                // migration; the card's own state handles the immediate render.
+                setSongs((prev) => {
+                  const cur = prev[question.id];
+                  if (!cur || cur.period === period) return prev;
+                  return { ...prev, [question.id]: { ...cur, period } };
+                });
+              }}
               onContinue={() => {
                 // Unmounting the reveal fades out the preview (audio
                 // singleton cleanup), then the journey advances — or, after

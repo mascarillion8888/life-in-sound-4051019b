@@ -35,6 +35,8 @@ export interface PlayerCardProps {
   collectLabel: string;
   /** Optional override for the life-stage chip (e.g. "Childhood"). Derived from metaLeft when omitted. */
   stageLabel?: string;
+  /** When provided, replaces the static stage chip with an interactive period selector. */
+  periodChip?: ReactNode;
   /** Offline spectrum of the preview; with `getTime` the equalizer follows the real music. */
   spectrum?: Spectrum | null;
   /** Live playback position in seconds. */
@@ -72,6 +74,14 @@ const CSS = `
 .pc-times{display:flex;justify-content:space-between;font:500 12px var(--display);opacity:.8;margin-top:7px}
 .pc-tag{display:flex;justify-content:center;margin:0 0 10px}
 .pc-tag span{display:inline-flex;gap:6px;align-items:center;max-width:100%;padding:4px 11px;border-radius:999px;border:1px solid var(--sub);background:rgba(0,0,0,.3);color:var(--sub);font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;text-shadow:var(--glowTxt)}
+.pc-period{position:relative;display:inline-flex;justify-content:center}
+.pc-chip{display:inline-flex;gap:6px;align-items:center;max-width:100%;padding:4px 11px;border-radius:999px;border:1px solid var(--sub);background:rgba(0,0,0,.3);color:var(--sub);font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;text-shadow:var(--glowTxt);cursor:pointer}
+.pc-chip:focus-visible{outline:2px solid var(--sub);outline-offset:2px}
+.pc-chip-menu{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;min-width:150px;padding:6px;border-radius:12px;border:1px solid var(--sub);background:rgba(10,6,30,.96);box-shadow:0 12px 30px rgba(0,0,0,.6);backdrop-filter:blur(6px)}
+.pc-chip-menu:focus{outline:none}
+.pc-chip-option{padding:7px 12px;border-radius:8px;color:var(--text);font:600 13px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.pc-chip-option.active{background:rgba(255,255,255,.14)}
+.pc-chip-option[aria-selected="true"]{color:var(--sub);text-shadow:var(--glowTxt)}
 @property --lv{syntax:"<number>";inherits:false;initial-value:0}
 .pc-eq{display:flex;align-items:flex-end;justify-content:space-between;gap:3px;height:48px;margin:12px 0 20px;-webkit-box-reflect:below 1px linear-gradient(transparent 58%,rgba(255,255,255,.26))}
 .pc-eq .c{position:relative;flex:1 1 0;height:100%;-webkit-mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px);mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px)}
@@ -252,11 +262,15 @@ export function PlayerCard(p: PlayerCardProps) {
             </span>
           </div>
 
-          {stage && (
+          {p.periodChip ? (
+            <div className="pc-tag" data-testid="card-stage">
+              {p.periodChip}
+            </div>
+          ) : stage ? (
             <div className="pc-tag" data-testid="card-stage">
               <span>{stage}</span>
             </div>
-          )}
+          ) : null}
           <div className="pc-cover" data-testid="card-cover">
             {p.coverSlot}
           </div>
