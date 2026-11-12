@@ -18,7 +18,7 @@
 import { deterministicLore, historicalEraYear, type CardEncounter } from "./cardBlueprint.ts";
 
 /** Bumping this invalidates the client lore cache (see `useCardLore.cacheKey`). */
-export const LORE_STYLE_VERSION = "lore-v6";
+export const LORE_STYLE_VERSION = "lore-v7";
 
 /** How many candidate lines one provider call must return. */
 export const LORE_CANDIDATES = 3;
@@ -168,6 +168,11 @@ export type LorePromptInput = {
   genre?: string | null;
   mood?: string | null;
   userMemory?: string | null;
+  /**
+   * True when the listener met an older song well after its release — a soft
+   * hint to speak about discovering / returning to it later in life.
+   */
+  discoveredLater?: boolean | null;
   /** The UI language the lore must be written in, e.g. "Türkçe". */
   languageName: string;
 };
@@ -209,6 +214,12 @@ export function buildLoreUserPrompt(input: LorePromptInput): string {
 
   if (input.userMemory?.trim()) {
     parts.push(`Honour this personal memory from the listener: ${input.userMemory.trim()}.`);
+  }
+
+  if (input.discoveredLater) {
+    parts.push(
+      "This is an older song the listener met later in life: speak about discovering it or returning to it years afterwards. Keep it a soft, felt hint — no age numbers, no invented scenes.",
+    );
   }
 
   parts.push(
@@ -972,6 +983,7 @@ export async function generateLoreCore(
     genre: encounter.genre ?? null,
     mood: encounter.mood ?? null,
     userMemory: encounter.userMemory ?? null,
+    discoveredLater: encounter.discoveredLater ?? null,
     languageName: language,
   });
 

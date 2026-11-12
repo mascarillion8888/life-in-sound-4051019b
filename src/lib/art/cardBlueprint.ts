@@ -36,6 +36,12 @@ export type CardEncounter = {
   cardIndex?: number | null;
   /** The song's mood (e.g. "Nostalgic", "Joy") — colours the lore's feeling. */
   mood?: string | null;
+  /**
+   * True when an older song was met well after its release — the lore treats it
+   * as a later-life discovery. Derived by `resolveEncounterAge`; false/absent
+   * for the usual case.
+   */
+  discoveredLater?: boolean | null;
 };
 
 /** birthYear + encounterAge → the historical year of the encounter. */

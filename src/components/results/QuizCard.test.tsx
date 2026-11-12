@@ -133,13 +133,16 @@ describe("QuizCard (player-card layout)", () => {
     );
   });
 
-  it("shows the real age in the meta line and the derived stage when a birth year is known", () => {
-    act(() => birthYearStore.set(1967));
-    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+  it("shows the stage band in the meta line and a band-midpoint stage label, even with a birth year", () => {
+    // born 1981 + 1999 song in the Childhood band: the journey's stage choice
+    // wins, so the card must NOT show a derived "Age 18 / Young adult".
+    act(() => birthYearStore.set(1981));
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
     const meta = screen.getByTestId("card-meta").textContent ?? "";
-    expect(meta).toContain("Age 20");
-    expect(meta).toContain("FIRST SPARK");
-    expect(screen.getByTestId("card-stage").textContent).toBe("Youth");
+    expect(meta).toContain("Ages 5-9");
+    expect(meta).not.toContain("Age 18");
+    expect(screen.getByTestId("card-stage").textContent).toBe("Childhood");
+    expect(screen.getByTestId("card-stage").textContent).not.toBe("Young adult");
   });
 
   it("keeps the card's age band in the meta line when no birth year is known", () => {
@@ -190,12 +193,24 @@ describe("QuizCard (player-card layout)", () => {
   });
 
   it("renders the stage chip as a centered structure", () => {
-    act(() => birthYearStore.set(1967));
-    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    act(() => birthYearStore.set(1981));
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
     const stage = screen.getByTestId("card-stage");
-    expect(stage.textContent).toBe("Youth");
+    expect(stage.textContent).toBe("Childhood");
     const chip = stage.firstElementChild;
     expect(chip?.tagName).toBe("SPAN");
-    expect(chip?.textContent).toBe("Youth");
+    expect(chip?.textContent).toBe("Childhood");
+  });
+
+  it("renders no stage chip when the band carries no number ('Now')", () => {
+    render(<QuizCard card={cards[7]} song={song({ releaseYear: 2023 })} />);
+    expect(screen.queryByTestId("card-stage")).toBeNull();
+  });
+
+  it("still renders the favorite heart alongside the stage label", () => {
+    act(() => birthYearStore.set(1981));
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
+    expect(screen.getByTestId("card-stage").textContent).toBe("Childhood");
+    expect(screen.getByTestId("card-heart")).toBeTruthy();
   });
 });

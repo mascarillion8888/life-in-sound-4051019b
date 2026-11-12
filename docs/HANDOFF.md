@@ -16,6 +16,23 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-12, fix/encounter-age-stage-first — PR #31):** Kart yaşı artık
+> AŞAMA-ÖNCELİKLİ. `resolveEncounterAge` (`src/lib/art/encounterAge.ts`) eskiden
+> birthYear + releaseYear varsa `releaseYear - birthYear` yaşını döndürüp
+> journey'nin aşama cevabını (`card.ageRange`) eziyordu (1981 doğumlu + 1999 şarkı
+> "Childhood" → "Age 18 / Young adult"; 1977 şarkı negatif → sessiz band yedeği).
+> Artık `value` = band ortası, `derived` her zaman false; `releasedAtAge` (0..100
+> aralığında, aksi null) ve `discoveredLater` (şarkı, band başlangıç yılından en az
+> `DISCOVERED_LATER_YEARS` = 8 yıl önce veya doğum yılından önce çıkmışsa true)
+> eklendi. QuizCard meta satırı bandı korur; aşama chip'i band ortasından türetilir
+> ("Now" gibi sayısız bantta chip yok). Lore `discoveredLater`'ı yalnız true iken
+> yumuşak ipucu olarak alır; `LORE_STYLE_VERSION` → "lore-v7" ve bayrak
+> `useCardLore.cacheKey`'e girdi. `releasedAtAge` kart modelinde kaldı (varsayılan
+> gösterilmez). Music Memory tasarımı ve `src/lib/visual`/asset dosyalarına
+> DOKUNULMADI. Bu dalda: 90 dosya / 1049 passed / 2 skipped (1051); tsc 0; eslint 0;
+> prettier temiz; build exit 0. `origin/main` bu dala MERGE EDİLDİ (no-op: main hâlâ
+> 60f6a52, dal tabanıyla aynı). PR AÇIK, MERGE EDİLMEDİ; force-push YOK.
+
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
 Dal:         docs/sync-status-2026-11-10 (bu oturum, docs-only). main = origin/main.
