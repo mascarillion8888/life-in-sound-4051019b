@@ -267,4 +267,22 @@ describe("buildLorePrompt", () => {
       "Honour this personal memory from the listener: rain on the window that summer",
     );
   });
+
+  it("adds the discovered-later hint only when the flag is true", () => {
+    const withHint = buildLorePrompt({
+      artist: "Sting",
+      songTitle: "Fragile",
+      encounterAge: 15,
+      discoveredLater: true,
+    });
+    expect(withHint).toContain("older song the listener met later in life");
+
+    const withoutHint = buildLorePrompt({
+      artist: "Sting",
+      songTitle: "Fragile",
+      encounterAge: 15,
+      discoveredLater: false,
+    });
+    expect(withoutHint).not.toContain("older song the listener met later in life");
+  });
 });

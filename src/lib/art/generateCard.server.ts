@@ -98,6 +98,7 @@ export function buildLorePrompt(encounter: CardEncounter & { language?: Language
     genre: encounter.genre ?? null,
     mood: encounter.mood ?? null,
     userMemory: encounter.userMemory ?? null,
+    discoveredLater: encounter.discoveredLater ?? null,
     languageName: LANGUAGE_NAMES[language],
   });
 }
@@ -257,6 +258,7 @@ export const generateCard = createServerFn({ method: "POST" })
         : null,
     mood: typeof input.mood === "string" ? input.mood.slice(0, 40) : null,
     userMemory: typeof input.userMemory === "string" ? input.userMemory.slice(0, 500) : null,
+    discoveredLater: input.discoveredLater === true,
     cardIndex:
       typeof input.cardIndex === "number" && Number.isFinite(input.cardIndex)
         ? Math.floor(input.cardIndex)

@@ -163,7 +163,7 @@ describe("LORE_SYSTEM_PROMPT (style guide)", () => {
   });
 
   it("has a versioned style id", () => {
-    expect(LORE_STYLE_VERSION).toBe("lore-v6");
+    expect(LORE_STYLE_VERSION).toBe("lore-v7");
   });
 });
 
@@ -237,6 +237,19 @@ describe("buildLoreUserPrompt", () => {
   it("weaves the personal memory when supplied", () => {
     const prompt = buildLoreUserPrompt({ ...base, age: 9, userMemory: "rain on the window" });
     expect(prompt).toContain("Honour this personal memory from the listener: rain on the window");
+  });
+
+  it("adds the discovered-later hint only when the flag is true", () => {
+    const withHint = buildLoreUserPrompt({ ...base, age: 15, discoveredLater: true });
+    expect(withHint).toContain("older song the listener met later in life");
+    expect(withHint).toContain("discovering it or returning to it");
+    expect(withHint).toContain("no age numbers, no invented scenes");
+
+    const withoutHint = buildLoreUserPrompt({ ...base, age: 15, discoveredLater: false });
+    expect(withoutHint).not.toContain("older song the listener met later in life");
+
+    const absent = buildLoreUserPrompt({ ...base, age: 15 });
+    expect(absent).not.toContain("older song the listener met later in life");
   });
 });
 

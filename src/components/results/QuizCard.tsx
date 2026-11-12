@@ -79,21 +79,20 @@ export function QuizCard({
 
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
-  const { value: encounterAge, derived: ageIsDerived } = resolveEncounterAge({
+  const { value: encounterAge, discoveredLater } = resolveEncounterAge({
     ageRange: card.ageRange,
     birthYear,
     releaseYear: song?.releaseYear ?? null,
   });
-  // A real age (from birth year + release year) replaces the card's coarse band
-  // in both the meta line ("Age 20" / "20 Yaş") and the life-stage chip.
-  const metaLeft =
-    ageIsDerived && encounterAge != null
-      ? `${language === "tr" ? `${encounterAge} Yaş` : `Age ${encounterAge}`} · ${card.eraTitle}`
-      : `${card.ageRange} · ${card.eraTitle}`;
-  const stageLabel =
-    ageIsDerived && encounterAge != null ? stageLabelForAge(encounterAge) : undefined;
+  // The journey's stage band is the encounter age — the meta line keeps the
+  // band ("Ages 5-9 · First Spark"), never a year-derived "Age 18" override.
+  const metaLeft = `${card.ageRange} · ${card.eraTitle}`;
+  // The chip's label comes from the band's midpoint; a band without a number
+  // ("Now") yields no label.
+  const stageLabel = encounterAge != null ? stageLabelForAge(encounterAge) : undefined;
   const lore = useCardLore(song, {
     encounterAge,
+    discoveredLater,
     birthYear,
     mood: (song as { mood?: string | null } | null)?.mood ?? null,
     cardIndex: card.index,
