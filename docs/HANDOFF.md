@@ -47,9 +47,12 @@
 > `useCardLore` zaten `encounterAge` + `discoveredLater`'a key'liyor → dönem
 > değişince önbellek anahtarı değişir ve yalnız o kartın lore'u yeniden üretilir;
 > `LORE_STYLE_VERSION` ARTIRILMADI. `src/lib/visual`, asset dosyaları,
-> `docs/architecture`, `supabase/migrations` DOKUNULMADI. Bu dalda: 91 dosya passed
-> / 1 skipped (92); 1100 passed / 2 skipped (1102); tsc 0; eslint 0; prettier temiz
-> (değişen 16 dosya); build exit 0. PR AÇIK, MERGE EDİLMEDİ; force-push YOK.
+> `docs/architecture`, `supabase/migrations` DOKUNULMADI. Bu dalda (HEAD
+> c99b4d1; kod b668e99 + HANDOFF fac61af + takip düzeltmeleri 0202119 a11y
+> S6852, c99b4d1 test dedup): 91 dosya passed / 1 skipped (92); 1105 passed / 2
+> skipped (1107); tsc 0; eslint 0; prettier temiz; build exit 0; SonarCloud
+> kalite kapısı OK (0 bug / 0 vulnerability / 0 code smell). PR AÇIK (#32),
+> MERGE EDİLMEDİ; force-push YOK.
 
 > **NOT (2026-11-12, fix/encounter-age-stage-first — PR #31):** Kart yaşı artık
 > AŞAMA-ÖNCELİKLİ. `resolveEncounterAge` (`src/lib/art/encounterAge.ts`) eskiden
