@@ -13,6 +13,7 @@
  */
 import { getSupabase } from "./client";
 import type { JourneyRow } from "./types";
+import { isPeriod } from "../art/listenerPeriod";
 import type { Song } from "../song/types";
 import {
   clearJourney,
@@ -61,12 +62,13 @@ export async function loadRemoteJourney(userId: string): Promise<JourneyProgress
 
     const remote = toProgress(data);
     const merged = mergeJourneys(local, remote);
+    const reconciled = merged ? withLocalPeriods(merged, local) : null;
 
-    if (merged) {
-      saveJourney(merged);
-      dbCache.set(journeyCacheKey(userId), merged);
+    if (reconciled) {
+      saveJourney(reconciled);
+      dbCache.set(journeyCacheKey(userId), reconciled);
     }
-    return merged;
+    return reconciled;
   } catch {
     // Offline or request failed — keep using local cache.
     dbCache.set(journeyCacheKey(userId), local);
@@ -161,4 +163,37 @@ function toProgress(
   }
 
   return { current, answers, songs };
+}
+
+/**
+ * The listener's chosen life period lives inside the song object (local-first,
+ * no migration — see `song/types.ts`). A Google-link restore merges the server
+ * copy back over the local draft; the remote `songs` JSONB may predate the
+ * period feature and carry none. For that field the local value wins, so a
+ * chosen period is never erased by a restore that has no period to offer.
+ */
+export function withLocalPeriods(
+  merged: JourneyProgress,
+  local: JourneyProgress | null,
+): JourneyProgress {
+  if (!local) return merged;
+  let changed = false;
+  const songs: Record<number, Song> = { ...merged.songs };
+  for (const [key, localSong] of Object.entries(local.songs)) {
+    const id = Number(key);
+    if (!isPeriod(localSong.period)) continue;
+    const mergedSong = songs[id];
+    // Only carry the local period onto the same track (identity key + provider),
+    // never onto a different song that happens to share the question id.
+    if (
+      mergedSong &&
+      mergedSong.provider === localSong.provider &&
+      mergedSong.providerId === localSong.providerId &&
+      !isPeriod(mergedSong.period)
+    ) {
+      songs[id] = { ...mergedSong, period: localSong.period };
+      changed = true;
+    }
+  }
+  return changed ? { ...merged, songs } : merged;
 }

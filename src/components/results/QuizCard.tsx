@@ -3,15 +3,21 @@
  *
  * Same props and hooks as the previous gothic card; only the rendering moved
  * to <PlayerCard />. The old layout is kept in QuizCardLegacy.tsx.
+ *
+ * The stage chip is a listener-controlled period selector: the card defaults to
+ * the period of its journey band, and the user can reassign the song's life
+ * period (see `listenerPeriod.ts`). A chosen period feeds the encounter age and
+ * therefore the lore, and is reported through `onPeriodChange` so the journey
+ * can persist it inside the song object.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { resolveEncounterAge } from "@/lib/art/encounterAge";
-import { stageLabelForAge } from "@/lib/art/lifeStageLabel";
+import { periodForBand, periodLabel, type Period } from "@/lib/art/listenerPeriod";
 import {
   isInCollection,
   loadCollection,
@@ -26,6 +32,7 @@ import { cardTemplateUrl } from "@/lib/card/cardTemplates";
 import type { Song } from "@/lib/song/types";
 import { usePreviewSpectrum } from "@/lib/soundmap/previewSpectrum";
 import { useBirthYear } from "@/lib/supabase/birth-year-store";
+import { PeriodChip } from "./PeriodChip";
 import { PlayerCard } from "./PlayerCard";
 
 /** Tiny deterministic string hash (no external dependency). */
@@ -46,6 +53,7 @@ export function QuizCard({
   autoPlayPreview = false,
   templateFile,
   artStatus,
+  onPeriodChange,
 }: {
   card: LifeCard;
   /** The era's song when one exists — artwork + preview come only from here. */
@@ -56,6 +64,8 @@ export function QuizCard({
   templateFile?: string | null;
   /** Background cover verification state (journey). */
   artStatus?: "idle" | "loading" | "ok" | "notfound";
+  /** Reports a listener-chosen life period so the caller can persist it. */
+  onPeriodChange?: (period: Period) => void;
 }) {
   const { t, language } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
@@ -77,19 +87,38 @@ export function QuizCard({
     syncCollectionToggle(collectionKey, entry);
   };
 
+  // The listener's period choice: local state wins for the session, the
+  // persisted `song.period` restores it after a refresh/navigation.
+  const [chosen, setChosen] = useState<Period | null>(null);
+  useEffect(() => {
+    setChosen(null);
+  }, [collectionKey]);
+
+  const persistedPeriod = song?.period ?? null;
+  const hasChosen = chosen != null || persistedPeriod != null;
+  const period: Period = chosen ?? persistedPeriod ?? periodForBand(card.ageRange);
+  const selectPeriod = (next: Period) => {
+    setChosen(next);
+    onPeriodChange?.(next);
+  };
+
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   const { value: encounterAge, discoveredLater } = resolveEncounterAge({
     ageRange: card.ageRange,
     birthYear,
     releaseYear: song?.releaseYear ?? null,
+    // Only a listener-chosen period overrides the band; until then the band's
+    // midpoint is the encounter age, exactly as before.
+    period: hasChosen ? period : null,
   });
-  // The journey's stage band is the encounter age — the meta line keeps the
-  // band ("Ages 5-9 · First Spark"), never a year-derived "Age 18" override.
-  const metaLeft = `${card.ageRange} · ${card.eraTitle}`;
-  // The chip's label comes from the band's midpoint; a band without a number
-  // ("Now") yields no label.
-  const stageLabel = encounterAge != null ? stageLabelForAge(encounterAge) : undefined;
+  // The chip always shows the effective period (the listener's choice, or the
+  // band's default period). Once the user chooses, the meta line shows the
+  // period label instead of the fixed band.
+  const stageLabel = periodLabel(period);
+  const metaLeft = hasChosen
+    ? `${stageLabel} · ${card.eraTitle}`
+    : `${card.ageRange} · ${card.eraTitle}`;
   const lore = useCardLore(song, {
     encounterAge,
     discoveredLater,
@@ -190,6 +219,7 @@ export function QuizCard({
       mood={mood}
       metaLeft={metaLeft}
       stageLabel={stageLabel}
+      periodChip={<PeriodChip label={stageLabel} selected={period} onSelect={selectPeriod} />}
       sequence={sequence}
       title={song?.title ?? card.eraTitle}
       artist={song?.artist ?? card.tag}

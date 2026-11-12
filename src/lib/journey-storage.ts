@@ -1,3 +1,4 @@
+import { isPeriod } from "./art/listenerPeriod";
 import { COERCE_TO_PERSISTED, SONG_FIELDS, type Song } from "./song/types";
 
 export const JOURNEY_STORAGE_KEY = "soundmap.journey.v1";
@@ -64,9 +65,15 @@ export function isValidSong(value: unknown): value is Song {
 export function normalizeSong(song: Song): Song {
   const out: Partial<Record<(typeof SONG_FIELDS)[number], unknown>> = {};
   for (const field of SONG_FIELDS) {
-    // The optional verified flag only appears when true (absent otherwise).
+    // Optional-by-value fields only appear when set: `verified` when true, and
+    // `period` when the listener has chosen one (absent otherwise, so a song
+    // with no chosen period stays byte-identical through the round-trip).
     if (field === "verified") {
       if (song.verified === true) out.verified = true;
+      continue;
+    }
+    if (field === "period") {
+      if (isPeriod(song.period)) out.period = song.period;
       continue;
     }
     // Every other field is ALWAYS present in the output: string/number kept as

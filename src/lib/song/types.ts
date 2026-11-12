@@ -1,3 +1,5 @@
+import { isPeriod, type Period } from "../art/listenerPeriod";
+
 /**
  * Provider-neutral Song model.
  *
@@ -47,6 +49,14 @@ export type Song = {
   genre?: string | null;
   /** Mood tag when a provider supplies one. Never fabricated. */
   mood?: string | null;
+  /**
+   * The life period the LISTENER assigned to this song (see
+   * `src/lib/art/listenerPeriod.ts`). Absent until the user picks one — the
+   * card then defaults to its journey band. Persisted inside the song object
+   * so the choice round-trips through localStorage and the `journeys.songs`
+   * JSONB column without a schema change.
+   */
+  period?: Period | null;
 };
 
 /**
@@ -74,6 +84,7 @@ export const SONG_FIELDS = [
   "verified",
   "genre",
   "mood",
+  "period",
 ] as const satisfies readonly SongKey[];
 
 /** Every key a Song carries. */
@@ -105,7 +116,9 @@ type PersistedSong = {
       ? string | null
       : K extends "releaseYear"
         ? number | null
-        : boolean | undefined; // "verified"
+        : K extends "period"
+          ? Period | undefined
+          : boolean | undefined; // "verified"
 };
 
 /**
@@ -132,6 +145,8 @@ export function isPersistableValue(field: SongField, value: unknown): boolean {
       return value === null || typeof value === "string";
     case "releaseYear":
       return value === null || (typeof value === "number" && Number.isFinite(value));
+    case "period":
+      return value === undefined || isPeriod(value);
     case "verified":
       return value === undefined || value === true || value === false;
     default: {
@@ -169,6 +184,7 @@ export const COERCE_TO_PERSISTED: {
   verified: (raw) => (raw === true ? true : undefined),
   genre: (raw) => (typeof raw === "string" && raw.length > 0 ? raw : null),
   mood: (raw) => (typeof raw === "string" && raw.length > 0 ? raw : null),
+  period: (raw) => (isPeriod(raw) ? raw : undefined),
 };
 
 /**

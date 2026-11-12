@@ -6,16 +6,27 @@
  * life-stage band is the primary source and its midpoint is the resolved age.
  * The song's release year never overrides that choice — it only marks a
  * "discovered later" case, when an older song was met years after its release.
+ *
+ * When the listener has picked a life period for the song (see
+ * `listenerPeriod.ts`), that period replaces the band: `value` becomes the
+ * period's midpoint (or the current age for "now") and the "discovered later"
+ * threshold uses the period's start year instead of the band's.
  */
+import { PERIOD_INFO, periodStartYear, type Period } from "./listenerPeriod";
+
 export type EncounterAgeInput = {
   /** Human label such as "Ages 18-24", "40+", or "Now". */
   ageRange: string;
   birthYear?: number | null;
   releaseYear?: number | null;
+  /** Listener-chosen life period — overrides the band when present. */
+  period?: Period | null;
+  /** Current year, injected so "now" stays deterministic. Defaults to the clock. */
+  currentYear?: number;
 };
 
 export type EncounterAge = {
-  /** The stage band's midpoint, or null when the band carries no number. */
+  /** The stage band's midpoint (or the chosen period's midpoint), or null. */
   value: number | null;
   /** Always false: the age comes from the stage band, never a derived year. */
   derived: boolean;
@@ -54,24 +65,43 @@ export function resolveEncounterAge({
   ageRange,
   birthYear,
   releaseYear,
+  period,
+  currentYear,
 }: EncounterAgeInput): EncounterAge {
-  const value = bandMidpoint(ageRange);
-
   const hasBirthYear = typeof birthYear === "number" && Number.isFinite(birthYear);
   const hasReleaseYear = typeof releaseYear === "number" && Number.isFinite(releaseYear);
+  const year = currentYear ?? new Date().getFullYear();
+
+  let value: number | null;
+  if (period) {
+    // A chosen period wins: its midpoint is the age, and "now" resolves to the
+    // current age when the birth year is known (null otherwise).
+    const midpoint = PERIOD_INFO[period].midpoint;
+    value = midpoint ?? (hasBirthYear ? year - (birthYear as number) : null);
+  } else {
+    value = bandMidpoint(ageRange);
+  }
 
   let releasedAtAge: number | null = null;
   if (hasBirthYear && hasReleaseYear) {
-    const age = releaseYear - birthYear;
+    const age = (releaseYear as number) - (birthYear as number);
     if (age >= AGE_MIN && age <= AGE_MAX) releasedAtAge = age;
   }
 
   let discoveredLater = false;
   if (hasBirthYear && hasReleaseYear) {
     const lower = bandLowerBound(ageRange);
-    if (releaseYear < birthYear) {
+    const startYear = period
+      ? periodStartYear(period, birthYear as number, year)
+      : lower !== null
+        ? (birthYear as number) + lower
+        : null;
+    if ((releaseYear as number) < (birthYear as number)) {
       discoveredLater = true;
-    } else if (lower !== null && releaseYear <= birthYear + lower - DISCOVERED_LATER_YEARS) {
+    } else if (
+      startYear !== null &&
+      (releaseYear as number) <= startYear - DISCOVERED_LATER_YEARS
+    ) {
       discoveredLater = true;
     }
   }

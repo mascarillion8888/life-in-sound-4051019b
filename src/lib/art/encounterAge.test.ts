@@ -142,3 +142,113 @@ describe("resolveEncounterAge (stage-first)", () => {
     });
   });
 });
+
+/**
+ * A listener-chosen period replaces the band: `value` becomes the period's
+ * midpoint ("now" resolves to the current age) and the "discovered later"
+ * threshold uses the period's start year. The current year is injected so the
+ * "now" cases stay deterministic.
+ */
+describe("resolveEncounterAge (listener-chosen period)", () => {
+  const cases: Array<{
+    name: string;
+    input: {
+      ageRange: string;
+      birthYear?: number | null;
+      releaseYear?: number | null;
+      period?: "childhood" | "teen" | "youth" | "youngAdult" | "adulthood" | "laterLife" | "now";
+      currentYear?: number;
+    };
+    expected: {
+      value: number | null;
+      releasedAtAge: number | null;
+      discoveredLater: boolean;
+    };
+  }> = [
+    {
+      // The classic example: born 1981, met a 1977 song as a teenager.
+      name: "born 1981 + 1977 song, period teen: value 15, discovered later",
+      input: { ageRange: "Ages 5-9", birthYear: 1981, releaseYear: 1977, period: "teen" },
+      expected: { value: 15, releasedAtAge: null, discoveredLater: true },
+    },
+    {
+      // Same song, but heard now: current age 45 (2026 - 1981). The song
+      // predates the birth year, so it is still a later discovery.
+      name: "born 1981 + 1977 song, period now: value 45, discovered later (pre-birth)",
+      input: {
+        ageRange: "Ages 5-9",
+        birthYear: 1981,
+        releaseYear: 1977,
+        period: "now",
+        currentYear: 2026,
+      },
+      expected: { value: 45, releasedAtAge: null, discoveredLater: true },
+    },
+    {
+      // Period childhood (start 1986): 1977 is before birth → discovered later.
+      name: "born 1981 + 1977 song, period childhood: value 9, discovered later",
+      input: { ageRange: "Now", birthYear: 1981, releaseYear: 1977, period: "childhood" },
+      expected: { value: 9, releasedAtAge: null, discoveredLater: true },
+    },
+    {
+      name: "period now without birth year: value null (chip still shows)",
+      input: { ageRange: "Ages 5-9", releaseYear: 1977, period: "now", currentYear: 2026 },
+      expected: { value: null, releasedAtAge: null, discoveredLater: false },
+    },
+    {
+      name: "a period overrides the band midpoint (Childhood band + youth period)",
+      input: { ageRange: "Ages 5-9", period: "youth" },
+      expected: { value: 21, releasedAtAge: null, discoveredLater: false },
+    },
+    {
+      name: "period start year drives discovered later: 1998 vs teen start 1994",
+      input: { ageRange: "Now", birthYear: 1981, releaseYear: 1998, period: "teen" },
+      expected: { value: 15, releasedAtAge: 17, discoveredLater: false },
+    },
+    {
+      name: "period start year drives discovered later: 1985 <= 1994 - 8",
+      input: { ageRange: "Now", birthYear: 1981, releaseYear: 1985, period: "teen" },
+      expected: { value: 15, releasedAtAge: 4, discoveredLater: true },
+    },
+    {
+      name: "period now uses the current year as its start (no false discovery)",
+      input: {
+        ageRange: "Ages 40+",
+        birthYear: 1981,
+        releaseYear: 2020,
+        period: "now",
+        currentYear: 2026,
+      },
+      expected: { value: 45, releasedAtAge: 39, discoveredLater: false },
+    },
+  ];
+
+  it.each(cases)("$name", ({ input, expected }) => {
+    const result = resolveEncounterAge(input);
+    expect(result.value).toBe(expected.value);
+    expect(result.derived).toBe(false);
+    expect(result.releasedAtAge).toBe(expected.releasedAtAge);
+    expect(result.discoveredLater).toBe(expected.discoveredLater);
+  });
+
+  it("falls back to the band when no period is given (signature stays compatible)", () => {
+    const band = resolveEncounterAge({
+      ageRange: "Ages 13-17",
+      birthYear: 1981,
+      releaseYear: 1977,
+    });
+    const withNullPeriod = resolveEncounterAge({
+      ageRange: "Ages 13-17",
+      birthYear: 1981,
+      releaseYear: 1977,
+      period: null,
+    });
+    expect(band).toEqual(withNullPeriod);
+    expect(band.value).toBe(15);
+  });
+
+  it("uses the real clock for 'now' when currentYear is not injected", () => {
+    const result = resolveEncounterAge({ ageRange: "Now", birthYear: 1981, period: "now" });
+    expect(result.value).toBe(new Date().getFullYear() - 1981);
+  });
+});
