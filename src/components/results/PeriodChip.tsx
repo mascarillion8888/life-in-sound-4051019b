@@ -116,6 +116,7 @@ export function PeriodChip({
             <div
               key={period}
               role="option"
+              tabIndex={-1}
               aria-selected={period === selected}
               data-testid={`period-option-${period}`}
               className={`pc-chip-option${index === activeIndex ? " active" : ""}`}
