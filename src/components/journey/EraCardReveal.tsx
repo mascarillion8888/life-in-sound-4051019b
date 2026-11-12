@@ -18,6 +18,7 @@ import { SceneRoom } from "@/components/scene/SceneRoom";
 import { Button } from "@/components/ui/button";
 import { QuizCard } from "@/components/results/QuizCard";
 import { sceneThemeFor } from "@/lib/art/sceneTheme";
+import type { Period } from "@/lib/art/listenerPeriod";
 import { type LifeCard } from "@/lib/soundmap/lifeCards";
 import type { Song } from "@/lib/song/types";
 import { eraThemeForYear } from "@/lib/visual/eraThemes";
@@ -36,6 +37,7 @@ export function EraCardReveal({
   artStatus,
   isLast,
   onContinue,
+  onPeriodChange,
 }: {
   card: LifeCard;
   /** The song just committed for this era — artwork + preview come only from here. */
@@ -45,6 +47,8 @@ export function EraCardReveal({
   isLast: boolean;
   /** Advance to the next era (or the Master Poster when isLast). */
   onContinue: () => void;
+  /** Reports a listener-chosen life period so the journey can persist it. */
+  onPeriodChange?: (period: Period) => void;
 }) {
   const themeId = sceneThemeFor(song);
   const eraTheme = eraThemeForYear(song?.releaseYear);
@@ -98,6 +102,7 @@ export function EraCardReveal({
               autoPlayPreview
               templateFile={null}
               artStatus={artStatus}
+              onPeriodChange={onPeriodChange}
             />
           </div>
         </div>

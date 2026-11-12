@@ -418,3 +418,80 @@ describe("clearRemoteJourney", () => {
     expect(localStorage.getItem("soundmap.journey.v1")).toBeNull();
   });
 });
+
+describe("withLocalPeriods — a restore never erases a locally stored period", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    dbCache.invalidate();
+    setFake(null);
+  });
+
+  it("keeps the local period when the server copy carries none", async () => {
+    const localSong = song({ period: "teen" });
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: localSong.title }, songs: { 1: localSong } }),
+    );
+    // Server wins the merge (more answers) but its song has no period.
+    const fake = makeFakeSupabase({
+      existing: {
+        current: 1,
+        answers: { 1: localSong.title, 2: "Second" },
+        songs: { 1: song() },
+      },
+    });
+    setFake(fake);
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1].period).toBe("teen");
+    // The reconciled copy is written back to localStorage too.
+    const cached = JSON.parse(localStorage.getItem("soundmap.journey.v1")!);
+    expect(cached.songs[1].period).toBe("teen");
+  });
+
+  it("does not carry a local period onto a different track at the same index", async () => {
+    const localSong = song({ providerId: "local-track", period: "teen" });
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: localSong.title }, songs: { 1: localSong } }),
+    );
+    const remoteSong = song({ providerId: "remote-track" });
+    setFake(
+      makeFakeSupabase({
+        existing: {
+          current: 1,
+          answers: { 1: remoteSong.title, 2: "Second" },
+          songs: { 1: remoteSong },
+        },
+      }),
+    );
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1].providerId).toBe("remote-track");
+    expect("period" in (result?.songs[1] ?? {})).toBe(false);
+  });
+
+  it("keeps the server's own period when both sides have one", async () => {
+    const localSong = song({ period: "childhood" });
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: localSong.title }, songs: { 1: localSong } }),
+    );
+    const remoteSong = song({ period: "now" });
+    setFake(
+      makeFakeSupabase({
+        existing: {
+          current: 1,
+          answers: { 1: remoteSong.title, 2: "Second" },
+          songs: { 1: remoteSong },
+        },
+      }),
+    );
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1].period).toBe("now");
+  });
+});

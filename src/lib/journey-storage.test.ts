@@ -340,3 +340,52 @@ describe("mergeJourneys reconciliation", () => {
     expect(mergeJourneys(withoutSongs, withSongs)).toEqual(withSongs);
   });
 });
+
+describe("journey-storage listener period persistence", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("round-trips a chosen period through localStorage", () => {
+    const withPeriod = song({ period: "teen" });
+    saveJourney({ current: 1, answers: { 1: withPeriod.title }, songs: { 1: withPeriod } });
+    expect(loadJourney()?.songs[1].period).toBe("teen");
+  });
+
+  it("omits the period field when none was chosen (byte-identical round-trip)", () => {
+    const plain = song();
+    saveJourney({ current: 1, answers: { 1: plain.title }, songs: { 1: plain } });
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(plain);
+    expect("period" in (loaded?.songs[1] ?? {})).toBe(false);
+  });
+
+  it("drops a garbage period value to absent", () => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: { 1: { ...song(), period: "child" } },
+      }),
+    );
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(song());
+    expect("period" in (loaded?.songs[1] ?? {})).toBe(false);
+  });
+
+  it("coerces a null period to absent", () => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: { 1: { ...song(), period: null } },
+      }),
+    );
+    expect("period" in (loadJourney()?.songs[1] ?? {})).toBe(false);
+  });
+});

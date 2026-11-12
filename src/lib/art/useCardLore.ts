@@ -39,6 +39,8 @@ export type CardLoreContext = {
   cardIndex?: number;
   birthYear?: number | null;
   encounterAge?: number | null;
+  /** True when an older song was met later in life — soft lore hint. */
+  discoveredLater?: boolean;
   genre?: string | null;
   userMemory?: string | null;
   mood?: string | null;
@@ -51,13 +53,13 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
   const artist = song?.artist ?? "";
   const title = song?.title ?? "";
   const releaseYear = song?.releaseYear ?? null;
-  const { cardIndex, birthYear, encounterAge, genre, userMemory, mood } = context;
+  const { cardIndex, birthYear, encounterAge, discoveredLater, genre, userMemory, mood } = context;
   const language = isLanguage(context.language) ? context.language : DEFAULT_LANGUAGE;
   // The same track can read differently per life stage / memory / mood, and the
   // lore text is language-specific; the style version busts stale entries when
   // the prompt changes.
   const cacheKey = key
-    ? `${LORE_STYLE_VERSION}|${key}|${language}|${birthYear ?? ""}|${encounterAge ?? ""}|${mood ?? ""}|${userMemory ?? ""}`
+    ? `${LORE_STYLE_VERSION}|${key}|${language}|${birthYear ?? ""}|${encounterAge ?? ""}|${discoveredLater ? "later" : ""}|${mood ?? ""}|${userMemory ?? ""}`
     : "";
 
   const [state, setState] = useState<{ key: string; lore: string | null }>({
@@ -101,6 +103,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
             cardIndex,
             birthYear: birthYear ?? null,
             encounterAge: encounterAge ?? null,
+            discoveredLater: discoveredLater ?? false,
             genre: genre ?? null,
             userMemory: userMemory ?? null,
             mood: mood ?? null,
@@ -134,6 +137,7 @@ export function useCardLore(song: Song | null, context: CardLoreContext = {}): s
     cardIndex,
     birthYear,
     encounterAge,
+    discoveredLater,
     genre,
     userMemory,
     mood,
