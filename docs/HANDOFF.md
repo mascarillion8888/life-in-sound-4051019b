@@ -12,42 +12,48 @@
 
 ## 1. Doğrulanabilir gerçek
 
-> **Bu bölüm git gerçeğinden derlendi (2026-11-12).** Doğrulama komutları bölüm
+> **Bu bölüm git gerçeğinden derlendi (2026-11-10).** Doğrulama komutları bölüm
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-12, fix/encounter-age-stage-first — PR #31):** Kart yaşı artık
+> AŞAMA-ÖNCELİKLİ. `resolveEncounterAge` (`src/lib/art/encounterAge.ts`) eskiden
+> birthYear + releaseYear varsa `releaseYear - birthYear` yaşını döndürüp
+> journey'nin aşama cevabını (`card.ageRange`) eziyordu (1981 doğumlu + 1999 şarkı
+> "Childhood" → "Age 18 / Young adult"; 1977 şarkı negatif → sessiz band yedeği).
+> Artık `value` = band ortası, `derived` her zaman false; `releasedAtAge` (0..100
+> aralığında, aksi null) ve `discoveredLater` (şarkı, band başlangıç yılından en az
+> `DISCOVERED_LATER_YEARS` = 8 yıl önce veya doğum yılından önce çıkmışsa true)
+> eklendi. QuizCard meta satırı bandı korur; aşama chip'i band ortasından türetilir
+> ("Now" gibi sayısız bantta chip yok). Lore `discoveredLater`'ı yalnız true iken
+> yumuşak ipucu olarak alır; `LORE_STYLE_VERSION` → "lore-v7" ve bayrak
+> `useCardLore.cacheKey`'e girdi. `releasedAtAge` kart modelinde kaldı (varsayılan
+> gösterilmez). Music Memory tasarımı ve `src/lib/visual`/asset dosyalarına
+> DOKUNULMADI. Bu dalda: 90 dosya / 1049 passed / 2 skipped (1051); tsc 0; eslint 0;
+> prettier temiz; build exit 0. `origin/main` bu dala MERGE EDİLDİ (no-op: main hâlâ
+> 60f6a52, dal tabanıyla aynı). PR AÇIK, MERGE EDİLMEDİ; force-push YOK.
+
 ```
 Aktif ortam: Freebuff Cloud workspace (Linux checkout) + kullanıcının Windows yereli
-Dal:         fix/encounter-age-stage-first (bu oturum). main = origin/main = 60f6a52.
-HEAD:        fix/encounter-age-stage-first e8cb2a0 — "fix(card): make the journey's life stage the encounter age…"
-             e8cb2a0 — fix(card): aşama-öncelikli yaş (bu dal, kod) — resolveEncounterAge artık bandı birincil
-             kaynak alır; releasedAtAge + discoveredLater; QuizCard band etiketi + band-ortası aşama etiketi;
-             lore discoveredLater ipucu; LORE_STYLE_VERSION "lore-v7"; tablo-tabanlı testler.
-             60f6a52 — Merge pull request #28 …/fix/lore-filter-polish (main = origin/main tabanı)
-             67bf1e0 — feat/lore-cinematic-style round-6 (önceki iş; #27)
-              (daha eskisi: #24 hide-card-no-replay-fade, #20 collection-supabase-sync, #22 google-return,
-               #21 card-opacity-wallpaper-toggle, #19 handoff-update, #18 google-link-status,
-               #17 card-heart-and-stage-label, #16 lint-debt, #14 ci-ignore-scripts, #13 real-age-from-birth-year,
-               #12 personal-lore, #10 auth-birth-year; #9/#8/#7/#6/#4/#3/#2/#1)
-Testler:     fix/encounter-age-stage-first (e8cb2a0): 90 dosya passed / 1 skipped (91); 1049 passed / 2 skipped (1051).
-             vitest v4.1.11, `npm test -- --run` exit 0 (2026-11-12 doğrulandı). Değişen 6 test dosyası: 149 passed.
-tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-12 doğrulandı).
-Lint:        ✅ 0 hata — `npx eslint .` exit 0 (2026-11-12 doğrulandı).
-Prettier:    ✅ temiz — değişen 10 dosyada `npx prettier --check` exit 0 (2026-11-12).
-Sonar/CI:    PR açılınca bakılacak (bu dalda henüz koşmadı).
-Build:       exit 0 — `npm run build` (2026-11-12 doğrulandı).
-Push:        fix/encounter-age-stage-first → origin (PR açık, MERGE EDİLMEDİ). main = origin/main = 60f6a52.
-NOT (2026-11-12, fix/encounter-age-stage-first): kart yaşı artık AŞAMA-ÖNCELİKLİ. resolveEncounterAge
-             (src/lib/art/encounterAge.ts) eskiden birthYear + releaseYear varsa `releaseYear - birthYear`
-             yaşını döndürüp journey'nin aşama cevabını (card.ageRange) eziyordu (1981 doğumlu + 1999 şarkı
-             "Childhood" → "Age 18 / Young adult"; 1977 şarkı negatif → sessiz band yedeği). Artık `value` =
-             band ortası, `derived` her zaman false; `releasedAtAge` (0..100 aralığında, aksi null) ve
-             `discoveredLater` (şarkı, band başlangıç yılından en az 8 yıl önce — sabit DISCOVERED_LATER_YEARS —
-             veya doğum yılından önce çıkmışsa true) eklendi. QuizCard meta satırı bandı korur; aşama chip'i
-             band ortasından türetilir ("Now" gibi sayısız bantta chip yok). Lore discoveredLater'ı yalnız true
-             iken yumuşak ipucu olarak alır; LORE_STYLE_VERSION "lore-v7" ve bayrak useCardLore.cacheKey'e girdi.
-             `releasedAtAge` kart modelinde kaldı (varsayılan gösterilmez). Music Memory tasarımı ve
-             src/lib/visual/asset dosyalarına DOKUNULMADI.
+Dal:         docs/sync-status-2026-11-10 (bu oturum, docs-only). main = origin/main.
+HEAD:        main 375e0a3 — "Merge pull request #24 from mascarillion8888/fix/hide-card-no-replay-fade"
+             375e0a3 — Merge PR #24 (gizle→göster'de giriş animasyonu yeniden oynamıyor)
+             797a5fe — docs: note the card enter-fade replay fix in HANDOFF §1 (PR #24 gövdesi)
+             5e2c947 — fix(card): do not replay enter fade when showing hidden card (PR #24 gövdesi)
+             ea59c71 — Merge pull request #20 …/feat/collection-supabase-sync
+             810b07e — Merge pull request #22 …/fix/hide-card-poster-and-google-return
+             2fd7204 — Merge pull request #21 …/feat/card-opacity-and-wallpaper-toggle
+             3354d9b — Merge pull request #19 …/docs/handoff-update
+             5791309 — Merge pull request #18 …/feat/google-link-status
+             a0c488c — Merge pull request #17 …/feat/card-heart-and-stage-label
+             0151dbf — Merge pull request #16 …/chore/lint-debt
+             (daha eskisi: #14 ci-ignore-scripts, #13 real-age-from-birth-year, #12 personal-lore, #10 auth-birth-year; #9/#8/#7/#6/#4/#3/#2/#1)
+Testler:     main (375e0a3): 87 dosya passed / 1 skipped (88); 943 passed / 2 skipped (945). vitest v4.1.11, `npm test -- --run` exit 0 (2026-11-10 doğrulandı).
+tsc:         temiz (`npx tsc --noEmit` = 0 hata, 2026-11-10 doğrulandı).
+Lint:        ✅ 0 hata — `npm run lint` exit 0 (2026-11-10 doğrulandı).
+Sonar/CI:    ✅ temiz — PR #20/#22/#24'te SonarCloud Code Analysis + CI/verify + Vercel + Vercel Preview Comments tümü başarılı.
+Build:       exit 0 (2026-11-10 doğrulandı).
+Push:        main = origin/main (375e0a3). Bu oturumun dalı docs/sync-status-2026-11-10 (docs-only).
 NOT (2026-11-10, fix/llm-timeouts-no-body-logs): #11 (phase-1/generation-security) BİRLEŞTİRİLMEDİ (Lovable geçmişi;
              rebase/force-push YOK). #11'den yalnız İKİ parça elle taşındı: (a) summarizer (Groq, orchestra.ts) +
              OpenRouter (openrouter.server.ts) çağrılarına varsayılan 20 sn zaman aşımı (AbortController; çağrı başına
