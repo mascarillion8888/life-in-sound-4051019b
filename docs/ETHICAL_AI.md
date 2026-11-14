@@ -123,6 +123,17 @@ BESLENMİYOR (dead-plumb). Bu yüzden kriz guard'ı şu an oraya uygulanmıyor. 
 ileride `userMemory` serbest metin taşımaya başlarsa, AYNI guard oraya da
 bağlanmalıdır (3b/3c'deki aynı mantık).
 
+> **KARAR NOTU (2026-11-14) — ONAYLANDI:** Music Memory v1'in serbest-metin
+> alanları (`note`/`feeling`) da **AYNI mevcut `crisisGuard`'dan**
+> (`detectCrisisNote`) geçecek — **yeni desen YOK**; kullanıcının kendi serbest
+> metni herhangi bir LLM/görsel-sağlayıcı çağrısından ÖNCE bu guard'a girer
+> (3b/3c ile aynı mantık). Sahibi, `docs/architecture/CINEMATIC_LIFE_POSTER.md`
+> §8.2/3 ve §9/3'e "Önerilere katılıyorum" yanıtıyla **onayladı**; bu, §3e'nin
+> yukarıdaki "kapsam dışı" statüsünü **bu alanlar için değiştirir**.
+> **Bu PR yalnız bir doküman notudur: hiçbir kalıp, `crisisGuard.ts` veya kod
+> DEĞİŞMEZ.** Uygulama ayrı görevdir (**MM-3**, §8.3) ve kanıtı mevcut
+> `crisisGuard.test.ts`'tir.
+
 ---
 
 ## 4. Konum Haritası (kod ile eşleşme)

@@ -12,6 +12,33 @@
 > **Etiketler:** `CURRENT` (kodda var, doğrulandı) · `ÖNERİ` (yön net, kod yok) ·
 > `VARSAYIM` (doğrulanmadı — karar öncesi doğrula) · `TEK-KAYNAK` (tek kaynaktan
 > alınan sayı — karar öncesi bağımsız doğrula).
+>
+> **Güncelleme (2026-11-14):** §8.2 ve §9'daki açık kararlar sahibi tarafından
+> **ONAYLANDI** ("Önerilere katılıyorum"). Ayrıntı: **Karar kaydı** bölümü.
+> Faz 0 serbest; Faz 1 yalnız S2 güvenlik PR'ı main'e alındıktan sonra.
+
+---
+
+## Karar kaydı (2026-11-14) — SAHİBİ ONAYLADI
+
+> **Sahibin yanıtı (birebir):** "Önerilere katılıyorum" — §9'daki 8 önerinin
+> TAMAMI onaylandı. Aşağıdaki kararlar bu tarih itibarıyla **APPROVED**'dır.
+> §8.2 ve §9'daki seçenekler (A/B/C) SİLİNMEDİ; yalnız onay işaretlendi.
+
+| #   | Karar                                        | Onaylanan karar                                                                                                                                                                                                       | Kaynak       |
+| --- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 1   | Runtime görsel üretimi (Faz 1 hibrit)        | **EVET**, ama **yalnız S2 güvenlik PR'ı sonrası** (kota/authz/single-flight/concurrency). **Faz 0 önce.**                                                                                                             | §8.2/1, §9/1 |
+| 2   | Faz 1 sağlayıcı                              | **Sağlayıcı-agnostik adapter** (Gemini Flash Image deprecated; dokümana göre 2027-03-15'te kapanır)                                                                                                                   | §8.2/2, §9/2 |
+| 3   | Music Memory `note`/`feeling` kriz guard'ı   | **EVET** — AYNI mevcut `crisisGuard` (`detectCrisisNote`), **yeni desen yok**; herhangi bir LLM/görsel-sağlayıcı çağrısından ÖNCE çalışır; kanıt `crisisGuard.test.ts`. ETHICAL_AI §3e "kapsam dışı" statüsü DEĞİŞİR. | §8.2/3, §9/3 |
+| 4   | Music Memory v1 şeması                       | **EVET** (uygulanırken `docs/TECH/DATABASE_PLAN.md` gerçek şemayla hizalanır)                                                                                                                                         | §8.2/4, §9/4 |
+| 5   | Poster yeniden üretim tavanı                 | **5 / gün**                                                                                                                                                                                                           | §8.2/5, §9/5 |
+| 6   | Poster çıktı ölçüsü                          | **2048×3072 (2:3)**                                                                                                                                                                                                   | §8.2/6, §9/6 |
+| 7   | Kullanıcı notu sağlayıcıya gönderilsin mi    | **HAYIR** (veri minimizasyonu)                                                                                                                                                                                        | §8.2/7, §9/7 |
+| 8   | Faz 1, S2 main'e alınmadan başlatılabilir mi | **HAYIR**                                                                                                                                                                                                             | §9/8         |
+
+**Uygulama notu:** Kararlar onaylandı; **bu PR (docs) hiçbir kod/migration
+değiştirmez.** Faz 0 veri modeli görevi **P0-1** (§8.3) bu kayda dayanır;
+kriz-guard bağlama görevi **MM-3**'tür (bu PR'da DEĞİL).
 
 ---
 
@@ -351,25 +378,36 @@ mevcut guard'dan** geçmeli — **yeni desen eklenmez**, `crisisGuard.ts` ve
 | R7  | Telifli görsel sızması                                 | Hukuki        | Prompt kısıtı + moderasyon                                 |
 | R8  | Asset çeşitliliği (207 kayıt) tekrara düşer            | Kalite        | Deterministik kompozisyon katmanları + küratörlü genişleme |
 
-### 8.2 Açık kararlar (numaralı)
+### 8.2 Açık kararlar (numaralı) — **2026-11-14: TÜMÜ ONAYLANDI (APPROVED)**
 
-1. **Runtime görsel üretimi (Faz 1) onaylanacak mı?**
+> **Durum:** Aşağıdaki 7 karar sahibi tarafından **ONAYLANDI** ("Önerilere
+> katılıyorum"). Öneriler (`Öneri: …`) onaylanan karardır; özgün A/B/C
+> seçenekleri KORUNDU. Ayrıntılı tablo: **Karar kaydı (2026-11-14)**.
+
+1. **Runtime görsel üretimi (Faz 1) onaylanacak mı?** — **APPROVED (2026-11-14)**
    Seçenekler: (A) Hayır, yalnız Faz 0 · (B) Evet, Faz 1 hibrit (kota+moderasyon)
    · (C) Yalnız Faz 2 preview. **Öneri: (B)**, ama S2 güvenlik PR'ı sonrası.
-2. **Faz 1 hangi sağlayıcı?**
+   → **Karar: (B) EVET, yalnız S2 sonrası; Faz 0 önce.**
+2. **Faz 1 hangi sağlayıcı?** — **APPROVED (2026-11-14)**
    (A) Gemini Flash Image · (B) OpenAI image · (C) sağlayıcı-agnostik adapter.
    **Öneri: (C) adapter** (ANA_YASA §9 "provider adapter" hedefiyle uyumlu).
-3. **`note`/`feeling` kriz guard'ı (ETHICAL_AI §3d/§3e onayı).**
+   → **Karar: (C) sağlayıcı-agnostik adapter.**
+3. **`note`/`feeling` kriz guard'ı (ETHICAL_AI §3d/§3e onayı).** — **APPROVED (2026-11-14)**
    (A) Onayla — aynı `crisisGuard`, yeni desen yok · (B) Reddet (v1'de serbest
    metin yok). **Öneri: (A)**, kanıt `crisisGuard.test.ts`.
-4. **Music Memory v1 şeması onaylanacak mı?** (A) Evet · (B) Değişiklik iste.
-   **Öneri: (A)**, `docs/TECH/DATABASE_PLAN.md` gerçek şemayla hizalanarak.
-5. **Poster yeniden üretim tavanı?** (A) 5/gün · (B) 10/gün · (C) sınırsız.
-   **Öneri: (A)** (`VARSAYIM`).
-6. **Poster çıktı ölçüsü?** (A) 2048×3072 (2:3, mevcut master) · (B) 2400×3600
-   (poeticPoster). **Öneri: (A)** — mevcut master ile uyumlu.
-7. **Sağlayıcıya kullanıcı notu gönderilsin mi?** (A) Hayır (varsayılan) ·
-   (B) Evet (rıza ile). **Öneri: (A)** — veri minimizasyonu.
+   → **Karar: (A); ETHICAL_AI §3e statüsü DEĞİŞİR; uygulama görevi MM-3.**
+4. **Music Memory v1 şeması onaylanacak mı?** — **APPROVED (2026-11-14)**
+   (A) Evet · (B) Değişiklik iste. **Öneri: (A)**, `docs/TECH/DATABASE_PLAN.md`
+   gerçek şemayla hizalanarak. → **Karar: (A) EVET.**
+5. **Poster yeniden üretim tavanı?** — **APPROVED (2026-11-14)**
+   (A) 5/gün · (B) 10/gün · (C) sınırsız. **Öneri: (A)** (`VARSAYIM`).
+   → **Karar: (A) 5/gün.**
+6. **Poster çıktı ölçüsü?** — **APPROVED (2026-11-14)**
+   (A) 2048×3072 (2:3, mevcut master) · (B) 2400×3600 (poeticPoster).
+   **Öneri: (A)** — mevcut master ile uyumlu. → **Karar: (A) 2048×3072 (2:3).**
+7. **Sağlayıcıya kullanıcı notu gönderilsin mi?** — **APPROVED (2026-11-14)**
+   (A) Hayır (varsayılan) · (B) Evet (rıza ile). **Öneri: (A)** — veri
+   minimizasyonu. → **Karar: (A) HAYIR.**
 
 ### 8.3 Görev kırılımı (küçük PR'lar)
 
@@ -394,16 +432,28 @@ mevcut guard'dan** geçmeli — **yeni desen eklenmez**, `crisisGuard.ts` ve
 
 ---
 
-## 9. Sahibin karar vermesi gerekenler (en fazla 8)
+## 9. Sahibin karar vermesi gerekenler (en fazla 8) — **2026-11-14: TÜMÜ ONAYLANDI**
+
+> **Sahibin yanıtı (birebir):** "Önerilere katılıyorum". Aşağıdaki 8 maddenin
+> TAMAMI **APPROVED** (2026-11-14). Özgün seçenekler KORUNDU; onay işareti
+> `→ **Karar:**` satırındadır. Ayrıntı: **Karar kaydı (2026-11-14)**.
 
 1. Runtime görsel üretimi onaylanacak mı (Faz 1 hibrit)? **Evet / Hayır**
+   → **Karar: EVET** (yalnız S2 güvenlik PR'ı main'e alındıktan sonra; Faz 0 önce).
 2. Faz 1 sağlayıcısı: **A)** Gemini Flash Image · **B)** OpenAI image · **C)** adapter
+   → **Karar: C) sağlayıcı-agnostik adapter** (Gemini Flash Image deprecated, 2027-03-15 kapanır).
 3. `note`/`feeling` aynı `crisisGuard`'dan geçsin mi (ETHICAL_AI §3e onayı)? **Evet / Hayır**
+   → **Karar: EVET** — aynı `detectCrisisNote`, yeni desen yok; her LLM/görsel-sağlayıcı çağrısından ÖNCE; kanıt `crisisGuard.test.ts`. Uygulama = MM-3.
 4. Music Memory v1 şeması onaylanacak mı? **Evet / Değişiklik iste**
+   → **Karar: EVET** (uygulanırken `docs/TECH/DATABASE_PLAN.md` gerçek şemayla hizalanır).
 5. Poster yeniden üretim tavanı: **A)** 5/gün · **B)** 10/gün · **C)** sınırsız
+   → **Karar: A) 5/gün.**
 6. Poster çıktı ölçüsü: **A)** 2048×3072 (2:3) · **B)** 2400×3600
+   → **Karar: A) 2048×3072 (2:3).**
 7. Sağlayıcıya kullanıcı notu gönderilsin mi? **Evet / Hayır**
+   → **Karar: HAYIR** (veri minimizasyonu; not modele girer ama sağlayıcıya GÖNDERİLMEZ).
 8. Faz 1, S2 güvenlik PR'ı (#11) main'e alınmadan başlatılabilir mi? **Evet / Hayır**
+   → **Karar: HAYIR.**
 
 ---
 

@@ -16,6 +16,42 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-14, feat/poster-model-p0-1 — bu dal, PR açılacak):** Sahibi
+> 2026-11-14'te `docs/architecture/CINEMATIC_LIFE_POSTER.md` §9'daki 8 öneriye
+> "Önerilere katılıyorum" yanıtını verdi → **§8.2/§9 kararları APPROVED** (kayıt
+> birebir, "Karar kaydı" bölümü eklendi; özgün A/B/C seçenekleri KORUNDU): (1)
+> Faz 1 hibrit runtime görsel üretimi EVET ama YALNIZ S2 güvenlik PR'ı sonrası,
+> Faz 0 önce; (2) sağlayıcı-agnostik adapter (Gemini Flash Image deprecated,
+> 2027-03-15 kapanır); (3) Music Memory `note`/`feeling` AYNI mevcut
+> `crisisGuard`'dan (`detectCrisisNote`) geçer, yeni desen yok, her LLM/görsel
+> çağrısından ÖNCE → `docs/ETHICAL_AI.md` §3e'ye TEK tarihli not eklendi
+> ("kapsam dışı" statüsü bu alanlar için DEĞİŞİR; uygulama = MM-3, bu PR'da
+> DEĞİL; hiçbir kalıp/kod değişmedi); (4) Music Memory v1 şeması EVET; (5)
+> regenerate tavanı 5/gün; (6) çıktı 2048×3072 (2:3); (7) kullanıcı notu
+> sağlayıcıya GÖNDERİLMEZ; (8) Faz 1, S2 main'e alınmadan BAŞLATILAMAZ.
+> **P0-1 (kod) yapıldı:** YENİ `src/lib/poster/posterModel.ts` (+ `.test.ts`,
+> 30 test) — SAF veri modeli: React/ağ/LLM/rastgelelik YOK. `LifePosterModel`
+> = id, version, outputSize (2048×3072), entries, generatedFromLanguage,
+> birthYear|null. `PosterEntry` = cardIndex, stageTitle, track (provider,
+> providerId, title, artist), releaseYear|null, period|null, mood|null,
+> genre|null, decade|null, loreLine|null, userNote|null, noteForProvider:false.
+> `composePosterModel(input)` girdi = journey `songs` + kart meta + lore/not
+> eşlemeleri; mevcut tipler YENİDEN kullanılır (`Song`, `LifeCard`,
+> `normalizeGenre`, `decadeOf`, `isPeriod`); sıra = kart sırası; şarkısız kart
+> ATLANIR; eksik alan → `null` (uydurma YOK). `providerSafePosterModel(model)`
+> notu KALDIRIR (boşaltmaz) — sağlayıcıya güvenli tek biçim. Deterministik `id`
+> = `stableHash(kanonik JSON + POSTER_MODEL_VERSION)`; herhangi bir alan veya
+> sürüm değişince değişir. `POSTER_MODEL_VERSION="poster-v1"`,
+> `POSTER_OUTPUT_SIZE` dışa aktarılır. **Tasarımı repo tipi zorladı:**
+> `JourneyProgress.answers` (yalnız başlık metinleri) OKUNMAZ — çıplak başlık
+> provider+providerId uydurmadan `Song` kimliği olamaz (`src/lib/song/types.ts`);
+> `period` yalnız geçerliyse geçer (`Song.period`). Bağımlılık eklenmedi;
+> `src/lib/visual`, asset, migration, supabase, UI, lore motoru DOKUNULMADI;
+> Music Memory / Faz 1 / görsel-sağlayıcı kodu BAŞLATILMADI. Bu dal (taban
+> `main` f04b05a): **92 dosya passed / 1 skipped (93); 1191 passed / 2 skipped
+> (1193)**; tsc 0; eslint 0; build exit 0; yeni dosyalar prettier-temiz. PR
+> AÇIK olacak, MERGE EDİLMEDİ; force-push/rebase/amend YOK.
+
 > **NOT (2026-11-11, feat/backdrop-decade-registry — PR #30):** DÖNEM (decade) boyutu
 > backdrop kaydına eklendi; bugüne dek çözüm yalnız (genre, mood) eksenindeydi ve TÜM
 > dosyalar dönemsizdi → 1960s/70s/90s şarkılar 1980s backdrop'ını gösteriyordu (decade
