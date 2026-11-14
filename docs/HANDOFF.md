@@ -16,6 +16,34 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-14, feat/poster-layout-p0-2 — bu dal, PR açılacak):** Taban
+> `main` = `3ad8ee2` (PR #33 MERGE EDİLDİ; ön koşul doğrulandı:
+> `src/lib/poster/posterModel.ts` main'de VAR). **P0-2 (kod) yapıldı:** YENİ
+> `src/lib/poster/posterLayout.ts` (+ `.test.ts`, 60 test) — SAF düzen çekirdeği:
+> React/canvas/ağ/LLM/rastgelelik/Date YOK. `composePosterLayout(input)` girdisi
+> `LifePosterModel` VEYA `ProviderSafeLifePosterModel` kabul eder; çıktı
+> `PosterLayout` = version (`layout-v1`), layoutId, variant, canvas, safeArea,
+> regions[]. Koordinat = 2048×3072 master üzerinde TAM SAYI piksel, sol-üst
+> orijin (+x sağ, +y aşağı) — mevcut `poeticPoster`/`MasterPosterCanvas` ile
+> AYNI kural (ikisi de DEĞİŞTİRİLMEDİ). Rol kümesi: title, subtitle,
+> entry-backdrop (girdi başına bir), entry-stage, entry-song, entry-artist,
+> entry-year, entry-lore, footer; font/renk/görsel YOK (P0-3 renderer'ın işi);
+> metin bölgeleri deterministik `textBudget { maxLines, maxCharsPerLine }` taşır.
+> **Varyant YALNIZ girdi sayısına göre:** 0 → empty-state (title+subtitle+
+> footer); 1-3 → large-stacked; 4-8 → two-column; 9+ → compact-grid (journey
+> azami 8'i ve Music Memory 12'yi kapsar). Determinizm: aynı model → bayt-aynı
+> JSON; `layoutId = stableHash(model.id + POSTER_LAYOUT_VERSION)`; geometri
+> YALNIZ girdi sayısına bağlı, metin uzunluğuna ASLA. **Lore kuralı (tek,
+> belgelenmiş):** entry-lore bölgesi HER ZAMAN vardır (geometri sayı-tabanlı)
+> ama lore yoksa bütçesi `maxLines: 0`'a düşer. `truncateToBudget(text, budget)`
+> = saf kelime-sınırı sarma, grapheme-güvenli (ş ğ ı İ korunur, emoji bölünmez),
+> üç nokta yalnız son satırda, asla throw etmez. Bağımlılık eklenmedi;
+> `src/lib/visual`, asset, migration, supabase, UI, lore motoru ve mevcut poster
+> renderer'ları DOKUNULMADI. Bu dal: **93 dosya passed / 1 skipped (94); 1251
+> passed / 2 skipped (1253)** (P0-1 tabanı 92/1191 → +1 dosya, +60 test); tsc 0;
+> eslint 0; build exit 0; yeni dosyalar prettier-temiz. PR AÇIK olacak, MERGE
+> EDİLMEDİ; force-push/rebase/amend YOK.
+
 > **NOT (2026-11-14, feat/poster-model-p0-1 — bu dal, PR açılacak):** Sahibi
 > 2026-11-14'te `docs/architecture/CINEMATIC_LIFE_POSTER.md` §9'daki 8 öneriye
 > "Önerilere katılıyorum" yanıtını verdi → **§8.2/§9 kararları APPROVED** (kayıt
