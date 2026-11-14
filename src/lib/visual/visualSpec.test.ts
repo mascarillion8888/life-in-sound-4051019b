@@ -1,15 +1,37 @@
 /**
- * FAZ 3 — VisualResolver contract tests (deterministic, no I/O).
+ * FAZ 3 / 3.2 — VisualResolver + decade-aware backdrop registry contract tests
+ * (deterministic, no I/O). Kanonik karar (STATE KARARLAR): mood+genre+decade
+ * interactive; eksik eksen deterministik fallback'e iner; uydurma yok.
  *
- * Kanonik karar (STATE KARARLAR): mood+genre+decade interactive; eksik eksen deterministik
- * fallback'e iner; uydurma yok. Mevcut `moodBackdropUrl` davranışı korunur.
+ * Fallback sırası (bkz. backdropRegistry.resolveBackdrop):
+ *   (a) exact genre+mood+decade  (b) genre+decade→nearest mood
+ *   (c) genre+mood→nearest decade (ties→later)  (d) genre→nearest decade  (e) default
+ * Tüm fallback testleri TABLO güdümlüdür (Sonar kopya oranı düşük kalsın).
  */
 import { existsSync } from "fs";
 import { resolve as resolvePath } from "path";
 import { describe, expect, it } from "vitest";
 
-import { ALL_GENRES, GENRE_ALIASES, normalizeGenre, SCENE_ASSET_REGISTRY } from "./assetRegistry";
+import { ALL_GENRES, GENRE_ALIASES, normalizeGenre } from "./assetRegistry";
+import {
+  BACKDROP_REGISTRY,
+  DECADES,
+  decadeForYear,
+  normalizeDecade,
+  resolveBackdrop,
+  type BackdropEntry,
+} from "./backdropRegistry";
 import { resolveSceneVisualSpec } from "./visualResolver";
+
+/** Sentetik kayıt kurucu — test tablolarını kısa tutar (kopya azaltır). */
+function reg(genre: string, mood: string, decade: string): BackdropEntry {
+  return {
+    genre,
+    mood,
+    decade: decade as BackdropEntry["decade"],
+    assetRef: `${genre}/${mood}-${decade}.webp`,
+  };
+}
 
 describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () => {
   it("same mood + different decade → differentiatable via eraStyle/eraTheme (not identical visuals)", () => {
@@ -24,35 +46,34 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
       releaseYear: 1985,
     });
 
-    // backdrop aynı kalabilir (etkileşim yalnız mood'e bağlı), ama görsel kimlik farklılaşmalı:
+    // Yalnız eski (1980s) dosyalar varken backdrop AYNI dosyaya inebilir; ama
+    // çözüm dönemi raporlar ve exact=false olur → görsel kimlik farklılaşır.
     expect(seventies.backdropUrl).toBeDefined();
     expect(eighties.backdropUrl).toBeDefined();
+    expect(seventies.matchedDecade).toBe("1980s");
+    expect(seventies.backdropExact).toBe(false);
+    expect(eighties.backdropExact).toBe(true);
     expect(seventies.eraStyle?.decade).not.toBe(eighties.eraStyle?.decade);
     expect(seventies.eraTheme).not.toBe(eighties.eraTheme);
-    // ikisi de scene palette'te aynıysa bile bileşik kimlikte en az farklı eralar olmalı:
     expect(seventies.eraStyle ?? eighties.eraStyle).toBeDefined();
   });
 
   it("same mood + different genre → differentiatable via sceneThemeId/palette", () => {
-    // Doom Metal (registry'de yok → nötr pop mood-wall + gothic theme) ile
-    // Grunge (artık KAYITLI — kendi grunge/ klasöründen backdrop alır).
-    // Arkaplan artık farklıdır (grunge kendi folder'ından), tema da farklıdır.
     const goth = resolveSceneVisualSpec({ mood: "Dark", genre: "Doom Metal", releaseYear: 1990 });
     const grunge = resolveSceneVisualSpec({ mood: "Dark", genre: "Grunge", releaseYear: 1990 });
 
     expect(goth.sceneThemeId).not.toBe(grunge.sceneThemeId);
-    // grunge artık kendi asset'ine sahip → backdrop'lar farklılaşır
-    // (Doom Metal nötr pop wall'a iner, Grunge grunge/ klasörüne):
     expect(goth.backdropUrl).not.toBe(grunge.backdropUrl);
   });
 
   it("missing mood → NO backdrop fallback (backdropUrl undefined), genre/decade still work", () => {
-    const { backdropUrl, sceneThemeId } = resolveSceneVisualSpec({
+    const { backdropUrl, sceneThemeId, matchedDecade } = resolveSceneVisualSpec({
       mood: null,
       genre: "Jazz",
       releaseYear: 1972,
     });
     expect(backdropUrl).toBeUndefined();
+    expect(matchedDecade).toBeUndefined();
     expect(sceneThemeId).toBe("jazz");
   });
 
@@ -72,11 +93,10 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
     const res = resolveSceneVisualSpec({ mood: "Dreamy", genre: "Soul", decade: null });
     expect(res.eraStyle).toBeUndefined();
     expect(res.eraTheme).toBeUndefined();
-    // genre hâlâ theme belirler:
     expect(res.sceneThemeId).toBe("soul");
   });
 
-  it("all three axes missing → nötr: gothic theme + dreamy-free backdrop (no fabrication)", () => {
+  it("all three axes missing → nötr: gothic theme + no backdrop (no fabrication)", () => {
     const res = resolveSceneVisualSpec({});
     expect(res.sceneThemeId).toBe("gothic");
     expect(res.backdropUrl).toBeUndefined();
@@ -96,10 +116,9 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
 
   it("never fabricates a missing axis — no invented genre/decade/mood values", () => {
     const res = resolveSceneVisualSpec({ mood: null, genre: null, releaseYear: null });
-    expect(res.backdropUrl).toBeUndefined(); // mood uydurulmadı
-    expect(res.sceneThemeId).toBe("gothic"); // genre/decade uydurulup tema dayatılmadı
-    expect(res.eraStyle).toBeUndefined(); // year yok → eraStyle yok
-    // fallbackTrace'te uydurulmuş eksen ispatı yok:
+    expect(res.backdropUrl).toBeUndefined();
+    expect(res.sceneThemeId).toBe("gothic");
+    expect(res.eraStyle).toBeUndefined();
     expect(res.fallbackTrace.some((t) => /source=provider/.test(t) && /genre/.test(t))).toBe(false);
   });
 
@@ -107,195 +126,291 @@ describe("resolveSceneVisualSpec — interactive Song{mood, genre, decade}", () 
     const res = resolveSceneVisualSpec({ mood: "Dark", genre: "Metal", releaseYear: 2010 });
     expect(res.backdropUrl).toBeDefined();
     expect(res.backdropUrl).toContain("mood-backdrop-dark");
-    expect(res.sceneThemeId).toBe("gothic"); // metal → gothic keyword
+    expect(res.sceneThemeId).toBe("gothic");
     expect(res.eraTheme).toBeDefined();
   });
-});
 
-describe("exact-match asset registry (FAZ 3.1)", () => {
-  it("pop + Energetic → exactAssetRef dolu + fallbackTrace'te iz (dönemsiz)", () => {
+  it("returns matched decade + exact flag so a later PR can add an era layer", () => {
     const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1985 });
-    expect(res.exactAssetRef).toBe("pop/mood-backdrop-energetic.jpg");
-    expect(res.fallbackTrace.join("|")).toContain("exact-match:pop-energetic");
-    // görsel davranış değişmez — backdrop aynı mood dosyasının folder URL'sini gösterir:
-    expect(res.backdropUrl).toBeDefined();
-    expect(res.backdropUrl).toContain("mood-backdrop-energetic");
-  });
-
-  it("genre eşleşmezse (Doom Metal — registry dışı) → exactAssetRef undefined, exact-match izi yok", () => {
-    // Doom Metal bir GenreId DEĞİL ve GENRE_ALIASES'te yok → küçük-harfli orijinal
-    // kalır, hiçbir registry satırıyla eşleşmez.
-    const res = resolveSceneVisualSpec({
-      mood: "Energetic",
-      genre: "Doom Metal",
-      releaseYear: 1985,
-    });
-    expect(res.exactAssetRef).toBeUndefined();
-    expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
-  });
-
-  it("pop artık dönemsiz — 1990s'te de exact match eder", () => {
-    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1992 });
-    expect(res.exactAssetRef).toBe("pop/mood-backdrop-energetic.jpg");
-    expect(res.fallbackTrace.join("|")).toContain("exact-match:pop-energetic");
-  });
-
-  it("soul (decade-free) herhangi bir yılda eşleşir — decade koşulu yoksayılır", () => {
-    const seventies = resolveSceneVisualSpec({
-      mood: "Energetic",
-      genre: "soul",
-      releaseYear: 1975,
-    });
-    const nineties = resolveSceneVisualSpec({
-      mood: "Energetic",
-      genre: "soul",
-      releaseYear: 1994,
-    });
-    expect(seventies.exactAssetRef).toBe("soul/mood-backdrop-energetic.jpg");
-    expect(nineties.exactAssetRef).toBe("soul/mood-backdrop-energetic.jpg");
-    // dönemsiz kayıt trace'i genre-mood şeklindedir (decade yok).
-    expect(seventies.fallbackTrace.join("|")).toContain("exact-match:soul-energetic");
-    // backdrop, soul dosyasının gerçek URL'sini gösterir (glob'da çözülür).
-    expect(seventies.backdropUrl).toContain("mood-backdrop-energetic");
-  });
-
-  it("soul'un yeni decade-free kayıtları (Dark gibi) her yılda exact-match eder", () => {
-    const seventies = resolveSceneVisualSpec({ mood: "Dark", genre: "soul", releaseYear: 1972 });
-    const nineties = resolveSceneVisualSpec({ mood: "Dark", genre: "soul", releaseYear: 1998 });
-    expect(seventies.exactAssetRef).toBe("soul/mood-backdrop-dark.jpg");
-    expect(nineties.exactAssetRef).toBe("soul/mood-backdrop-dark.jpg");
-    // dönemsiz kayıt trace'i genre-mood şeklindedir (decade yok).
-    expect(seventies.fallbackTrace.join("|")).toContain("exact-match:soul-dark");
-    // backdrop, soul dosyasının gerçek URL'sini gösterir (glob'da çözülür).
-    expect(seventies.backdropUrl).toContain("mood-backdrop-dark");
-  });
-
-  it("yeni genre klasörleri exact-match eder — jazz/hiphop/funk/new-age/reggae (2026-09-30)", () => {
-    const cases: [string, string, string][] = [
-      // [genre, mood, expected assetRef]
-      ["Jazz", "Dark", "jazz/mood-backdrop-dark.jpg"],
-      ["Hip-Hop", "Energetic", "hip-hop/mood-backdrop-energetic.jpg"],
-      ["Funk", "Playful", "funk/mood-backdrop-playful.jpg"],
-      ["New Age", "Dreamy", "new age/mood-backdrop-dreamy.jpg"],
-      ["Reggae", "World", "reggae/mood-backdrop-world.jpg"],
-    ];
-    for (const [genre, mood, expectedRef] of cases) {
-      const res = resolveSceneVisualSpec({ mood, genre, releaseYear: 1990 });
-      expect(res.exactAssetRef).toBe(expectedRef);
-      expect(res.fallbackTrace.join("|")).toContain("exact-match:");
-      expect(res.backdropUrl).toBeDefined();
-      expect(res.backdropUrl).toContain("mood-backdrop");
-    }
-  });
-
-  it("regresyon: pop dönemsiz — 1980s ve 1990s ikisi de exact match eder", () => {
-    const eighties = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1985 });
-    const nineties = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1995 });
-    expect(eighties.exactAssetRef).toBe("pop/mood-backdrop-energetic.jpg");
-    expect(nineties.exactAssetRef).toBe("pop/mood-backdrop-energetic.jpg");
-    expect(eighties.fallbackTrace.join("|")).toContain("exact-match:pop-energetic");
-  });
-
-  it("kayıtlı 23 genre kapalı — registry dışı genre'de (doom metal) exact asset seçilmez", () => {
-    // 23 türün 9 mood'unun tamamı registry'de. doom metal aliased değil/GenreId değil
-    // → küçük-harfli orijinal kalır, hiçbir satırla eşleşmez.
-    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "doom metal", releaseYear: 2002 });
-    expect(res.exactAssetRef).toBeUndefined();
-    expect(res.fallbackTrace.join("|")).not.toContain("exact-match:");
-  });
-
-  it("provider genre'si normalize edilir — iTunes 'R&B/Soul' → soul exact asset", () => {
-    // Gerçek provider değeri registry anahtarıyla birebir aynı değildir:
-    // iTunes "R&B/Soul" verir, registry anahtarı "soul". normalizeGenre bunu eşler.
-    const itunesRnb = resolveSceneVisualSpec({
-      mood: "Romantic",
-      genre: "R&B/Soul",
-      releaseYear: 1967,
-    });
-    expect(itunesRnb.exactAssetRef).toBe("soul/mood-backdrop-romantic.jpg");
-    expect(itunesRnb.fallbackTrace.join("|")).toContain("exact-match:soul-romantic");
-    // backdrop, soul dosyasının gerçek URL'sini gösterir (glob'da çözülür).
-    expect(itunesRnb.backdropUrl).toContain("mood-backdrop-romantic");
-  });
-
-  it("normalizeGenre — bilinen eşanlamlılar tek kimliğe iner, bilinmeyen aynen kalır", () => {
-    const cases: [string, string][] = [
-      ["R&B/Soul", "soul"],
-      ["rhythm and blues", "rnb"],
-      ["soul/funk", "soul"],
-      ["R&B", "rnb"],
-      ["Hip-Hop", "hiphop"],
-      ["New Wave", "synth"],
-      ["Pop", "pop"], // eşanlamlı yok → kimlik döner (klasör pop/)
-      ["Rock", "rock"], // klasör rock/
-      ["Punk", "punk"], // klasör punk/
-      // rock ailesi → rock; metal ailesi → metal (2026-10-10 ayrıştı)
-      ["Hard Rock", "rock"],
-      ["Heavy Metal", "metal"],
-      ["Metal", "metal"],
-      ["Hard Rock & Metal", "metal"],
-      ["Hard Rock and Metal", "metal"],
-      ["Classic Rock", "rock"],
-      ["Rock & Roll", "rock"],
-      ["German Rock", "rock"],
-      ["Arena Rock", "rock"],
-      ["Rockabilly", "rock"],
-      ["Doom Metal", "doom metal"], // alias'ta yok → küçük-harfli orijinal (eşleşmez)
-      // 2026-09-30 yeni genre aileleri → ilgili klasör
-      ["Funk", "funk"],
-      ["P-Funk", "funk"],
-      ["Smooth Jazz", "jazz"],
-      ["Acid Jazz", "jazz"],
-      ["Bebop", "jazz"],
-      ["Swing", "jazz"],
-      ["New Age", "new age"],
-      ["Newage", "new age"],
-      ["Ambient", "new age"],
-      ["Dancehall", "reggae"],
-      ["Ska", "reggae"],
-      ["Reggaeton", "reggae"],
-      ["Roots Reggae", "reggae"],
-      // hibritler soul'a iner (soul kaynağı), funk klasörüne DEĞİL:
-      ["Soul/Funk", "soul"],
-      ["Funk/Soul", "soul"],
-    ];
-    for (const [input, expected] of cases) {
-      expect(normalizeGenre(input)).toBe(expected);
-    }
-    expect(normalizeGenre(null)).toBeNull();
-    expect(normalizeGenre("  ")).toBeNull();
+    expect(res.matchedDecade).toBe("1980s");
+    expect(res.backdropExact).toBe(true);
+    expect(res.backdropStrategy).toBe("exact");
+    expect(res.fallbackTrace.join("|")).toContain("backdrop-match:exact:");
   });
 });
 
-describe("registry integritesi — 23 genre × 9 mood = 207 yol (2026-10-10)", () => {
-  const FOLDER_OVERRIDE: Record<string, string> = { hiphop: "hip-hop" };
-
-  it("207 satır: 23 genre × 9 mood, hepsi kendi klasöründe (kalıbında)", () => {
-    expect(ALL_GENRES).toHaveLength(23);
-    expect(SCENE_ASSET_REGISTRY).toHaveLength(23 * 9);
-    // her satır gerçek GenreId kullanır (uydurma yok), metadata ilk öğeden türetilir
-    const genreIds = new Set(ALL_GENRES);
-    const refs = SCENE_ASSET_REGISTRY.map((e) => e.assetRef);
-    expect(new Set(refs)).toHaveLength(refs.length); // kopya yok
-    for (const e of SCENE_ASSET_REGISTRY) {
-      expect(genreIds.has(e.genre)).toBe(true);
-      const folder = FOLDER_OVERRIDE[e.genre] ?? e.genre;
-      expect(e.assetRef.startsWith(`${folder}/`)).toBe(true);
-      expect(e.assetRef.endsWith(`mood-backdrop-${e.mood.toLowerCase()}.jpg`)).toBe(true);
-    }
+describe("decadeForYear / normalizeDecade — clamping (no fabrication)", () => {
+  const cases: [number, string][] = [
+    [1955, "1960s"],
+    [1960, "1960s"],
+    [1969, "1960s"],
+    [1975, "1970s"],
+    [1985, "1980s"],
+    [1994, "1990s"],
+    [2001, "2000s"],
+    [2015, "2010s"],
+    [2020, "2020s"],
+    [2035, "2020s"],
+  ];
+  it.each(cases)("decadeForYear(%i) → %s", (year, expected) => {
+    expect(decadeForYear(year)).toBe(expected);
   });
 
-  it("her assetRef diske karşılık gelir (src/assets/<folder>/mood-backdrop-<mood>.jpg)", () => {
-    // Dosya SİSTEMİNDE varlığı gerçekten doğrulanır (uydurulmuş ref yok). Test
-    // çalışma dizini = repo kökü (vitest); assets/ köke göre src/assets/'tir.
+  it("normalizeDecade parses labels/years and returns null for junk", () => {
+    expect(normalizeDecade("1970s")).toBe("1970s");
+    expect(normalizeDecade("1970")).toBe("1970s");
+    expect(normalizeDecade(1999)).toBe("1990s");
+    expect(normalizeDecade("  80s ")).toBeNull();
+    expect(normalizeDecade("abc")).toBeNull();
+    expect(normalizeDecade(null)).toBeNull();
+    expect(normalizeDecade(undefined)).toBeNull();
+  });
+
+  it("DECADES is the canonical ascending list (1960s..2020s)", () => {
+    expect([...DECADES]).toEqual(["1960s", "1970s", "1980s", "1990s", "2000s", "2010s", "2020s"]);
+  });
+});
+
+describe("resolveBackdrop — deterministic fallback order (table-driven)", () => {
+  const REG: BackdropEntry[] = [
+    reg("rock", "Melancholic", "1970s"),
+    reg("rock", "Melancholic", "1990s"),
+    reg("rock", "Energetic", "1970s"),
+    reg("rock", "Dreamy", "1970s"),
+    reg("pop", "Melancholic", "1980s"),
+    reg("pop", "Dreamy", "1980s"),
+  ];
+
+  // [ad, girdi(mood,genre,decade), beklenen assetRef, strateji, beklenen dönem, exact?]
+  type Case = [
+    name: string,
+    mood: string,
+    genre: string,
+    decade: string | undefined,
+    ref: string,
+    strategy: string,
+    matched: string,
+    exact: boolean,
+  ];
+  const cases: Case[] = [
+    [
+      "(a) exact genre+mood+decade",
+      "Melancholic",
+      "rock",
+      "1970s",
+      "rock/Melancholic-1970s.webp",
+      "exact",
+      "1970s",
+      true,
+    ],
+    [
+      "(b) same genre+decade, nearest mood (requested mood absent)",
+      "Euphoric",
+      "rock",
+      "1970s",
+      "rock/Energetic-1970s.webp",
+      "mood",
+      "1970s",
+      true, // dönem TAM eşleşti (yalnız mood düştü)
+    ],
+    [
+      "(c) same genre+mood, nearest decade (ties prefer the LATER decade)",
+      "Melancholic",
+      "rock",
+      "1980s",
+      "rock/Melancholic-1990s.webp",
+      "decade",
+      "1990s",
+      false,
+    ],
+    [
+      "(d) same genre, nearest decade, any mood",
+      "Dark",
+      "rock",
+      "2000s",
+      "rock/Melancholic-1990s.webp",
+      "genre-decade",
+      "1990s",
+      false,
+    ],
+    [
+      "(e) unknown genre → global default (pop mood wall)",
+      "Melancholic",
+      "polka",
+      "1970s",
+      "pop/Melancholic-1980s.webp",
+      "default",
+      "1980s",
+      false,
+    ],
+    [
+      "(e) unknown genre + unknown mood → neutral dreamy default",
+      "Dark",
+      "polka",
+      "1970s",
+      "pop/Dreamy-1980s.webp",
+      "default",
+      "1980s",
+      false,
+    ],
+    [
+      "no decade (releaseYear absent) → 1980s target, ties prefer LATER decade",
+      "Melancholic",
+      "rock",
+      undefined,
+      "rock/Melancholic-1990s.webp",
+      "decade",
+      "1990s",
+      false,
+    ],
+  ];
+
+  it.each(cases)("%s", (_name, mood, genre, decade, ref, strategy, matched, exact) => {
+    const res = resolveBackdrop({ mood, genre, decade }, REG);
+    expect(res.assetRef).toBe(ref);
+    expect(res.strategy).toBe(strategy);
+    expect(res.matchedDecade).toBe(matched);
+    expect(res.exact).toBe(exact);
+  });
+
+  it("(b) ties in mood distance resolve deterministically (stable across calls)", () => {
+    const a = resolveBackdrop({ mood: "Dark", genre: "rock", decade: "1970s" }, REG);
+    const b = resolveBackdrop({ mood: "Dark", genre: "rock", decade: "1970s" }, REG);
+    expect(a.assetRef).toBe(b.assetRef);
+  });
+
+  it("empty registry → never throws, returns the neutral default", () => {
+    const res = resolveBackdrop({ mood: "Melancholic", genre: "rock", decade: "1970s" }, []);
+    expect(res.assetRef).toBe("pop/mood-backdrop-dreamy.jpg");
+    expect(res.strategy).toBe("default");
+    expect(res.exact).toBe(false);
+  });
+
+  it("empty registry + no axes → never throws", () => {
+    expect(() => resolveBackdrop({}, [])).not.toThrow();
+    expect(resolveBackdrop({}, []).strategy).toBe("default");
+  });
+});
+
+describe("BACKDROP_REGISTRY — derived from files (no hand-written list)", () => {
+  it("every entry is a real file under src/assets (no fabricated ref)", () => {
     const assetsDir = resolvePath(process.cwd(), "src", "assets");
-    for (const e of SCENE_ASSET_REGISTRY) {
+    expect(BACKDROP_REGISTRY.length).toBeGreaterThan(0);
+    for (const e of BACKDROP_REGISTRY) {
       const local = resolvePath(assetsDir, e.assetRef);
       expect({ assetRef: e.assetRef, exists: existsSync(local) }).toHaveProperty("exists", true);
     }
   });
 
-  it("her GENRE_ALIASES hedefi geçerli bir GenreId'dir (belirlenmiş 23 küme içinde)", () => {
+  it("legacy (decade-less) files are treated as 1980s", () => {
+    const legacy = BACKDROP_REGISTRY.filter((e) => e.assetRef.endsWith(".jpg"));
+    expect(legacy.length).toBeGreaterThan(0);
+    for (const e of legacy) expect(e.decade).toBe("1980s");
+  });
+
+  it("genre ids are canonical (folder 'hip-hop' → 'hiphop')", () => {
+    const hiphop = BACKDROP_REGISTRY.filter((e) => e.assetRef.startsWith("hip-hop/"));
+    expect(hiphop.length).toBeGreaterThan(0);
+    for (const e of hiphop) expect(e.genre).toBe("hiphop");
+  });
+
+  it("resolution is deterministic across calls (sorted, stable)", () => {
+    const a = resolveBackdrop({ mood: "Dark", genre: "metal", releaseYear: 1985 });
+    const b = resolveBackdrop({ mood: "Dark", genre: "metal", releaseYear: 1985 });
+    expect(a).toEqual(b);
+  });
+});
+
+describe("resolveSceneVisualSpec — decade-aware integration (real registry)", () => {
+  it("1985 pop energetic is an EXACT 1980s match", () => {
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1985 });
+    expect(res.exactAssetRef).toBe("pop/mood-backdrop-energetic.jpg");
+    expect(res.matchedDecade).toBe("1980s");
+    expect(res.backdropExact).toBe(true);
+    expect(res.backdropStrategy).toBe("exact");
+    expect(res.backdropUrl).toContain("mood-backdrop-energetic");
+  });
+
+  it("1975 pop energetic is APPROXIMATE (falls back to the 1980s file) — the bug this PR fixes", () => {
+    const res = resolveSceneVisualSpec({ mood: "Energetic", genre: "pop", releaseYear: 1975 });
+    expect(res.exactAssetRef).toBe("pop/mood-backdrop-energetic.jpg");
+    expect(res.matchedDecade).toBe("1980s");
+    expect(res.backdropExact).toBe(false);
+    expect(res.fallbackTrace.join("|")).toContain("backdrop-match:");
+    expect(res.fallbackTrace.join("|")).toContain(":approx");
+  });
+
+  it("unknown genre falls back to the neutral pop mood wall, reported as default", () => {
+    const res = resolveSceneVisualSpec({ mood: "Dark", genre: "Doom Metal", releaseYear: 1990 });
+    expect(res.backdropStrategy).toBe("default");
+    expect(res.backdropUrl).toContain("pop/mood-backdrop-dark");
+    expect(res.backdropExact).toBe(false);
+  });
+
+  it("provider genre is normalized — iTunes 'R&B/Soul' → soul asset", () => {
+    const res = resolveSceneVisualSpec({ mood: "Romantic", genre: "R&B/Soul", releaseYear: 1985 });
+    expect(res.exactAssetRef).toBe("soul/mood-backdrop-romantic.jpg");
+    expect(res.matchedDecade).toBe("1980s");
+    expect(res.backdropExact).toBe(true);
+    expect(res.backdropUrl).toContain("mood-backdrop-romantic");
+  });
+});
+
+describe("normalizeGenre — synonyms collapse, unknown preserved", () => {
+  const cases: [string, string][] = [
+    ["R&B/Soul", "soul"],
+    ["rhythm and blues", "rnb"],
+    ["soul/funk", "soul"],
+    ["R&B", "rnb"],
+    ["Hip-Hop", "hiphop"],
+    ["New Wave", "synth"],
+    ["Pop", "pop"],
+    ["Rock", "rock"],
+    ["Punk", "punk"],
+    ["Hard Rock", "rock"],
+    ["Heavy Metal", "metal"],
+    ["Metal", "metal"],
+    ["Hard Rock & Metal", "metal"],
+    ["Hard Rock and Metal", "metal"],
+    ["Classic Rock", "rock"],
+    ["Rock & Roll", "rock"],
+    ["German Rock", "rock"],
+    ["Arena Rock", "rock"],
+    ["Rockabilly", "rock"],
+    ["Doom Metal", "doom metal"],
+    ["Funk", "funk"],
+    ["P-Funk", "funk"],
+    ["Smooth Jazz", "jazz"],
+    ["Acid Jazz", "jazz"],
+    ["Bebop", "jazz"],
+    ["Swing", "jazz"],
+    ["New Age", "new age"],
+    ["Newage", "new age"],
+    ["Ambient", "new age"],
+    ["Dancehall", "reggae"],
+    ["Ska", "reggae"],
+    ["Reggaeton", "reggae"],
+    ["Roots Reggae", "reggae"],
+    ["Soul/Funk", "soul"],
+    ["Funk/Soul", "soul"],
+  ];
+  it.each(cases)("normalizeGenre(%s) → %s", (input, expected) => {
+    expect(normalizeGenre(input)).toBe(expected);
+  });
+
+  it("null/blank → null (no fabrication)", () => {
+    expect(normalizeGenre(null)).toBeNull();
+    expect(normalizeGenre("  ")).toBeNull();
+  });
+});
+
+describe("taxonomy integrity — 23 genres, aliases target canonical ids", () => {
+  it("ALL_GENRES is the closed 23-genre set", () => {
+    expect(ALL_GENRES).toHaveLength(23);
+    expect(new Set(ALL_GENRES).size).toBe(23);
+  });
+
+  it("every GENRE_ALIASES target is a valid GenreId", () => {
     const genreIds: Set<string> = new Set(ALL_GENRES);
     for (const [alias, target] of Object.entries(GENRE_ALIASES)) {
       expect({ alias, target }).toSatisfy((x: { target: string }) => genreIds.has(x.target));

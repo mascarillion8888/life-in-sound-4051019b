@@ -79,7 +79,9 @@ VisualProfile {
 
 ## 3. Visual Resolver (CURRENT/IMPLEMENTED — FAZ 3/3.1/3.2/4a/4b)
 
-**Durum güncellemesi (2026-09-24):** Bu bölüm daha önce "FUTURE — kodda yok" etiketliydi; ancak Visual Resolver artık **CANLI**. `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` + `resolveExactAsset`) + `src/lib/visual/assetRegistry.ts` (`SCENE_ASSET_REGISTRY`) kurulu ve `SceneRoom` bunu çağırıyor (resolver canlı, orphan değil, FAZ 4a/4b wiring'i 2026-09-20'de tamamlandı). `moodBackdrop.ts` çok-eksenli fallback ile birlikte çalışır. Test: `visualSpec.test.ts` 19/19, SceneRoom bundle 40/40, tsc temiz. Aşağıdaki sözleşme tanımları geçerliliğini korur.
+**Durum güncellemesi (2026-11-11):** Visual Resolver artık **DÖNEM-farkındadır**. `src/lib/visual/visualResolver.ts` (`resolveSceneVisualSpec` + `resolveBackdropAsset`) + `src/lib/visual/backdropRegistry.ts` (`BACKDROP_REGISTRY`, `resolveBackdrop`, dosyalardan türetilir) + `src/lib/visual/assetRegistry.ts` (23 tür taksonomisi) kurulu ve `SceneRoom` bunu çağırıyor. Çözüm `matchedDecade` + `exact` bayrağını da döner (dönem renk/grain katmanı bir sonraki PR'a bırakıldı). `moodBackdrop.ts` nötr mood duvarını sağlar. Test: `visualSpec.test.ts` (tablo güdümlü), SceneRoom 40/40, tsc temiz. Aşağıdaki sözleşme tanımları geçerliliğini korur.
+
+**Geçmiş not (2026-09-24):** Bu bölüm daha önce "FUTURE — kodda yok" etiketliydi; ancak Visual Resolver **CANLI** oldu (`resolveExactAsset` + dönemsiz `SCENE_ASSET_REGISTRY`; FAZ 4a/4b wiring'i 2026-09-20). Bu dönemsiz çözüm 2026-11-11'de dönem-farkında `resolveBackdrop` ile değiştirildi (bkz. §8).
 
 **Karar girdisi (kanonik — 18 Eylül, STATE KARARLAR):** Resolver görsel kararı, tek eksen
 değil **`Song {mood, genre, decade}` bileşiminin** ürünüdür. Mood, genre ve decade birlikte
@@ -203,9 +205,22 @@ kimlik (base universe) korunur.
 
 ---
 
-## 8. Asset Registry (CURRENT/IMPLEMENTED — temel kurulu; metadata modeli kısmen)
+## 8. Asset Registry (CURRENT/IMPLEMENTED — dosyadan türetilir; metadata modeli kısmen)
 
-**Durum güncellemesi (2026-09-24):** Bu bölüm daha önce "FUTURE — kodda yok" etiketliydi; ancak Asset Registry'nin **çalışan çekirdeği** kurulu: `src/lib/visual/assetRegistry.ts` `SCENE_ASSET_REGISTRY` (genre/décade-free soul 9/9 + pilot 1980s×Pop) + `resolveExactAsset` (genre `normalizeGenre` ile eşleşir). Aşağıdaki zengin metadata modeli (asset spec/status/version vb.) hâlâ **kavramsal/FUTURE** — bugün registry satırları daha basit bir shape'dir (`SceneAssetEntry`).
+**Durum güncellemesi (2026-11-11):** Kayıt artık ELLE tutulmaz ve **DÖNEM**
+boyutunu taşır. `src/lib/visual/backdropRegistry.ts` `src/assets` altındaki
+GERÇEK dosyalardan (`import.meta.glob`) `BACKDROP_REGISTRY`'yi türetir; çözüm
+`resolveBackdrop` ile deterministiktir (exact → genre+decade→mood → genre+mood→decade
+→ genre→decade → default). Dönemsiz (eski) dosyalar 1980s sayılır; yeni dosyalar
+`{genre}-{mood}-{decade}.{jpg,webp}` adıyla düşer. Sözleşme: `docs/ASSETS.md`.
+
+**Geçmiş not (2026-09-24):** Bu bölüm daha önce `SCENE_ASSET_REGISTRY`
+(GenreId × mood çarpımı, dönemsiz) + `resolveExactAsset` tarif ediyordu. Bu
+türetme, tüm dosyalar dönemsiz olduğu için 1960s/70s/90s şarkıları da 1980s
+backdrop'una indiriyordu; **kaldırıldı** ve yerini dosyadan türeyen dönemli
+kayıt aldı. Aşağıdaki zengin metadata modeli (asset spec/status/version vb.)
+hâlâ **kavramsal/FUTURE** — bugün registry satırları basit bir shape'dir
+(`BackdropEntry`).
 
 Mimari, üretilen görsellerin YALNIZCA dosya olması yerine **metadata ile yönetilmesini** hedefler.
 

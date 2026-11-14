@@ -16,6 +16,33 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-11, feat/backdrop-decade-registry — PR #30):** DÖNEM (decade) boyutu
+> backdrop kaydına eklendi; bugüne dek çözüm yalnız (genre, mood) eksenindeydi ve TÜM
+> dosyalar dönemsizdi → 1960s/70s/90s şarkılar 1980s backdrop'ını gösteriyordu (decade
+> hiçbir zaman dosya seçmiyordu). Değişiklikler: (a) YENİ `src/lib/visual/backdropRegistry.ts`
+> — kayıt `src/assets` altındaki GERÇEK dosyalardan (`import.meta.glob`) türetilir
+> (`BACKDROP_REGISTRY`), her satır bir dönem taşır; `decadeForYear` aralık dışını en yakına
+> kelepçeler (1955→1960s, 2035→2020s); `resolveBackdrop` deterministik düşer: exact →
+> genre+decade→en yakın mood → genre+mood→en yakın dönem (eşitlikte SONRAKİ) → genre→en
+> yakın dönem → nötr varsayılan (pop mood duvarı). Kayıt BOŞ olsa bile throw ETMEZ.
+> (b) Dosya adı sözleşmesi: eski `<klasör>/mood-backdrop-<mood>.jpg` = 1980s; yeni dönemli
+> dosya `{genre}-{mood}-{decade}.{jpg,webp}` (klasör içine VEYA assets köküne). Sahip yeni
+> dosyayı düşürünce KOD/MIGRATION DEĞİŞİKLİĞİ OLMADAN çözülür (docs/ASSETS.md).
+> (c) `assetRegistry.ts` yalnız taksonomiyi tutar; elle türetilmiş dönemsiz
+> `SCENE_ASSET_REGISTRY`/`resolveExactAsset` KALDIRILDI. (d) `visualResolver.ts`
+> `resolveBackdropAsset` + `matchedDecade`/`backdropExact`/`backdropStrategy` alanlarını
+> döner (dönem renk/grain KATMANI bu PR'da UYGULANMADI — bir sonraki PR'a bırakıldı);
+> `moodBackdropUrl` nötr mood duvarına indirgendi. (e) Testler tablo güdümlü yeniden
+> yazıldı (`visualSpec.test.ts` 79 test). (f) docs/ASSETS.md eklendi; VISUAL_ARCHITECTURE
+> §3/§8 güncellendi. KANIT: 1970s/1990s dosyaları düşürülünce (kod değişmeden) 1975
+> rock-melancholic → `rock/rock-melancholic-1970s.webp` (exact), 1994 →
+> `rock-melancholic-1990s.webp` (exact); dosyalar kaldırılınca 1980s'e iner (approx,
+> exact=false). `origin/main` (dfd44ba) bu dala MERGE EDİLDİ (merge commit; çakışma
+> yalnız docs/HANDOFF.md — §1 main'den AYNEN korundu, üstüne yalnız bu dalın notu
+> eklendi; src/ ve test dosyaları otomatik birleşti). Merge sonrası doğrulama: 91 dosya
+> passed / 1 skipped (92); 1161 passed / 2 skipped (1163); tsc 0; eslint 0; build exit 0.
+> PR AÇIK (#30), MERGE EDİLMEDİ; force-push YOK.
+
 > **NOT (2026-11-12, feat/listener-period-selector — bu dal):** Sahibi kararı "B":
 > bir şarkının hangi yaşam dönemine ait olduğuna SORU değil, DİNLEYİCİ karar verir;
 > `releaseYear - birthYear` kullanılmaz. Journey soruları tema olarak AYNEN kalır
