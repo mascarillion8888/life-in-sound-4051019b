@@ -16,6 +16,44 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-14, feat/poster-renderer-p0-3 — bu dal, PR açılacak):** Taban
+> `main` = `20b3bb8` (PR #33 ve #34 MERGE EDİLDİ; ön koşul doğrulandı:
+> `src/lib/poster/posterModel.ts` VE `posterLayout.ts` main'de VAR). **P0-3 (kod)
+> yapıldı:** YENİ `src/lib/poster/posterDrawPlan.ts` (+ `.test.ts`, 25 test) — SAF
+> çizim planı: canvas/DOM/ağ/LLM/rastgelelik/Date YOK. `buildPosterDrawPlan(layout,
+> model, assets)` girdisi `PosterLayout` + (`LifePosterModel` VEYA
+> `ProviderSafeLifePosterModel`) + enjekte edilmiş backdrop çözücü; çıktı
+> `PosterDrawPlan { version, layoutId, canvas, commands[] }`. Komut türleri: rect,
+> image (cover + odak noktası), gradientScrim, text, line. SIRA: zemin dolgu →
+> backdrop görseli → her metin bölgesinden hemen ÖNCE scrim (okunabilirlik) →
+> metin; her metin bölgesi `truncateToBudget` ile sarılır. Eksik veri
+> UYDURULMAZ: `releaseYear=null` → yıl metni YOK; lore yok/boş → lore metni YOK;
+> artist boş → atlanır; backdrop yoksa bile katı zemin KALIR (asla boş poster).
+> Renkler MEVCUT mood paletinden (`resolveCardVars`/`cardThemeV3`); çerçeve metni
+> MEVCUT `RENDER_LABELS`'tan (uydurma metin YOK); backdrop MEVCUT dönem-farkında
+> `resolveBackdrop` + `backdropUrlByRef` ile seçilir (enjekte edilir). Kullanıcı
+> notu ASLA okunmaz — plan JSON'u notu içeremez (kanıt: test). Determinizm: aynı
+> girdi → bayt-aynı JSON. `POSTER_DRAW_PLAN_VERSION="draw-v1"` dışa aktarılır.
+> YENİ `src/lib/poster/posterCanvas.ts` (+ `.test.ts`, 5 test) — canvas'a dokunan
+> TEK katman: `renderDrawPlan(ctx, plan, loadedImages)` planı yürütür (görsel
+> yüklenemezse o görseli atlar, asla throw ETMEZ); `exportPosterPng(plan,
+> loadImage)` 2048×3072 PNG üretir (görseller enjekte yükleyiciyle ön-yüklenir;
+> yükleyici reddederse katı dolguya düşer). YENİ `src/lib/poster/devGuard.ts`
+> (+ `.test.ts`, 3 test) + DEV-YALNIZ önizleme rotası `src/routes/dev.poster.tsx`
+> (`?n=` ile 0/1/3/8/12 varyant) — `beforeLoad` üretim derlemesinde `notFound()`
+> atar (derlenmiş üretim çıktısında `Va(!1)`; üretimde 404, kullanıcıya asla
+> ulaşmaz). `src/routeTree.gen.ts` OTOMATİK yenilendi. `src/lib/visual`, asset
+> dosyaları, migration, supabase, UI bileşenleri, lore motoru ve MEVCUT poster
+> renderer'ları (`poeticPoster`/`MasterPoster`) DOKUNULMADI; Music Memory / Faz 1
+> / görsel-sağlayıcı kodu BAŞLATILMADI. Bu dal (taban `main` 20b3bb8): **96 dosya
+> passed / 1 skipped (97); 1285 passed / 2 skipped (1287)** (P0-2 tabanı 94/1253 →
+> +3 dosya, +34 test); tsc 0; eslint 0; build exit 0; yeni dosyalar
+> prettier-temiz. PR AÇIK olacak, MERGE EDİLMEDİ; force-push/rebase/amend YOK.
+> **NOT (uyarı):** Bu oturumun istemi P0-1'i tarif ediyordu; ancak P0-1 (ve karar
+> kaydı) main'de ZATEN MERGE (PR #33). Kural gereği **git esastır** → yapılan iş
+> sıradaki görev **P0-3**'tür (dallanma adı da bunu yansıtır).
+
+
 > **NOT (2026-11-14, feat/poster-layout-p0-2 — bu dal, PR açılacak):** Taban
 > `main` = `3ad8ee2` (PR #33 MERGE EDİLDİ; ön koşul doğrulandı:
 > `src/lib/poster/posterModel.ts` main'de VAR). **P0-2 (kod) yapıldı:** YENİ
