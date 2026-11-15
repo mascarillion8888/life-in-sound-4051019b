@@ -16,6 +16,73 @@
 > sonunda. Eski (artık geçersiz) tur notları SİLİNMEDİ → **§1a Geçmiş** altında
 > kısaltıldı. Kural: **git'e güven, dosyaya değil** (AGENTS.md).
 
+> **NOT (2026-11-15, feat/listener-meeting-age — bu dal, PR açılacak):** Sahibi
+> kararı (2026-11-15): bir kartın yaşam anı, ŞARKININ ÇIKIŞ YILI ya da soruya
+> bağlı sabit yaş bantlarıyla değil, **DİNLEYİCİNİN ŞARKIYLA TANIŞTIĞI ZAMAN**
+> ile tanımlanır. Dinleyici her şarkıyı ne zaman tanıdığını söyler; bu alan
+> İSTEĞE BAĞLIDIR ve akıllı bir varsayılanı vardır; dönem + isteğe bağlı kesin
+> yaş; soru başına tek şarkı. Çıkış yılı YALNIZ backdrop dönemini ve yıl
+> etiketini sürer. Soru metinleri DEĞİŞMEDİ (ayrı PR). **Dokuz dönem** (yaşa
+> göre): childhood ≤9, preTeen 10-12, teen 13-17, youth 18-22, youngAdult 23-29,
+> adulthood 30-39, midlife 40-59, laterLife 60+, artı "now" (yeni/bugün
+> tanıştım). İngilizce sabit etiketler: "Childhood","Pre-teen","Teen years",
+> "Youth","Young adult","Adulthood","Midlife","Later life","Now". Eşiklerin TEK
+> kaynağı `src/lib/art/lifeStageLabel.ts` (`stageLabelForAge`); `listenerPeriod.ts`
+> ondan türetir. `isPeriod` katı kaldı; önceden kalıcılaşmış geçerli dönemler
+> (childhood, teen, youth, youngAdult, adulthood, laterLife, now) ÇALIŞMAYA DEVAM
+> EDER. Orta noktalar/başlangıç yaşları bu eşiklerle tutarlı (`PERIOD_INFO`;
+> başlangıçlar 0/10/13/18/23/30/40/60, "now" başlangıçsız). **İsteğe bağlı kesin
+> yaş:** `Song`'a isteğe bağlı tamsayı `metAge` (0..100, `isMetAge` ile
+> doğrulanır; `SONG_FIELDS`/`normalizeSong`/`COERCE_TO_PERSISTED` beyaz listesinde)
+> eklendi — `period` ile AYNI mekanizma, MIGRATION YOK, yerel + remote JSONB'de
+> gidiş-dönüş yapar; `metAge` varsa KAZANIR (etkin dönem `stageLabelForAge`
+> eşikleriyle ondan türetilir). **Seçenekler dinleyiciye bağlı:** birthYear
+> biliniyorsa `currentAge = currentYear - birthYear` (testler için `currentYear`
+> enjekte edilir) → yalnız BAŞLANGIÇ yaşı ≤ currentAge olan dönemler + her zaman
+> "Now" sunulur; kalıcı bir seçim sunulmasa bile HER ZAMAN gösterilir/korunur;
+> birthYear yoksa dokuzu + Now. `metAge` girdisi bilindiğinde ≤ currentAge olmalı.
+> **Akıllı varsayılan (henüz seçim yok):** `suggestedAge = releaseYear - birthYear`
+> her iki yıl da biliniyorken VE 3 ≤ suggestedAge ≤ currentAge ise o yaşın dönemi
+> önseçilir (chip normal görünür, dinleyici değiştirebilir). Aksi halde (doğum
+> öncesi şarkı, dinleyicinin ömründen yeni şarkı, eksik yıl, bilinmeyen birthYear)
+> VARSAYILAN YOK: chip İngilizce "When did you meet it?" gösterir (caret/ipucu
+> zaten chip'te) ve lore YAŞ ALMAZ (encounterAge null) + discoveredLater ipucu
+> yok. Yaş ASLA uydurulmaz. **Lore:** `encounterAge` = metAge, yoksa seçilen/
+> varsayılan dönemin orta noktası currentAge'e kelepçeli, yoksa null ("now" =
+> currentAge). `discoveredLater`: şarkı, tanışma yılından ≥ 8 yıl önce çıkmış
+> (tanışma yılı = birthYear + metAge, ya da dönem başlangıç yılı, ya da "now" için
+> currentYear), ya da dinleyicinin doğumundan önce çıkmış ama tanışma sonraysa.
+> Lore prompt METNİ DEĞİŞMEDİ; `LORE_STYLE_VERSION` ARTIRILMADI (önbellek anahtarı
+> zaten `encounterAge`/`discoveredLater` içeriyor — doğrulandı). **UI
+> (QuizCard/PeriodChip):** chip menüsü mevcut seçenekleri yaşam sırasında listeler
+> (a11y aynı); altında isteğe bağlı küçük sayısal alan "Age (optional)" (İngilizce
+> sabit, label+aria, 0..currentAge doğrulanır, Enter onaylar, Escape kapatır).
+> Meta satırı: metAge varsa "Met at {yaş} · {çıkışYılı}"; yalnız dönem varsa
+> "Met in {dönem etiketi} · {çıkışYılı}"; çıkış yılı null ise yıl kısmı atlanır;
+> seçim ve varsayılan yoksa "met" kısmı için HİÇBİR ŞEY gösterilmez. Dönem başlığı
+> kısmı bugünkü gibi. Ortalanmış chip konumu, kalp, gizle/göster ve tek-seferlik
+> giriş animasyonu DOKUNULMADI. **Testler** (tablo güdümlü, düşük Sonar
+> kopyası): eşikler 9/10, 12/13, 17/18, 22/23, 29/30, 39/40, 59/60; currentAge 12,
+> 26, 52, 70 ve bilinmeyen birthYear için seçenekler; kalıcı seçim daima korunur;
+> metAge doğrulaması (negatif, >100, > currentAge, tamsayı değil, NaN); akıllı
+> varsayılan tablosu; kararsızken lore yaşı null; discoveredLater tablosu;
+> kalıcılık gidiş-dönüşü (metAge dahil, remote restore yereli silmez); UI: 26
+> yaşındaki için menü yalnız izinli seçenekleri gösterir, yaş yazımı chip/meta
+> satırını günceller, Escape kapatır. `src/lib/poster`, `src/lib/visual`, asset,
+> migration, supabase, lore prompt, soru metinleri, i18n sözlükleri DOKUNULMADI.
+> KANIT (ham, gerçek koddan): doğum 2000 (currentYear 2026): (Sting 1987, seçim
+> yok) → chip "When did you meet it?", meta "1987 · …", age null, later false;
+> (2012 şarkı, seçim yok) → "Pre-teen", "Met in Pre-teen · 2012", age 11;
+> (1987 şarkı, metAge 9) → "Childhood", "Met at 9 · 1987", age 9, later true;
+> (1984 şarkı, metAge 14) → "Teen years", "Met at 14 · 1984", age 14, later true;
+> (şimdi tanıştı) → "Now", "Met in Now · 2024", age 26. Doğum 1981: (1977 şarkı,
+> seçim yok) → "When did you meet it?", age null; (1999 şarkı, seçim yok) →
+> "Youth", "Met in Youth · 1999", age 20. ÖNCE (gerçek kod): dört senaryonun
+> dördü de chip "Childhood" + age 9 gösteriyordu (band ortası). Bu dal (taban
+> `main` = `20b3bb8`): **93 dosya passed / 1 skipped (94); 1323 passed / 2 skipped
+> (1325)** (taban 1251/2); tsc 0; eslint 0; prettier temiz (değişen dosyalar);
+> build exit 0. PR AÇIK olacak, MERGE EDİLMEDİ; force-push/rebase/amend YOK.
+
 > **NOT (2026-11-14, feat/poster-layout-p0-2 — bu dal, PR açılacak):** Taban
 > `main` = `3ad8ee2` (PR #33 MERGE EDİLDİ; ön koşul doğrulandı:
 > `src/lib/poster/posterModel.ts` main'de VAR). **P0-2 (kod) yapıldı:** YENİ

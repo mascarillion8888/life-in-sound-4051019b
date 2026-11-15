@@ -4,20 +4,33 @@
  * Same props and hooks as the previous gothic card; only the rendering moved
  * to <PlayerCard />. The old layout is kept in QuizCardLegacy.tsx.
  *
- * The stage chip is a listener-controlled period selector: the card defaults to
- * the period of its journey band, and the user can reassign the song's life
- * period (see `listenerPeriod.ts`). A chosen period feeds the encounter age and
- * therefore the lore, and is reported through `onPeriodChange` so the journey
- * can persist it inside the song object.
+ * The stage chip is a listener-controlled meeting selector: a card's life
+ * moment is WHEN THE LISTENER MET THE SONG. The card offers the periods the
+ * listener may be offered (their current age gates the list), preselects a
+ * smart default when the release year makes one plausible, and lets the
+ * listener state an exact age. The choice feeds the encounter age (and so the
+ * lore) and is reported through `onPeriodChange` / `onMetAgeChange` so the
+ * journey can persist it inside the song object.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { cardArtworkKey, useCardArtwork } from "@/lib/art/useCardArtwork";
 import { useCardLore } from "@/lib/art/useCardLore";
 import { dynamicCardText } from "@/lib/art/dynamicCardText";
 import { resolveEncounterAge } from "@/lib/art/encounterAge";
-import { periodForBand, periodLabel, type Period } from "@/lib/art/listenerPeriod";
+import {
+  MEETING_PROMPT,
+  PERIODS,
+  availablePeriods,
+  currentAgeFor,
+  isMetAge,
+  isPeriod,
+  periodForAge,
+  periodLabel,
+  suggestedPeriod,
+  type Period,
+} from "@/lib/art/listenerPeriod";
 import {
   isInCollection,
   loadCollection,
@@ -53,7 +66,9 @@ export function QuizCard({
   autoPlayPreview = false,
   templateFile,
   artStatus,
+  currentYear,
   onPeriodChange,
+  onMetAgeChange,
 }: {
   card: LifeCard;
   /** The era's song when one exists — artwork + preview come only from here. */
@@ -64,8 +79,12 @@ export function QuizCard({
   templateFile?: string | null;
   /** Background cover verification state (journey). */
   artStatus?: "idle" | "loading" | "ok" | "notfound";
+  /** Current year, injected so the smart default stays deterministic in tests. */
+  currentYear?: number;
   /** Reports a listener-chosen life period so the caller can persist it. */
   onPeriodChange?: (period: Period) => void;
+  /** Reports a typed exact meeting age (null clears it) so the caller can persist it. */
+  onMetAgeChange?: (age: number | null) => void;
 }) {
   const { t, language } = useLanguage();
   const preview = useAudioPreview(song, { autoPlay: autoPlayPreview });
@@ -87,38 +106,67 @@ export function QuizCard({
     syncCollectionToggle(collectionKey, entry);
   };
 
-  // The listener's period choice: local state wins for the session, the
-  // persisted `song.period` restores it after a refresh/navigation.
+  // The listener's stated meeting: a period choice and/or an exact age. Local
+  // state wins for the session; the persisted `song.period` / `song.metAge`
+  // restore them after a refresh/navigation.
   const [chosen, setChosen] = useState<Period | null>(null);
+  const [chosenMetAge, setChosenMetAge] = useState<number | null>(null);
   useEffect(() => {
     setChosen(null);
+    setChosenMetAge(null);
   }, [collectionKey]);
 
+  const year = currentYear ?? new Date().getFullYear();
   const persistedPeriod = song?.period ?? null;
-  const hasChosen = chosen != null || persistedPeriod != null;
-  const period: Period = chosen ?? persistedPeriod ?? periodForBand(card.ageRange);
+  const persistedMetAge = isMetAge(song?.metAge) ? (song?.metAge as number) : null;
+  const metAge = chosenMetAge ?? persistedMetAge;
+  const chosenPeriod = chosen ?? (isPeriod(persistedPeriod) ? persistedPeriod : null);
+  const currentAge = currentAgeFor(birthYear, year);
+  const defaultPeriod = suggestedPeriod({
+    birthYear,
+    releaseYear: song?.releaseYear ?? null,
+    currentYear: year,
+  });
+  // The effective period: the listener's stated exact age wins (derived through
+  // the stage thresholds), else their period choice, else the card's smart
+  // default. An age is more specific than a period, so it takes precedence.
+  const derivedFromAge = metAge != null ? periodForAge(metAge) : null;
+  const period: Period | null = derivedFromAge ?? chosenPeriod ?? defaultPeriod;
+  // A persisted/effective period is ALWAYS offered (and highlighted) even when
+  // it would no longer be available (e.g. above the listener's current age).
+  const options = useMemo(() => {
+    const base = availablePeriods(currentAge);
+    return period && !base.includes(period) ? [...base, period] : base;
+  }, [currentAge, period]);
+
   const selectPeriod = (next: Period) => {
     setChosen(next);
     onPeriodChange?.(next);
+  };
+  const selectMetAge = (next: number | null) => {
+    setChosenMetAge(next);
+    onMetAgeChange?.(next);
   };
 
   const art = useCardArtwork(song, { cardIndex: card.index });
   const templateUrl = templateFile ? cardTemplateUrl(templateFile) : undefined;
   const { value: encounterAge, discoveredLater } = resolveEncounterAge({
-    ageRange: card.ageRange,
+    metAge,
     birthYear,
     releaseYear: song?.releaseYear ?? null,
-    // Only a listener-chosen period overrides the band; until then the band's
-    // midpoint is the encounter age, exactly as before.
-    period: hasChosen ? period : null,
+    period,
+    currentYear: year,
   });
-  // The chip always shows the effective period (the listener's choice, or the
-  // band's default period). Once the user chooses, the meta line shows the
-  // period label instead of the fixed band.
-  const stageLabel = periodLabel(period);
-  const metaLeft = hasChosen
-    ? `${stageLabel} · ${card.eraTitle}`
-    : `${card.ageRange} · ${card.eraTitle}`;
+  // Chip label: the stated/default period's label, or the English prompt when
+  // no meeting is known yet (never invent one).
+  const stageLabel = period ? periodLabel(period) : MEETING_PROMPT;
+  const releaseYear = song?.releaseYear ?? null;
+  // Meta line: the "met" part shows the exact age when stated, else the period
+  // label, else nothing; the release year is appended when known.
+  const metPart = metAge != null ? `Met at ${metAge}` : period ? `Met in ${stageLabel}` : "";
+  const metaLeft = [metPart, releaseYear != null ? String(releaseYear) : "", card.eraTitle]
+    .filter((part) => part.length > 0)
+    .join(" · ");
   const lore = useCardLore(song, {
     encounterAge,
     discoveredLater,
@@ -143,8 +191,7 @@ export function QuizCard({
 
   const sequence = (copy as { sequence?: string } | null)?.sequence ?? "";
   const mood = (song as { mood?: string | null } | null)?.mood ?? null;
-  const year = song?.releaseYear ?? null;
-  const eraValue = year ? `${Math.floor(year / 10) * 10}s` : card.ageRange;
+  const eraValue = releaseYear ? `${Math.floor(releaseYear / 10) * 10}s` : card.ageRange;
   // Placeholder score: deterministic 6–10 from the track identity.
   // Replace with a real discovery score when one exists.
   const score = song ? 6 + (hashString(collectionKey) % 5) : 6;
@@ -219,7 +266,17 @@ export function QuizCard({
       mood={mood}
       metaLeft={metaLeft}
       stageLabel={stageLabel}
-      periodChip={<PeriodChip label={stageLabel} selected={period} onSelect={selectPeriod} />}
+      periodChip={
+        <PeriodChip
+          label={stageLabel}
+          selected={period}
+          options={options}
+          onSelect={selectPeriod}
+          metAge={metAge}
+          maxAge={currentAge}
+          onMetAge={selectMetAge}
+        />
+      }
       sequence={sequence}
       title={song?.title ?? card.eraTitle}
       artist={song?.artist ?? card.tag}

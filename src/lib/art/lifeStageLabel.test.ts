@@ -2,22 +2,36 @@ import { describe, expect, it } from "vitest";
 
 import { stageLabelForAge } from "./lifeStageLabel";
 
+/**
+ * The nine life periods' eight age bands. These cut-offs are the SINGLE source
+ * of the period thresholds — `listenerPeriod.ts` derives from them — so the
+ * boundary table below is the contract every other module relies on.
+ */
 describe("stageLabelForAge", () => {
-  it("labels a 20-year-old as Youth", () => {
-    expect(stageLabelForAge(20)).toBe("Youth");
+  const boundaries: Array<[number, string]> = [
+    [0, "Childhood"],
+    [9, "Childhood"],
+    [10, "Pre-teen"],
+    [12, "Pre-teen"],
+    [13, "Teen years"],
+    [17, "Teen years"],
+    [18, "Youth"],
+    [22, "Youth"],
+    [23, "Young adult"],
+    [29, "Young adult"],
+    [30, "Adulthood"],
+    [39, "Adulthood"],
+    [40, "Midlife"],
+    [59, "Midlife"],
+    [60, "Later life"],
+    [100, "Later life"],
+  ];
+
+  it.each(boundaries)("labels age %i as %s", (age, expected) => {
+    expect(stageLabelForAge(age)).toBe(expected);
   });
 
-  it("keeps the original thresholds", () => {
-    expect(stageLabelForAge(5)).toBe("Childhood");
-    expect(stageLabelForAge(12)).toBe("Childhood");
-    expect(stageLabelForAge(13)).toBe("Teen years");
-    expect(stageLabelForAge(17)).toBe("Teen years");
-    expect(stageLabelForAge(18)).toBe("Youth");
-    expect(stageLabelForAge(24)).toBe("Youth");
-    expect(stageLabelForAge(25)).toBe("Young adult");
-    expect(stageLabelForAge(39)).toBe("Young adult");
-    expect(stageLabelForAge(40)).toBe("Adulthood");
-    expect(stageLabelForAge(59)).toBe("Adulthood");
-    expect(stageLabelForAge(60)).toBe("Later life");
+  it("labels a 20-year-old as Youth", () => {
+    expect(stageLabelForAge(20)).toBe("Youth");
   });
 });

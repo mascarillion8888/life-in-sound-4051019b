@@ -69,8 +69,11 @@ describe("QuizCard (player-card layout)", () => {
   it("renders meta line, cover, title, artist, lore, badge, era, mood and progress", () => {
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
     const meta = screen.getByTestId("card-meta").textContent ?? "";
-    expect(meta).toContain("Ages 5-9");
+    // No birth year → no smart default, so the "met" part is omitted; the
+    // release year and the era title remain.
+    expect(meta).toContain("1987");
     expect(meta).toContain("FIRST SPARK");
+    expect(meta).not.toContain("Ages");
     expect(meta).toMatch(/\d+\/100/);
     expect((screen.getByTestId("card-art-cover") as HTMLImageElement).src).toContain("art.jpg");
     expect(screen.getByTestId("card-title").textContent).toBe("Fragile");
@@ -145,23 +148,22 @@ describe("QuizCard (player-card layout)", () => {
     );
   });
 
-  it("shows the stage band in the meta line and a band-midpoint stage label, even with a birth year", () => {
-    // born 1981 + 1999 song in the Childhood band: the journey's stage choice
-    // wins, so the card must NOT show a derived "Age 18 / Young adult".
+  it("preselects the smart default period from the release year when a birth year is known", () => {
+    // born 1981 + 1999 song → met at 18 → Youth (the chip looks normal).
     act(() => birthYearStore.set(1981));
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
     const meta = screen.getByTestId("card-meta").textContent ?? "";
-    expect(meta).toContain("Ages 5-9");
-    expect(meta).not.toContain("Age 18");
-    expect(screen.getByTestId("card-stage").textContent).toBe("Childhood");
-    expect(screen.getByTestId("card-stage").textContent).not.toBe("Young adult");
+    expect(meta).toContain("Met in Youth");
+    expect(meta).toContain("1999");
+    expect(meta).not.toContain("Ages 5-9");
+    expect(screen.getByTestId("card-stage").textContent).toBe("Youth");
   });
 
-  it("keeps the card's age band in the meta line when no birth year is known", () => {
+  it("shows no 'met' part in the meta line when there is no default and no choice", () => {
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
     const meta = screen.getByTestId("card-meta").textContent ?? "";
-    expect(meta).toContain("Ages 5-9");
-    expect(meta).not.toContain("Age 20");
+    expect(meta).not.toContain("Ages");
+    expect(meta).not.toContain("Met");
   });
 
   it("toggles the favorite heart: aria-pressed flips and persists to localStorage", () => {
@@ -208,22 +210,23 @@ describe("QuizCard (player-card layout)", () => {
     act(() => birthYearStore.set(1981));
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
     const stage = screen.getByTestId("card-stage");
-    expect(stage.textContent).toBe("Childhood");
+    expect(stage.textContent).toBe("Youth");
     const chip = screen.getByTestId("card-stage-button");
     expect(chip.tagName).toBe("BUTTON");
-    expect(chip.textContent).toBe("Childhood");
+    expect(chip.textContent).toBe("Youth");
     expect(chip.getAttribute("aria-haspopup")).toBe("listbox");
   });
 
-  it("shows the 'Now' chip even though the band carries no number", () => {
+  it("shows the English meeting prompt when no default is possible", () => {
+    // A recent song with no birth year: no default → the prompt, not an invented age.
     render(<QuizCard card={cards[7]} song={song({ releaseYear: 2023 })} />);
-    expect(screen.getByTestId("card-stage-button").textContent).toBe("Now");
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("When did you meet it?");
   });
 
   it("still renders the favorite heart alongside the stage label", () => {
     act(() => birthYearStore.set(1981));
     render(<QuizCard card={cards[0]} song={song({ releaseYear: 1999 })} />);
-    expect(screen.getByTestId("card-stage-button").textContent).toBe("Childhood");
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Youth");
     expect(screen.getByTestId("card-heart")).toBeTruthy();
   });
 
@@ -231,22 +234,20 @@ describe("QuizCard (player-card layout)", () => {
     const onPeriodChange = vi.fn();
     render(<QuizCard card={cards[0]} song={song()} onPeriodChange={onPeriodChange} />);
     const chip = screen.getByTestId("card-stage-button");
-    // Default comes from the card's band ("Ages 5-9" -> Childhood).
-    expect(chip.textContent).toBe("Childhood");
-    expect(screen.getByTestId("card-meta").textContent).toContain("Ages 5-9");
+    // No birth year → no default → the prompt.
+    expect(chip.textContent).toBe("When did you meet it?");
     expect(screen.queryByTestId("period-listbox")).toBeNull();
 
     fireEvent.click(chip);
     expect(screen.getByTestId("period-listbox")).toBeTruthy();
-    // All seven options are present.
-    expect(screen.getAllByRole("option")).toHaveLength(7);
+    // All nine options are present when the birth year is unknown.
+    expect(screen.getAllByRole("option")).toHaveLength(9);
 
     fireEvent.click(screen.getByTestId("period-option-teen"));
     // Menu closed, chip shows the choice, meta line shows the period label.
     expect(screen.queryByTestId("period-listbox")).toBeNull();
     expect(chip.textContent).toBe("Teen years");
-    expect(screen.getByTestId("card-meta").textContent).toContain("Teen years");
-    expect(screen.getByTestId("card-meta").textContent).not.toContain("Ages 5-9");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Met in Teen years");
     expect(onPeriodChange).toHaveBeenCalledWith("teen");
   });
 
@@ -278,17 +279,32 @@ describe("QuizCard (player-card layout)", () => {
     const listbox = screen.getByTestId("period-listbox");
     expect(listbox).toBeTruthy();
 
-    // Opens on the selected option (Childhood, index 0); ArrowDown moves to Teen.
+    // No choice yet → opens on the first option (Childhood, index 0); ArrowDown
+    // moves to the next option in life order (Pre-teen).
     fireEvent.keyDown(listbox, { key: "ArrowDown" });
     fireEvent.keyDown(listbox, { key: "Enter" });
-    expect(chip.textContent).toBe("Teen years");
-    expect(onPeriodChange).toHaveBeenCalledWith("teen");
+    expect(chip.textContent).toBe("Pre-teen");
+    expect(onPeriodChange).toHaveBeenCalledWith("preTeen");
   });
 
   it("restores a persisted period from the song and shows it in the meta line", () => {
     render(<QuizCard card={cards[0]} song={song({ period: "now" })} />);
     expect(screen.getByTestId("card-stage-button").textContent).toBe("Now");
-    expect(screen.getByTestId("card-meta").textContent).toContain("Now · FIRST SPARK");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Met in Now · FIRST SPARK");
+  });
+
+  it("restores a persisted exact metAge and shows it in the meta line", () => {
+    render(<QuizCard card={cards[0]} song={song({ metAge: 14, releaseYear: 1984 })} />);
+    // The chip derives its period from the age (14 → Teen years).
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Teen years");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Met at 14 · 1984");
+  });
+
+  it("omits the year part of the meta line when the release year is null", () => {
+    render(<QuizCard card={cards[0]} song={song({ metAge: 14, releaseYear: null })} />);
+    const meta = screen.getByTestId("card-meta").textContent ?? "";
+    expect(meta).toContain("Met at 14");
+    expect(meta).not.toMatch(/Met at 14 · \d/);
   });
 
   it("passes the chosen period's age to lore, but no age for 'Now' without a birth year", () => {
@@ -307,5 +323,90 @@ describe("QuizCard (player-card layout)", () => {
     fireEvent.click(screen.getByTestId("period-option-now"));
     const nowContext = lore.contexts.at(-1);
     expect(nowContext?.encounterAge).toBe(new Date().getFullYear() - 1981);
+  });
+
+  it("passes no age to lore when nothing is decided (never invented)", () => {
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: 1987 })} />);
+    const context = lore.contexts.at(-1);
+    expect(context?.encounterAge).toBeNull();
+    expect(context?.discoveredLater).toBe(false);
+  });
+
+  it("shows only the periods a 26-year-old may be offered", () => {
+    // born 2000 → current age 26: childhood..youngAdult + Now (six options).
+    act(() => birthYearStore.set(2000));
+    render(<QuizCard card={cards[0]} song={song({ releaseYear: null })} currentYear={2026} />);
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    const labels = screen.getAllByRole("option").map((o) => o.textContent);
+    expect(labels).toEqual(["Childhood", "Pre-teen", "Teen years", "Youth", "Young adult", "Now"]);
+    // Adulthood, Midlife and Later life are not offered to a 26-year-old.
+    expect(screen.queryByTestId("period-option-adulthood")).toBeNull();
+    expect(screen.queryByTestId("period-option-midlife")).toBeNull();
+    expect(screen.queryByTestId("period-option-laterLife")).toBeNull();
+  });
+
+  it("keeps a persisted period that would no longer be offered (above the current age)", () => {
+    // A 26-year-old whose saved choice is Midlife: still shown, still offered.
+    act(() => birthYearStore.set(2000));
+    render(
+      <QuizCard
+        card={cards[0]}
+        song={song({ period: "midlife", releaseYear: null })}
+        currentYear={2026}
+      />,
+    );
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Midlife");
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    expect(screen.getByTestId("period-option-midlife")).toBeTruthy();
+  });
+
+  it("typing an exact age updates the chip, the meta line and the lore age", () => {
+    const onMetAgeChange = vi.fn();
+    render(
+      <QuizCard
+        card={cards[0]}
+        song={song({ releaseYear: 1984 })}
+        currentYear={2026}
+        onMetAgeChange={onMetAgeChange}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    const input = screen.getByTestId("period-age-input");
+    fireEvent.change(input, { target: { value: "14" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(screen.queryByTestId("period-listbox")).toBeNull();
+    expect(screen.getByTestId("card-stage-button").textContent).toBe("Teen years");
+    expect(screen.getByTestId("card-meta").textContent).toContain("Met at 14 · 1984");
+    expect(onMetAgeChange).toHaveBeenCalledWith(14);
+    expect(lore.contexts.at(-1)?.encounterAge).toBe(14);
+  });
+
+  it("rejects an age above the listener's current age", () => {
+    const onMetAgeChange = vi.fn();
+    act(() => birthYearStore.set(2000)); // current age 26 in 2026
+    render(
+      <QuizCard
+        card={cards[0]}
+        song={song({ releaseYear: null })}
+        currentYear={2026}
+        onMetAgeChange={onMetAgeChange}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("card-stage-button"));
+    const input = screen.getByTestId("period-age-input");
+    fireEvent.change(input, { target: { value: "40" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onMetAgeChange).not.toHaveBeenCalledWith(40);
+  });
+
+  it("closes the menu on Escape from the age input", () => {
+    render(<QuizCard card={cards[0]} song={song()} />);
+    const chip = screen.getByTestId("card-stage-button");
+    fireEvent.click(chip);
+    const input = screen.getByTestId("period-age-input");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByTestId("period-listbox")).toBeNull();
+    expect(document.activeElement).toBe(chip);
   });
 });

@@ -496,6 +496,22 @@ function JourneyPage() {
                   return { ...prev, [question.id]: { ...cur, period } };
                 });
               }}
+              onMetAgeChange={(metAge) => {
+                // Same local-first persistence for the exact meeting age: it
+                // lives inside the song object, no schema change.
+                setSongs((prev) => {
+                  const cur = prev[question.id];
+                  if (!cur) return prev;
+                  if (metAge === null) {
+                    if (cur.metAge == null) return prev;
+                    const next = { ...cur };
+                    delete next.metAge;
+                    return { ...prev, [question.id]: next };
+                  }
+                  if (cur.metAge === metAge) return prev;
+                  return { ...prev, [question.id]: { ...cur, metAge } };
+                });
+              }}
               onContinue={() => {
                 // Unmounting the reveal fades out the preview (audio
                 // singleton cleanup), then the journey advances — or, after

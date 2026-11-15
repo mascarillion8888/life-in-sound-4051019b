@@ -13,7 +13,7 @@
  */
 import { getSupabase } from "./client";
 import type { JourneyRow } from "./types";
-import { isPeriod } from "../art/listenerPeriod";
+import { isMetAge, isPeriod } from "../art/listenerPeriod";
 import type { Song } from "../song/types";
 import {
   clearJourney,
@@ -62,7 +62,7 @@ export async function loadRemoteJourney(userId: string): Promise<JourneyProgress
 
     const remote = toProgress(data);
     const merged = mergeJourneys(local, remote);
-    const reconciled = merged ? withLocalPeriods(merged, local) : null;
+    const reconciled = merged ? withLocalChoices(merged, local) : null;
 
     if (reconciled) {
       saveJourney(reconciled);
@@ -166,13 +166,13 @@ function toProgress(
 }
 
 /**
- * The listener's chosen life period lives inside the song object (local-first,
- * no migration — see `song/types.ts`). A Google-link restore merges the server
- * copy back over the local draft; the remote `songs` JSONB may predate the
- * period feature and carry none. For that field the local value wins, so a
- * chosen period is never erased by a restore that has no period to offer.
+ * The listener's stated meeting (life period and exact age) lives inside the
+ * song object (local-first, no migration — see `song/types.ts`). A Google-link
+ * restore merges the server copy back over the local draft; the remote `songs`
+ * JSONB may predate these fields and carry none. For those fields the local
+ * value wins, so a stated meeting is never erased by a restore that has none.
  */
-export function withLocalPeriods(
+export function withLocalChoices(
   merged: JourneyProgress,
   local: JourneyProgress | null,
 ): JourneyProgress {
@@ -181,17 +181,25 @@ export function withLocalPeriods(
   const songs: Record<number, Song> = { ...merged.songs };
   for (const [key, localSong] of Object.entries(local.songs)) {
     const id = Number(key);
-    if (!isPeriod(localSong.period)) continue;
     const mergedSong = songs[id];
-    // Only carry the local period onto the same track (identity key + provider),
+    // Only carry a local choice onto the same track (identity key + provider),
     // never onto a different song that happens to share the question id.
     if (
-      mergedSong &&
-      mergedSong.provider === localSong.provider &&
-      mergedSong.providerId === localSong.providerId &&
-      !isPeriod(mergedSong.period)
+      !mergedSong ||
+      mergedSong.provider !== localSong.provider ||
+      mergedSong.providerId !== localSong.providerId
     ) {
-      songs[id] = { ...mergedSong, period: localSong.period };
+      continue;
+    }
+    let next = mergedSong;
+    if (isPeriod(localSong.period) && !isPeriod(mergedSong.period)) {
+      next = { ...next, period: localSong.period };
+    }
+    if (isMetAge(localSong.metAge) && !isMetAge(mergedSong.metAge)) {
+      next = { ...next, metAge: localSong.metAge };
+    }
+    if (next !== mergedSong) {
+      songs[id] = next;
       changed = true;
     }
   }
