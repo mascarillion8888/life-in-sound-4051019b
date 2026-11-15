@@ -36,8 +36,10 @@ export function EraCardReveal({
   song,
   artStatus,
   isLast,
+  currentYear,
   onContinue,
   onPeriodChange,
+  onMetAgeChange,
 }: {
   card: LifeCard;
   /** The song just committed for this era — artwork + preview come only from here. */
@@ -45,10 +47,14 @@ export function EraCardReveal({
   /** Artwork verification status (for QuizCard skeleton breathing animation) */
   artStatus?: "idle" | "loading" | "ok" | "notfound";
   isLast: boolean;
+  /** Current year, injected so the smart default stays deterministic in tests. */
+  currentYear?: number;
   /** Advance to the next era (or the Master Poster when isLast). */
   onContinue: () => void;
   /** Reports a listener-chosen life period so the journey can persist it. */
   onPeriodChange?: (period: Period) => void;
+  /** Reports a typed exact meeting age (null clears it) so the journey can persist it. */
+  onMetAgeChange?: (age: number | null) => void;
 }) {
   const themeId = sceneThemeFor(song);
   const eraTheme = eraThemeForYear(song?.releaseYear);
@@ -102,7 +108,9 @@ export function EraCardReveal({
               autoPlayPreview
               templateFile={null}
               artStatus={artStatus}
+              currentYear={currentYear}
               onPeriodChange={onPeriodChange}
+              onMetAgeChange={onMetAgeChange}
             />
           </div>
         </div>

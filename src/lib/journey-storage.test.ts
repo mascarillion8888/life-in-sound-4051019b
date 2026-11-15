@@ -389,3 +389,64 @@ describe("journey-storage listener period persistence", () => {
     expect("period" in (loadJourney()?.songs[1] ?? {})).toBe(false);
   });
 });
+
+describe("journey-storage exact meeting age persistence", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("round-trips an exact metAge through localStorage", () => {
+    const withAge = song({ metAge: 14 });
+    saveJourney({ current: 1, answers: { 1: withAge.title }, songs: { 1: withAge } });
+    expect(loadJourney()?.songs[1].metAge).toBe(14);
+  });
+
+  it("round-trips period and metAge together", () => {
+    const both = song({ period: "teen", metAge: 14 });
+    saveJourney({ current: 1, answers: { 1: both.title }, songs: { 1: both } });
+    const loaded = loadJourney()?.songs[1];
+    expect(loaded?.period).toBe("teen");
+    expect(loaded?.metAge).toBe(14);
+  });
+
+  it("omits metAge when none was stated (byte-identical round-trip)", () => {
+    const plain = song();
+    saveJourney({ current: 1, answers: { 1: plain.title }, songs: { 1: plain } });
+    const loaded = loadJourney();
+    expect(loaded?.songs[1]).toEqual(plain);
+    expect("metAge" in (loaded?.songs[1] ?? {})).toBe(false);
+  });
+
+  it.each([
+    ["negative", -1],
+    ["over 100", 101],
+    ["non-integer", 1.5],
+    ["NaN", Number.NaN],
+    ["a string", "14"],
+  ])("drops an invalid metAge (%s) to absent", (_label, bad) => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: { 1: { ...song(), metAge: bad } },
+      }),
+    );
+    expect("metAge" in (loadJourney()?.songs[1] ?? {})).toBe(false);
+  });
+
+  it("coerces a null metAge to absent", () => {
+    localStorage.setItem(
+      JOURNEY_STORAGE_KEY,
+      JSON.stringify({
+        current: 1,
+        answers: { 1: "x" },
+        songs: { 1: { ...song(), metAge: null } },
+      }),
+    );
+    expect("metAge" in (loadJourney()?.songs[1] ?? {})).toBe(false);
+  });
+});

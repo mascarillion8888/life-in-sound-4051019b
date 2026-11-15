@@ -419,7 +419,7 @@ describe("clearRemoteJourney", () => {
   });
 });
 
-describe("withLocalPeriods — a restore never erases a locally stored period", () => {
+describe("withLocalChoices — a restore never erases a locally stored choice", () => {
   beforeEach(() => {
     localStorage.clear();
     dbCache.invalidate();
@@ -450,6 +450,29 @@ describe("withLocalPeriods — a restore never erases a locally stored period", 
     expect(cached.songs[1].period).toBe("teen");
   });
 
+  it("keeps the local metAge when the server copy carries none", async () => {
+    const localSong = song({ metAge: 14 });
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: localSong.title }, songs: { 1: localSong } }),
+    );
+    setFake(
+      makeFakeSupabase({
+        existing: {
+          current: 1,
+          answers: { 1: localSong.title, 2: "Second" },
+          songs: { 1: song() },
+        },
+      }),
+    );
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1].metAge).toBe(14);
+    const cached = JSON.parse(localStorage.getItem("soundmap.journey.v1")!);
+    expect(cached.songs[1].metAge).toBe(14);
+  });
+
   it("does not carry a local period onto a different track at the same index", async () => {
     const localSong = song({ providerId: "local-track", period: "teen" });
     localStorage.setItem(
@@ -473,6 +496,28 @@ describe("withLocalPeriods — a restore never erases a locally stored period", 
     expect("period" in (result?.songs[1] ?? {})).toBe(false);
   });
 
+  it("does not carry a local metAge onto a different track at the same index", async () => {
+    const localSong = song({ providerId: "local-track", metAge: 14 });
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: localSong.title }, songs: { 1: localSong } }),
+    );
+    const remoteSong = song({ providerId: "remote-track" });
+    setFake(
+      makeFakeSupabase({
+        existing: {
+          current: 1,
+          answers: { 1: remoteSong.title, 2: "Second" },
+          songs: { 1: remoteSong },
+        },
+      }),
+    );
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect("metAge" in (result?.songs[1] ?? {})).toBe(false);
+  });
+
   it("keeps the server's own period when both sides have one", async () => {
     const localSong = song({ period: "childhood" });
     localStorage.setItem(
@@ -493,5 +538,27 @@ describe("withLocalPeriods — a restore never erases a locally stored period", 
     const result = await loadRemoteJourney("user-1");
 
     expect(result?.songs[1].period).toBe("now");
+  });
+
+  it("keeps the server's own metAge when both sides have one", async () => {
+    const localSong = song({ metAge: 14 });
+    localStorage.setItem(
+      "soundmap.journey.v1",
+      JSON.stringify({ current: 1, answers: { 1: localSong.title }, songs: { 1: localSong } }),
+    );
+    const remoteSong = song({ metAge: 20 });
+    setFake(
+      makeFakeSupabase({
+        existing: {
+          current: 1,
+          answers: { 1: remoteSong.title, 2: "Second" },
+          songs: { 1: remoteSong },
+        },
+      }),
+    );
+
+    const result = await loadRemoteJourney("user-1");
+
+    expect(result?.songs[1].metAge).toBe(20);
   });
 });

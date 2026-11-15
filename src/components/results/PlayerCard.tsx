@@ -82,6 +82,9 @@ const CSS = `
 .pc-chip-option{padding:7px 12px;border-radius:8px;color:var(--text);font:600 13px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 .pc-chip-option.active{background:rgba(255,255,255,.14)}
 .pc-chip-option[aria-selected="true"]{color:var(--sub);text-shadow:var(--glowTxt)}
+.pc-chip-age{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:6px 12px 4px;border-top:1px solid rgba(255,255,255,.14);color:var(--text);font:600 11px var(--display);letter-spacing:.06em;text-transform:uppercase}
+.pc-chip-age input{width:56px;padding:4px 6px;border-radius:6px;border:1px solid var(--sub);background:rgba(0,0,0,.4);color:var(--text);font:600 13px var(--display);text-align:center}
+.pc-chip-age input:focus-visible{outline:2px solid var(--sub);outline-offset:1px}
 @property --lv{syntax:"<number>";inherits:false;initial-value:0}
 .pc-eq{display:flex;align-items:flex-end;justify-content:space-between;gap:3px;height:48px;margin:12px 0 20px;-webkit-box-reflect:below 1px linear-gradient(transparent 58%,rgba(255,255,255,.26))}
 .pc-eq .c{position:relative;flex:1 1 0;height:100%;-webkit-mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px);mask-image:repeating-linear-gradient(to top,#000 0,#000 3px,transparent 3px,transparent 4px)}

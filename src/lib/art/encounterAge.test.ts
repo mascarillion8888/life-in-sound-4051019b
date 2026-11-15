@@ -1,16 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import { resolveEncounterAge } from "./encounterAge";
+import type { Period } from "./listenerPeriod";
 
 /**
- * Stage-first model: the journey's life-stage band is the encounter age, so
- * `value` is always the band midpoint and `derived` is always false. The song's
- * release year only feeds `releasedAtAge` and the `discoveredLater` flag.
+ * The meeting-age model: a card's life moment is WHEN THE LISTENER MET THE SONG.
+ * `value` is the exact `metAge` when given, else the chosen/defaulted period's
+ * midpoint clamped to the listener's current age ("now" → the current age),
+ * else null — never invented. The current year is injected so "now" and every
+ * derived value stay deterministic.
  */
-describe("resolveEncounterAge (stage-first)", () => {
+describe("resolveEncounterAge (meeting-age model)", () => {
+  const CY = 2026;
+
   const cases: Array<{
     name: string;
-    input: { ageRange: string; birthYear?: number | null; releaseYear?: number | null };
+    input: {
+      metAge?: number | null;
+      period?: Period | null;
+      birthYear?: number | null;
+      releaseYear?: number | null;
+    };
     expected: {
       value: number | null;
       releasedAtAge: number | null;
@@ -18,237 +28,190 @@ describe("resolveEncounterAge (stage-first)", () => {
     };
   }> = [
     {
-      name: "born 1981 + 1999 song in the Childhood band: band value wins, no 'Young adult'",
-      input: { ageRange: "Ages 5-9", birthYear: 1981, releaseYear: 1999 },
-      expected: { value: 7, releasedAtAge: 18, discoveredLater: false },
+      name: "exact metAge wins over the period and the midpoint",
+      input: { metAge: 9, period: "teen", birthYear: 2000, releaseYear: 1987 },
+      expected: { value: 9, releasedAtAge: null, discoveredLater: true },
     },
     {
-      name: "born 1981 + 1977 song in the Teen band: released before birth → discovered later",
-      input: { ageRange: "Ages 13-17", birthYear: 1981, releaseYear: 1977 },
-      expected: { value: 15, releasedAtAge: null, discoveredLater: true },
+      name: "born 1981 + metAge 14, 1984 song: value 14, discovered later (1984 ≤ 1987)",
+      input: { metAge: 14, birthYear: 1981, releaseYear: 1984 },
+      expected: { value: 14, releasedAtAge: 3, discoveredLater: true },
     },
     {
-      name: "born 1981 + 1990 song in the Childhood band: not discovered later",
-      input: { ageRange: "Ages 5-9", birthYear: 1981, releaseYear: 1990 },
-      expected: { value: 7, releasedAtAge: 9, discoveredLater: false },
+      name: "born 1981 + metAge 14, 1990 song: value 14, not discovered later",
+      input: { metAge: 14, birthYear: 1981, releaseYear: 1990 },
+      expected: { value: 14, releasedAtAge: 9, discoveredLater: false },
     },
     {
-      name: "missing birth year: band only, no release-based signals",
-      input: { ageRange: "Ages 18-24", releaseYear: 1987 },
-      expected: { value: 21, releasedAtAge: null, discoveredLater: false },
+      name: "period childhood → midpoint 5",
+      input: { period: "childhood", birthYear: 2000 },
+      expected: { value: 5, releasedAtAge: null, discoveredLater: false },
     },
     {
-      name: "null birth year: band only",
-      input: { ageRange: "Ages 18-24", birthYear: null, releaseYear: 1987 },
-      expected: { value: 21, releasedAtAge: null, discoveredLater: false },
+      name: "period teen → midpoint 15",
+      input: { period: "teen", birthYear: 1981 },
+      expected: { value: 15, releasedAtAge: null, discoveredLater: false },
     },
     {
-      name: "missing release year: band only",
-      input: { ageRange: "Ages 18-24", birthYear: 1967 },
-      expected: { value: 21, releasedAtAge: null, discoveredLater: false },
+      name: "period now → the current age (2026 - 1981 = 45)",
+      input: { period: "now", birthYear: 1981 },
+      expected: { value: 45, releasedAtAge: null, discoveredLater: false },
     },
     {
-      name: "'Now' band (no numbers): value null",
-      input: { ageRange: "Now" },
+      name: "period now without a birth year → no age",
+      input: { period: "now" },
       expected: { value: null, releasedAtAge: null, discoveredLater: false },
     },
     {
-      name: "'Şimdi' band (no numbers): value null",
-      input: { ageRange: "Şimdi" },
+      name: "no period and no metAge → null (never invented)",
+      input: { birthYear: 2000, releaseYear: 1987 },
       expected: { value: null, releasedAtAge: null, discoveredLater: false },
     },
     {
-      name: "'Now' band with both years: still no value, but releasedAtAge is kept",
-      input: { ageRange: "Now", birthYear: 1990, releaseYear: 2020 },
-      expected: { value: null, releasedAtAge: 30, discoveredLater: false },
+      name: "period midpoint above the current age is clamped to the current age",
+      // born 2000 → current age 26; the midlife midpoint (50) clamps to 26.
+      input: { period: "midlife", birthYear: 2000 },
+      expected: { value: 26, releasedAtAge: null, discoveredLater: false },
     },
     {
-      name: "open band '40+': value 40, midpoint of the only number",
-      input: { ageRange: "Ages 40+", birthYear: 1900, releaseYear: 2010 },
-      expected: { value: 40, releasedAtAge: null, discoveredLater: false },
+      name: "missing birth year: the period midpoint still resolves",
+      input: { period: "teen", releaseYear: 1987 },
+      expected: { value: 15, releasedAtAge: null, discoveredLater: false },
     },
     {
       name: "releasedAtAge keeps the 0 and 100 lifetime bounds",
-      input: { ageRange: "Ages 40+", birthYear: 1990, releaseYear: 1990 },
+      input: { metAge: 40, birthYear: 1990, releaseYear: 1990 },
       expected: { value: 40, releasedAtAge: 0, discoveredLater: true },
     },
   ];
 
   it.each(cases)("$name", ({ input, expected }) => {
-    const result = resolveEncounterAge(input);
+    const result = resolveEncounterAge({
+      metAge: input.metAge,
+      period: input.period,
+      birthYear: input.birthYear,
+      releaseYear: input.releaseYear,
+      currentYear: CY,
+    });
     expect(result.value).toBe(expected.value);
-    expect(result.derived).toBe(false);
     expect(result.releasedAtAge).toBe(expected.releasedAtAge);
     expect(result.discoveredLater).toBe(expected.discoveredLater);
   });
 
-  it("never marks an age as derived (the band is the source of truth)", () => {
-    const inputs: Array<{ ageRange: string; birthYear?: number; releaseYear?: number }> = [
-      { ageRange: "Ages 5-9", birthYear: 1967, releaseYear: 1987 },
-      { ageRange: "Ages 5-9", birthYear: 1980, releaseYear: 1987 },
-      { ageRange: "Ages 40+", birthYear: 1920, releaseYear: 2020 },
-    ];
-    for (const input of inputs) {
-      expect(resolveEncounterAge(input).derived).toBe(false);
-    }
-  });
-
-  it("accepts the lifetime bounds (0 and 100) as releasedAtAge", () => {
-    expect(
-      resolveEncounterAge({ ageRange: "Ages 40+", birthYear: 1990, releaseYear: 1990 })
-        .releasedAtAge,
-    ).toBe(0);
-    expect(
-      resolveEncounterAge({ ageRange: "Ages 40+", birthYear: 1920, releaseYear: 2020 })
-        .releasedAtAge,
-    ).toBe(100);
+  it("marks a period-derived age as derived, and a metAge as not derived", () => {
+    expect(resolveEncounterAge({ period: "teen", currentYear: CY }).derived).toBe(true);
+    expect(resolveEncounterAge({ metAge: 14, currentYear: CY }).derived).toBe(false);
+    expect(resolveEncounterAge({ currentYear: CY }).derived).toBe(false);
   });
 
   it("rejects a releasedAtAge outside the 0–100 lifetime range", () => {
     // 1987 - 1999 = -12 (song released before birth).
     expect(
-      resolveEncounterAge({ ageRange: "Ages 18-24", birthYear: 1999, releaseYear: 1987 })
+      resolveEncounterAge({ metAge: 18, birthYear: 1999, releaseYear: 1987, currentYear: CY })
         .releasedAtAge,
     ).toBeNull();
     // 2010 - 1900 = 110.
     expect(
-      resolveEncounterAge({ ageRange: "Ages 40+", birthYear: 1900, releaseYear: 2010 })
+      resolveEncounterAge({ metAge: 40, birthYear: 1900, releaseYear: 2010, currentYear: CY })
         .releasedAtAge,
     ).toBeNull();
   });
 
-  // The "discovered later" rule is `releaseYear <= birthYear + bandLower - 8`.
-  // Teen band (lower 13) with birth year 1981 → threshold 1981 + 13 - 8 = 1986.
-  describe("8-year boundary (named constant DISCOVERED_LATER_YEARS)", () => {
-    it("flags exactly 8 years before the band start as discovered later", () => {
-      expect(
-        resolveEncounterAge({ ageRange: "Ages 13-17", birthYear: 1981, releaseYear: 1986 })
-          .discoveredLater,
-      ).toBe(true);
-    });
+  it("uses the real clock for 'now' when currentYear is not injected", () => {
+    const result = resolveEncounterAge({ period: "now", birthYear: 1981 });
+    expect(result.value).toBe(new Date().getFullYear() - 1981);
+  });
 
-    it("does not flag 7 years before the band start", () => {
-      expect(
-        resolveEncounterAge({ ageRange: "Ages 13-17", birthYear: 1981, releaseYear: 1987 })
-          .discoveredLater,
-      ).toBe(false);
-    });
-
-    it("flags any song released before the birth year", () => {
-      expect(
-        resolveEncounterAge({ ageRange: "Ages 13-17", birthYear: 1981, releaseYear: 1980 })
-          .discoveredLater,
-      ).toBe(true);
-    });
+  it("ignores an invalid metAge (falls back to the period)", () => {
+    expect(resolveEncounterAge({ metAge: -1, period: "teen", currentYear: CY }).value).toBe(15);
+    expect(resolveEncounterAge({ metAge: 1.5, period: "teen", currentYear: CY }).value).toBe(15);
+    expect(resolveEncounterAge({ metAge: Number.NaN, period: "teen", currentYear: CY }).value).toBe(
+      15,
+    );
+    expect(resolveEncounterAge({ metAge: 101, period: "teen", currentYear: CY }).value).toBe(15);
   });
 });
 
 /**
- * A listener-chosen period replaces the band: `value` becomes the period's
- * midpoint ("now" resolves to the current age) and the "discovered later"
- * threshold uses the period's start year. The current year is injected so the
- * "now" cases stay deterministic.
+ * The "discovered later" rule: `releaseYear <= meetingYear - 8`, or the song
+ * predates the birth year. The meeting year is birthYear + metAge, the period's
+ * start year, or the current year for "now".
  */
-describe("resolveEncounterAge (listener-chosen period)", () => {
+describe("resolveEncounterAge — discoveredLater", () => {
+  const CY = 2026;
   const cases: Array<{
     name: string;
     input: {
-      ageRange: string;
+      metAge?: number | null;
+      period?: Period | null;
       birthYear?: number | null;
       releaseYear?: number | null;
-      period?: "childhood" | "teen" | "youth" | "youngAdult" | "adulthood" | "laterLife" | "now";
-      currentYear?: number;
     };
-    expected: {
-      value: number | null;
-      releasedAtAge: number | null;
-      discoveredLater: boolean;
-    };
+    expected: boolean;
   }> = [
     {
-      // The classic example: born 1981, met a 1977 song as a teenager.
-      name: "born 1981 + 1977 song, period teen: value 15, discovered later",
-      input: { ageRange: "Ages 5-9", birthYear: 1981, releaseYear: 1977, period: "teen" },
-      expected: { value: 15, releasedAtAge: null, discoveredLater: true },
+      // meeting year = 1981 + 14 = 1995; 1995 - 8 = 1987.
+      name: "born 1981 + metAge 14, 1987 song: exactly 8 years before → true",
+      input: { metAge: 14, birthYear: 1981, releaseYear: 1987 },
+      expected: true,
     },
     {
-      // Same song, but heard now: current age 45 (2026 - 1981). The song
-      // predates the birth year, so it is still a later discovery.
-      name: "born 1981 + 1977 song, period now: value 45, discovered later (pre-birth)",
-      input: {
-        ageRange: "Ages 5-9",
-        birthYear: 1981,
-        releaseYear: 1977,
-        period: "now",
-        currentYear: 2026,
-      },
-      expected: { value: 45, releasedAtAge: null, discoveredLater: true },
+      name: "born 1981 + metAge 14, 1988 song: 7 years before → false",
+      input: { metAge: 14, birthYear: 1981, releaseYear: 1988 },
+      expected: false,
     },
     {
-      // Period childhood (start 1986): 1977 is before birth → discovered later.
-      name: "born 1981 + 1977 song, period childhood: value 9, discovered later",
-      input: { ageRange: "Now", birthYear: 1981, releaseYear: 1977, period: "childhood" },
-      expected: { value: 9, releasedAtAge: null, discoveredLater: true },
+      name: "song released before the birth year → true",
+      input: { metAge: 14, birthYear: 1981, releaseYear: 1980 },
+      expected: true,
     },
     {
-      name: "period now without birth year: value null (chip still shows)",
-      input: { ageRange: "Ages 5-9", releaseYear: 1977, period: "now", currentYear: 2026 },
-      expected: { value: null, releasedAtAge: null, discoveredLater: false },
+      // period teen starts 1994; 1994 - 8 = 1986.
+      name: "period teen (start 1994), 1986 song → true",
+      input: { period: "teen", birthYear: 1981, releaseYear: 1986 },
+      expected: true,
     },
     {
-      name: "a period overrides the band midpoint (Childhood band + youth period)",
-      input: { ageRange: "Ages 5-9", period: "youth" },
-      expected: { value: 21, releasedAtAge: null, discoveredLater: false },
+      name: "period teen (start 1994), 1987 song → false",
+      input: { period: "teen", birthYear: 1981, releaseYear: 1987 },
+      expected: false,
     },
     {
-      name: "period start year drives discovered later: 1998 vs teen start 1994",
-      input: { ageRange: "Now", birthYear: 1981, releaseYear: 1998, period: "teen" },
-      expected: { value: 15, releasedAtAge: 17, discoveredLater: false },
+      name: "period now, a recent song → false",
+      input: { period: "now", birthYear: 1981, releaseYear: 2020 },
+      expected: false,
     },
     {
-      name: "period start year drives discovered later: 1985 <= 1994 - 8",
-      input: { ageRange: "Now", birthYear: 1981, releaseYear: 1985, period: "teen" },
-      expected: { value: 15, releasedAtAge: 4, discoveredLater: true },
+      name: "no meeting stated → false (nothing to compare)",
+      input: { birthYear: 1981, releaseYear: 1977 },
+      expected: false,
     },
     {
-      name: "period now uses the current year as its start (no false discovery)",
-      input: {
-        ageRange: "Ages 40+",
-        birthYear: 1981,
-        releaseYear: 2020,
-        period: "now",
-        currentYear: 2026,
-      },
-      expected: { value: 45, releasedAtAge: 39, discoveredLater: false },
+      name: "no release year → false",
+      input: { metAge: 14, birthYear: 1981, releaseYear: null },
+      expected: false,
     },
   ];
 
   it.each(cases)("$name", ({ input, expected }) => {
-    const result = resolveEncounterAge(input);
-    expect(result.value).toBe(expected.value);
-    expect(result.derived).toBe(false);
-    expect(result.releasedAtAge).toBe(expected.releasedAtAge);
-    expect(result.discoveredLater).toBe(expected.discoveredLater);
+    const result = resolveEncounterAge({
+      metAge: input.metAge,
+      period: input.period,
+      birthYear: input.birthYear,
+      releaseYear: input.releaseYear,
+      currentYear: CY,
+    });
+    expect(result.discoveredLater).toBe(expected);
   });
 
-  it("falls back to the band when no period is given (signature stays compatible)", () => {
-    const band = resolveEncounterAge({
-      ageRange: "Ages 13-17",
+  it("marks a 'now' meeting of a pre-birth song as discovered later", () => {
+    const result = resolveEncounterAge({
+      period: "now",
       birthYear: 1981,
       releaseYear: 1977,
+      currentYear: CY,
     });
-    const withNullPeriod = resolveEncounterAge({
-      ageRange: "Ages 13-17",
-      birthYear: 1981,
-      releaseYear: 1977,
-      period: null,
-    });
-    expect(band).toEqual(withNullPeriod);
-    expect(band.value).toBe(15);
-  });
-
-  it("uses the real clock for 'now' when currentYear is not injected", () => {
-    const result = resolveEncounterAge({ ageRange: "Now", birthYear: 1981, period: "now" });
-    expect(result.value).toBe(new Date().getFullYear() - 1981);
+    expect(result.value).toBe(45);
+    expect(result.discoveredLater).toBe(true);
   });
 });

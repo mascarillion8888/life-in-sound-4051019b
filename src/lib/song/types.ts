@@ -1,4 +1,4 @@
-import { isPeriod, type Period } from "../art/listenerPeriod";
+import { isMetAge, isPeriod, type Period } from "../art/listenerPeriod";
 
 /**
  * Provider-neutral Song model.
@@ -57,6 +57,12 @@ export type Song = {
    * JSONB column without a schema change.
    */
   period?: Period | null;
+  /**
+   * The exact age the listener was when they met the song (0–100), if they
+   * stated one. When set it wins over `period` for the encounter age. Persisted
+   * the same way as `period` — inside the song object, no schema change.
+   */
+  metAge?: number | null;
 };
 
 /**
@@ -85,6 +91,7 @@ export const SONG_FIELDS = [
   "genre",
   "mood",
   "period",
+  "metAge",
 ] as const satisfies readonly SongKey[];
 
 /** Every key a Song carries. */
@@ -118,7 +125,9 @@ type PersistedSong = {
         ? number | null
         : K extends "period"
           ? Period | undefined
-          : boolean | undefined; // "verified"
+          : K extends "metAge"
+            ? number | undefined
+            : boolean | undefined; // "verified"
 };
 
 /**
@@ -147,6 +156,8 @@ export function isPersistableValue(field: SongField, value: unknown): boolean {
       return value === null || (typeof value === "number" && Number.isFinite(value));
     case "period":
       return value === undefined || isPeriod(value);
+    case "metAge":
+      return value === undefined || isMetAge(value);
     case "verified":
       return value === undefined || value === true || value === false;
     default: {
@@ -185,6 +196,7 @@ export const COERCE_TO_PERSISTED: {
   genre: (raw) => (typeof raw === "string" && raw.length > 0 ? raw : null),
   mood: (raw) => (typeof raw === "string" && raw.length > 0 ? raw : null),
   period: (raw) => (isPeriod(raw) ? raw : undefined),
+  metAge: (raw) => (isMetAge(raw) ? raw : undefined),
 };
 
 /**
